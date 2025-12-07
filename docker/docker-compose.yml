@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: uswds-pt-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-uswds_pt}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-uswds_pt}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-uswds_pt} -d ${DB_NAME:-uswds_pt}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uswds-pt-network
+
+  # API Server
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: uswds-pt-api
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-uswds_pt}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-uswds_pt}
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      PORT: 3001
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    networks:
+      - uswds-pt-network
+
+  # Frontend Editor
+  editor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.editor
+      args:
+        VITE_API_URL: ${API_URL:-http://localhost:3001}
+    container_name: uswds-pt-editor
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - uswds-pt-network
+
+volumes:
+  postgres_data:
+
+networks:
+  uswds-pt-network:
+    driver: bridge
