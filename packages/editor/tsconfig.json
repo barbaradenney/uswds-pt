@@ -16,9 +16,5 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*"],
-  "references": [
-    { "path": "../shared" },
-    { "path": "../adapter" }
-  ]
+  "include": ["src/**/*"]
 }
