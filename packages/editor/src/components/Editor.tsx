@@ -1,31 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, GrapesProjectData } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
+import { BLOCK_CATEGORIES, DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
+import StudioEditor from '@grapesjs/studio-sdk/react';
+import '@grapesjs/studio-sdk/style';
+import type { Editor as GrapesEditor } from 'grapesjs';
 
-/**
- * Placeholder Editor Component
- *
- * NOTE: This is a placeholder. The actual GrapesJS Studio SDK integration
- * requires an Enterprise license. Once acquired, replace this with:
- *
- * import StudioEditor from '@grapesjs/studio-sdk/react';
- * import '@grapesjs/studio-sdk/style';
- */
+// License key from environment variable
+const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 
 export function Editor() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const editorRef = useRef<GrapesEditor | null>(null);
 
   const [prototype, setPrototype] = useState<Prototype | null>(null);
   const [name, setName] = useState('Untitled Prototype');
-  const [htmlContent, setHtmlContent] = useState('');
-  const [grapesData, setGrapesData] = useState<GrapesProjectData>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [htmlContent, setHtmlContent] = useState('');
 
   // Load existing prototype if editing
   useEffect(() => {
@@ -53,7 +50,11 @@ export function Editor() {
       setPrototype(data);
       setName(data.name);
       setHtmlContent(data.htmlContent);
-      setGrapesData(data.grapesData);
+
+      // Load project data into editor if available
+      if (editorRef.current && data.grapesData) {
+        editorRef.current.loadProjectData(data.grapesData as any);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load prototype');
     } finally {
@@ -66,6 +67,10 @@ export function Editor() {
     setError(null);
 
     try {
+      const editor = editorRef.current;
+      const currentHtml = editor ? editor.getHtml() : htmlContent;
+      const grapesData = editor ? editor.getProjectData() : {};
+
       const url = prototype
         ? `/api/prototypes/${prototype.slug}`
         : '/api/prototypes';
@@ -76,7 +81,7 @@ export function Editor() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          htmlContent,
+          htmlContent: currentHtml,
           grapesData,
         }),
       });
@@ -88,23 +93,94 @@ export function Editor() {
       const data: Prototype = await response.json();
 
       if (!prototype) {
-        // Navigate to the edit URL after creating
         navigate(`/edit/${data.slug}`, { replace: true });
       }
 
       setPrototype(data);
+      setHtmlContent(currentHtml);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setIsSaving(false);
     }
-  }, [prototype, name, htmlContent, grapesData, navigate]);
+  }, [prototype, name, htmlContent, navigate]);
+
+  const handleExport = useCallback(() => {
+    const editor = editorRef.current;
+    if (editor) {
+      setHtmlContent(editor.getHtml());
+    }
+    setShowExport(true);
+  }, []);
+
+  // Generate blocks from USWDS components
+  const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => ({
+    id: tagName,
+    label: tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    content,
+    media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
+    category: getCategoryForComponent(tagName),
+  }));
+
+  function getCategoryForComponent(tagName: string): string {
+    const categoryMap: Record<string, string[]> = {
+      'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
+      'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'usa-radio', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
+      'Navigation': ['usa-header', 'usa-footer', 'usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-skip-link'],
+      'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
+      'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
+      'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
+      'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
+      'Templates': ['usa-landing-template', 'usa-form-template', 'usa-sign-in-template', 'usa-error-template'],
+    };
+
+    for (const [category, components] of Object.entries(categoryMap)) {
+      if (components.includes(tagName)) {
+        return category;
+      }
+    }
+    return 'Components';
+  }
 
   if (isLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner" />
         <p>Loading editor...</p>
+      </div>
+    );
+  }
+
+  // Check if we have a license key
+  if (!LICENSE_KEY) {
+    return (
+      <div className="editor-container">
+        <header className="editor-header">
+          <div className="editor-header-left">
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/')}
+              style={{ padding: '6px 12px' }}
+            >
+              ← Back
+            </button>
+          </div>
+        </header>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px',
+        }}>
+          <div className="card" style={{ maxWidth: '500px', textAlign: 'center' }}>
+            <h2>License Key Required</h2>
+            <p style={{ color: 'var(--color-base-light)', marginTop: '12px' }}>
+              The GrapesJS Studio SDK license key is not configured.
+              Please add the <code>VITE_GRAPESJS_LICENSE_KEY</code> environment variable.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -145,7 +221,7 @@ export function Editor() {
           )}
           <button
             className="btn btn-secondary"
-            onClick={() => setShowExport(true)}
+            onClick={handleExport}
           >
             Export
           </button>
@@ -159,85 +235,56 @@ export function Editor() {
         </div>
       </header>
 
-      <div className="editor-main">
-        {/*
-          PLACEHOLDER: GrapesJS Studio SDK Editor
-
-          Once you have the Enterprise license, replace this with:
-
-          <StudioEditor
-            options={editorConfig}
-            onReady={(editor) => {
-              // Load existing project data
-              if (grapesData.pages) {
-                editor.loadProjectData(grapesData);
-              }
-            }}
-          />
-        */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#f5f5f5',
-            padding: '48px',
+      <div className="editor-main" style={{ flex: 1 }}>
+        <StudioEditor
+          licenseKey={LICENSE_KEY}
+          options={{
+            project: {
+              type: 'web',
+              default: {
+                pages: [{
+                  name: 'Prototype',
+                  component: prototype?.htmlContent || `
+                    <div style="padding: 20px;">
+                      <h1>Start Building</h1>
+                      <p>Drag USWDS components from the left panel to build your prototype.</p>
+                    </div>
+                  `,
+                }],
+              },
+            },
+            storage: false,
+            assets: {
+              noAssets: true,
+            },
           }}
-        >
-          <div
-            style={{
-              background: 'white',
-              padding: '48px',
-              borderRadius: '8px',
-              maxWidth: '600px',
-              textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            }}
-          >
-            <h2 style={{ marginBottom: '16px' }}>GrapesJS Studio SDK Required</h2>
-            <p style={{ color: '#666', marginBottom: '24px' }}>
-              This editor requires the GrapesJS Studio SDK Enterprise license.
-              Once acquired, the full visual editor will be available here.
-            </p>
-            <p style={{ color: '#666', marginBottom: '24px' }}>
-              The adapter package is ready to integrate with the SDK. See the
-              plan document for integration details.
-            </p>
+          blocks={blocks}
+          onReady={(editor) => {
+            editorRef.current = editor;
 
-            <div
-              style={{
-                background: '#f0f0f0',
-                padding: '16px',
-                borderRadius: '4px',
-                textAlign: 'left',
-                fontFamily: 'monospace',
-                fontSize: '14px',
-              }}
-            >
-              <p style={{ margin: 0 }}>npm install @grapesjs/studio-sdk</p>
-            </div>
+            // Load existing project data if available
+            if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {
+              editor.loadProjectData(prototype.grapesData as any);
+            }
 
-            <div style={{ marginTop: '24px' }}>
-              <h3 style={{ marginBottom: '12px' }}>Temporary HTML Editor</h3>
-              <textarea
-                value={htmlContent}
-                onChange={(e) => setHtmlContent(e.target.value)}
-                placeholder="<usa-button>Click me</usa-button>"
-                style={{
-                  width: '100%',
-                  minHeight: '200px',
-                  padding: '12px',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-              />
-            </div>
-          </div>
-        </div>
+            // Add USWDS styles to canvas
+            const canvas = editor.Canvas;
+            if (canvas) {
+              const frame = canvas.getFrameEl();
+              if (frame?.contentDocument) {
+                const link = frame.contentDocument.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/@uswds/uswds@3.8.1/dist/css/uswds.min.css';
+                frame.contentDocument.head.appendChild(link);
+
+                // Add USWDS JS for component functionality
+                const script = frame.contentDocument.createElement('script');
+                script.src = 'https://unpkg.com/@uswds/uswds@3.8.1/dist/js/uswds.min.js';
+                frame.contentDocument.body.appendChild(script);
+              }
+            }
+          }}
+        />
       </div>
 
       {showExport && (

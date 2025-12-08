@@ -57,6 +57,7 @@ jobs:
         run: pnpm --filter @uswds-pt/editor build
         env:
           VITE_API_URL: ${{ vars.API_URL || '' }}
+          VITE_GRAPESJS_LICENSE_KEY: ${{ secrets.GRAPESJS_LICENSE_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
