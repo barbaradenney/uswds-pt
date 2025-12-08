@@ -267,39 +267,25 @@ export function Editor() {
               editor.loadProjectData(prototype.grapesData as any);
             }
 
-            // Add USWDS-WC styles and scripts to canvas
+            // Add USWDS-WC styles and components to canvas
             const canvas = editor.Canvas;
             if (canvas) {
               const frame = canvas.getFrameEl();
               if (frame?.contentDocument) {
-                // Load USWDS-WC core styles
+                // Load USWDS-WC core styles via esm.sh (handles CSS imports)
                 const styles = frame.contentDocument.createElement('link');
                 styles.rel = 'stylesheet';
-                styles.href = 'https://unpkg.com/@uswds-wc/core@2.5.3/styles.css';
+                styles.href = 'https://esm.sh/@uswds-wc/core@2.5.3/styles.css';
                 frame.contentDocument.head.appendChild(styles);
 
-                // Load USWDS-WC component packages via ES modules
-                const importMap = frame.contentDocument.createElement('script');
-                importMap.type = 'importmap';
-                importMap.textContent = JSON.stringify({
-                  imports: {
-                    'lit': 'https://unpkg.com/lit@3/index.js?module',
-                    'lit/': 'https://unpkg.com/lit@3/',
-                    '@lit/reactive-element': 'https://unpkg.com/@lit/reactive-element@2?module',
-                    '@lit/reactive-element/': 'https://unpkg.com/@lit/reactive-element@2/',
-                    'lit-html': 'https://unpkg.com/lit-html@3?module',
-                    'lit-html/': 'https://unpkg.com/lit-html@3/',
-                    'lit-element/': 'https://unpkg.com/lit-element@4/',
-                  }
-                });
-                frame.contentDocument.head.appendChild(importMap);
-
-                // Load all USWDS-WC component packages
+                // Load USWDS-WC components via esm.sh
+                // esm.sh automatically bundles all dependencies including @uswds-wc/core
                 const packages = ['actions', 'forms', 'feedback', 'navigation', 'data-display', 'layout', 'patterns'];
                 packages.forEach(pkg => {
                   const script = frame.contentDocument!.createElement('script');
                   script.type = 'module';
-                  script.src = `https://unpkg.com/@uswds-wc/${pkg}@2.5.3/dist/index.js`;
+                  // esm.sh handles all dependency resolution automatically
+                  script.src = `https://esm.sh/@uswds-wc/${pkg}@2.5.3`;
                   frame.contentDocument!.head.appendChild(script);
                 });
               }
