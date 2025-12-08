@@ -267,24 +267,50 @@ export function Editor() {
               editor.loadProjectData(prototype.grapesData as any);
             }
 
-            // Add USWDS-WC styles and components to canvas
+            // Add USWDS styles and web components to canvas
             const canvas = editor.Canvas;
             if (canvas) {
               const frame = canvas.getFrameEl();
               if (frame?.contentDocument) {
-                // Load USWDS-WC core styles directly from jsdelivr
+                // Load standard USWDS CSS (includes fonts properly)
                 const styles = frame.contentDocument.createElement('link');
                 styles.rel = 'stylesheet';
-                styles.href = 'https://cdn.jsdelivr.net/npm/@uswds-wc/core@2.5.3/src/styles/styles.css';
+                styles.href = 'https://cdn.jsdelivr.net/npm/@uswds/uswds@3.8.1/dist/css/uswds.min.css';
                 frame.contentDocument.head.appendChild(styles);
 
-                // Load USWDS-WC components via esm.sh with bundle flag
-                // The ?bundle flag tells esm.sh to bundle all dependencies into one file
+                // Create import map for resolving bare module specifiers
+                const importMap = frame.contentDocument.createElement('script');
+                importMap.type = 'importmap';
+                importMap.textContent = JSON.stringify({
+                  imports: {
+                    'lit': 'https://esm.sh/lit@3',
+                    'lit/': 'https://esm.sh/lit@3/',
+                    'lit/decorators.js': 'https://esm.sh/lit@3/decorators.js',
+                    '@lit/reactive-element': 'https://esm.sh/@lit/reactive-element@2',
+                    '@lit/reactive-element/': 'https://esm.sh/@lit/reactive-element@2/',
+                    'lit-html': 'https://esm.sh/lit-html@3',
+                    'lit-html/': 'https://esm.sh/lit-html@3/',
+                    'lit-element': 'https://esm.sh/lit-element@4',
+                    'lit-element/': 'https://esm.sh/lit-element@4/',
+                    '@uswds-wc/core': 'https://esm.sh/@uswds-wc/core@2.5.3',
+                    '@uswds-wc/core/': 'https://esm.sh/@uswds-wc/core@2.5.3/',
+                    '@uswds-wc/actions': 'https://esm.sh/@uswds-wc/actions@2.5.3',
+                    '@uswds-wc/forms': 'https://esm.sh/@uswds-wc/forms@2.5.3',
+                    '@uswds-wc/feedback': 'https://esm.sh/@uswds-wc/feedback@2.5.3',
+                    '@uswds-wc/navigation': 'https://esm.sh/@uswds-wc/navigation@2.5.3',
+                    '@uswds-wc/data-display': 'https://esm.sh/@uswds-wc/data-display@2.5.3',
+                    '@uswds-wc/layout': 'https://esm.sh/@uswds-wc/layout@2.5.3',
+                    '@uswds-wc/patterns': 'https://esm.sh/@uswds-wc/patterns@2.5.3',
+                  }
+                });
+                frame.contentDocument.head.insertBefore(importMap, frame.contentDocument.head.firstChild);
+
+                // Load USWDS-WC components
                 const packages = ['actions', 'forms', 'feedback', 'navigation', 'data-display', 'layout', 'patterns'];
                 packages.forEach(pkg => {
                   const script = frame.contentDocument!.createElement('script');
                   script.type = 'module';
-                  script.src = `https://esm.sh/*@uswds-wc/${pkg}@2.5.3?bundle&external=@uswds-wc/core/styles.css`;
+                  script.textContent = `import 'https://esm.sh/@uswds-wc/${pkg}@2.5.3?deps=lit@3'`;
                   frame.contentDocument!.head.appendChild(script);
                 });
               }
