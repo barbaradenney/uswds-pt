@@ -1,20 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { Prototype, GrapesProjectData } from '@uswds-pt/shared';
+import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
-import { BLOCK_CATEGORIES, DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
+import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
-import type { Editor as GrapesEditor } from 'grapesjs';
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 
+// Use any for editor ref to avoid type conflicts between SDK versions
+type EditorInstance = any;
+
 export function Editor() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const editorRef = useRef<GrapesEditor | null>(null);
+  const editorRef = useRef<EditorInstance | null>(null);
 
   const [prototype, setPrototype] = useState<Prototype | null>(null);
   const [name, setName] = useState('Untitled Prototype');
@@ -237,8 +239,8 @@ export function Editor() {
 
       <div className="editor-main" style={{ flex: 1 }}>
         <StudioEditor
-          licenseKey={LICENSE_KEY}
           options={{
+            licenseKey: LICENSE_KEY,
             project: {
               type: 'web',
               default: {
@@ -253,12 +255,10 @@ export function Editor() {
                 }],
               },
             },
-            storage: false,
-            assets: {
-              noAssets: true,
+            blocks: {
+              default: blocks,
             },
           }}
-          blocks={blocks}
           onReady={(editor) => {
             editorRef.current = editor;
 
