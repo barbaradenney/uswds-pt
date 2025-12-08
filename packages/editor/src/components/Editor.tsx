@@ -272,20 +272,19 @@ export function Editor() {
             if (canvas) {
               const frame = canvas.getFrameEl();
               if (frame?.contentDocument) {
-                // Load USWDS-WC core styles via esm.sh (handles CSS imports)
+                // Load USWDS-WC core styles directly from jsdelivr
                 const styles = frame.contentDocument.createElement('link');
                 styles.rel = 'stylesheet';
-                styles.href = 'https://esm.sh/@uswds-wc/core@2.5.3/styles.css';
+                styles.href = 'https://cdn.jsdelivr.net/npm/@uswds-wc/core@2.5.3/src/styles/styles.css';
                 frame.contentDocument.head.appendChild(styles);
 
-                // Load USWDS-WC components via esm.sh
-                // esm.sh automatically bundles all dependencies including @uswds-wc/core
+                // Load USWDS-WC components via esm.sh with bundle flag
+                // The ?bundle flag tells esm.sh to bundle all dependencies into one file
                 const packages = ['actions', 'forms', 'feedback', 'navigation', 'data-display', 'layout', 'patterns'];
                 packages.forEach(pkg => {
                   const script = frame.contentDocument!.createElement('script');
                   script.type = 'module';
-                  // esm.sh handles all dependency resolution automatically
-                  script.src = `https://esm.sh/@uswds-wc/${pkg}@2.5.3`;
+                  script.src = `https://esm.sh/*@uswds-wc/${pkg}@2.5.3?bundle&external=@uswds-wc/core/styles.css`;
                   frame.contentDocument!.head.appendChild(script);
                 });
               }
