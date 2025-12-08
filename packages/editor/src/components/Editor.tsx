@@ -267,20 +267,41 @@ export function Editor() {
               editor.loadProjectData(prototype.grapesData as any);
             }
 
-            // Add USWDS styles to canvas
+            // Add USWDS-WC styles and scripts to canvas
             const canvas = editor.Canvas;
             if (canvas) {
               const frame = canvas.getFrameEl();
               if (frame?.contentDocument) {
-                const link = frame.contentDocument.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/@uswds/uswds@3.8.1/dist/css/uswds.min.css';
-                frame.contentDocument.head.appendChild(link);
+                // Load USWDS-WC core styles
+                const styles = frame.contentDocument.createElement('link');
+                styles.rel = 'stylesheet';
+                styles.href = 'https://unpkg.com/@uswds-wc/core@2.5.3/styles.css';
+                frame.contentDocument.head.appendChild(styles);
 
-                // Add USWDS JS for component functionality
-                const script = frame.contentDocument.createElement('script');
-                script.src = 'https://unpkg.com/@uswds/uswds@3.8.1/dist/js/uswds.min.js';
-                frame.contentDocument.body.appendChild(script);
+                // Load USWDS-WC component packages via ES modules
+                const importMap = frame.contentDocument.createElement('script');
+                importMap.type = 'importmap';
+                importMap.textContent = JSON.stringify({
+                  imports: {
+                    'lit': 'https://unpkg.com/lit@3/index.js?module',
+                    'lit/': 'https://unpkg.com/lit@3/',
+                    '@lit/reactive-element': 'https://unpkg.com/@lit/reactive-element@2?module',
+                    '@lit/reactive-element/': 'https://unpkg.com/@lit/reactive-element@2/',
+                    'lit-html': 'https://unpkg.com/lit-html@3?module',
+                    'lit-html/': 'https://unpkg.com/lit-html@3/',
+                    'lit-element/': 'https://unpkg.com/lit-element@4/',
+                  }
+                });
+                frame.contentDocument.head.appendChild(importMap);
+
+                // Load all USWDS-WC component packages
+                const packages = ['actions', 'forms', 'feedback', 'navigation', 'data-display', 'layout', 'patterns'];
+                packages.forEach(pkg => {
+                  const script = frame.contentDocument!.createElement('script');
+                  script.type = 'module';
+                  script.src = `https://unpkg.com/@uswds-wc/${pkg}@2.5.3/dist/index.js`;
+                  frame.contentDocument!.head.appendChild(script);
+                });
               }
             }
           }}
