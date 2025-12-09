@@ -3,7 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
-import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
+import {
+  DEFAULT_CONTENT,
+  COMPONENT_ICONS,
+  CDN_IMPORT_MAP,
+  CDN_STYLES,
+  generateComponentLoaderScript,
+} from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
 
@@ -272,47 +278,31 @@ export function Editor() {
             if (canvas) {
               const frame = canvas.getFrameEl();
               if (frame?.contentDocument) {
-                // Load standard USWDS CSS (includes fonts properly)
-                const styles = frame.contentDocument.createElement('link');
-                styles.rel = 'stylesheet';
-                styles.href = 'https://cdn.jsdelivr.net/npm/@uswds/uswds@3.8.1/dist/css/uswds.min.css';
-                frame.contentDocument.head.appendChild(styles);
+                const doc = frame.contentDocument;
 
-                // Create import map for resolving bare module specifiers
-                const importMap = frame.contentDocument.createElement('script');
+                // 1. Create and insert import map FIRST (must be before any module scripts)
+                const importMap = doc.createElement('script');
                 importMap.type = 'importmap';
-                importMap.textContent = JSON.stringify({
-                  imports: {
-                    'lit': 'https://esm.sh/lit@3',
-                    'lit/': 'https://esm.sh/lit@3/',
-                    'lit/decorators.js': 'https://esm.sh/lit@3/decorators.js',
-                    '@lit/reactive-element': 'https://esm.sh/@lit/reactive-element@2',
-                    '@lit/reactive-element/': 'https://esm.sh/@lit/reactive-element@2/',
-                    'lit-html': 'https://esm.sh/lit-html@3',
-                    'lit-html/': 'https://esm.sh/lit-html@3/',
-                    'lit-element': 'https://esm.sh/lit-element@4',
-                    'lit-element/': 'https://esm.sh/lit-element@4/',
-                    '@uswds-wc/core': 'https://esm.sh/@uswds-wc/core@2.5.3',
-                    '@uswds-wc/core/': 'https://esm.sh/@uswds-wc/core@2.5.3/',
-                    '@uswds-wc/actions': 'https://esm.sh/@uswds-wc/actions@2.5.3',
-                    '@uswds-wc/forms': 'https://esm.sh/@uswds-wc/forms@2.5.3',
-                    '@uswds-wc/feedback': 'https://esm.sh/@uswds-wc/feedback@2.5.3',
-                    '@uswds-wc/navigation': 'https://esm.sh/@uswds-wc/navigation@2.5.3',
-                    '@uswds-wc/data-display': 'https://esm.sh/@uswds-wc/data-display@2.5.3',
-                    '@uswds-wc/layout': 'https://esm.sh/@uswds-wc/layout@2.5.3',
-                    '@uswds-wc/patterns': 'https://esm.sh/@uswds-wc/patterns@2.5.3',
-                  }
-                });
-                frame.contentDocument.head.insertBefore(importMap, frame.contentDocument.head.firstChild);
+                importMap.textContent = JSON.stringify(CDN_IMPORT_MAP);
+                doc.head.insertBefore(importMap, doc.head.firstChild);
 
-                // Load USWDS-WC components
-                const packages = ['actions', 'forms', 'feedback', 'navigation', 'data-display', 'layout', 'patterns'];
-                packages.forEach(pkg => {
-                  const script = frame.contentDocument!.createElement('script');
-                  script.type = 'module';
-                  script.textContent = `import 'https://esm.sh/@uswds-wc/${pkg}@2.5.3?deps=lit@3'`;
-                  frame.contentDocument!.head.appendChild(script);
-                });
+                // 2. Load USWDS CSS for base styling
+                const uswdsStyles = doc.createElement('link');
+                uswdsStyles.rel = 'stylesheet';
+                uswdsStyles.href = CDN_STYLES.uswds;
+                doc.head.appendChild(uswdsStyles);
+
+                // 3. Load USWDS-WC core styles
+                const wcStyles = doc.createElement('link');
+                wcStyles.rel = 'stylesheet';
+                wcStyles.href = CDN_STYLES.uswdsWcCore;
+                doc.head.appendChild(wcStyles);
+
+                // 4. Load USWDS-WC components via module script
+                const componentLoader = doc.createElement('script');
+                componentLoader.type = 'module';
+                componentLoader.textContent = generateComponentLoaderScript();
+                doc.head.appendChild(componentLoader);
               }
             }
           }}

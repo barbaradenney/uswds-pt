@@ -234,3 +234,70 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
   'uswds-wc-patterns': 'patterns',
   'uswds-wc-templates': 'templates',
 };
+
+/**
+ * CDN configuration for USWDS-WC components
+ * Uses esm.sh with shared Lit dependencies to avoid duplicate custom element registration
+ */
+export const USWDS_WC_VERSION = '2.5.3';
+export const LIT_VERSION = '3';
+export const USWDS_VERSION = '3.8.1';
+
+/**
+ * Import map for sharing Lit dependencies across all USWDS-WC packages
+ */
+export const CDN_IMPORT_MAP = {
+  imports: {
+    // Lit core dependencies - shared across all packages
+    'lit': `https://esm.sh/lit@${LIT_VERSION}`,
+    'lit/': `https://esm.sh/lit@${LIT_VERSION}/`,
+    'lit/decorators.js': `https://esm.sh/lit@${LIT_VERSION}/decorators.js`,
+    'lit-html': `https://esm.sh/lit-html@${LIT_VERSION}`,
+    'lit-html/': `https://esm.sh/lit-html@${LIT_VERSION}/`,
+    'lit-element': `https://esm.sh/lit-element@4`,
+    'lit-element/': `https://esm.sh/lit-element@4/`,
+    '@lit/reactive-element': `https://esm.sh/@lit/reactive-element@2`,
+    '@lit/reactive-element/': `https://esm.sh/@lit/reactive-element@2/`,
+    // USWDS-WC packages with external Lit (uses import map for resolution)
+    '@uswds-wc/core': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSION}`,
+    '@uswds-wc/core/': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSION}/`,
+    '@uswds-wc/actions': `https://esm.sh/*@uswds-wc/actions@${USWDS_WC_VERSION}`,
+    '@uswds-wc/forms': `https://esm.sh/*@uswds-wc/forms@${USWDS_WC_VERSION}`,
+    '@uswds-wc/feedback': `https://esm.sh/*@uswds-wc/feedback@${USWDS_WC_VERSION}`,
+    '@uswds-wc/navigation': `https://esm.sh/*@uswds-wc/navigation@${USWDS_WC_VERSION}`,
+    '@uswds-wc/data-display': `https://esm.sh/*@uswds-wc/data-display@${USWDS_WC_VERSION}`,
+    '@uswds-wc/layout': `https://esm.sh/*@uswds-wc/layout@${USWDS_WC_VERSION}`,
+    '@uswds-wc/patterns': `https://esm.sh/*@uswds-wc/patterns@${USWDS_WC_VERSION}`,
+  },
+};
+
+/**
+ * USWDS-WC package names for loading
+ */
+export const USWDS_WC_PACKAGES = [
+  'core',
+  'actions',
+  'forms',
+  'feedback',
+  'navigation',
+  'data-display',
+  'layout',
+  'patterns',
+] as const;
+
+/**
+ * CDN URLs for stylesheets
+ */
+export const CDN_STYLES = {
+  uswds: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  uswdsWcCore: `https://esm.sh/@uswds-wc/core@${USWDS_WC_VERSION}/styles.css`,
+};
+
+/**
+ * Generate a script that loads all USWDS-WC components in an iframe
+ * This script should be injected after the import map
+ */
+export function generateComponentLoaderScript(): string {
+  const imports = USWDS_WC_PACKAGES.map(pkg => `import '@uswds-wc/${pkg}';`).join('\n');
+  return imports;
+}
