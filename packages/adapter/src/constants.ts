@@ -239,7 +239,7 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
  * CDN configuration for USWDS-WC components
  * Uses esm.sh with shared Lit dependencies to avoid duplicate custom element registration
  */
-export const USWDS_WC_VERSION = '2.5.3';
+export const USWDS_WC_VERSION = '2.5.4';
 export const LIT_VERSION = '3';
 export const USWDS_VERSION = '3.8.1';
 
