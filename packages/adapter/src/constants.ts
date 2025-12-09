@@ -239,7 +239,16 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
  * CDN configuration for USWDS-WC components
  * Uses esm.sh with shared Lit dependencies to avoid duplicate custom element registration
  */
-export const USWDS_WC_VERSION = '2.5.4';
+export const USWDS_WC_VERSIONS = {
+  core: '2.5.3',
+  actions: '2.5.4',
+  forms: '2.5.3',
+  feedback: '2.5.3',
+  navigation: '2.5.4',
+  'data-display': '2.5.3',
+  layout: '2.5.3',
+  patterns: '2.5.3',
+} as const;
 export const LIT_VERSION = '3';
 export const USWDS_VERSION = '3.8.1';
 
@@ -259,15 +268,15 @@ export const CDN_IMPORT_MAP = {
     '@lit/reactive-element': `https://esm.sh/@lit/reactive-element@2`,
     '@lit/reactive-element/': `https://esm.sh/@lit/reactive-element@2/`,
     // USWDS-WC packages with external Lit (uses import map for resolution)
-    '@uswds-wc/core': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSION}`,
-    '@uswds-wc/core/': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSION}/`,
-    '@uswds-wc/actions': `https://esm.sh/*@uswds-wc/actions@${USWDS_WC_VERSION}`,
-    '@uswds-wc/forms': `https://esm.sh/*@uswds-wc/forms@${USWDS_WC_VERSION}`,
-    '@uswds-wc/feedback': `https://esm.sh/*@uswds-wc/feedback@${USWDS_WC_VERSION}`,
-    '@uswds-wc/navigation': `https://esm.sh/*@uswds-wc/navigation@${USWDS_WC_VERSION}`,
-    '@uswds-wc/data-display': `https://esm.sh/*@uswds-wc/data-display@${USWDS_WC_VERSION}`,
-    '@uswds-wc/layout': `https://esm.sh/*@uswds-wc/layout@${USWDS_WC_VERSION}`,
-    '@uswds-wc/patterns': `https://esm.sh/*@uswds-wc/patterns@${USWDS_WC_VERSION}`,
+    '@uswds-wc/core': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSIONS.core}`,
+    '@uswds-wc/core/': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSIONS.core}/`,
+    '@uswds-wc/actions': `https://esm.sh/*@uswds-wc/actions@${USWDS_WC_VERSIONS.actions}`,
+    '@uswds-wc/forms': `https://esm.sh/*@uswds-wc/forms@${USWDS_WC_VERSIONS.forms}`,
+    '@uswds-wc/feedback': `https://esm.sh/*@uswds-wc/feedback@${USWDS_WC_VERSIONS.feedback}`,
+    '@uswds-wc/navigation': `https://esm.sh/*@uswds-wc/navigation@${USWDS_WC_VERSIONS.navigation}`,
+    '@uswds-wc/data-display': `https://esm.sh/*@uswds-wc/data-display@${USWDS_WC_VERSIONS['data-display']}`,
+    '@uswds-wc/layout': `https://esm.sh/*@uswds-wc/layout@${USWDS_WC_VERSIONS.layout}`,
+    '@uswds-wc/patterns': `https://esm.sh/*@uswds-wc/patterns@${USWDS_WC_VERSIONS.patterns}`,
   },
 };
 
@@ -290,7 +299,7 @@ export const USWDS_WC_PACKAGES = [
  */
 export const CDN_STYLES = {
   uswds: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcCore: `https://esm.sh/@uswds-wc/core@${USWDS_WC_VERSION}/styles.css`,
+  uswdsWcCore: `https://esm.sh/@uswds-wc/core@${USWDS_WC_VERSIONS.core}/styles.css`,
 };
 
 /**
