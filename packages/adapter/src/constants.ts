@@ -299,7 +299,7 @@ export const USWDS_WC_PACKAGES = [
  */
 export const CDN_STYLES = {
   uswds: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcCore: `https://esm.sh/@uswds-wc/core@${USWDS_WC_VERSIONS.core}/styles.css`,
+  uswdsWcCore: `https://unpkg.com/@uswds-wc/core@${USWDS_WC_VERSIONS.core}/src/styles/styles.css`,
 };
 
 /**
