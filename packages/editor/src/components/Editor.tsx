@@ -286,19 +286,13 @@ export function Editor() {
                 importMap.textContent = JSON.stringify(CDN_IMPORT_MAP);
                 doc.head.insertBefore(importMap, doc.head.firstChild);
 
-                // 2. Load USWDS CSS for base styling
+                // 2. Load USWDS CSS for base styling (from jsdelivr with proper CORS)
                 const uswdsStyles = doc.createElement('link');
                 uswdsStyles.rel = 'stylesheet';
                 uswdsStyles.href = CDN_STYLES.uswds;
                 doc.head.appendChild(uswdsStyles);
 
-                // 3. Load USWDS-WC core styles
-                const wcStyles = doc.createElement('link');
-                wcStyles.rel = 'stylesheet';
-                wcStyles.href = CDN_STYLES.uswdsWcCore;
-                doc.head.appendChild(wcStyles);
-
-                // 4. Load USWDS-WC components via module script
+                // 3. Load USWDS-WC components via module script
                 const componentLoader = doc.createElement('script');
                 componentLoader.type = 'module';
                 componentLoader.textContent = generateComponentLoaderScript();
