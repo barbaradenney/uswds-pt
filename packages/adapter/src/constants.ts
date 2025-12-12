@@ -241,11 +241,11 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
  */
 export const USWDS_WC_VERSIONS = {
   core: '2.5.3',
-  actions: '2.5.4',
+  actions: '2.5.5',
   forms: '2.5.3',
-  feedback: '2.5.3',
-  navigation: '2.5.4',
-  'data-display': '2.5.3',
+  feedback: '2.5.4',
+  navigation: '2.5.5',
+  'data-display': '2.5.4',
   layout: '2.5.3',
   patterns: '2.5.3',
 } as const;
@@ -268,8 +268,8 @@ export const CDN_IMPORT_MAP = {
     '@lit/reactive-element': `https://esm.sh/@lit/reactive-element@2`,
     '@lit/reactive-element/': `https://esm.sh/@lit/reactive-element@2/`,
     // USWDS-WC packages with external Lit (uses import map for resolution)
+    // Note: No prefix mappings (e.g., '@uswds-wc/core/') to avoid CSS being loaded as modules
     '@uswds-wc/core': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSIONS.core}`,
-    '@uswds-wc/core/': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSIONS.core}/`,
     '@uswds-wc/actions': `https://esm.sh/*@uswds-wc/actions@${USWDS_WC_VERSIONS.actions}`,
     '@uswds-wc/forms': `https://esm.sh/*@uswds-wc/forms@${USWDS_WC_VERSIONS.forms}`,
     '@uswds-wc/feedback': `https://esm.sh/*@uswds-wc/feedback@${USWDS_WC_VERSIONS.feedback}`,
