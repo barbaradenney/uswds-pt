@@ -240,7 +240,7 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
  * Uses esm.sh with shared Lit dependencies to avoid duplicate custom element registration
  */
 export const USWDS_WC_VERSIONS = {
-  core: '2.5.3',
+  core: '2.5.4',
   actions: '2.5.5',
   forms: '2.5.3',
   feedback: '2.5.4',
