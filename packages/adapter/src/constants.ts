@@ -120,11 +120,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   // Forms
   'usa-text-input': '<usa-text-input label="Label" name="field"></usa-text-input>',
   'usa-textarea': '<usa-textarea label="Label" name="field"></usa-textarea>',
-  'usa-select': `<usa-select label="Label" name="field">
-  <option value="">Select an option</option>
-  <option value="1">Option 1</option>
-  <option value="2">Option 2</option>
-</usa-select>`,
+  'usa-select': '<usa-select label="Label" name="field" defaultOption="Select an option"></usa-select>',
   'usa-checkbox': '<usa-checkbox label="Checkbox label" name="field"></usa-checkbox>',
   'usa-radio': '<usa-radio label="Radio label" name="field" value="1"></usa-radio>',
   'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
@@ -256,7 +252,7 @@ export const USWDS_VERSION = '3.8.1';
  * USWDS-WC Bundle version
  * The bundle package includes all components with Lit bundled in
  */
-export const USWDS_WC_BUNDLE_VERSION = '2.5.3';
+export const USWDS_WC_BUNDLE_VERSION = '2.5.4';
 
 /**
  * USWDS-WC package names for loading
