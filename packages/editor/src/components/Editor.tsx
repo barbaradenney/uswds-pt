@@ -7,6 +7,7 @@ import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
   CDN_URLS,
+  registerComponentTraits,
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
@@ -265,6 +266,9 @@ export function Editor() {
           }}
           onReady={(editor) => {
             editorRef.current = editor;
+
+            // Register USWDS component traits for property editing
+            registerComponentTraits(editor);
 
             // Load existing project data if available
             if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {

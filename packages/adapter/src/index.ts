@@ -20,6 +20,7 @@ export {
   CDN_STYLES,
   generateComponentLoaderScript,
 } from './constants.js';
+export { COMPONENT_TRAITS, registerComponentTraits } from './component-traits.js';
 
 export type {
   GrapesBlock,
