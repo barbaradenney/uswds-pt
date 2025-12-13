@@ -3,6 +3,7 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fastifyPlugin from 'fastify-plugin';
 import fastifyJwt from '@fastify/jwt';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
@@ -21,9 +22,9 @@ interface JWTPayload {
   email: string;
 }
 
-export async function authPlugin(app: FastifyInstance) {
+async function authPluginImpl(app: FastifyInstance) {
   // Register JWT plugin
-  app.register(fastifyJwt, {
+  await app.register(fastifyJwt, {
     secret: process.env.JWT_SECRET || 'development-secret-change-in-production',
   });
 
@@ -39,6 +40,9 @@ export async function authPlugin(app: FastifyInstance) {
     }
   );
 }
+
+// Use fastify-plugin to expose decorators to parent scope
+export const authPlugin = fastifyPlugin(authPluginImpl);
 
 /**
  * Hash a password
