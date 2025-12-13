@@ -6,9 +6,7 @@ import { ExportModal } from './ExportModal';
 import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
-  CDN_IMPORT_MAP,
-  CDN_STYLES,
-  generateComponentLoaderScript,
+  CDN_URLS,
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
@@ -273,30 +271,28 @@ export function Editor() {
               editor.loadProjectData(prototype.grapesData as any);
             }
 
-            // Add USWDS styles and web components to canvas
+            // Add USWDS styles and web components to canvas iframe
             const canvas = editor.Canvas;
             if (canvas) {
-              const frame = canvas.getFrameEl();
-              if (frame?.contentDocument) {
-                const doc = frame.contentDocument;
+              const doc = canvas.getDocument();
+              if (doc) {
+                // 1. Load USWDS base CSS for styling
+                const uswdsCss = doc.createElement('link');
+                uswdsCss.rel = 'stylesheet';
+                uswdsCss.href = CDN_URLS.uswdsCss;
+                doc.head.appendChild(uswdsCss);
 
-                // 1. Create and insert import map FIRST (must be before any module scripts)
-                const importMap = doc.createElement('script');
-                importMap.type = 'importmap';
-                importMap.textContent = JSON.stringify(CDN_IMPORT_MAP);
-                doc.head.insertBefore(importMap, doc.head.firstChild);
+                // 2. Load USWDS-WC bundle CSS (component-specific styles)
+                const uswdsWcCss = doc.createElement('link');
+                uswdsWcCss.rel = 'stylesheet';
+                uswdsWcCss.href = CDN_URLS.uswdsWcCss;
+                doc.head.appendChild(uswdsWcCss);
 
-                // 2. Load USWDS CSS for base styling (from jsdelivr with proper CORS)
-                const uswdsStyles = doc.createElement('link');
-                uswdsStyles.rel = 'stylesheet';
-                uswdsStyles.href = CDN_STYLES.uswds;
-                doc.head.appendChild(uswdsStyles);
-
-                // 3. Load USWDS-WC components via module script
-                const componentLoader = doc.createElement('script');
-                componentLoader.type = 'module';
-                componentLoader.textContent = generateComponentLoaderScript();
-                doc.head.appendChild(componentLoader);
+                // 3. Load USWDS-WC bundle JS (all web components with Lit bundled)
+                const uswdsWcScript = doc.createElement('script');
+                uswdsWcScript.type = 'module';
+                uswdsWcScript.src = CDN_URLS.uswdsWcJs;
+                doc.head.appendChild(uswdsWcScript);
               }
             }
           }}

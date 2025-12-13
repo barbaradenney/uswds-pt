@@ -253,32 +253,10 @@ export const LIT_VERSION = '3';
 export const USWDS_VERSION = '3.8.1';
 
 /**
- * Import map for sharing Lit dependencies across all USWDS-WC packages
+ * USWDS-WC Bundle version
+ * The bundle package includes all components with Lit bundled in
  */
-export const CDN_IMPORT_MAP = {
-  imports: {
-    // Lit core dependencies - shared across all packages
-    'lit': `https://esm.sh/lit@${LIT_VERSION}`,
-    'lit/': `https://esm.sh/lit@${LIT_VERSION}/`,
-    'lit/decorators.js': `https://esm.sh/lit@${LIT_VERSION}/decorators.js`,
-    'lit-html': `https://esm.sh/lit-html@${LIT_VERSION}`,
-    'lit-html/': `https://esm.sh/lit-html@${LIT_VERSION}/`,
-    'lit-element': `https://esm.sh/lit-element@4`,
-    'lit-element/': `https://esm.sh/lit-element@4/`,
-    '@lit/reactive-element': `https://esm.sh/@lit/reactive-element@2`,
-    '@lit/reactive-element/': `https://esm.sh/@lit/reactive-element@2/`,
-    // USWDS-WC packages with external Lit (uses import map for resolution)
-    // Note: No prefix mappings (e.g., '@uswds-wc/core/') to avoid CSS being loaded as modules
-    '@uswds-wc/core': `https://esm.sh/*@uswds-wc/core@${USWDS_WC_VERSIONS.core}`,
-    '@uswds-wc/actions': `https://esm.sh/*@uswds-wc/actions@${USWDS_WC_VERSIONS.actions}`,
-    '@uswds-wc/forms': `https://esm.sh/*@uswds-wc/forms@${USWDS_WC_VERSIONS.forms}`,
-    '@uswds-wc/feedback': `https://esm.sh/*@uswds-wc/feedback@${USWDS_WC_VERSIONS.feedback}`,
-    '@uswds-wc/navigation': `https://esm.sh/*@uswds-wc/navigation@${USWDS_WC_VERSIONS.navigation}`,
-    '@uswds-wc/data-display': `https://esm.sh/*@uswds-wc/data-display@${USWDS_WC_VERSIONS['data-display']}`,
-    '@uswds-wc/layout': `https://esm.sh/*@uswds-wc/layout@${USWDS_WC_VERSIONS.layout}`,
-    '@uswds-wc/patterns': `https://esm.sh/*@uswds-wc/patterns@${USWDS_WC_VERSIONS.patterns}`,
-  },
-};
+export const USWDS_WC_BUNDLE_VERSION = '2.5.3';
 
 /**
  * USWDS-WC package names for loading
@@ -295,11 +273,21 @@ export const USWDS_WC_PACKAGES = [
 ] as const;
 
 /**
- * CDN URLs for stylesheets
+ * CDN URLs for stylesheets and scripts
+ * Using @uswds-wc/bundle which includes all components with Lit bundled
+ * @see https://github.com/barbaradenney/uswds-wc
  */
+export const CDN_URLS = {
+  // USWDS base CSS (required for styling)
+  uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  // USWDS-WC bundle - all web components with Lit included (using jsdelivr for better reliability)
+  uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
+  uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
+};
+
+// Keep CDN_STYLES for backwards compatibility
 export const CDN_STYLES = {
-  uswds: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcCore: `https://unpkg.com/@uswds-wc/core@${USWDS_WC_VERSIONS.core}/src/styles/styles.css`,
+  uswds: CDN_URLS.uswdsCss,
 };
 
 /**

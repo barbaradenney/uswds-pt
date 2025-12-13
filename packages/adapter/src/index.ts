@@ -14,8 +14,9 @@ export {
   USWDS_WC_VERSIONS,
   LIT_VERSION,
   USWDS_VERSION,
-  CDN_IMPORT_MAP,
+  USWDS_WC_BUNDLE_VERSION,
   USWDS_WC_PACKAGES,
+  CDN_URLS,
   CDN_STYLES,
   generateComponentLoaderScript,
 } from './constants.js';
