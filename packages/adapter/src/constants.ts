@@ -242,12 +242,12 @@ export const PATH_TO_CATEGORY: Record<string, string> = {
 export const USWDS_WC_VERSIONS = {
   core: '2.5.4',
   actions: '2.5.5',
-  forms: '2.5.3',
+  forms: '2.5.4',
   feedback: '2.5.4',
   navigation: '2.5.5',
   'data-display': '2.5.4',
-  layout: '2.5.3',
-  patterns: '2.5.3',
+  layout: '2.5.4',
+  patterns: '2.5.4',
 } as const;
 export const LIT_VERSION = '3';
 export const USWDS_VERSION = '3.8.1';
