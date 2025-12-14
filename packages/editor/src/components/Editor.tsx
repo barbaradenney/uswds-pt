@@ -333,12 +333,10 @@ export function Editor() {
 
             // Debug: Listen for component selection to see what traits it has
             editor.on('component:selected', (component: any) => {
-              console.log('USWDS-PT: Selected component:', {
-                tagName: component.get('tagName'),
-                type: component.get('type'),
-                traits: component.get('traits')?.models?.map((t: any) => t.get('name')),
-                allTraits: component.getTraits?.()?.map((t: any) => ({ name: t.get('name'), type: t.get('type') })),
-              });
+              const tagName = component.get('tagName');
+              const type = component.get('type');
+              const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
+              console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
             });
 
             // Try to find the Components API
