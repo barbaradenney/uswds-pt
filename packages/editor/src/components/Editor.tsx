@@ -331,6 +331,16 @@ export function Editor() {
             console.log('USWDS-PT: Editor ready');
             console.log('USWDS-PT: Editor keys:', Object.keys(editor));
 
+            // Debug: Listen for component selection to see what traits it has
+            editor.on('component:selected', (component: any) => {
+              console.log('USWDS-PT: Selected component:', {
+                tagName: component.get('tagName'),
+                type: component.get('type'),
+                traits: component.get('traits')?.models?.map((t: any) => t.get('name')),
+                allTraits: component.getTraits?.()?.map((t: any) => ({ name: t.get('name'), type: t.get('type') })),
+              });
+            });
+
             // Try to find the Components API
             const Components = editor.Components || editor.DomComponents;
             if (Components) {
