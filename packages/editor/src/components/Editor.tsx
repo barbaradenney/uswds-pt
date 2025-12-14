@@ -331,9 +331,20 @@ export function Editor() {
             console.log('USWDS-PT: Editor ready');
             console.log('USWDS-PT: Editor keys:', Object.keys(editor));
 
-            // Debug: Listen for component selection to see what traits it has
+            // When a component is selected, check if it's a USWDS component and set traits
             editor.on('component:selected', (component: any) => {
-              const tagName = component.get('tagName');
+              const tagName = component.get('tagName')?.toLowerCase();
+              const currentTraits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
+
+              // Find matching trait config for this component
+              const traitConfig = COMPONENT_TRAITS.find(c => c.tagName === tagName);
+
+              if (traitConfig && !currentTraits.includes(traitConfig.traits[0]?.name)) {
+                // This is a USWDS component without our custom traits - add them
+                console.log(`USWDS-PT: Adding traits to <${tagName}>`);
+                component.set('traits', traitConfig.traits);
+              }
+
               const type = component.get('type');
               const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
               console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
