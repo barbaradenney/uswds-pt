@@ -7,13 +7,66 @@ import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
   CDN_URLS,
-  registerComponentTraits,
+  COMPONENT_TRAITS,
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
 
+// Create a GrapesJS plugin to register USWDS component types
+// Plugins are loaded before the editor parses content, ensuring our types are available
+const uswdsComponentsPlugin = (editor: any) => {
+  const Components = editor.Components || editor.DomComponents;
+
+  if (!Components) {
+    console.error('USWDS-PT: Could not find Components API on editor');
+    return;
+  }
+
+  console.log('USWDS-PT: Registering component types via plugin...');
+
+  for (const config of COMPONENT_TRAITS) {
+    Components.addType(config.tagName, {
+      // Match any element with this tag name
+      isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
+
+      model: {
+        defaults: {
+          tagName: config.tagName,
+          draggable: true,
+          droppable: config.droppable ?? false,
+          // Define the traits that will show in the properties panel
+          traits: config.traits,
+          // Web components handle their own rendering
+          components: false,
+        },
+      },
+    });
+  }
+
+  // Handle the special case of select options
+  editor.on('component:update:options-json', (model: any) => {
+    try {
+      const jsonStr = model.get('attributes')['options-json'];
+      if (jsonStr) {
+        const options = JSON.parse(jsonStr);
+        const el = model.getEl();
+        if (el) {
+          el.options = options;
+        }
+      }
+    } catch (e) {
+      console.warn('Invalid options JSON:', e);
+    }
+  });
+
+  console.log('USWDS-PT: Component types registered successfully');
+};
+
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
+
+// Debug: Log when this module loads
+console.log('🔧 USWDS-PT Editor module loaded');
 
 // Use any for editor ref to avoid type conflicts between SDK versions
 type EditorInstance = any;
@@ -121,10 +174,15 @@ export function Editor() {
   }, []);
 
   // Generate blocks from USWDS components
+  // Use object format with type property to link to our registered component types
   const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => ({
     id: tagName,
     label: tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    content,
+    // Use object content format to specify component type explicitly
+    content: {
+      type: tagName,
+      content: content,
+    },
     media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
     category: getCategoryForComponent(tagName),
   }));
@@ -246,6 +304,8 @@ export function Editor() {
         <StudioEditor
           options={{
             licenseKey: LICENSE_KEY,
+            // Register USWDS component types via plugin (runs before content parsing)
+            plugins: [uswdsComponentsPlugin],
             project: {
               type: 'web',
               default: {
@@ -267,8 +327,37 @@ export function Editor() {
           onReady={(editor) => {
             editorRef.current = editor;
 
-            // Register USWDS component traits for property editing
-            registerComponentTraits(editor);
+            // Debug: Log available APIs on the editor
+            console.log('USWDS-PT: Editor ready');
+            console.log('USWDS-PT: Editor keys:', Object.keys(editor));
+
+            // Try to find the Components API
+            const Components = editor.Components || editor.DomComponents;
+            if (Components) {
+              console.log('USWDS-PT: Found Components API, registering types...');
+
+              // Register component types
+              for (const config of COMPONENT_TRAITS) {
+                try {
+                  Components.addType(config.tagName, {
+                    isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
+                    model: {
+                      defaults: {
+                        tagName: config.tagName,
+                        draggable: true,
+                        droppable: config.droppable ?? false,
+                        traits: config.traits,
+                      },
+                    },
+                  } as any);
+                  console.log(`USWDS-PT: Registered ${config.tagName}`);
+                } catch (e) {
+                  console.error(`USWDS-PT: Failed to register ${config.tagName}:`, e);
+                }
+              }
+            } else {
+              console.error('USWDS-PT: Components API not found on editor');
+            }
 
             // Load existing project data if available
             if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {

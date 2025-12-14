@@ -458,22 +458,35 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
  * Register component types with GrapesJS editor
  */
 export function registerComponentTraits(editor: any): void {
-  const DomComponents = editor.DomComponents;
+  // Use Components API (or DomComponents, they're the same in GrapesJS)
+  const Components = editor.Components || editor.DomComponents;
+
+  if (!Components) {
+    console.error('USWDS-PT: Could not find Components API on editor');
+    return;
+  }
+
+  console.log('USWDS-PT: Registering component traits...');
 
   for (const config of COMPONENT_TRAITS) {
-    DomComponents.addType(config.tagName, {
+    Components.addType(config.tagName, {
+      // Match any element with this tag name
       isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
+
       model: {
         defaults: {
           tagName: config.tagName,
           draggable: true,
           droppable: config.droppable ?? false,
+          // Define the traits that will show in the properties panel
           traits: config.traits,
           // Web components handle their own rendering
           components: false,
         },
       },
     });
+
+    console.log(`USWDS-PT: Registered traits for ${config.tagName}`);
   }
 
   // Handle the special case of select options
@@ -492,4 +505,6 @@ export function registerComponentTraits(editor: any): void {
       console.warn('Invalid options JSON:', e);
     }
   });
+
+  console.log('USWDS-PT: Component traits registered successfully');
 }
