@@ -174,15 +174,12 @@ export function Editor() {
   }, []);
 
   // Generate blocks from USWDS components
-  // Use object format with type property to link to our registered component types
+  // Use HTML string format - GrapesJS will recognize the tag and apply our component type
   const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => ({
     id: tagName,
     label: tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    // Use object content format to specify component type explicitly
-    content: {
-      type: tagName,
-      content: content,
-    },
+    // Use HTML string - GrapesJS's isComponent will match the tag and apply our type
+    content: `<${tagName}>${content}</${tagName}>`,
     media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
     category: getCategoryForComponent(tagName),
   }));

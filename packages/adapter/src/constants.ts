@@ -109,111 +109,111 @@ export const COMPONENT_ICONS: Record<string, string> = {
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Actions
-  'usa-button': '<usa-button>Click me</usa-button>',
-  'usa-button-group': `<usa-button-group>
-  <usa-button>Button 1</usa-button>
-  <usa-button variant="outline">Button 2</usa-button>
-</usa-button-group>`,
-  'usa-link': '<usa-link href="#">Link text</usa-link>',
-  'usa-search': '<usa-search label="Search" size="small"></usa-search>',
+  'usa-button': 'Click me',
+  // 'usa-button-group': `<usa-button-group>
+  // <usa-button>Button 1</usa-button>
+  // <usa-button variant="outline">Button 2</usa-button>
+  // </usa-button-group>`,
+  // 'usa-link': '<usa-link href="#">Link text</usa-link>',
+  // 'usa-search': '<usa-search label="Search" size="small"></usa-search>',
 
-  // Forms
-  'usa-text-input': '<usa-text-input label="Label" name="field"></usa-text-input>',
-  'usa-textarea': '<usa-textarea label="Label" name="field"></usa-textarea>',
-  'usa-select': '<usa-select label="Label" name="field" defaultOption="Select an option"></usa-select>',
-  'usa-checkbox': '<usa-checkbox label="Checkbox label" name="field"></usa-checkbox>',
-  'usa-radio': '<usa-radio label="Radio label" name="field" value="1"></usa-radio>',
-  'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
-  'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
-  'usa-file-input': '<usa-file-input label="Upload file" name="file"></usa-file-input>',
-  'usa-combo-box': '<usa-combo-box label="Combo box" name="combo"></usa-combo-box>',
-  'usa-range-slider': '<usa-range-slider label="Range" name="range" min="0" max="100"></usa-range-slider>',
+  // // Forms
+  // 'usa-text-input': '<usa-text-input label="Label" name="field"></usa-text-input>',
+  // 'usa-textarea': '<usa-textarea label="Label" name="field"></usa-textarea>',
+  // 'usa-select': '<usa-select label="Label" name="field" defaultOption="Select an option"></usa-select>',
+  // 'usa-checkbox': '<usa-checkbox label="Checkbox label" name="field"></usa-checkbox>',
+  // 'usa-radio': '<usa-radio label="Radio label" name="field" value="1"></usa-radio>',
+  // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
+  // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
+  // 'usa-file-input': '<usa-file-input label="Upload file" name="file"></usa-file-input>',
+  // 'usa-combo-box': '<usa-combo-box label="Combo box" name="combo"></usa-combo-box>',
+  // 'usa-range-slider': '<usa-range-slider label="Range" name="range" min="0" max="100"></usa-range-slider>',
 
-  // Navigation
-  'usa-header': `<usa-header>
-  <span slot="title">Site Title</span>
-</usa-header>`,
-  'usa-footer': '<usa-footer></usa-footer>',
-  'usa-breadcrumb': `<usa-breadcrumb>
-  <a href="#">Home</a>
-  <a href="#">Section</a>
-  <span>Current page</span>
-</usa-breadcrumb>`,
-  'usa-pagination': '<usa-pagination current-page="1" total-pages="5"></usa-pagination>',
-  'usa-side-navigation': '<usa-side-navigation></usa-side-navigation>',
-  'usa-skip-link': '<usa-skip-link href="#main">Skip to main content</usa-skip-link>',
+  // // Navigation
+  // 'usa-header': `<usa-header>
+  // <span slot="title">Site Title</span>
+  // </usa-header>`,
+  // 'usa-footer': '<usa-footer></usa-footer>',
+  // 'usa-breadcrumb': `<usa-breadcrumb>
+  // <a href="#">Home</a>
+  // <a href="#">Section</a>
+  // <span>Current page</span>
+  // </usa-breadcrumb>`,
+  // 'usa-pagination': '<usa-pagination current-page="1" total-pages="5"></usa-pagination>',
+  // 'usa-side-navigation': '<usa-side-navigation></usa-side-navigation>',
+  // 'usa-skip-link': '<usa-skip-link href="#main">Skip to main content</usa-skip-link>',
 
-  // Data Display
-  'usa-card': `<usa-card>
-  <span slot="header">Card Title</span>
-  <p>Card content goes here.</p>
-</usa-card>`,
-  'usa-table': `<usa-table>
-  <thead>
-    <tr><th>Column 1</th><th>Column 2</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Data 1</td><td>Data 2</td></tr>
-  </tbody>
-</usa-table>`,
-  'usa-tag': '<usa-tag>Tag</usa-tag>',
-  'usa-list': `<usa-list>
-  <li>Item 1</li>
-  <li>Item 2</li>
-  <li>Item 3</li>
-</usa-list>`,
-  'usa-icon': '<usa-icon icon="check"></usa-icon>',
-  'usa-collection': '<usa-collection></usa-collection>',
-  'usa-summary-box': `<usa-summary-box heading="Key information">
-  <p>Summary content here.</p>
-</usa-summary-box>`,
+  // // Data Display
+  // 'usa-card': `<usa-card>
+  // <span slot="header">Card Title</span>
+  // <p>Card content goes here.</p>
+  // </usa-card>`,
+  // 'usa-table': `<usa-table>
+  // <thead>
+  //   <tr><th>Column 1</th><th>Column 2</th></tr>
+  // </thead>
+  // <tbody>
+  //   <tr><td>Data 1</td><td>Data 2</td></tr>
+  // </tbody>
+  // </usa-table>`,
+  // 'usa-tag': '<usa-tag>Tag</usa-tag>',
+  // 'usa-list': `<usa-list>
+  // <li>Item 1</li>
+  // <li>Item 2</li>
+  // <li>Item 3</li>
+  // </usa-list>`,
+  // 'usa-icon': '<usa-icon icon="check"></usa-icon>',
+  // 'usa-collection': '<usa-collection></usa-collection>',
+  // 'usa-summary-box': `<usa-summary-box heading="Key information">
+  // <p>Summary content here.</p>
+  // </usa-summary-box>`,
 
-  // Feedback
-  'usa-alert': `<usa-alert variant="info">
-  <span slot="heading">Alert heading</span>
-  Alert message content.
-</usa-alert>`,
-  'usa-banner': '<usa-banner></usa-banner>',
-  'usa-site-alert': `<usa-site-alert variant="info">
-  Important site-wide message.
-</usa-site-alert>`,
-  'usa-modal': `<usa-modal>
-  <span slot="heading">Modal Title</span>
-  <p>Modal content goes here.</p>
-</usa-modal>`,
-  'usa-tooltip': '<usa-tooltip content="Tooltip text">Hover me</usa-tooltip>',
+  // // Feedback
+  // 'usa-alert': `<usa-alert variant="info">
+  // <span slot="heading">Alert heading</span>
+  // Alert message content.
+  // </usa-alert>`,
+  // 'usa-banner': '<usa-banner></usa-banner>',
+  // 'usa-site-alert': `<usa-site-alert variant="info">
+  // Important site-wide message.
+  // </usa-site-alert>`,
+  // 'usa-modal': `<usa-modal>
+  // <span slot="heading">Modal Title</span>
+  // <p>Modal content goes here.</p>
+  // </usa-modal>`,
+  // 'usa-tooltip': '<usa-tooltip content="Tooltip text">Hover me</usa-tooltip>',
 
-  // Layout
-  'usa-accordion': `<usa-accordion>
-  <usa-accordion-item heading="Section 1">
-    <p>Content for section 1</p>
-  </usa-accordion-item>
-  <usa-accordion-item heading="Section 2">
-    <p>Content for section 2</p>
-  </usa-accordion-item>
-</usa-accordion>`,
-  'usa-step-indicator': '<usa-step-indicator current-step="1" total-steps="4"></usa-step-indicator>',
-  'usa-process-list': '<usa-process-list></usa-process-list>',
-  'usa-identifier': '<usa-identifier></usa-identifier>',
-  'usa-prose': '<usa-prose><p>Prose content with proper typography.</p></usa-prose>',
+  // // Layout
+  // 'usa-accordion': `<usa-accordion>
+  // <usa-accordion-item heading="Section 1">
+  //   <p>Content for section 1</p>
+  // </usa-accordion-item>
+  // <usa-accordion-item heading="Section 2">
+  //   <p>Content for section 2</p>
+  // </usa-accordion-item>
+  // </usa-accordion>`,
+  // 'usa-step-indicator': '<usa-step-indicator current-step="1" total-steps="4"></usa-step-indicator>',
+  // 'usa-process-list': '<usa-process-list></usa-process-list>',
+  // 'usa-identifier': '<usa-identifier></usa-identifier>',
+  // 'usa-prose': '<usa-prose><p>Prose content with proper typography.</p></usa-prose>',
 
-  // Patterns
-  'usa-name-pattern': '<usa-name-pattern label="Full Name"></usa-name-pattern>',
-  'usa-address-pattern': '<usa-address-pattern label="Mailing Address"></usa-address-pattern>',
-  'usa-phone-number-pattern': '<usa-phone-number-pattern label="Phone Number"></usa-phone-number-pattern>',
-  'usa-email-address-pattern': '<usa-email-address-pattern label="Email Address"></usa-email-address-pattern>',
-  'usa-date-of-birth-pattern': '<usa-date-of-birth-pattern label="Date of Birth"></usa-date-of-birth-pattern>',
-  'usa-ssn-pattern': '<usa-ssn-pattern label="Social Security Number"></usa-ssn-pattern>',
+  // // Patterns
+  // 'usa-name-pattern': '<usa-name-pattern label="Full Name"></usa-name-pattern>',
+  // 'usa-address-pattern': '<usa-address-pattern label="Mailing Address"></usa-address-pattern>',
+  // 'usa-phone-number-pattern': '<usa-phone-number-pattern label="Phone Number"></usa-phone-number-pattern>',
+  // 'usa-email-address-pattern': '<usa-email-address-pattern label="Email Address"></usa-email-address-pattern>',
+  // 'usa-date-of-birth-pattern': '<usa-date-of-birth-pattern label="Date of Birth"></usa-date-of-birth-pattern>',
+  // 'usa-ssn-pattern': '<usa-ssn-pattern label="Social Security Number"></usa-ssn-pattern>',
 
-  // Templates
-  'usa-landing-template': `<usa-landing-template
-  hero-heading="Welcome"
-  hero-description="Your agency description here."
-  hero-cta-text="Learn More">
-</usa-landing-template>`,
-  'usa-form-template': '<usa-form-template heading="Form Title"></usa-form-template>',
-  'usa-sign-in-template': '<usa-sign-in-template></usa-sign-in-template>',
-  'usa-error-template': '<usa-error-template error-code="404"></usa-error-template>',
+  // // Templates
+  // 'usa-landing-template': `<usa-landing-template
+  // hero-heading="Welcome"
+  // hero-description="Your agency description here."
+  // hero-cta-text="Learn More">
+  // </usa-landing-template>`,
+  // 'usa-form-template': '<usa-form-template heading="Form Title"></usa-form-template>',
+  // 'usa-sign-in-template': '<usa-sign-in-template></usa-sign-in-template>',
+  // 'usa-error-template': '<usa-error-template error-code="404"></usa-error-template>',
 };
 
 /**
