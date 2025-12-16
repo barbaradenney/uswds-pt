@@ -25,6 +25,14 @@ const uswdsComponentsPlugin = (editor: any) => {
   console.log('USWDS-PT: Registering component types via plugin...');
 
   for (const config of COMPONENT_TRAITS) {
+    // Build default values from trait defaults
+    const traitDefaults: Record<string, any> = {};
+    config.traits.forEach(trait => {
+      if (trait.default !== undefined) {
+        traitDefaults[trait.name] = trait.default;
+      }
+    });
+
     Components.addType(config.tagName, {
       // Match any element with this tag name
       isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
@@ -36,6 +44,8 @@ const uswdsComponentsPlugin = (editor: any) => {
           droppable: config.droppable ?? false,
           // Define the traits that will show in the properties panel
           traits: config.traits,
+          // Set default values from traits
+          ...traitDefaults,
           // Web components handle their own rendering
           components: false,
         },
@@ -382,27 +392,34 @@ export function Editor() {
                 }
               };
 
-              // USWDS buttons use CSS classes - manually apply them based on traits
+              // For usa-button web component, set variant and size as attributes
+              // The web component will handle its internal button styling
               if (tagName === 'usa-button') {
-                const classes = ['usa-button'];
-
                 const variant = getTraitValue('variant');
                 const size = getTraitValue('size');
 
-                console.log(`  🔍 Building CSS classes - variant: "${variant}", size: "${size}"`);
+                console.log(`  🎯 Setting web component attributes - variant: "${variant}", size: "${size}"`);
 
-                // Add variant class (skip "default" which is the base style)
-                if (variant && variant !== 'default' && variant !== '') {
-                  classes.push(`usa-button--${variant}`);
+                // Set variant attribute (web component will apply internal classes)
+                if (variant && variant !== '') {
+                  el.setAttribute('variant', variant);
+                  console.log(`  ✅ Set variant attribute: "${variant}"`);
+                } else {
+                  el.removeAttribute('variant');
                 }
 
-                // Add size class
-                if (size && size !== '' && size !== 'default') {
-                  classes.push(`usa-button--${size}`);
+                // Set size attribute
+                if (size && size !== '') {
+                  el.setAttribute('size', size);
+                  console.log(`  ✅ Set size attribute: "${size}"`);
+                } else {
+                  el.removeAttribute('size');
                 }
 
-                el.className = classes.join(' ');
-                console.log('  🎨 Applied CSS classes:', el.className);
+                // Keep the base class for GrapesJS styling
+                if (!el.classList.contains('usa-button')) {
+                  el.classList.add('usa-button');
+                }
               }
 
               // Sync each attribute to the DOM element
