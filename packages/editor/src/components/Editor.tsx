@@ -379,7 +379,30 @@ export function Editor() {
                 }
               };
 
-              // Sync each attribute
+              // USWDS buttons use CSS classes - manually apply them based on traits
+              if (tagName === 'usa-button') {
+                const classes = ['usa-button'];
+
+                const variant = getTraitValue('variant');
+                const size = getTraitValue('size');
+
+                console.log(`  🔍 Building CSS classes - variant: "${variant}", size: "${size}"`);
+
+                // Add variant class (skip "default" which is the base style)
+                if (variant && variant !== 'default' && variant !== '') {
+                  classes.push(`usa-button--${variant}`);
+                }
+
+                // Add size class
+                if (size && size !== '' && size !== 'default') {
+                  classes.push(`usa-button--${size}`);
+                }
+
+                el.className = classes.join(' ');
+                console.log('  🎨 Applied CSS classes:', el.className);
+              }
+
+              // Sync each attribute to the DOM element
               syncAttr('variant');
               syncAttr('size');
               syncAttr('disabled');
@@ -400,7 +423,7 @@ export function Editor() {
               if (el.shadowRoot) {
                 console.log('  shadowRoot HTML:', el.shadowRoot.innerHTML);
               }
-              console.log('  All attributes:', Array.from(el.attributes).map((attr: Attr) => `${attr.name}="${attr.value}"`));
+              console.log('  All attributes:', Array.from(el.attributes as NamedNodeMap).map((attr) => `${attr.name}="${attr.value}"`));
 
               const iframeWindow = el.ownerDocument.defaultView;
               if (iframeWindow) {
@@ -408,27 +431,6 @@ export function Editor() {
                 console.log('  computed style display:', computedStyle.display);
                 console.log('  computed style backgroundColor:', computedStyle.backgroundColor);
                 console.log('  computed style padding:', computedStyle.padding);
-              }
-
-              // USWDS buttons use CSS classes - manually apply them based on attributes
-              if (tagName === 'usa-button') {
-                const classes = ['usa-button'];
-
-                const variant = getTraitValue('variant');
-                const size = getTraitValue('size');
-
-                // Add variant class
-                if (variant && variant !== 'default' && variant !== '') {
-                  classes.push(`usa-button--${variant}`);
-                }
-
-                // Add size class
-                if (size && size !== '' && size !== 'default') {
-                  classes.push(`usa-button--${size}`);
-                }
-
-                el.className = classes.join(' ');
-                console.log('  🎨 Applied CSS classes:', el.className);
               }
 
               // Force the web component to update by dispatching events or calling methods
