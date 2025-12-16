@@ -423,18 +423,31 @@ export function Editor() {
                   el.removeAttribute('size');
                 }
 
-                // Keep the base class for GrapesJS styling
-                if (!el.classList.contains('usa-button')) {
-                  el.classList.add('usa-button');
-                }
+                // Remove usa-button class from web component container (it shouldn't be styled)
+                el.classList.remove('usa-button');
               }
 
-              // Sync each attribute to the DOM element (including text as an attribute)
-              syncAttr('text');
+              // Sync each attribute to the DOM element
               syncAttr('variant');
               syncAttr('size');
               syncAttr('disabled');
               syncAttr('href');
+
+              // Handle text specially for web components
+              const text = getTraitValue('text');
+              if (text !== null && text !== undefined && text !== '') {
+                // Set as attribute for the web component to read
+                el.setAttribute('text', text);
+                console.log(`  ✅ Set text attribute: "${text}"`);
+
+                // Also check if the web component has rendered its internal button
+                // and sync the text there for GrapesJS inline editing
+                const internalButton = el.querySelector?.('button');
+                if (internalButton && internalButton.textContent !== text) {
+                  internalButton.textContent = text;
+                  console.log(`  ✅ Updated internal button text: "${text}"`);
+                }
+              }
 
               // DEBUG: Log the final state of the DOM element
               console.log('USWDS-PT: Final DOM element state:');
