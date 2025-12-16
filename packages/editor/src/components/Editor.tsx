@@ -353,26 +353,28 @@ export function Editor() {
 
               // Helper to get trait value from multiple possible locations
               const getTraitValue = (traitName: string) => {
-                // Get from trait model (most reliable source)
-                const traitModels = component.getTraits?.();
-                const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
-                const fromTraitModel = traitModel?.get('value');
+                // Try attributes object (GrapesJS Studio SDK stores values here)
+                const fromAttributes = component.get('attributes')?.[traitName];
 
                 // Try component properties (where traits without changeProp store values)
                 const fromComponent = component.get(traitName);
 
-                // Try attributes object
-                const fromAttributes = component.get('attributes')?.[traitName];
+                // Get from trait model (fallback)
+                const traitModels = component.getTraits?.();
+                const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
+                const fromTraitModel = traitModel?.get('value');
+
+                const finalValue = fromAttributes ?? fromComponent ?? fromTraitModel;
 
                 console.log(`  🔍 Searching for "${traitName}":`, {
-                  fromTraitModel,
-                  fromComponent,
                   fromAttributes,
-                  final: fromTraitModel ?? fromComponent ?? fromAttributes,
+                  fromComponent,
+                  fromTraitModel,
+                  final: finalValue,
                 });
 
-                // Prefer trait model value, then component properties, then attributes
-                return fromTraitModel ?? fromComponent ?? fromAttributes;
+                // Prefer attributes (where Studio SDK stores changes), then component, then trait model
+                return finalValue;
               };
 
               // Helper to sync individual attribute to DOM
