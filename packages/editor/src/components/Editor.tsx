@@ -396,12 +396,45 @@ export function Editor() {
               console.log('USWDS-PT: Final DOM element state:');
               console.log('  outerHTML:', el.outerHTML);
               console.log('  classList:', Array.from(el.classList));
+              console.log('  shadowRoot:', el.shadowRoot);
+              if (el.shadowRoot) {
+                console.log('  shadowRoot HTML:', el.shadowRoot.innerHTML);
+              }
+              console.log('  All attributes:', Array.from(el.attributes).map((attr: Attr) => `${attr.name}="${attr.value}"`));
+
               const iframeWindow = el.ownerDocument.defaultView;
               if (iframeWindow) {
                 const computedStyle = iframeWindow.getComputedStyle(el);
                 console.log('  computed style display:', computedStyle.display);
                 console.log('  computed style backgroundColor:', computedStyle.backgroundColor);
                 console.log('  computed style padding:', computedStyle.padding);
+              }
+
+              // USWDS buttons use CSS classes - manually apply them based on attributes
+              if (tagName === 'usa-button') {
+                const classes = ['usa-button'];
+
+                const variant = getTraitValue('variant');
+                const size = getTraitValue('size');
+
+                // Add variant class
+                if (variant && variant !== 'default' && variant !== '') {
+                  classes.push(`usa-button--${variant}`);
+                }
+
+                // Add size class
+                if (size && size !== '' && size !== 'default') {
+                  classes.push(`usa-button--${size}`);
+                }
+
+                el.className = classes.join(' ');
+                console.log('  🎨 Applied CSS classes:', el.className);
+              }
+
+              // Force the web component to update by dispatching events or calling methods
+              if (typeof (el as any).requestUpdate === 'function') {
+                console.log('  🔄 Calling requestUpdate() on web component');
+                (el as any).requestUpdate();
               }
             };
 
