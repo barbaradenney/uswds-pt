@@ -328,52 +328,75 @@ export function Editor() {
             console.log('USWDS-PT: Editor ready');
             console.log('USWDS-PT: Editor keys:', Object.keys(editor));
 
-            // When a component is selected, check if it's a USWDS component and set traits
+            // Create a function to sync traits to DOM
+            const syncTraitsToDOM = (component: any) => {
+              const el = component.getEl();
+              if (!el) {
+                console.log('USWDS-PT: No element found for component');
+                return;
+              }
+
+              const tagName = component.get('tagName')?.toLowerCase();
+              if (!tagName?.startsWith('usa-')) return;
+
+              console.log(`USWDS-PT: Syncing traits to DOM for <${tagName}>`);
+              console.log('USWDS-PT: Component attributes:', component.get('attributes'));
+
+              // Helper to sync individual attribute to DOM
+              const syncAttr = (attrName: string) => {
+                const attrs = component.get('attributes') || {};
+                const value = attrs[attrName];
+
+                if (value !== null && value !== undefined && value !== '' && value !== false && value !== 'default') {
+                  el.setAttribute(attrName, String(value));
+                  // Also set as property for web components
+                  if (attrName in el) {
+                    (el as any)[attrName] = value;
+                  }
+                  console.log(`  ✓ Set ${attrName}="${value}"`);
+                } else {
+                  el.removeAttribute(attrName);
+                  console.log(`  ✗ Removed ${attrName}`);
+                }
+              };
+
+              // Sync each attribute
+              syncAttr('variant');
+              syncAttr('size');
+              syncAttr('disabled');
+              syncAttr('href');
+
+              // Handle text content separately
+              const text = component.get('attributes')?.text;
+              if (text !== null && text !== undefined) {
+                el.textContent = text;
+                console.log(`  ✓ Set textContent="${text}"`);
+              }
+            };
+
+            // When a component is selected, set up listeners on that specific component
             editor.on('component:selected', (component: any) => {
               const tagName = component.get('tagName')?.toLowerCase();
-              const currentTraits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
 
-              // Find matching trait config for this component
-              const traitConfig = COMPONENT_TRAITS.find(c => c.tagName === tagName);
-
-              if (traitConfig && !currentTraits.includes(traitConfig.traits[0]?.name)) {
-                // This is a USWDS component without our custom traits - add them
-                console.log(`USWDS-PT: Adding traits to <${tagName}>`);
-                component.set('traits', traitConfig.traits);
-              }
+              if (!tagName?.startsWith('usa-')) return;
 
               const type = component.get('type');
               const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
               console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
+
+              // Trigger initial sync
+              syncTraitsToDOM(component);
+
+              // Listen for attribute changes on THIS component
+              // Remove any previous listeners to avoid duplicates
+              component.off('change:attributes');
+              component.on('change:attributes', () => {
+                console.log('USWDS-PT: Attributes changed!');
+                syncTraitsToDOM(component);
+              });
+
+              console.log('USWDS-PT: Set up change:attributes listener');
             });
-
-            // Try to find the Components API
-            const Components = editor.Components || editor.DomComponents;
-            if (Components) {
-              console.log('USWDS-PT: Found Components API, registering types...');
-
-              // Register component types
-              for (const config of COMPONENT_TRAITS) {
-                try {
-                  Components.addType(config.tagName, {
-                    isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
-                    model: {
-                      defaults: {
-                        tagName: config.tagName,
-                        draggable: true,
-                        droppable: config.droppable ?? false,
-                        traits: config.traits,
-                      },
-                    },
-                  } as any);
-                  console.log(`USWDS-PT: Registered ${config.tagName}`);
-                } catch (e) {
-                  console.error(`USWDS-PT: Failed to register ${config.tagName}:`, e);
-                }
-              }
-            } else {
-              console.error('USWDS-PT: Components API not found on editor');
-            }
 
             // Load existing project data if available
             if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {

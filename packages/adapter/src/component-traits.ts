@@ -14,6 +14,7 @@ export interface TraitDefinition {
   label: string;
   type: 'text' | 'number' | 'checkbox' | 'select' | 'color' | 'textarea';
   changeProp?: number;
+  valueType?: string;
   default?: string | number | boolean;
   placeholder?: string;
   options?: Array<{ id: string; label: string }>;
@@ -29,12 +30,19 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
   {
     tagName: 'usa-button',
     traits: [
-      { name: 'text', label: 'Button Text', type: 'text', changeProp: 0, default: 'Click me' }, // changeProp: 0 means update content
+      // Text content trait - changeProp: 1 means it updates the attributes object
+      {
+        name: 'text',
+        label: 'Button Text',
+        type: 'text',
+        changeProp: 1,
+        default: 'Click me',
+      },
       {
         name: 'variant',
         label: 'Variant',
         type: 'select',
-        changeProp: 1, // Update attributes
+        changeProp: 1,
         default: 'default',
         options: [
           { id: 'default', label: 'Default' },
@@ -51,7 +59,7 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
         name: 'size',
         label: 'Size',
         type: 'select',
-        changeProp: 1, // Update attributes
+        changeProp: 1,
         default: '',
         options: [
           { id: '', label: 'Default' },
@@ -481,28 +489,8 @@ export function registerComponentTraits(editor: any): void {
           tagName: config.tagName,
           draggable: true,
           droppable: config.droppable ?? false,
-          // Define the traits that will show in the properties panel
           traits: config.traits,
-          // Web components handle their own rendering
           components: false,
-        },
-
-        // Initialize text trait from content
-        init(this: any) {
-          // Sync text trait with content on init
-          const content = this.get('content') || '';
-          const textTrait = this.getTrait('text');
-          if (textTrait && typeof content === 'string') {
-            textTrait.set('value', content);
-          }
-
-          // Listen for text trait changes and update content
-          this.on('change:text', () => {
-            const newText = this.get('text');
-            if (newText !== undefined) {
-              this.set('content', newText);
-            }
-          });
         },
       },
     });
