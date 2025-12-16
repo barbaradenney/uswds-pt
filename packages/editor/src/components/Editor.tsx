@@ -391,6 +391,18 @@ export function Editor() {
                 el.textContent = text;
                 console.log(`  ✅ Set textContent="${text}"`);
               }
+
+              // DEBUG: Log the final state of the DOM element
+              console.log('USWDS-PT: Final DOM element state:');
+              console.log('  outerHTML:', el.outerHTML);
+              console.log('  classList:', Array.from(el.classList));
+              const iframeWindow = el.ownerDocument.defaultView;
+              if (iframeWindow) {
+                const computedStyle = iframeWindow.getComputedStyle(el);
+                console.log('  computed style display:', computedStyle.display);
+                console.log('  computed style backgroundColor:', computedStyle.backgroundColor);
+                console.log('  computed style padding:', computedStyle.padding);
+              }
             };
 
             // When a component is selected, set up listeners on that specific component
@@ -490,23 +502,35 @@ export function Editor() {
             if (canvas) {
               const doc = canvas.getDocument();
               if (doc) {
+                console.log('USWDS-PT: Loading CSS and JS into canvas iframe...');
+                console.log('USWDS-PT: Base URL:', doc.location.href);
+
                 // 1. Load USWDS base CSS for styling
                 const uswdsCss = doc.createElement('link');
                 uswdsCss.rel = 'stylesheet';
                 uswdsCss.href = CDN_URLS.uswdsCss;
+                uswdsCss.onload = () => console.log('USWDS-PT: ✅ USWDS CSS loaded');
+                uswdsCss.onerror = (e) => console.error('USWDS-PT: ❌ USWDS CSS failed to load', e);
                 doc.head.appendChild(uswdsCss);
+                console.log('USWDS-PT: Added USWDS CSS:', CDN_URLS.uswdsCss);
 
                 // 2. Load USWDS-WC bundle CSS (component-specific styles)
                 const uswdsWcCss = doc.createElement('link');
                 uswdsWcCss.rel = 'stylesheet';
                 uswdsWcCss.href = CDN_URLS.uswdsWcCss;
+                uswdsWcCss.onload = () => console.log('USWDS-PT: ✅ USWDS-WC CSS loaded');
+                uswdsWcCss.onerror = (e) => console.error('USWDS-PT: ❌ USWDS-WC CSS failed to load', e);
                 doc.head.appendChild(uswdsWcCss);
+                console.log('USWDS-PT: Added USWDS-WC CSS:', CDN_URLS.uswdsWcCss);
 
                 // 3. Load USWDS-WC bundle JS (all web components with Lit bundled)
                 const uswdsWcScript = doc.createElement('script');
                 uswdsWcScript.type = 'module';
                 uswdsWcScript.src = CDN_URLS.uswdsWcJs;
+                uswdsWcScript.onload = () => console.log('USWDS-PT: ✅ USWDS-WC JS loaded');
+                uswdsWcScript.onerror = (e) => console.error('USWDS-PT: ❌ USWDS-WC JS failed to load', e);
                 doc.head.appendChild(uswdsWcScript);
+                console.log('USWDS-PT: Added USWDS-WC JS:', CDN_URLS.uswdsWcJs);
               }
             }
           }}
