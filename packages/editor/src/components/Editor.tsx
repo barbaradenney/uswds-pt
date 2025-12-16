@@ -340,12 +340,31 @@ export function Editor() {
               if (!tagName?.startsWith('usa-')) return;
 
               console.log(`USWDS-PT: Syncing traits to DOM for <${tagName}>`);
-              console.log('USWDS-PT: Component attributes:', component.get('attributes'));
+
+              // Helper to get trait value from multiple possible locations
+              const getTraitValue = (traitName: string) => {
+                // Try multiple locations
+                const fromAttributes = component.get('attributes')?.[traitName];
+                const fromComponent = component.get(traitName);
+
+                // Get from trait model
+                const traitModels = component.getTraits?.();
+                const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
+                const fromTraitModel = traitModel?.get('value');
+
+                console.log(`  🔍 Searching for "${traitName}":`, {
+                  fromAttributes,
+                  fromComponent,
+                  fromTraitModel,
+                });
+
+                // Prefer trait model value, then attributes, then component
+                return fromTraitModel ?? fromAttributes ?? fromComponent;
+              };
 
               // Helper to sync individual attribute to DOM
               const syncAttr = (attrName: string) => {
-                const attrs = component.get('attributes') || {};
-                const value = attrs[attrName];
+                const value = getTraitValue(attrName);
 
                 if (value !== null && value !== undefined && value !== '' && value !== false && value !== 'default') {
                   el.setAttribute(attrName, String(value));
@@ -353,10 +372,10 @@ export function Editor() {
                   if (attrName in el) {
                     (el as any)[attrName] = value;
                   }
-                  console.log(`  ✓ Set ${attrName}="${value}"`);
+                  console.log(`  ✅ Set ${attrName}="${value}"`);
                 } else {
                   el.removeAttribute(attrName);
-                  console.log(`  ✗ Removed ${attrName}`);
+                  console.log(`  ❌ Removed ${attrName} (value was: ${value})`);
                 }
               };
 
@@ -367,10 +386,10 @@ export function Editor() {
               syncAttr('href');
 
               // Handle text content separately
-              const text = component.get('attributes')?.text;
-              if (text !== null && text !== undefined) {
+              const text = getTraitValue('text');
+              if (text !== null && text !== undefined && text !== '') {
                 el.textContent = text;
-                console.log(`  ✓ Set textContent="${text}"`);
+                console.log(`  ✅ Set textContent="${text}"`);
               }
             };
 
@@ -384,18 +403,81 @@ export function Editor() {
               const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
               console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
 
-              // Trigger initial sync
-              syncTraitsToDOM(component);
+              // DEBUG: Log all component properties
+              console.log('USWDS-PT: Component properties:', {
+                attributes: component.get('attributes'),
+                text: component.get('text'),
+                variant: component.get('variant'),
+                size: component.get('size'),
+                disabled: component.get('disabled'),
+                href: component.get('href'),
+              });
 
-              // Listen for attribute changes on THIS component
-              // Remove any previous listeners to avoid duplicates
+              // DEBUG: Try to see what events are available
+              console.log('USWDS-PT: Setting up multiple event listeners for debugging...');
+
+              // Remove any previous listeners
               component.off('change:attributes');
+              component.off('change:text');
+              component.off('change:variant');
+              component.off('change:size');
+              component.off('change:disabled');
+              component.off('change:href');
+              component.off('change');
+
+              // Try listening to various events
               component.on('change:attributes', () => {
-                console.log('USWDS-PT: Attributes changed!');
+                console.log('🔥 EVENT: change:attributes');
                 syncTraitsToDOM(component);
               });
 
-              console.log('USWDS-PT: Set up change:attributes listener');
+              component.on('change:text', () => {
+                console.log('🔥 EVENT: change:text');
+                syncTraitsToDOM(component);
+              });
+
+              component.on('change:variant', () => {
+                console.log('🔥 EVENT: change:variant');
+                syncTraitsToDOM(component);
+              });
+
+              component.on('change:size', () => {
+                console.log('🔥 EVENT: change:size');
+                syncTraitsToDOM(component);
+              });
+
+              component.on('change:disabled', () => {
+                console.log('🔥 EVENT: change:disabled');
+                syncTraitsToDOM(component);
+              });
+
+              component.on('change:href', () => {
+                console.log('🔥 EVENT: change:href');
+                syncTraitsToDOM(component);
+              });
+
+              // Generic change listener
+              component.on('change', (comp: any, value: any, opts: any) => {
+                console.log('🔥 EVENT: change (generic)', { value, opts });
+              });
+
+              // Try listening to trait changes through the trait manager
+              const traitModels = component.getTraits?.();
+              if (traitModels && traitModels.length > 0) {
+                console.log('USWDS-PT: Setting up listeners on individual trait models...');
+                traitModels.forEach((trait: any) => {
+                  const traitName = trait.get('name');
+                  trait.on('change:value', () => {
+                    console.log(`🔥 TRAIT EVENT: ${traitName} value changed to:`, trait.get('value'));
+                    syncTraitsToDOM(component);
+                  });
+                });
+              }
+
+              // Trigger initial sync
+              syncTraitsToDOM(component);
+
+              console.log('USWDS-PT: All event listeners set up');
             });
 
             // Load existing project data if available

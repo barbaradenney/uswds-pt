@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:grapesjs.com)",
+      "Bash(cat:*)",
+      "WebFetch(domain:app.grapesjs.com)",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:dev.to)",
+      "Bash(find:*)",
+      "Bash(pnpm --filter @uswds-pt/editor build:*)",
+      "Bash(pnpm --filter @uswds-pt/shared build:*)",
+      "Bash(pnpm --filter @uswds-pt/adapter build:*)",
+      "WebFetch(domain:unpkg.com)",
+      "Bash(curl:*)",
+      "WebFetch(domain:app.unpkg.com)",
+      "Bash(cd /Users/barbaramiles/Library/Mobile\\ Documents/com~apple~CloudDocs/Documents/Github/uswds-pt && pnpm --filter @uswds-pt/editor add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
