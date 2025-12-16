@@ -429,18 +429,12 @@ export function Editor() {
                 }
               }
 
-              // Sync each attribute to the DOM element
+              // Sync each attribute to the DOM element (including text as an attribute)
+              syncAttr('text');
               syncAttr('variant');
               syncAttr('size');
               syncAttr('disabled');
               syncAttr('href');
-
-              // Handle text content separately
-              const text = getTraitValue('text');
-              if (text !== null && text !== undefined && text !== '') {
-                el.textContent = text;
-                console.log(`  ✅ Set textContent="${text}"`);
-              }
 
               // DEBUG: Log the final state of the DOM element
               console.log('USWDS-PT: Final DOM element state:');
