@@ -470,6 +470,24 @@ export function Editor() {
               const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
               console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
 
+              // Initialize trait values from defaults if not set
+              const componentTraits = component.getTraits?.();
+              if (componentTraits) {
+                componentTraits.forEach((trait: any) => {
+                  const traitName = trait.get('name');
+                  const currentValue = trait.get('value');
+                  const defaultValue = trait.get('default');
+
+                  // If trait has no value but has a default, set it
+                  if ((currentValue === undefined || currentValue === null || currentValue === '') && defaultValue !== undefined) {
+                    console.log(`USWDS-PT: Initializing trait "${traitName}" with default value:`, defaultValue);
+                    trait.set('value', defaultValue);
+                    // Also set on component
+                    component.set(traitName, defaultValue);
+                  }
+                });
+              }
+
               // DEBUG: Log all component properties
               console.log('USWDS-PT: Component properties:', {
                 attributes: component.get('attributes'),
