@@ -379,7 +379,12 @@ export function Editor() {
               const syncAttr = (attrName: string) => {
                 const value = getTraitValue(attrName);
 
-                if (value !== null && value !== undefined && value !== '' && value !== false && value !== 'default') {
+                // For web components, we should set attributes even for "default" values
+                // Only skip if truly empty (null, undefined, empty string, or false for booleans)
+                const shouldSet = value !== null && value !== undefined && value !== '' &&
+                                 !(value === false && attrName !== 'disabled');
+
+                if (shouldSet) {
                   el.setAttribute(attrName, String(value));
                   // Also set as property for web components
                   if (attrName in el) {
@@ -550,8 +555,11 @@ export function Editor() {
               const traitModels = component.getTraits?.();
               if (traitModels && traitModels.length > 0) {
                 console.log('USWDS-PT: Setting up listeners on individual trait models...');
-                traitModels.forEach((trait: any) => {
+                console.log('USWDS-PT: Trait count:', traitModels.length);
+
+                traitModels.forEach((trait: any, index: number) => {
                   const traitName = trait.get('name');
+                  console.log(`USWDS-PT: Processing trait ${index}: "${traitName}"`, trait);
 
                   // Remove old listeners to avoid duplicates
                   trait.off('change:value');
@@ -570,14 +578,24 @@ export function Editor() {
                     setTimeout(() => syncTraitsToDOM(component), 10);
                   });
 
-                  // DEBUG: Log trait element to see if we can access the DOM
-                  const traitView = trait.view;
-                  if (traitView) {
-                    console.log(`USWDS-PT: Trait "${traitName}" has view:`, traitView);
+                  // DEBUG: Check trait properties
+                  console.log(`USWDS-PT: Trait "${traitName}" properties:`, {
+                    view: trait.view,
+                    el: trait.el,
+                    $el: trait.$el,
+                    attributes: trait.attributes,
+                  });
+
+                  // Try multiple approaches to find the DOM element
+                  const traitView = trait.view || trait;
+                  const traitEl = trait.el || traitView.el || trait.$el?.[0];
+
+                  if (traitEl) {
+                    console.log(`USWDS-PT: Found element for "${traitName}":`, traitEl);
                     // Try to find the select element
-                    const selectEl = traitView.el?.querySelector('select');
+                    const selectEl = traitEl.querySelector?.('select') || (traitEl.tagName === 'SELECT' ? traitEl : null);
                     if (selectEl) {
-                      console.log(`USWDS-PT: Found select element for "${traitName}"`);
+                      console.log(`USWDS-PT: ✅ Found select element for "${traitName}"`);
                       // Manually attach change listener
                       selectEl.addEventListener('change', (e: Event) => {
                         const newValue = (e.target as HTMLSelectElement).value;
@@ -586,9 +604,15 @@ export function Editor() {
                         component.set(traitName, newValue);
                         setTimeout(() => syncTraitsToDOM(component), 10);
                       });
+                    } else {
+                      console.log(`USWDS-PT: ❌ No select element found for "${traitName}"`);
                     }
+                  } else {
+                    console.log(`USWDS-PT: ❌ No element found for trait "${traitName}"`);
                   }
                 });
+              } else {
+                console.log('USWDS-PT: No trait models found!');
               }
 
               // Trigger initial sync
