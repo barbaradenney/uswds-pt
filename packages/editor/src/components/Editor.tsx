@@ -555,6 +555,7 @@ export function Editor() {
 
                   // Remove old listeners to avoid duplicates
                   trait.off('change:value');
+                  trait.off('change');
 
                   // Listen for value changes
                   trait.on('change:value', (model: any, value: any) => {
@@ -562,6 +563,31 @@ export function Editor() {
                     // Small delay to ensure the value is propagated
                     setTimeout(() => syncTraitsToDOM(component), 10);
                   });
+
+                  // Also listen to generic change event
+                  trait.on('change', () => {
+                    console.log(`🔥 TRAIT CHANGE: ${traitName} changed (generic)`);
+                    setTimeout(() => syncTraitsToDOM(component), 10);
+                  });
+
+                  // DEBUG: Log trait element to see if we can access the DOM
+                  const traitView = trait.view;
+                  if (traitView) {
+                    console.log(`USWDS-PT: Trait "${traitName}" has view:`, traitView);
+                    // Try to find the select element
+                    const selectEl = traitView.el?.querySelector('select');
+                    if (selectEl) {
+                      console.log(`USWDS-PT: Found select element for "${traitName}"`);
+                      // Manually attach change listener
+                      selectEl.addEventListener('change', (e: Event) => {
+                        const newValue = (e.target as HTMLSelectElement).value;
+                        console.log(`🔥 DOM SELECT CHANGE: ${traitName} = ${newValue}`);
+                        trait.set('value', newValue);
+                        component.set(traitName, newValue);
+                        setTimeout(() => syncTraitsToDOM(component), 10);
+                      });
+                    }
+                  }
                 });
               }
 
