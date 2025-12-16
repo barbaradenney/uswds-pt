@@ -30,19 +30,17 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
   {
     tagName: 'usa-button',
     traits: [
-      // Text content trait - changeProp: 1 means it updates the attributes object
+      // Text content trait
       {
         name: 'text',
         label: 'Button Text',
         type: 'text',
-        changeProp: 1,
         default: 'Click me',
       },
       {
         name: 'variant',
         label: 'Variant',
         type: 'select',
-        changeProp: 1,
         default: 'default',
         options: [
           { id: 'default', label: 'Default' },
@@ -59,15 +57,14 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
         name: 'size',
         label: 'Size',
         type: 'select',
-        changeProp: 1,
         default: '',
         options: [
           { id: '', label: 'Default' },
           { id: 'big', label: 'Big' },
         ],
       },
-      { name: 'disabled', label: 'Disabled', type: 'checkbox', changeProp: 1, default: false },
-      { name: 'href', label: 'Link URL', type: 'text', changeProp: 1, placeholder: 'https://...' },
+      { name: 'disabled', label: 'Disabled', type: 'checkbox', default: false },
+      { name: 'href', label: 'Link URL', type: 'text', placeholder: 'https://...' },
     ],
   },
 

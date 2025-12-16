@@ -343,23 +343,26 @@ export function Editor() {
 
               // Helper to get trait value from multiple possible locations
               const getTraitValue = (traitName: string) => {
-                // Try multiple locations
-                const fromAttributes = component.get('attributes')?.[traitName];
-                const fromComponent = component.get(traitName);
-
-                // Get from trait model
+                // Get from trait model (most reliable source)
                 const traitModels = component.getTraits?.();
                 const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
                 const fromTraitModel = traitModel?.get('value');
 
+                // Try component properties (where traits without changeProp store values)
+                const fromComponent = component.get(traitName);
+
+                // Try attributes object
+                const fromAttributes = component.get('attributes')?.[traitName];
+
                 console.log(`  🔍 Searching for "${traitName}":`, {
-                  fromAttributes,
-                  fromComponent,
                   fromTraitModel,
+                  fromComponent,
+                  fromAttributes,
+                  final: fromTraitModel ?? fromComponent ?? fromAttributes,
                 });
 
-                // Prefer trait model value, then attributes, then component
-                return fromTraitModel ?? fromAttributes ?? fromComponent;
+                // Prefer trait model value, then component properties, then attributes
+                return fromTraitModel ?? fromComponent ?? fromAttributes;
               };
 
               // Helper to sync individual attribute to DOM
@@ -514,9 +517,15 @@ export function Editor() {
                 console.log('USWDS-PT: Setting up listeners on individual trait models...');
                 traitModels.forEach((trait: any) => {
                   const traitName = trait.get('name');
-                  trait.on('change:value', () => {
-                    console.log(`🔥 TRAIT EVENT: ${traitName} value changed to:`, trait.get('value'));
-                    syncTraitsToDOM(component);
+
+                  // Remove old listeners to avoid duplicates
+                  trait.off('change:value');
+
+                  // Listen for value changes
+                  trait.on('change:value', (model: any, value: any) => {
+                    console.log(`🔥 TRAIT EVENT: ${traitName} value changed to:`, value);
+                    // Small delay to ensure the value is propagated
+                    setTimeout(() => syncTraitsToDOM(component), 10);
                   });
                 });
               }
