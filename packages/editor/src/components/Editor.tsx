@@ -381,10 +381,28 @@ export function Editor() {
               const syncAttr = (attrName: string) => {
                 const value = getTraitValue(attrName);
 
-                // For web components, we should set attributes even for "default" values
-                // Only skip if truly empty (null, undefined, empty string, or false for booleans)
-                const shouldSet = value !== null && value !== undefined && value !== '' &&
-                                 !(value === false && attrName !== 'disabled');
+                // Handle boolean attributes (like disabled) specially
+                if (attrName === 'disabled') {
+                  if (value === true || value === 'true') {
+                    // For boolean attributes, just presence matters
+                    el.setAttribute('disabled', '');
+                    if ('disabled' in el) {
+                      (el as any).disabled = true;
+                    }
+                    console.log(`  ✅ Set disabled (true)`);
+                  } else {
+                    // Remove the attribute to enable
+                    el.removeAttribute('disabled');
+                    if ('disabled' in el) {
+                      (el as any).disabled = false;
+                    }
+                    console.log(`  ✅ Removed disabled (enabled)`);
+                  }
+                  return;
+                }
+
+                // For other attributes, set if we have a non-empty value
+                const shouldSet = value !== null && value !== undefined && value !== '' && value !== false;
 
                 if (shouldSet) {
                   el.setAttribute(attrName, String(value));
