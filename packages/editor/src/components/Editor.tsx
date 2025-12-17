@@ -338,42 +338,66 @@ export function Editor() {
             console.log('USWDS-PT: Editor ready');
             console.log('USWDS-PT: Editor keys:', Object.keys(editor));
 
+            // Flag to prevent infinite loops during sync
+            let isSyncing = false;
+
             // Create a function to sync traits to DOM
             const syncTraitsToDOM = (component: any) => {
+              const timestamp = new Date().toISOString().split('T')[1];
+
+              // Prevent infinite loops
+              if (isSyncing) {
+                console.log(`[${timestamp}] 🚫 USWDS-PT: Sync already in progress, skipping...`);
+                return;
+              }
+
               const el = component.getEl();
               if (!el) {
-                console.log('USWDS-PT: No element found for component');
+                console.log(`[${timestamp}] ❌ USWDS-PT: No element found for component`);
                 return;
               }
 
               const tagName = component.get('tagName')?.toLowerCase();
               if (!tagName?.startsWith('usa-')) return;
 
-              console.log(`USWDS-PT: Syncing traits to DOM for <${tagName}>`);
+              isSyncing = true;
+              console.log(`[${timestamp}] 🔄 USWDS-PT: ===== SYNC START for <${tagName}> =====`);
 
               // Helper to get trait value from multiple possible locations
               const getTraitValue = (traitName: string) => {
-                // Try attributes object (GrapesJS Studio SDK stores values here)
-                const fromAttributes = component.get('attributes')?.[traitName];
-
-                // Try component properties (where traits without changeProp store values)
-                const fromComponent = component.get(traitName);
-
-                // Get from trait model (fallback)
+                // Get from trait model (most up-to-date source for user changes)
                 const traitModels = component.getTraits?.();
                 const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
                 const fromTraitModel = traitModel?.get('value');
 
-                const finalValue = fromAttributes ?? fromComponent ?? fromTraitModel;
+                // Try attributes object (GrapesJS Studio SDK stores values here)
+                const fromAttributes = component.get('attributes')?.[traitName];
 
-                console.log(`  🔍 Searching for "${traitName}":`, {
-                  fromAttributes,
-                  fromComponent,
-                  fromTraitModel,
-                  final: finalValue,
+                // Try component properties (fallback)
+                const fromComponent = component.get(traitName);
+
+                // Use trait model value if it exists (not undefined/null), otherwise fall back
+                // Note: We check explicitly for undefined/null to allow false/empty string values
+                let finalValue;
+                let source;
+                if (fromTraitModel !== undefined && fromTraitModel !== null) {
+                  finalValue = fromTraitModel;
+                  source = 'traitModel';
+                } else if (fromAttributes !== undefined && fromAttributes !== null) {
+                  finalValue = fromAttributes;
+                  source = 'attributes';
+                } else {
+                  finalValue = fromComponent;
+                  source = 'component';
+                }
+
+                console.log(`  🔍 [${traitName}] from ${source}:`, {
+                  traitModel: fromTraitModel,
+                  attributes: fromAttributes,
+                  component: fromComponent,
+                  '→ USING': finalValue,
                 });
 
-                // Prefer attributes (where Studio SDK stores changes), then component, then trait model
                 return finalValue;
               };
 
@@ -383,31 +407,42 @@ export function Editor() {
 
                 // Handle boolean attributes (like disabled) specially
                 if (attrName === 'disabled') {
+                  console.log(`  🎯 [DISABLED] Raw value:`, value, `(type: ${typeof value})`);
                   const isDisabled = value === true || value === 'true';
+                  console.log(`  🎯 [DISABLED] Computed isDisabled:`, isDisabled);
 
+                  // Update the web component attribute
                   if (isDisabled) {
-                    // For boolean attributes, just presence matters
                     el.setAttribute('disabled', '');
                     if ('disabled' in el) {
                       (el as any).disabled = true;
                     }
-                    console.log(`  ✅ Set disabled (true)`);
                   } else {
-                    // Remove the attribute to enable
                     el.removeAttribute('disabled');
                     if ('disabled' in el) {
                       (el as any).disabled = false;
                     }
-                    console.log(`  ✅ Removed disabled (enabled)`);
                   }
 
-                  // Update trait model and component to keep UI in sync
-                  component.set('disabled', isDisabled);
-                  const traitModels = component.getTraits?.();
-                  const disabledTrait = traitModels?.find((t: any) => t.get('name') === 'disabled');
-                  if (disabledTrait) {
-                    disabledTrait.set('value', isDisabled);
+                  // CRITICAL: Also update the internal button directly
+                  // The web component doesn't always react to attribute changes
+                  const internalButton = el.querySelector?.('button');
+                  if (internalButton) {
+                    if (isDisabled) {
+                      internalButton.setAttribute('disabled', '');
+                      (internalButton as any).disabled = true;
+                      console.log(`  ✅ [DISABLED] Set disabled on web component AND internal button`);
+                    } else {
+                      internalButton.removeAttribute('disabled');
+                      (internalButton as any).disabled = false;
+                      console.log(`  ✅ [DISABLED] Removed disabled from web component AND internal button`);
+                    }
+                  } else {
+                    console.log(`  ⚠️  [DISABLED] Updated web component but no internal button found`);
                   }
+
+                  // Don't update trait model here - only sync FROM traits TO DOM
+                  // Bidirectional sync causes infinite loops
 
                   return;
                 }
@@ -423,24 +458,14 @@ export function Editor() {
                   }
                   console.log(`  ✅ Set ${attrName}="${value}"`);
 
-                  // Update component and trait model for bidirectional sync
-                  component.set(attrName, value);
-                  const traitModels = component.getTraits?.();
-                  const trait = traitModels?.find((t: any) => t.get('name') === attrName);
-                  if (trait) {
-                    trait.set('value', value);
-                  }
+                  // Don't update trait model here - only sync FROM traits TO DOM
+                  // Bidirectional sync causes infinite loops
                 } else {
                   el.removeAttribute(attrName);
                   console.log(`  ❌ Removed ${attrName} (value was: ${value})`);
 
-                  // Clear from component and trait model too
-                  component.set(attrName, '');
-                  const traitModels = component.getTraits?.();
-                  const trait = traitModels?.find((t: any) => t.get('name') === attrName);
-                  if (trait) {
-                    trait.set('value', '');
-                  }
+                  // Don't update trait model here - only sync FROM traits TO DOM
+                  // Bidirectional sync causes infinite loops
                 }
               };
 
@@ -480,18 +505,28 @@ export function Editor() {
 
               // Handle text specially for web components
               const text = getTraitValue('text');
+              console.log(`  📝 [TEXT] Value:`, text);
               if (text !== null && text !== undefined && text !== '') {
                 // Set as attribute for the web component to read
                 el.setAttribute('text', text);
-                console.log(`  ✅ Set text attribute: "${text}"`);
+                console.log(`  ✅ [TEXT] Set text attribute: "${text}"`);
 
                 // Also check if the web component has rendered its internal button
                 // and sync the text there for GrapesJS inline editing
                 const internalButton = el.querySelector?.('button');
-                if (internalButton && internalButton.textContent !== text) {
-                  internalButton.textContent = text;
-                  console.log(`  ✅ Updated internal button text: "${text}"`);
+                if (internalButton) {
+                  const currentText = internalButton.textContent;
+                  if (currentText !== text) {
+                    internalButton.textContent = text;
+                    console.log(`  ✅ [TEXT] Updated internal button text: "${currentText}" → "${text}"`);
+                  } else {
+                    console.log(`  ⏭️  [TEXT] Internal button text already matches: "${text}"`);
+                  }
+                } else {
+                  console.log(`  ⚠️  [TEXT] No internal button found in shadow DOM`);
                 }
+              } else {
+                console.log(`  ⏭️  [TEXT] Skipped (empty/null/undefined)`);
               }
 
               // DEBUG: Log the final state of the DOM element
@@ -517,17 +552,23 @@ export function Editor() {
                 console.log('  🔄 Calling requestUpdate() on web component');
                 (el as any).requestUpdate();
               }
+
+              // Reset the sync flag
+              isSyncing = false;
+              console.log(`[${timestamp}] ✅ USWDS-PT: ===== SYNC END for <${tagName}> =====`);
             };
 
             // When a component is selected, set up listeners on that specific component
             editor.on('component:selected', (component: any) => {
+              const selectionTimestamp = new Date().toISOString().split('T')[1];
               const tagName = component.get('tagName')?.toLowerCase();
 
               if (!tagName?.startsWith('usa-')) return;
 
               const type = component.get('type');
               const traits = component.getTraits?.()?.map((t: any) => t.get('name')) || [];
-              console.log(`USWDS-PT: Selected <${tagName}> type="${type}" traits=[${traits.join(', ')}]`);
+              console.log(`\n[${selectionTimestamp}] 🎯 USWDS-PT: ========== COMPONENT SELECTED: <${tagName}> ==========`);
+              console.log(`  type="${type}" traits=[${traits.join(', ')}]`);
 
               // Initialize trait values from defaults if not set
               const componentTraits = component.getTraits?.();
@@ -557,116 +598,41 @@ export function Editor() {
                 href: component.get('href'),
               });
 
-              // DEBUG: Try to see what events are available
-              console.log('USWDS-PT: Setting up multiple event listeners for debugging...');
+              // Set up event listeners for trait changes
+              const setupTimestamp = new Date().toISOString().split('T')[1];
+              console.log(`[${setupTimestamp}] 🎧 USWDS-PT: Setting up event listeners...`);
 
-              // Remove any previous listeners
+              // Remove any previous listeners to avoid duplicates
               component.off('change:attributes');
-              component.off('change:text');
-              component.off('change:variant');
-              component.off('change:size');
-              component.off('change:disabled');
-              component.off('change:href');
-              component.off('change');
 
-              // Try listening to various events
-              component.on('change:attributes', () => {
-                console.log('🔥 EVENT: change:attributes');
+              // Listen to attributes changes (where Studio SDK stores trait values)
+              component.on('change:attributes', (comp: any, attrs: any) => {
+                const eventTimestamp = new Date().toISOString().split('T')[1];
+                console.log(`[${eventTimestamp}] 🔥 EVENT: change:attributes`, attrs);
                 syncTraitsToDOM(component);
               });
 
-              component.on('change:text', () => {
-                console.log('🔥 EVENT: change:text');
-                syncTraitsToDOM(component);
-              });
-
-              component.on('change:variant', () => {
-                console.log('🔥 EVENT: change:variant');
-                syncTraitsToDOM(component);
-              });
-
-              component.on('change:size', () => {
-                console.log('🔥 EVENT: change:size');
-                syncTraitsToDOM(component);
-              });
-
-              component.on('change:disabled', () => {
-                console.log('🔥 EVENT: change:disabled');
-                syncTraitsToDOM(component);
-              });
-
-              component.on('change:href', () => {
-                console.log('🔥 EVENT: change:href');
-                syncTraitsToDOM(component);
-              });
-
-              // Generic change listener
-              component.on('change', (comp: any, value: any, opts: any) => {
-                console.log('🔥 EVENT: change (generic)', { value, opts });
-              });
-
-              // Try listening to trait changes through the trait manager
+              // Listen to trait changes through the trait manager
               const traitModels = component.getTraits?.();
               if (traitModels && traitModels.length > 0) {
-                console.log('USWDS-PT: Setting up listeners on individual trait models...');
-                console.log('USWDS-PT: Trait count:', traitModels.length);
+                console.log(`[${setupTimestamp}] 🎧 Setting up listeners on ${traitModels.length} trait models...`);
 
-                traitModels.forEach((trait: any, index: number) => {
+                traitModels.forEach((trait: any) => {
                   const traitName = trait.get('name');
-                  console.log(`USWDS-PT: Processing trait ${index}: "${traitName}"`, trait);
+                  const initialValue = trait.get('value');
+                  console.log(`  - [${traitName}] initial value:`, initialValue);
 
                   // Remove old listeners to avoid duplicates
                   trait.off('change:value');
-                  trait.off('change');
 
                   // Listen for value changes
                   trait.on('change:value', (model: any, value: any) => {
-                    console.log(`🔥 TRAIT EVENT: ${traitName} value changed to:`, value);
-                    // Small delay to ensure the value is propagated
-                    setTimeout(() => syncTraitsToDOM(component), 10);
+                    const eventTimestamp = new Date().toISOString().split('T')[1];
+                    console.log(`[${eventTimestamp}] 🔥 TRAIT EVENT: [${traitName}] value changed to:`, value, `(was: ${model.previous('value')})`);
+                    // Sync immediately when trait changes
+                    syncTraitsToDOM(component);
                   });
-
-                  // Also listen to generic change event
-                  trait.on('change', () => {
-                    console.log(`🔥 TRAIT CHANGE: ${traitName} changed (generic)`);
-                    setTimeout(() => syncTraitsToDOM(component), 10);
-                  });
-
-                  // DEBUG: Check trait properties
-                  console.log(`USWDS-PT: Trait "${traitName}" properties:`, {
-                    view: trait.view,
-                    el: trait.el,
-                    $el: trait.$el,
-                    attributes: trait.attributes,
-                  });
-
-                  // Try multiple approaches to find the DOM element
-                  const traitView = trait.view || trait;
-                  const traitEl = trait.el || traitView.el || trait.$el?.[0];
-
-                  if (traitEl) {
-                    console.log(`USWDS-PT: Found element for "${traitName}":`, traitEl);
-                    // Try to find the select element
-                    const selectEl = traitEl.querySelector?.('select') || (traitEl.tagName === 'SELECT' ? traitEl : null);
-                    if (selectEl) {
-                      console.log(`USWDS-PT: ✅ Found select element for "${traitName}"`);
-                      // Manually attach change listener
-                      selectEl.addEventListener('change', (e: Event) => {
-                        const newValue = (e.target as HTMLSelectElement).value;
-                        console.log(`🔥 DOM SELECT CHANGE: ${traitName} = ${newValue}`);
-                        trait.set('value', newValue);
-                        component.set(traitName, newValue);
-                        setTimeout(() => syncTraitsToDOM(component), 10);
-                      });
-                    } else {
-                      console.log(`USWDS-PT: ❌ No select element found for "${traitName}"`);
-                    }
-                  } else {
-                    console.log(`USWDS-PT: ❌ No element found for trait "${traitName}"`);
-                  }
                 });
-              } else {
-                console.log('USWDS-PT: No trait models found!');
               }
 
               // Trigger initial sync
