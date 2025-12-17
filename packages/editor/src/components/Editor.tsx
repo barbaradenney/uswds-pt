@@ -399,6 +399,14 @@ export function Editor() {
                   '→ USING': finalValue,
                 });
 
+                // CRITICAL: Sync attributes value back to trait model to keep UI in sync
+                // Studio SDK updates attributes but NOT trait model, so checkbox stays wrong
+                // Only update if they differ to avoid infinite loops
+                if (source === 'attributes' && traitModel && fromTraitModel !== finalValue) {
+                  console.log(`  🔄 [${traitName}] Syncing attributes → trait model: ${fromTraitModel} → ${finalValue}`);
+                  traitModel.set('value', finalValue, { silent: true }); // silent to avoid triggering events
+                }
+
                 return finalValue;
               };
 
