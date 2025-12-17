@@ -383,7 +383,9 @@ export function Editor() {
 
                 // Handle boolean attributes (like disabled) specially
                 if (attrName === 'disabled') {
-                  if (value === true || value === 'true') {
+                  const isDisabled = value === true || value === 'true';
+
+                  if (isDisabled) {
                     // For boolean attributes, just presence matters
                     el.setAttribute('disabled', '');
                     if ('disabled' in el) {
@@ -398,6 +400,15 @@ export function Editor() {
                     }
                     console.log(`  ✅ Removed disabled (enabled)`);
                   }
+
+                  // Update trait model and component to keep UI in sync
+                  component.set('disabled', isDisabled);
+                  const traitModels = component.getTraits?.();
+                  const disabledTrait = traitModels?.find((t: any) => t.get('name') === 'disabled');
+                  if (disabledTrait) {
+                    disabledTrait.set('value', isDisabled);
+                  }
+
                   return;
                 }
 
@@ -411,9 +422,25 @@ export function Editor() {
                     (el as any)[attrName] = value;
                   }
                   console.log(`  ✅ Set ${attrName}="${value}"`);
+
+                  // Update component and trait model for bidirectional sync
+                  component.set(attrName, value);
+                  const traitModels = component.getTraits?.();
+                  const trait = traitModels?.find((t: any) => t.get('name') === attrName);
+                  if (trait) {
+                    trait.set('value', value);
+                  }
                 } else {
                   el.removeAttribute(attrName);
                   console.log(`  ❌ Removed ${attrName} (value was: ${value})`);
+
+                  // Clear from component and trait model too
+                  component.set(attrName, '');
+                  const traitModels = component.getTraits?.();
+                  const trait = traitModels?.find((t: any) => t.get('name') === attrName);
+                  if (trait) {
+                    trait.set('value', '');
+                  }
                 }
               };
 
