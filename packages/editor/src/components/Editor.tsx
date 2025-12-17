@@ -365,36 +365,37 @@ export function Editor() {
 
               // Helper to get trait value from multiple possible locations
               const getTraitValue = (traitName: string) => {
-                // Get from trait model (most up-to-date source for user changes)
+                // Try attributes object (GrapesJS Studio SDK stores values here) - HIGHEST PRIORITY
+                const fromAttributes = component.get('attributes')?.[traitName];
+
+                // Try component properties
+                const fromComponent = component.get(traitName);
+
+                // Get from trait model (fallback - Studio SDK doesn't always update this)
                 const traitModels = component.getTraits?.();
                 const traitModel = traitModels?.find((t: any) => t.get('name') === traitName);
                 const fromTraitModel = traitModel?.get('value');
 
-                // Try attributes object (GrapesJS Studio SDK stores values here)
-                const fromAttributes = component.get('attributes')?.[traitName];
-
-                // Try component properties (fallback)
-                const fromComponent = component.get(traitName);
-
-                // Use trait model value if it exists (not undefined/null), otherwise fall back
+                // Use attributes value if it exists (not undefined/null), otherwise fall back
                 // Note: We check explicitly for undefined/null to allow false/empty string values
+                // Studio SDK updates attributes but NOT trait model, so attributes must be first
                 let finalValue;
                 let source;
-                if (fromTraitModel !== undefined && fromTraitModel !== null) {
-                  finalValue = fromTraitModel;
-                  source = 'traitModel';
-                } else if (fromAttributes !== undefined && fromAttributes !== null) {
+                if (fromAttributes !== undefined && fromAttributes !== null) {
                   finalValue = fromAttributes;
                   source = 'attributes';
-                } else {
+                } else if (fromComponent !== undefined && fromComponent !== null) {
                   finalValue = fromComponent;
                   source = 'component';
+                } else {
+                  finalValue = fromTraitModel;
+                  source = 'traitModel';
                 }
 
                 console.log(`  🔍 [${traitName}] from ${source}:`, {
-                  traitModel: fromTraitModel,
                   attributes: fromAttributes,
                   component: fromComponent,
+                  traitModel: fromTraitModel,
                   '→ USING': finalValue,
                 });
 
