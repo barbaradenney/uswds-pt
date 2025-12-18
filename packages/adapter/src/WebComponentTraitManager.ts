@@ -282,13 +282,14 @@ export class WebComponentTraitManager {
     const componentId = component.getId();
 
     textTraits.forEach(([traitName, handler]) => {
-      // Debug: Log all input elements to understand the DOM structure
-      const allInputs = document.querySelectorAll('input[type="text"], textarea');
-      console.log(`WebComponentTraitManager: Found ${allInputs.length} text inputs in document`);
+      // Debug: Search more broadly - all inputs regardless of type
+      const allInputs = document.querySelectorAll('input, textarea');
+      console.log(`WebComponentTraitManager: Found ${allInputs.length} inputs/textareas in document`);
 
       allInputs.forEach((input, index) => {
         const inputEl = input as HTMLInputElement;
         console.log(`Input ${index}:`, {
+          type: inputEl.type,
           name: inputEl.name,
           id: inputEl.id,
           placeholder: inputEl.placeholder,
@@ -297,6 +298,31 @@ export class WebComponentTraitManager {
           parentClasses: inputEl.parentElement?.className,
           dataset: { ...inputEl.dataset },
         });
+      });
+
+      // Also check for iframes (GrapesJS Studio SDK might use iframes for panels)
+      const iframes = document.querySelectorAll('iframe');
+      console.log(`WebComponentTraitManager: Found ${iframes.length} iframes`);
+
+      iframes.forEach((iframe, index) => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (iframeDoc) {
+            const iframeInputs = iframeDoc.querySelectorAll('input, textarea');
+            console.log(`Iframe ${index}: Found ${iframeInputs.length} inputs`);
+            iframeInputs.forEach((input, inputIndex) => {
+              const inputEl = input as HTMLInputElement;
+              console.log(`  Iframe ${index} Input ${inputIndex}:`, {
+                type: inputEl.type,
+                name: inputEl.name,
+                value: inputEl.value,
+                className: inputEl.className,
+              });
+            });
+          }
+        } catch (e) {
+          console.log(`Iframe ${index}: Cannot access (cross-origin or not loaded)`);
+        }
       });
 
       // Try multiple selectors to find the trait input
