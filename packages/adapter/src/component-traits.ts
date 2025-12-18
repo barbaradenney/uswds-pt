@@ -58,6 +58,7 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
         label: 'Size',
         type: 'select',
         default: '',
+        changeProp: 1, // Tell GrapesJS to update component attributes when this changes
         options: [
           { id: '', label: 'Default' },
           { id: 'big', label: 'Big' },
