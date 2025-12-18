@@ -282,12 +282,32 @@ export class WebComponentTraitManager {
     const componentId = component.getId();
 
     textTraits.forEach(([traitName, handler]) => {
+      // Debug: Log all input elements to understand the DOM structure
+      const allInputs = document.querySelectorAll('input[type="text"], textarea');
+      console.log(`WebComponentTraitManager: Found ${allInputs.length} text inputs in document`);
+
+      allInputs.forEach((input, index) => {
+        const inputEl = input as HTMLInputElement;
+        console.log(`Input ${index}:`, {
+          name: inputEl.name,
+          id: inputEl.id,
+          placeholder: inputEl.placeholder,
+          value: inputEl.value,
+          className: inputEl.className,
+          parentClasses: inputEl.parentElement?.className,
+          dataset: { ...inputEl.dataset },
+        });
+      });
+
       // Try multiple selectors to find the trait input
       const selectors = [
+        `input[name="${traitName}"]`,
+        `textarea[name="${traitName}"]`,
         `[data-trait="${traitName}"] input`,
         `[data-trait="${traitName}"] textarea`,
         `.gjs-trt-trait[data-trait-name="${traitName}"] input`,
         `.gjs-trt-trait[data-trait-name="${traitName}"] textarea`,
+        `#trait-${traitName}`,
       ];
 
       let traitInput: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -297,6 +317,20 @@ export class WebComponentTraitManager {
         if (traitInput) {
           console.log(`WebComponentTraitManager: Found trait input with selector: ${selector}`);
           break;
+        }
+      }
+
+      // If still not found, try to find by value or placeholder
+      if (!traitInput) {
+        const currentValue = component.get('attributes')?.[traitName];
+        if (currentValue) {
+          allInputs.forEach((input) => {
+            const inputEl = input as HTMLInputElement;
+            if (inputEl.value === currentValue || inputEl.placeholder === traitName) {
+              console.log(`WebComponentTraitManager: Found trait input by value match: ${currentValue}`);
+              traitInput = inputEl;
+            }
+          });
         }
       }
 
