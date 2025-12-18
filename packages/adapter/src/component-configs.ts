@@ -45,7 +45,7 @@ export const usaButtonConfig: ComponentConfig = {
     size: {
       onChange: (element, value) => {
         console.log('USWDS-PT: size onChange called with:', value, 'type:', typeof value);
-        if (value && value !== '' && value !== 'default') {
+        if (value && value !== 'default') {
           WebComponentTraitManager.setAttribute(element, 'size', value);
           console.log('USWDS-PT: Set size attribute to:', value);
         } else {
@@ -54,7 +54,7 @@ export const usaButtonConfig: ComponentConfig = {
         }
       },
       getValue: (element) => {
-        return element.getAttribute('size') || '';
+        return element.getAttribute('size') || 'default';
       },
     },
 

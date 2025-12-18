@@ -57,9 +57,9 @@ export const COMPONENT_TRAITS: ComponentTraitConfig[] = [
         name: 'size',
         label: 'Size',
         type: 'select',
-        default: '',
+        default: 'default',
         options: [
-          { id: '', label: 'Default' },
+          { id: 'default', label: 'Default' },
           { id: 'big', label: 'Big' },
         ],
       },
