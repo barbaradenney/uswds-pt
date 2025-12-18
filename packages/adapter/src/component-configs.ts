@@ -18,11 +18,33 @@ export const usaButtonConfig: ComponentConfig = {
         // Set the attribute (like href does)
         element.setAttribute('text', value || '');
 
-        // Also update the button textContent (synchronously)
-        const button = element.querySelector('button');
-        if (button) {
-          button.textContent = value || '';
-          console.log('USWDS-PT: Set button textContent to:', value);
+        // Update the button textContent - wait for it to exist if needed
+        const updateButtonText = () => {
+          const button = element.querySelector('button');
+          if (button) {
+            button.textContent = value || '';
+            console.log('USWDS-PT: Set button textContent to:', value);
+            return true;
+          }
+          return false;
+        };
+
+        // Try immediately
+        if (!updateButtonText()) {
+          // If button doesn't exist yet, try a few more times
+          console.log('USWDS-PT: Button element not found yet, will retry...');
+
+          let attempts = 0;
+          const maxAttempts = 10;
+          const intervalId = setInterval(() => {
+            attempts++;
+            if (updateButtonText() || attempts >= maxAttempts) {
+              clearInterval(intervalId);
+              if (attempts >= maxAttempts) {
+                console.warn('USWDS-PT: Could not find button element after', maxAttempts, 'attempts');
+              }
+            }
+          }, 50);
         }
       },
       getValue: (element) => {

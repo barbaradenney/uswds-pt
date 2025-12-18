@@ -194,10 +194,27 @@ export class WebComponentTraitManager {
 
             // For text attributes, ensure button textContent stays in sync
             if (attributeName === 'text') {
-              const button = element.querySelector('button');
-              if (button && button.textContent !== newValue) {
-                button.textContent = newValue || '';
-                console.log(`WebComponentTraitManager: Synced button textContent to:`, newValue);
+              const syncButtonText = () => {
+                const button = element.querySelector('button');
+                if (button) {
+                  if (button.textContent !== newValue) {
+                    button.textContent = newValue || '';
+                    console.log(`WebComponentTraitManager: Synced button textContent to:`, newValue);
+                  }
+                  return true;
+                }
+                return false;
+              };
+
+              // Try immediately
+              if (!syncButtonText()) {
+                // Button doesn't exist yet, wait for it
+                console.log(`WebComponentTraitManager: Button not found for sync, will retry...`);
+                setTimeout(() => {
+                  if (!syncButtonText()) {
+                    console.warn(`WebComponentTraitManager: Button element still not found after delay`);
+                  }
+                }, 100);
               }
             }
           }
