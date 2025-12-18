@@ -183,15 +183,15 @@ export class WebComponentTraitManager {
     const attributes = component.get('attributes') || {};
     const previousAttributes = component.previous('attributes') || {};
 
-    console.log('WebComponentTraitManager: All attributes:', attributes);
-    console.log('WebComponentTraitManager: Previous attributes:', previousAttributes);
+    console.log('WebComponentTraitManager: All attributes:', JSON.stringify(attributes));
+    console.log('WebComponentTraitManager: Previous attributes:', JSON.stringify(previousAttributes));
 
     // Process each trait that has changed
     Object.entries(config.traits).forEach(([traitName, handler]) => {
       const newValue = attributes[traitName];
       const oldValue = previousAttributes[traitName];
 
-      console.log(`WebComponentTraitManager: Checking trait '${traitName}':`, { newValue, oldValue, changed: newValue !== oldValue });
+      console.log(`WebComponentTraitManager: Checking '${traitName}': newValue="${newValue}" (${typeof newValue}), oldValue="${oldValue}" (${typeof oldValue}), changed=${newValue !== oldValue}`);
 
       // Only process if value actually changed
       if (newValue !== oldValue) {
