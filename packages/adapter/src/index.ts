@@ -22,7 +22,16 @@ export {
 } from './constants.js';
 export { COMPONENT_TRAITS, registerComponentTraits } from './component-traits.js';
 export { WebComponentTraitManager } from './WebComponentTraitManager.js';
-export { getAllComponentConfigs, usaButtonConfig } from './component-configs.js';
+// Old exports (deprecated, will be removed in Step 6):
+// export { getAllComponentConfigs, usaButtonConfig } from './component-configs.js';
+
+// New exports from component-registry-v2:
+export {
+  componentRegistry,
+  createAttributeTrait,
+  createBooleanTrait,
+  createInternalSyncTrait,
+} from './component-registry-v2.js';
 
 export type {
   GrapesBlock,
@@ -33,3 +42,8 @@ export type {
   ComponentRegistryOptions,
 } from './types.js';
 export type { ComponentConfig, TraitHandler } from './WebComponentTraitManager.js';
+export type {
+  UnifiedTrait,
+  ComponentRegistration,
+  RetryConfig,
+} from './component-registry-v2.js';

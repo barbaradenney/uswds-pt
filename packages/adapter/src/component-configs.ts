@@ -1,14 +1,18 @@
 /**
  * Component configurations for USWDS Web Components
  * Defines how each component's traits should interact with the web component
+ *
+ * NOTE: usa-button has been migrated to component-registry-v2.ts
+ * This file will be deleted in Step 6 of the refactoring.
  */
 
 import { ComponentConfig, WebComponentTraitManager } from './WebComponentTraitManager';
 
 /**
  * Configuration for usa-button component
+ * DEPRECATED: Now in component-registry-v2.ts
  */
-export const usaButtonConfig: ComponentConfig = {
+/* export const usaButtonConfig: ComponentConfig = {
   tagName: 'usa-button',
   traits: {
     text: {
@@ -121,17 +125,18 @@ export const usaButtonConfig: ComponentConfig = {
       },
     },
   },
-};
+}; */
 
 /**
  * Get all component configurations
+ * DEPRECATED: Now using componentRegistry from component-registry-v2.ts
  */
-export function getAllComponentConfigs(): ComponentConfig[] {
+/* export function getAllComponentConfigs(): ComponentConfig[] {
   return [
-    usaButtonConfig,
+    // usaButtonConfig, // Moved to componentRegistry
     // Add more component configs here as you uncomment them in DEFAULT_CONTENT
     // usaTextInputConfig,
     // usaSelectConfig,
     // etc.
   ];
-}
+} */

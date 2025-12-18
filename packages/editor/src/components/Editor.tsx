@@ -9,7 +9,7 @@ import {
   CDN_URLS,
   COMPONENT_TRAITS,
   WebComponentTraitManager,
-  getAllComponentConfigs,
+  // getAllComponentConfigs, // Deprecated - using componentRegistry now
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
@@ -62,11 +62,11 @@ const uswdsComponentsPlugin = (editor: any) => {
   console.log('USWDS-PT: Initializing WebComponentTraitManager...');
   const traitManager = new WebComponentTraitManager(editor);
 
-  // Register all component configurations
-  const componentConfigs = getAllComponentConfigs();
-  traitManager.registerComponents(componentConfigs);
+  // Note: Component configurations now auto-registered via componentRegistry
+  // No need to call registerComponents - the WebComponentTraitManager will
+  // automatically check componentRegistry.getTraitHandlers() via backward compatibility
 
-  console.log('USWDS-PT: WebComponentTraitManager initialized with', componentConfigs.length, 'component(s)');
+  console.log('USWDS-PT: WebComponentTraitManager initialized (using componentRegistry)');
 
   // Handle the special case of select options
   editor.on('component:update:options-json', (model: any) => {

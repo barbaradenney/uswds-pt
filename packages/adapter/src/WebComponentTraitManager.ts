@@ -6,6 +6,8 @@
  * and prevents sync loops.
  */
 
+import { componentRegistry } from './component-registry-v2.js';
+
 export interface TraitHandler {
   /**
    * Called when a trait value changes in GrapesJS
@@ -61,6 +63,22 @@ export class WebComponentTraitManager {
   }
 
   /**
+   * Get trait handlers for a component (backward compatible)
+   * Checks new componentRegistry first, then falls back to old componentConfigs
+   */
+  private getTraitHandlers(tagName: string): Record<string, TraitHandler> | undefined {
+    // Try new registry first
+    const registryHandlers = componentRegistry.getTraitHandlers(tagName);
+    if (registryHandlers && Object.keys(registryHandlers).length > 0) {
+      return registryHandlers;
+    }
+
+    // Fall back to old componentConfigs
+    const config = this.componentConfigs.get(tagName);
+    return config?.traits;
+  }
+
+  /**
    * Set up global listeners for component lifecycle
    */
   private setupGlobalListeners(): void {
@@ -89,16 +107,16 @@ export class WebComponentTraitManager {
     const tagName = component.get('tagName')?.toLowerCase();
     if (!tagName) return;
 
-    const config = this.componentConfigs.get(tagName);
-    if (!config) return;
+    const handlers = this.getTraitHandlers(tagName);
+    if (!handlers) return;
 
     console.log(`WebComponentTraitManager: Selected ${tagName}`);
 
     // Set up trait change listeners
-    this.setupTraitListeners(component, config);
+    this.setupTraitListeners(component, tagName, handlers);
 
     // Set up real-time input listeners for text traits
-    this.setupTextTraitInputListeners(component, config);
+    this.setupTextTraitInputListeners(component, tagName, handlers);
   }
 
   /**
@@ -137,8 +155,8 @@ export class WebComponentTraitManager {
     const tagName = component.get('tagName')?.toLowerCase();
     if (!tagName) return;
 
-    const config = this.componentConfigs.get(tagName);
-    if (!config) return;
+    const handlers = this.getTraitHandlers(tagName);
+    if (!handlers) return;
 
     const element = component.getEl();
     if (!element) return;
@@ -146,19 +164,19 @@ export class WebComponentTraitManager {
     console.log(`WebComponentTraitManager: Mounted ${tagName}`);
 
     // Initialize all traits
-    this.initializeTraits(component, element, config);
+    this.initializeTraits(component, element, handlers);
 
     // Set up attribute observers for special traits like 'text'
-    this.setupAttributeObservers(component, element, config);
+    this.setupAttributeObservers(component, element, tagName, handlers);
   }
 
   /**
    * Initialize traits with their default values
    */
-  private initializeTraits(component: any, element: HTMLElement, config: ComponentConfig): void {
+  private initializeTraits(component: any, element: HTMLElement, handlers: Record<string, TraitHandler>): void {
     const attributes = component.get('attributes') || {};
 
-    Object.entries(config.traits).forEach(([traitName, handler]) => {
+    Object.entries(handlers).forEach(([traitName, handler]) => {
       const value = attributes[traitName];
 
       // Call onInit if it exists
@@ -177,7 +195,7 @@ export class WebComponentTraitManager {
   /**
    * Set up MutationObserver to watch for attribute changes and keep DOM in sync
    */
-  private setupAttributeObservers(component: any, element: HTMLElement, config: ComponentConfig): void {
+  private setupAttributeObservers(component: any, element: HTMLElement, tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
 
     // Create a MutationObserver to watch for attribute changes
@@ -187,7 +205,7 @@ export class WebComponentTraitManager {
           const attributeName = mutation.attributeName;
           if (!attributeName) return;
 
-          const handler = config.traits[attributeName];
+          const handler = handlers[attributeName];
           if (handler) {
             const newValue = element.getAttribute(attributeName);
             console.log(`WebComponentTraitManager: Observed attribute '${attributeName}' changed to:`, newValue);
@@ -238,7 +256,7 @@ export class WebComponentTraitManager {
   /**
    * Set up listeners for trait changes
    */
-  private setupTraitListeners(component: any, config: ComponentConfig): void {
+  private setupTraitListeners(component: any, tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
     const listenerId = `${componentId}-traits`;
 
@@ -250,7 +268,7 @@ export class WebComponentTraitManager {
 
     // Create new listener
     const listener = () => {
-      this.handleTraitChanges(component, config);
+      this.handleTraitChanges(component, handlers);
     };
 
     // Store and attach listener
@@ -261,7 +279,7 @@ export class WebComponentTraitManager {
   /**
    * Handle trait value changes
    */
-  private handleTraitChanges(component: any, config: ComponentConfig): void {
+  private handleTraitChanges(component: any, handlers: Record<string, TraitHandler>): void {
     const element = component.getEl();
     if (!element) {
       console.warn('WebComponentTraitManager: No element found for component');
@@ -275,7 +293,7 @@ export class WebComponentTraitManager {
     console.log('WebComponentTraitManager: Previous attributes:', JSON.stringify(previousAttributes));
 
     // Process each trait that has changed
-    Object.entries(config.traits).forEach(([traitName, handler]) => {
+    Object.entries(handlers).forEach(([traitName, handler]) => {
       const newValue = attributes[traitName];
       const oldValue = previousAttributes[traitName];
 
@@ -303,11 +321,11 @@ export class WebComponentTraitManager {
    * Set up real-time input listeners for text traits
    * This allows text fields to update as you type, not just on Enter/blur
    */
-  private setupTextTraitInputListeners(component: any, config: ComponentConfig): void {
+  private setupTextTraitInputListeners(component: any, tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
 
     // Use GrapesJS's trait event system to listen for trait value changes
-    const textTraits = Object.entries(config.traits).filter(
+    const textTraits = Object.entries(handlers).filter(
       ([name]) => name === 'text' || name.endsWith('Text') || name.endsWith('-text')
     );
 
@@ -338,10 +356,10 @@ export class WebComponentTraitManager {
       console.log(`WebComponentTraitManager: Added trait listener for '${traitName}'`);
     });
 
-    // Also try to hook into the TraitView's input events if available
-    setTimeout(() => {
-      this.setupDOMInputListeners(component, config, textTraits);
-    }, 200);
+    // Note: setupDOMInputListeners is dead code - will be removed in Step 4
+    // setTimeout(() => {
+    //   this.setupDOMInputListeners(component, tagName, textTraits);
+    // }, 200);
   }
 
   /**
