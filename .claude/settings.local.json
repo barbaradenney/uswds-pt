@@ -33,7 +33,8 @@
       "Bash(pnpm test:*)",
       "WebFetch(domain:github.com)",
       "Bash(pnpm build:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(gh run:*)"
     ],
     "deny": [],
     "ask": []

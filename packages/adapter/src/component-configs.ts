@@ -13,7 +13,17 @@ export const usaButtonConfig: ComponentConfig = {
   traits: {
     text: {
       onChange: (element, value) => {
+        console.log('USWDS-PT: text onChange called with:', value);
         WebComponentTraitManager.setTextContent(element, value || '', 'button');
+
+        // Also try setting textContent directly on the button
+        const button = element.querySelector('button');
+        if (button) {
+          button.textContent = value || '';
+          console.log('USWDS-PT: Set button textContent to:', value);
+        } else {
+          console.warn('USWDS-PT: No button element found inside usa-button');
+        }
       },
       getValue: (element) => {
         return element.getAttribute('text') || element.textContent || '';
@@ -34,10 +44,13 @@ export const usaButtonConfig: ComponentConfig = {
 
     size: {
       onChange: (element, value) => {
-        if (value && value !== '') {
+        console.log('USWDS-PT: size onChange called with:', value, 'type:', typeof value);
+        if (value && value !== '' && value !== 'default') {
           WebComponentTraitManager.setAttribute(element, 'size', value);
+          console.log('USWDS-PT: Set size attribute to:', value);
         } else {
           element.removeAttribute('size');
+          console.log('USWDS-PT: Removed size attribute (value was:', value, ')');
         }
       },
       getValue: (element) => {
