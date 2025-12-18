@@ -21,6 +21,8 @@ export {
   generateComponentLoaderScript,
 } from './constants.js';
 export { COMPONENT_TRAITS, registerComponentTraits } from './component-traits.js';
+export { WebComponentTraitManager } from './WebComponentTraitManager.js';
+export { getAllComponentConfigs, usaButtonConfig } from './component-configs.js';
 
 export type {
   GrapesBlock,
@@ -30,3 +32,4 @@ export type {
   GrapesComponentType,
   ComponentRegistryOptions,
 } from './types.js';
+export type { ComponentConfig, TraitHandler } from './WebComponentTraitManager.js';
