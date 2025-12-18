@@ -96,6 +96,9 @@ export class WebComponentTraitManager {
 
     // Set up trait change listeners
     this.setupTraitListeners(component, config);
+
+    // Set up real-time input listeners for text traits
+    this.setupTextTraitInputListeners(component, config);
   }
 
   /**
@@ -111,6 +114,18 @@ export class WebComponentTraitManager {
       component.off('change:attributes', listener);
       this.activeListeners.delete(listenerId);
     }
+
+    // Remove text input listeners
+    const cleanupKeys = Array.from(this.activeListeners.keys()).filter(key =>
+      key.startsWith(`${componentId}-text-inputs`)
+    );
+    cleanupKeys.forEach(key => {
+      const cleanup = this.activeListeners.get(key);
+      if (typeof cleanup === 'function') {
+        cleanup();
+      }
+      this.activeListeners.delete(key);
+    });
   }
 
   /**
@@ -209,6 +224,60 @@ export class WebComponentTraitManager {
         }
       }
     });
+  }
+
+  /**
+   * Set up real-time input listeners for text traits
+   * This allows text fields to update as you type, not just on Enter/blur
+   */
+  private setupTextTraitInputListeners(component: any, config: ComponentConfig): void {
+    const componentId = component.getId();
+    const listenerId = `${componentId}-text-inputs`;
+
+    // Wait for traits panel to render
+    setTimeout(() => {
+      // Find text trait handlers
+      const textTraits = Object.entries(config.traits).filter(
+        ([name, handler]) => name === 'text' || name.includes('Text')
+      );
+
+      if (textTraits.length === 0) return;
+
+      // Find the trait input elements in the properties panel
+      textTraits.forEach(([traitName, handler]) => {
+        const traitInput = document.querySelector(
+          `input[name="${traitName}"], textarea[name="${traitName}"]`
+        );
+
+        if (traitInput) {
+          const inputListener = (e: Event) => {
+            const newValue = (e.target as HTMLInputElement).value;
+            console.log(`WebComponentTraitManager: Text input event for '${traitName}':`, newValue);
+
+            // Update the component attribute immediately
+            const attributes = component.get('attributes') || {};
+            const updatedAttributes = { ...attributes, [traitName]: newValue };
+            component.set('attributes', updatedAttributes);
+
+            // Manually trigger the handler
+            const element = component.getEl();
+            if (element) {
+              handler.onChange(element, newValue, attributes[traitName]);
+            }
+          };
+
+          traitInput.addEventListener('input', inputListener);
+
+          // Store listener for cleanup
+          const cleanupKey = `${listenerId}-${traitName}`;
+          this.activeListeners.set(cleanupKey, () => {
+            traitInput.removeEventListener('input', inputListener);
+          });
+
+          console.log(`WebComponentTraitManager: Added input listener for '${traitName}'`);
+        }
+      });
+    }, 100); // Small delay to ensure traits panel is rendered
   }
 
   /**
