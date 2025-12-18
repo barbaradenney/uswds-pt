@@ -115,9 +115,11 @@ export class WebComponentTraitManager {
       this.activeListeners.delete(listenerId);
     }
 
-    // Remove text trait and DOM input listeners
+    // Remove text trait, DOM input listeners, and observers
     const cleanupKeys = Array.from(this.activeListeners.keys()).filter(key =>
-      key.startsWith(`${componentId}-trait-`) || key.startsWith(`${componentId}-dom-`)
+      key.startsWith(`${componentId}-trait-`) ||
+      key.startsWith(`${componentId}-dom-`) ||
+      key.startsWith(`${componentId}-observer`)
     );
     cleanupKeys.forEach(key => {
       const cleanup = this.activeListeners.get(key);
@@ -145,6 +147,9 @@ export class WebComponentTraitManager {
 
     // Initialize all traits
     this.initializeTraits(component, element, config);
+
+    // Set up attribute observers for special traits like 'text'
+    this.setupAttributeObservers(component, element, config);
   }
 
   /**
@@ -156,10 +161,61 @@ export class WebComponentTraitManager {
     Object.entries(config.traits).forEach(([traitName, handler]) => {
       const value = attributes[traitName];
 
+      // Call onInit if it exists
       if (handler.onInit && value !== undefined) {
         handler.onInit(element, value);
       }
+
+      // For traits without onInit, call onChange to initialize
+      // This ensures the DOM is in sync with the attribute value
+      if (!handler.onInit && value !== undefined) {
+        handler.onChange(element, value);
+      }
     });
+  }
+
+  /**
+   * Set up MutationObserver to watch for attribute changes and keep DOM in sync
+   */
+  private setupAttributeObservers(component: any, element: HTMLElement, config: ComponentConfig): void {
+    const componentId = component.getId();
+
+    // Create a MutationObserver to watch for attribute changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes') {
+          const attributeName = mutation.attributeName;
+          if (!attributeName) return;
+
+          const handler = config.traits[attributeName];
+          if (handler) {
+            const newValue = element.getAttribute(attributeName);
+            console.log(`WebComponentTraitManager: Observed attribute '${attributeName}' changed to:`, newValue);
+
+            // For text attributes, ensure button textContent stays in sync
+            if (attributeName === 'text') {
+              const button = element.querySelector('button');
+              if (button && button.textContent !== newValue) {
+                button.textContent = newValue || '';
+                console.log(`WebComponentTraitManager: Synced button textContent to:`, newValue);
+              }
+            }
+          }
+        }
+      });
+    });
+
+    // Observe attribute changes
+    observer.observe(element, {
+      attributes: true,
+      attributeOldValue: true,
+    });
+
+    // Store observer for cleanup
+    const observerId = `${componentId}-observer`;
+    this.activeListeners.set(observerId, () => observer.disconnect());
+
+    console.log(`WebComponentTraitManager: Set up attribute observer for ${component.get('tagName')}`);
   }
 
   /**

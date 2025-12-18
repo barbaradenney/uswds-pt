@@ -15,59 +15,19 @@ export const usaButtonConfig: ComponentConfig = {
       onChange: (element, value) => {
         console.log('USWDS-PT: text onChange called with:', value);
 
-        // Wait for web component to render if needed
-        const updateButton = () => {
-          const button = element.querySelector('button');
-          if (button) {
-            button.textContent = value || '';
-            element.setAttribute('text', value || '');
-            console.log('USWDS-PT: Set button textContent to:', value);
-          } else {
-            console.warn('USWDS-PT: No button element found inside usa-button');
-          }
-        };
+        // Set the attribute (like href does)
+        element.setAttribute('text', value || '');
 
-        // If using Lit, wait for updateComplete
-        if (typeof (element as any).updateComplete === 'object') {
-          (element as any).updateComplete.then(updateButton);
-        } else {
-          updateButton();
+        // Also update the button textContent (synchronously)
+        const button = element.querySelector('button');
+        if (button) {
+          button.textContent = value || '';
+          console.log('USWDS-PT: Set button textContent to:', value);
         }
       },
       getValue: (element) => {
-        const button = element.querySelector('button');
-        return button?.textContent || element.getAttribute('text') || '';
-      },
-      onInit: (element, value) => {
-        console.log('USWDS-PT: text onInit called with:', value);
-
-        // Wait for web component to render before setting initial text
-        const initButton = () => {
-          const button = element.querySelector('button');
-          if (button) {
-            button.textContent = value || 'Click me';
-            element.setAttribute('text', value || 'Click me');
-            console.log('USWDS-PT: Initialized button text to:', value || 'Click me');
-          } else {
-            // If button still not found, try again after a short delay
-            setTimeout(() => {
-              const btn = element.querySelector('button');
-              if (btn) {
-                btn.textContent = value || 'Click me';
-                element.setAttribute('text', value || 'Click me');
-                console.log('USWDS-PT: Initialized button text (delayed) to:', value || 'Click me');
-              }
-            }, 100);
-          }
-        };
-
-        // If using Lit, wait for updateComplete
-        if (typeof (element as any).updateComplete === 'object') {
-          (element as any).updateComplete.then(initButton);
-        } else {
-          // Otherwise use requestAnimationFrame to wait for next render
-          requestAnimationFrame(initButton);
-        }
+        // Read from attribute first (source of truth), then button textContent as fallback
+        return element.getAttribute('text') || '';
       },
     },
 
