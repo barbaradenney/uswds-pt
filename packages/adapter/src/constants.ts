@@ -117,8 +117,8 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   // 'usa-link': '<usa-link href="#">Link text</usa-link>',
   // 'usa-search': '<usa-search label="Search" size="small"></usa-search>',
 
-  // // Forms
-  // 'usa-text-input': '<usa-text-input label="Label" name="field"></usa-text-input>',
+  // Forms
+  'usa-text-input': '',
   // 'usa-textarea': '<usa-textarea label="Label" name="field"></usa-textarea>',
   // 'usa-select': '<usa-select label="Label" name="field" defaultOption="Select an option"></usa-select>',
   // 'usa-checkbox': '<usa-checkbox label="Checkbox label" name="field"></usa-checkbox>',

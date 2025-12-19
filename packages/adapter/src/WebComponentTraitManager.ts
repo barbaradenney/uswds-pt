@@ -8,6 +8,18 @@
 
 import { componentRegistry } from './component-registry-v2.js';
 
+// Debug logging flag - only log verbose output in development with explicit flag
+const DEBUG = false; // Set to true during development for detailed logs
+
+/**
+ * Debug logging helper - only logs when DEBUG flag is enabled
+ */
+function debug(...args: any[]): void {
+  if (DEBUG) {
+    console.log('[WebComponentTraitManager]', ...args);
+  }
+}
+
 export interface TraitHandler {
   /**
    * Called when a trait value changes in GrapesJS
@@ -52,7 +64,7 @@ export class WebComponentTraitManager {
    */
   registerComponent(config: ComponentConfig): void {
     this.componentConfigs.set(config.tagName, config);
-    console.log(`WebComponentTraitManager: Registered ${config.tagName}`);
+    debug(`Registered ${config.tagName}`);
   }
 
   /**
@@ -110,13 +122,10 @@ export class WebComponentTraitManager {
     const handlers = this.getTraitHandlers(tagName);
     if (!handlers) return;
 
-    console.log(`WebComponentTraitManager: Selected ${tagName}`);
+    debug(`Selected ${tagName}`);
 
     // Set up trait change listeners
     this.setupTraitListeners(component, tagName, handlers);
-
-    // Set up real-time input listeners for text traits
-    this.setupTextTraitInputListeners(component, tagName, handlers);
   }
 
   /**
@@ -133,10 +142,8 @@ export class WebComponentTraitManager {
       this.activeListeners.delete(listenerId);
     }
 
-    // Remove text trait, DOM input listeners, and observers
+    // Remove attribute observers
     const cleanupKeys = Array.from(this.activeListeners.keys()).filter(key =>
-      key.startsWith(`${componentId}-trait-`) ||
-      key.startsWith(`${componentId}-dom-`) ||
       key.startsWith(`${componentId}-observer`)
     );
     cleanupKeys.forEach(key => {
@@ -161,7 +168,7 @@ export class WebComponentTraitManager {
     const element = component.getEl();
     if (!element) return;
 
-    console.log(`WebComponentTraitManager: Mounted ${tagName}`);
+    debug(`Mounted ${tagName}`);
 
     // Initialize all traits
     this.initializeTraits(component, element, handlers);
@@ -208,7 +215,7 @@ export class WebComponentTraitManager {
           const handler = handlers[attributeName];
           if (handler) {
             const newValue = element.getAttribute(attributeName);
-            console.log(`WebComponentTraitManager: Observed attribute '${attributeName}' changed to:`, newValue);
+            debug(`Observed attribute '${attributeName}' changed to:`, newValue);
 
             // For text attributes, ensure button textContent stays in sync
             if (attributeName === 'text') {
@@ -217,7 +224,7 @@ export class WebComponentTraitManager {
                 if (button) {
                   if (button.textContent !== newValue) {
                     button.textContent = newValue || '';
-                    console.log(`WebComponentTraitManager: Synced button textContent to:`, newValue);
+                    debug(`Synced button textContent to:`, newValue);
                   }
                   return true;
                 }
@@ -227,7 +234,7 @@ export class WebComponentTraitManager {
               // Try immediately
               if (!syncButtonText()) {
                 // Button doesn't exist yet, wait for it
-                console.log(`WebComponentTraitManager: Button not found for sync, will retry...`);
+                debug(`Button not found for sync, will retry...`);
                 setTimeout(() => {
                   if (!syncButtonText()) {
                     console.warn(`WebComponentTraitManager: Button element still not found after delay`);
@@ -250,7 +257,7 @@ export class WebComponentTraitManager {
     const observerId = `${componentId}-observer`;
     this.activeListeners.set(observerId, () => observer.disconnect());
 
-    console.log(`WebComponentTraitManager: Set up attribute observer for ${component.get('tagName')}`);
+    debug(`Set up attribute observer for ${component.get('tagName')}`);
   }
 
   /**
@@ -289,19 +296,19 @@ export class WebComponentTraitManager {
     const attributes = component.get('attributes') || {};
     const previousAttributes = component.previous('attributes') || {};
 
-    console.log('WebComponentTraitManager: All attributes:', JSON.stringify(attributes));
-    console.log('WebComponentTraitManager: Previous attributes:', JSON.stringify(previousAttributes));
+    debug('All attributes:', JSON.stringify(attributes));
+    debug('Previous attributes:', JSON.stringify(previousAttributes));
 
     // Process each trait that has changed
     Object.entries(handlers).forEach(([traitName, handler]) => {
       const newValue = attributes[traitName];
       const oldValue = previousAttributes[traitName];
 
-      console.log(`WebComponentTraitManager: Checking '${traitName}': newValue="${newValue}" (${typeof newValue}), oldValue="${oldValue}" (${typeof oldValue}), changed=${newValue !== oldValue}`);
+      debug(`Checking '${traitName}': newValue="${newValue}" (${typeof newValue}), oldValue="${oldValue}" (${typeof oldValue}), changed=${newValue !== oldValue}`);
 
       // Only process if value actually changed
       if (newValue !== oldValue) {
-        console.log(`WebComponentTraitManager: Trait '${traitName}' changed from`, oldValue, 'to', newValue);
+        debug(`Trait '${traitName}' changed from`, oldValue, 'to', newValue);
 
         try {
           handler.onChange(element, newValue, oldValue);
@@ -313,163 +320,6 @@ export class WebComponentTraitManager {
         } catch (error) {
           console.error(`WebComponentTraitManager: Error handling trait '${traitName}':`, error);
         }
-      }
-    });
-  }
-
-  /**
-   * Set up real-time input listeners for text traits
-   * This allows text fields to update as you type, not just on Enter/blur
-   */
-  private setupTextTraitInputListeners(component: any, tagName: string, handlers: Record<string, TraitHandler>): void {
-    const componentId = component.getId();
-
-    // Use GrapesJS's trait event system to listen for trait value changes
-    const textTraits = Object.entries(handlers).filter(
-      ([name]) => name === 'text' || name.endsWith('Text') || name.endsWith('-text')
-    );
-
-    textTraits.forEach(([traitName, handler]) => {
-      const listenerId = `${componentId}-trait-${traitName}`;
-
-      // Listen for changes to this specific trait
-      const traitListener = () => {
-        const element = component.getEl();
-        if (!element) return;
-
-        const attributes = component.get('attributes') || {};
-        const newValue = attributes[traitName];
-
-        // Call the onChange handler directly
-        handler.onChange(element, newValue);
-
-        console.log(`WebComponentTraitManager: Trait '${traitName}' updated to:`, newValue);
-      };
-
-      // Listen to the specific attribute change
-      component.on(`change:attributes:${traitName}`, traitListener);
-
-      this.activeListeners.set(listenerId, () => {
-        component.off(`change:attributes:${traitName}`, traitListener);
-      });
-
-      console.log(`WebComponentTraitManager: Added trait listener for '${traitName}'`);
-    });
-
-    // Note: setupDOMInputListeners is dead code - will be removed in Step 4
-    // setTimeout(() => {
-    //   this.setupDOMInputListeners(component, tagName, textTraits);
-    // }, 200);
-  }
-
-  /**
-   * Set up DOM input listeners as a fallback
-   */
-  private setupDOMInputListeners(
-    component: any,
-    config: ComponentConfig,
-    textTraits: Array<[string, TraitHandler]>
-  ): void {
-    const componentId = component.getId();
-
-    textTraits.forEach(([traitName, handler]) => {
-      // Debug: Search more broadly - all inputs regardless of type
-      const allInputs = document.querySelectorAll('input, textarea');
-      console.log(`WebComponentTraitManager: Found ${allInputs.length} inputs/textareas in document`);
-
-      allInputs.forEach((input, index) => {
-        const inputEl = input as HTMLInputElement;
-        console.log(`Input ${index}:`, {
-          type: inputEl.type,
-          name: inputEl.name,
-          id: inputEl.id,
-          placeholder: inputEl.placeholder,
-          value: inputEl.value,
-          className: inputEl.className,
-          parentClasses: inputEl.parentElement?.className,
-          dataset: { ...inputEl.dataset },
-        });
-      });
-
-      // Also check for iframes (GrapesJS Studio SDK might use iframes for panels)
-      const iframes = document.querySelectorAll('iframe');
-      console.log(`WebComponentTraitManager: Found ${iframes.length} iframes`);
-
-      iframes.forEach((iframe, index) => {
-        try {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (iframeDoc) {
-            const iframeInputs = iframeDoc.querySelectorAll('input, textarea');
-            console.log(`Iframe ${index}: Found ${iframeInputs.length} inputs`);
-            iframeInputs.forEach((input, inputIndex) => {
-              const inputEl = input as HTMLInputElement;
-              console.log(`  Iframe ${index} Input ${inputIndex}:`, {
-                type: inputEl.type,
-                name: inputEl.name,
-                value: inputEl.value,
-                className: inputEl.className,
-              });
-            });
-          }
-        } catch (e) {
-          console.log(`Iframe ${index}: Cannot access (cross-origin or not loaded)`);
-        }
-      });
-
-      // Try multiple selectors to find the trait input
-      const selectors = [
-        `input[name="${traitName}"]`,
-        `textarea[name="${traitName}"]`,
-        `[data-trait="${traitName}"] input`,
-        `[data-trait="${traitName}"] textarea`,
-        `.gjs-trt-trait[data-trait-name="${traitName}"] input`,
-        `.gjs-trt-trait[data-trait-name="${traitName}"] textarea`,
-        `#trait-${traitName}`,
-      ];
-
-      let traitInput: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-      for (const selector of selectors) {
-        traitInput = document.querySelector(selector);
-        if (traitInput) {
-          console.log(`WebComponentTraitManager: Found trait input with selector: ${selector}`);
-          break;
-        }
-      }
-
-      // If still not found, try to find by value or placeholder
-      if (!traitInput) {
-        const currentValue = component.get('attributes')?.[traitName];
-        if (currentValue) {
-          allInputs.forEach((input) => {
-            const inputEl = input as HTMLInputElement;
-            if (inputEl.value === currentValue || inputEl.placeholder === traitName) {
-              console.log(`WebComponentTraitManager: Found trait input by value match: ${currentValue}`);
-              traitInput = inputEl;
-            }
-          });
-        }
-      }
-
-      if (traitInput) {
-        const inputListener = (e: Event) => {
-          const newValue = (e.target as HTMLInputElement).value;
-          console.log(`WebComponentTraitManager: DOM input event for '${traitName}':`, newValue);
-
-          // Update the component attribute immediately (this will trigger change:attributes:${traitName})
-          component.addAttributes({ [traitName]: newValue });
-        };
-
-        traitInput.addEventListener('input', inputListener);
-
-        const cleanupKey = `${componentId}-dom-${traitName}`;
-        this.activeListeners.set(cleanupKey, () => {
-          traitInput!.removeEventListener('input', inputListener);
-        });
-
-        console.log(`WebComponentTraitManager: Added DOM input listener for '${traitName}'`);
-      } else {
-        console.warn(`WebComponentTraitManager: Could not find DOM input for trait '${traitName}'`);
       }
     });
   }

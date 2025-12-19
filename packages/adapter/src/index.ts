@@ -20,12 +20,9 @@ export {
   CDN_STYLES,
   generateComponentLoaderScript,
 } from './constants.js';
-export { COMPONENT_TRAITS, registerComponentTraits } from './component-traits.js';
 export { WebComponentTraitManager } from './WebComponentTraitManager.js';
-// Old exports (deprecated, will be removed in Step 6):
-// export { getAllComponentConfigs, usaButtonConfig } from './component-configs.js';
 
-// New exports from component-registry-v2:
+// Unified component registry exports:
 export {
   componentRegistry,
   createAttributeTrait,

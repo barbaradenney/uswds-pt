@@ -7,12 +7,20 @@ import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
   CDN_URLS,
-  COMPONENT_TRAITS,
   WebComponentTraitManager,
-  // getAllComponentConfigs, // Deprecated - using componentRegistry now
+  componentRegistry,
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
+
+// Debug logging flag
+const DEBUG = false; // Set to true for verbose logging
+
+function debug(...args: any[]): void {
+  if (DEBUG) {
+    console.log('[USWDS-PT]', ...args);
+  }
+}
 
 // Create a GrapesJS plugin to register USWDS component types
 // Plugins are loaded before the editor parses content, ensuring our types are available
@@ -24,29 +32,34 @@ const uswdsComponentsPlugin = (editor: any) => {
     return;
   }
 
-  console.log('USWDS-PT: Registering component types via plugin...');
+  debug('Registering component types via plugin...');
 
-  // Register component types
-  for (const config of COMPONENT_TRAITS) {
+  // Register component types from componentRegistry
+  const registeredComponents = componentRegistry.getAll();
+
+  for (const registration of registeredComponents) {
+    // Get trait definitions for GrapesJS
+    const traitDefinitions = componentRegistry.getTraitDefinitions(registration.tagName);
+
     // Build default values from trait defaults
     const traitDefaults: Record<string, any> = {};
-    config.traits.forEach(trait => {
+    traitDefinitions.forEach(trait => {
       if (trait.default !== undefined) {
         traitDefaults[trait.name] = trait.default;
       }
     });
 
-    Components.addType(config.tagName, {
+    Components.addType(registration.tagName, {
       // Match any element with this tag name
-      isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === config.tagName,
+      isComponent: (el: HTMLElement) => el.tagName?.toLowerCase() === registration.tagName,
 
       model: {
         defaults: {
-          tagName: config.tagName,
+          tagName: registration.tagName,
           draggable: true,
-          droppable: config.droppable ?? false,
+          droppable: registration.droppable ?? false,
           // Define the traits that will show in the properties panel
-          traits: config.traits,
+          traits: traitDefinitions,
           // Set default values from traits
           ...traitDefaults,
           // Web components handle their own rendering
@@ -56,17 +69,17 @@ const uswdsComponentsPlugin = (editor: any) => {
     });
   }
 
-  console.log('USWDS-PT: Component types registered successfully');
+  debug('Component types registered successfully');
 
   // Initialize WebComponentTraitManager to handle trait ↔ web component sync
-  console.log('USWDS-PT: Initializing WebComponentTraitManager...');
+  debug('Initializing WebComponentTraitManager...');
   const traitManager = new WebComponentTraitManager(editor);
 
   // Note: Component configurations now auto-registered via componentRegistry
   // No need to call registerComponents - the WebComponentTraitManager will
   // automatically check componentRegistry.getTraitHandlers() via backward compatibility
 
-  console.log('USWDS-PT: WebComponentTraitManager initialized (using componentRegistry)');
+  debug('WebComponentTraitManager initialized (using componentRegistry)');
 
   // Handle the special case of select options
   editor.on('component:update:options-json', (model: any) => {
@@ -87,9 +100,6 @@ const uswdsComponentsPlugin = (editor: any) => {
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
-
-// Debug: Log when this module loads
-console.log('🔧 USWDS-PT Editor module loaded');
 
 // Use any for editor ref to avoid type conflicts between SDK versions
 type EditorInstance = any;
@@ -346,7 +356,7 @@ export function Editor() {
           }}
           onReady={(editor) => {
             editorRef.current = editor;
-            console.log('USWDS-PT: Editor ready');
+            debug('Editor ready');
 
             // WebComponentTraitManager handles all trait synchronization automatically
             // No manual sync code needed!
@@ -361,35 +371,31 @@ export function Editor() {
             if (canvas) {
               const doc = canvas.getDocument();
               if (doc) {
-                console.log('USWDS-PT: Loading CSS and JS into canvas iframe...');
-                console.log('USWDS-PT: Base URL:', doc.location.href);
+                debug('Loading USWDS resources into canvas iframe');
 
                 // 1. Load USWDS base CSS for styling
                 const uswdsCss = doc.createElement('link');
                 uswdsCss.rel = 'stylesheet';
                 uswdsCss.href = CDN_URLS.uswdsCss;
-                uswdsCss.onload = () => console.log('USWDS-PT: ✅ USWDS CSS loaded');
-                uswdsCss.onerror = (e) => console.error('USWDS-PT: ❌ USWDS CSS failed to load', e);
+                uswdsCss.onload = () => debug('USWDS CSS loaded');
+                uswdsCss.onerror = (e) => console.error('USWDS-PT: USWDS CSS failed to load', e);
                 doc.head.appendChild(uswdsCss);
-                console.log('USWDS-PT: Added USWDS CSS:', CDN_URLS.uswdsCss);
 
                 // 2. Load USWDS-WC bundle CSS (component-specific styles)
                 const uswdsWcCss = doc.createElement('link');
                 uswdsWcCss.rel = 'stylesheet';
                 uswdsWcCss.href = CDN_URLS.uswdsWcCss;
-                uswdsWcCss.onload = () => console.log('USWDS-PT: ✅ USWDS-WC CSS loaded');
-                uswdsWcCss.onerror = (e) => console.error('USWDS-PT: ❌ USWDS-WC CSS failed to load', e);
+                uswdsWcCss.onload = () => debug('USWDS-WC CSS loaded');
+                uswdsWcCss.onerror = (e) => console.error('USWDS-PT: USWDS-WC CSS failed to load', e);
                 doc.head.appendChild(uswdsWcCss);
-                console.log('USWDS-PT: Added USWDS-WC CSS:', CDN_URLS.uswdsWcCss);
 
                 // 3. Load USWDS-WC bundle JS (all web components with Lit bundled)
                 const uswdsWcScript = doc.createElement('script');
                 uswdsWcScript.type = 'module';
                 uswdsWcScript.src = CDN_URLS.uswdsWcJs;
-                uswdsWcScript.onload = () => console.log('USWDS-PT: ✅ USWDS-WC JS loaded');
-                uswdsWcScript.onerror = (e) => console.error('USWDS-PT: ❌ USWDS-WC JS failed to load', e);
+                uswdsWcScript.onload = () => debug('USWDS-WC JS loaded');
+                uswdsWcScript.onerror = (e) => console.error('USWDS-PT: USWDS-WC JS failed to load', e);
                 doc.head.appendChild(uswdsWcScript);
-                console.log('USWDS-PT: Added USWDS-WC JS:', CDN_URLS.uswdsWcJs);
               }
             }
           }}

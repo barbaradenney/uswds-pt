@@ -3,7 +3,7 @@
  * Single source of truth for component traits (UI definitions + behavior handlers)
  */
 
-import type { TraitDefinition } from './component-traits.js';
+import type { GrapesTrait } from './types.js';
 
 // ============================================================================
 // Core Types
@@ -34,7 +34,7 @@ export interface TraitHandler {
  */
 export interface UnifiedTrait {
   /** UI definition for GrapesJS trait panel */
-  definition: TraitDefinition;
+  definition: GrapesTrait;
 
   /** Handler for trait value changes */
   handler: TraitHandler;
@@ -337,7 +337,7 @@ class ComponentRegistry {
   /**
    * Extract trait definitions for GrapesJS (UI only)
    */
-  getTraitDefinitions(tagName: string): TraitDefinition[] {
+  getTraitDefinitions(tagName: string): GrapesTrait[] {
     const component = this.components.get(tagName);
     if (!component) return [];
 
@@ -430,6 +430,86 @@ componentRegistry.register({
       type: 'text',
       placeholder: 'https://...',
       removeDefaults: [''],
+    }),
+  },
+});
+
+/**
+ * USA Text Input Component
+ *
+ * Standard text input field with USWDS styling and accessibility features.
+ */
+componentRegistry.register({
+  tagName: 'usa-text-input',
+  droppable: false,
+
+  traits: {
+    // Label - displayed above input
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Label',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'field',
+      placeholder: 'field-name',
+    }),
+
+    // Placeholder - hint text inside input
+    placeholder: createAttributeTrait('placeholder', {
+      label: 'Placeholder',
+      type: 'text',
+      placeholder: 'Enter text...',
+      removeDefaults: [''],
+    }),
+
+    // Type - input type
+    type: createAttributeTrait('type', {
+      label: 'Input Type',
+      type: 'select',
+      default: 'text',
+      removeDefaults: ['text'],
+      options: [
+        { id: 'text', label: 'Text' },
+        { id: 'email', label: 'Email' },
+        { id: 'tel', label: 'Telephone' },
+        { id: 'url', label: 'URL' },
+        { id: 'number', label: 'Number' },
+        { id: 'password', label: 'Password' },
+      ],
+    }),
+
+    // Value - default value
+    value: createAttributeTrait('value', {
+      label: 'Default Value',
+      type: 'text',
+      placeholder: '',
+      removeDefaults: [''],
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'input',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'input',
+    }),
+
+    // Readonly - boolean flag
+    readonly: createBooleanTrait('readonly', {
+      label: 'Read Only',
+      default: false,
+      syncToInternal: 'input',
     }),
   },
 });
