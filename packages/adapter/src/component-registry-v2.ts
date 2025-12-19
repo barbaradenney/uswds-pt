@@ -813,29 +813,3 @@ componentRegistry.register({
   },
 });
 
-/**
- * USA Fieldset Component
- *
- * Semantic grouping container for related form controls (radio buttons, checkboxes).
- * Uses <fieldset> and <legend> for accessibility and proper form structure.
- */
-componentRegistry.register({
-  tagName: 'usa-fieldset',
-  droppable: true, // Can contain other components
-
-  traits: {
-    // Legend - label for the group
-    legend: createAttributeTrait('legend', {
-      label: 'Legend',
-      type: 'text',
-      default: 'Select an option',
-      placeholder: 'Group label',
-    }),
-
-    // Error - error state
-    error: createBooleanTrait('error', {
-      label: 'Error State',
-      default: false,
-    }),
-  },
-});
