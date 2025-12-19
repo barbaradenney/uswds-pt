@@ -667,18 +667,18 @@ componentRegistry.register({
 
     // Name - form field name
     name: createAttributeTrait('name', {
-      label: 'Name',
+      label: 'Name (same name groups checkboxes)',
       type: 'text',
       default: 'field',
-      placeholder: 'field-name',
+      placeholder: 'e.g., "interests" or "options"',
     }),
 
     // Value - value when checked
     value: createAttributeTrait('value', {
-      label: 'Value',
+      label: 'Value (unique for each checkbox)',
       type: 'text',
       default: 'on',
-      placeholder: 'on',
+      placeholder: 'e.g., "sports", "music", "art"',
     }),
 
     // Checked - initial checked state
@@ -729,18 +729,18 @@ componentRegistry.register({
 
     // Name - form field name (groups radios together)
     name: createAttributeTrait('name', {
-      label: 'Name',
+      label: 'Name (use same name to group radios)',
       type: 'text',
       default: 'radio-group',
-      placeholder: 'radio-group',
+      placeholder: 'e.g., "size" or "color"',
     }),
 
     // Value - value when selected
     value: createAttributeTrait('value', {
-      label: 'Value',
+      label: 'Value (unique for each radio)',
       type: 'text',
       default: '1',
-      placeholder: 'value',
+      placeholder: 'e.g., "small", "medium", "large"',
     }),
 
     // Checked - initial checked state
