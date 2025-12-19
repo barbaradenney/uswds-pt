@@ -491,6 +491,36 @@ componentRegistry.register({
       removeDefaults: [''],
     }),
 
+    // Width - responsive width option
+    width: createAttributeTrait('width', {
+      label: 'Width',
+      type: 'select',
+      default: '',
+      removeDefaults: ['', 'default'],
+      options: [
+        { id: '', label: 'Default' },
+        { id: '2xs', label: '2XS (5 characters)' },
+        { id: 'xs', label: 'XS (9 characters)' },
+        { id: 'sm', label: 'Small (13 characters)' },
+        { id: 'md', label: 'Medium (20 characters)' },
+        { id: 'lg', label: 'Large (30 characters)' },
+        { id: 'xl', label: 'XL (40 characters)' },
+        { id: '2xl', label: '2XL (50 characters)' },
+      ],
+    }),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Success - success state
+    success: createBooleanTrait('success', {
+      label: 'Success State',
+      default: false,
+    }),
+
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
@@ -565,6 +595,36 @@ componentRegistry.register({
       removeDefaults: [''],
     }),
 
+    // Width - responsive width option
+    width: createAttributeTrait('width', {
+      label: 'Width',
+      type: 'select',
+      default: '',
+      removeDefaults: ['', 'default'],
+      options: [
+        { id: '', label: 'Default' },
+        { id: '2xs', label: '2XS (5 characters)' },
+        { id: 'xs', label: 'XS (9 characters)' },
+        { id: 'sm', label: 'Small (13 characters)' },
+        { id: 'md', label: 'Medium (20 characters)' },
+        { id: 'lg', label: 'Large (30 characters)' },
+        { id: 'xl', label: 'XL (40 characters)' },
+        { id: '2xl', label: '2XL (50 characters)' },
+      ],
+    }),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Success - success state
+    success: createBooleanTrait('success', {
+      label: 'Success State',
+      default: false,
+    }),
+
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
@@ -628,6 +688,12 @@ componentRegistry.register({
       syncToInternal: 'input[type="checkbox"]',
     }),
 
+    // Tile - tile variant for larger touch targets
+    tile: createBooleanTrait('tile', {
+      label: 'Tile Variant',
+      default: false,
+    }),
+
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
@@ -682,6 +748,12 @@ componentRegistry.register({
       label: 'Checked',
       default: false,
       syncToInternal: 'input[type="radio"]',
+    }),
+
+    // Tile - tile variant for larger touch targets
+    tile: createBooleanTrait('tile', {
+      label: 'Tile Variant',
+      default: false,
     }),
 
     // Required - boolean flag
