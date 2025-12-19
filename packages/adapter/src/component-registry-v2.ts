@@ -513,3 +513,77 @@ componentRegistry.register({
     }),
   },
 });
+
+/**
+ * USA Textarea Component
+ *
+ * Multi-line text input field with USWDS styling and accessibility features.
+ */
+componentRegistry.register({
+  tagName: 'usa-textarea',
+  droppable: false,
+
+  traits: {
+    // Label - displayed above textarea
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Label',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'field',
+      placeholder: 'field-name',
+    }),
+
+    // Placeholder - hint text inside textarea
+    placeholder: createAttributeTrait('placeholder', {
+      label: 'Placeholder',
+      type: 'text',
+      placeholder: 'Enter text...',
+      removeDefaults: [''],
+    }),
+
+    // Rows - number of visible text lines
+    rows: createAttributeTrait('rows', {
+      label: 'Rows',
+      type: 'number',
+      default: 5,
+      min: 1,
+      max: 20,
+      removeDefaults: [5],
+    }),
+
+    // Value - default value
+    value: createAttributeTrait('value', {
+      label: 'Default Value',
+      type: 'textarea',
+      placeholder: '',
+      removeDefaults: [''],
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'textarea',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'textarea',
+    }),
+
+    // Readonly - boolean flag
+    readonly: createBooleanTrait('readonly', {
+      label: 'Read Only',
+      default: false,
+      syncToInternal: 'textarea',
+    }),
+  },
+});
