@@ -813,3 +813,178 @@ componentRegistry.register({
   },
 });
 
+/**
+ * USA File Input Component
+ *
+ * File upload input with USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-file-input',
+  droppable: false,
+
+  traits: {
+    // Label - displayed above file input
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Upload file',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'file',
+      placeholder: 'field-name',
+    }),
+
+    // Accept - allowed file types
+    accept: createAttributeTrait('accept', {
+      label: 'Accept (file types)',
+      type: 'text',
+      placeholder: 'e.g., ".pdf,.doc,.docx" or "image/*"',
+      removeDefaults: [''],
+    }),
+
+    // Multiple - allow multiple files
+    multiple: createBooleanTrait('multiple', {
+      label: 'Multiple Files',
+      default: false,
+      syncToInternal: 'input[type="file"]',
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'input[type="file"]',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'input[type="file"]',
+    }),
+  },
+});
+
+/**
+ * USA Range Slider Component
+ *
+ * Range slider input with USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-range-slider',
+  droppable: false,
+
+  traits: {
+    // Label - displayed above slider
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Range',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'range',
+      placeholder: 'field-name',
+    }),
+
+    // Min - minimum value
+    min: createAttributeTrait('min', {
+      label: 'Minimum',
+      type: 'number',
+      default: 0,
+      removeDefaults: [0],
+    }),
+
+    // Max - maximum value
+    max: createAttributeTrait('max', {
+      label: 'Maximum',
+      type: 'number',
+      default: 100,
+      removeDefaults: [100],
+    }),
+
+    // Step - increment step
+    step: createAttributeTrait('step', {
+      label: 'Step',
+      type: 'number',
+      default: 1,
+      removeDefaults: [1],
+    }),
+
+    // Value - default value
+    value: createAttributeTrait('value', {
+      label: 'Default Value',
+      type: 'number',
+      default: 50,
+      removeDefaults: [''],
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'input[type="range"]',
+    }),
+  },
+});
+
+/**
+ * USA Link Component
+ *
+ * Link/anchor element with USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-link',
+  droppable: false,
+
+  traits: {
+    // Text - link text content
+    text: createInternalSyncTrait('text', {
+      label: 'Link Text',
+      default: 'Link',
+      internalSelector: 'a',
+      syncProperty: 'textContent',
+    }),
+
+    // Href - link URL
+    href: createAttributeTrait('href', {
+      label: 'URL',
+      type: 'text',
+      default: '#',
+      placeholder: 'https://...',
+    }),
+
+    // Variant - link variant
+    variant: createAttributeTrait('variant', {
+      label: 'Variant',
+      type: 'select',
+      default: '',
+      removeDefaults: ['', 'default'],
+      options: [
+        { id: '', label: 'Default' },
+        { id: 'external', label: 'External' },
+        { id: 'unstyled', label: 'Unstyled' },
+      ],
+    }),
+
+    // Target - link target
+    target: createAttributeTrait('target', {
+      label: 'Target',
+      type: 'select',
+      default: '',
+      removeDefaults: ['', '_self'],
+      options: [
+        { id: '', label: 'Same Window' },
+        { id: '_blank', label: 'New Window' },
+      ],
+    }),
+  },
+});
+

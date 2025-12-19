@@ -110,11 +110,11 @@ export const COMPONENT_ICONS: Record<string, string> = {
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Actions
   'usa-button': 'Click me',
+  'usa-link': '',
   // 'usa-button-group': `<usa-button-group>
   // <usa-button>Button 1</usa-button>
   // <usa-button variant="outline">Button 2</usa-button>
   // </usa-button-group>`,
-  // 'usa-link': '<usa-link href="#">Link text</usa-link>',
   // 'usa-search': '<usa-search label="Search" size="small"></usa-search>',
 
   // Forms
@@ -123,11 +123,11 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-select': '',
   'usa-checkbox': '',
   'usa-radio': '',
+  'usa-file-input': '',
+  'usa-range-slider': '',
   // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
   // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
-  // 'usa-file-input': '<usa-file-input label="Upload file" name="file"></usa-file-input>',
   // 'usa-combo-box': '<usa-combo-box label="Combo box" name="combo"></usa-combo-box>',
-  // 'usa-range-slider': '<usa-range-slider label="Range" name="range" min="0" max="100"></usa-range-slider>',
 
   // // Navigation
   // 'usa-header': `<usa-header>
