@@ -118,6 +118,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   // 'usa-search': '<usa-search label="Search" size="small"></usa-search>',
 
   // Forms
+  'usa-fieldset': '',
   'usa-text-input': '',
   'usa-textarea': '',
   'usa-select': '',
