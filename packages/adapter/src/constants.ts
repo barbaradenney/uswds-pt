@@ -120,9 +120,9 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   // Forms
   'usa-text-input': '',
   'usa-textarea': '',
-  // 'usa-select': '<usa-select label="Label" name="field" defaultOption="Select an option"></usa-select>',
-  // 'usa-checkbox': '<usa-checkbox label="Checkbox label" name="field"></usa-checkbox>',
-  // 'usa-radio': '<usa-radio label="Radio label" name="field" value="1"></usa-radio>',
+  'usa-select': '',
+  'usa-checkbox': '',
+  'usa-radio': '',
   // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
   // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
   // 'usa-file-input': '<usa-file-input label="Upload file" name="file"></usa-file-input>',

@@ -587,3 +587,156 @@ componentRegistry.register({
     }),
   },
 });
+
+/**
+ * USA Checkbox Component
+ *
+ * Checkbox input with label and USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-checkbox',
+  droppable: false,
+
+  traits: {
+    // Label - displayed next to checkbox
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Checkbox label',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'field',
+      placeholder: 'field-name',
+    }),
+
+    // Value - value when checked
+    value: createAttributeTrait('value', {
+      label: 'Value',
+      type: 'text',
+      default: 'on',
+      placeholder: 'on',
+    }),
+
+    // Checked - initial checked state
+    checked: createBooleanTrait('checked', {
+      label: 'Checked',
+      default: false,
+      syncToInternal: 'input[type="checkbox"]',
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'input[type="checkbox"]',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'input[type="checkbox"]',
+    }),
+  },
+});
+
+/**
+ * USA Radio Component
+ *
+ * Radio button input with label and USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-radio',
+  droppable: false,
+
+  traits: {
+    // Label - displayed next to radio button
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Radio label',
+    }),
+
+    // Name - form field name (groups radios together)
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'radio-group',
+      placeholder: 'radio-group',
+    }),
+
+    // Value - value when selected
+    value: createAttributeTrait('value', {
+      label: 'Value',
+      type: 'text',
+      default: '1',
+      placeholder: 'value',
+    }),
+
+    // Checked - initial checked state
+    checked: createBooleanTrait('checked', {
+      label: 'Checked',
+      default: false,
+      syncToInternal: 'input[type="radio"]',
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'input[type="radio"]',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'input[type="radio"]',
+    }),
+  },
+});
+
+/**
+ * USA Select Component
+ *
+ * Dropdown select input with USWDS styling.
+ */
+componentRegistry.register({
+  tagName: 'usa-select',
+  droppable: false,
+
+  traits: {
+    // Label - displayed above select
+    label: createAttributeTrait('label', {
+      label: 'Label',
+      type: 'text',
+      default: 'Label',
+    }),
+
+    // Name - form field name
+    name: createAttributeTrait('name', {
+      label: 'Name',
+      type: 'text',
+      default: 'field',
+      placeholder: 'field-name',
+    }),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'select',
+    }),
+
+    // Disabled - boolean flag
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+      syncToInternal: 'select',
+    }),
+  },
+});
