@@ -431,6 +431,80 @@ componentRegistry.register({
       placeholder: 'https://...',
       removeDefaults: [''],
     }),
+
+    // Modal ID - opens a modal when clicked
+    'modal-id': {
+      definition: {
+        name: 'modal-id',
+        label: 'Opens Modal (ID)',
+        type: 'text',
+        default: '',
+        placeholder: 'e.g., my-modal',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const modalId = value?.trim() || '';
+          if (modalId) {
+            element.setAttribute('data-open-modal', '');
+            element.setAttribute('aria-controls', modalId);
+            // Also set on internal button
+            const button = element.querySelector('button');
+            if (button) {
+              button.setAttribute('data-open-modal', '');
+              button.setAttribute('aria-controls', modalId);
+            }
+          } else {
+            element.removeAttribute('data-open-modal');
+            element.removeAttribute('aria-controls');
+            const button = element.querySelector('button');
+            if (button) {
+              button.removeAttribute('data-open-modal');
+              button.removeAttribute('aria-controls');
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('aria-controls') || '';
+        },
+      },
+    },
+
+    // Tooltip - adds tooltip on hover
+    tooltip: {
+      definition: {
+        name: 'tooltip',
+        label: 'Tooltip Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Tooltip text on hover',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const tooltipText = value?.trim() || '';
+          if (tooltipText) {
+            element.setAttribute('title', tooltipText);
+            element.classList.add('usa-tooltip');
+            // Also set on internal button
+            const button = element.querySelector('button');
+            if (button) {
+              button.setAttribute('title', tooltipText);
+              button.classList.add('usa-tooltip');
+            }
+          } else {
+            element.removeAttribute('title');
+            element.classList.remove('usa-tooltip');
+            const button = element.querySelector('button');
+            if (button) {
+              button.removeAttribute('title');
+              button.classList.remove('usa-tooltip');
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('title') || '';
+        },
+      },
+    },
   },
 });
 
@@ -894,37 +968,179 @@ componentRegistry.register({
       placeholder: 'field-name',
     }),
 
-    // Min - minimum value
-    min: createAttributeTrait('min', {
-      label: 'Minimum',
-      type: 'number',
-      default: 0,
-      removeDefaults: [0],
-    }),
+    // Min - minimum value (custom handler to sync to internal input)
+    min: {
+      definition: {
+        name: 'min',
+        label: 'Minimum',
+        type: 'number',
+        default: 0,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          // Parse value as number, default to 0 for empty/invalid
+          const parsed = parseFloat(value);
+          const minValue = isNaN(parsed) ? 0 : parsed;
 
-    // Max - maximum value
-    max: createAttributeTrait('max', {
-      label: 'Maximum',
-      type: 'number',
-      default: 100,
-      removeDefaults: [100],
-    }),
+          // Set property directly on web component (Lit reactive property)
+          (element as any).min = minValue;
 
-    // Step - increment step
-    step: createAttributeTrait('step', {
-      label: 'Step',
-      type: 'number',
-      default: 1,
-      removeDefaults: [1],
-    }),
+          // Also set attribute for persistence
+          element.setAttribute('min', String(minValue));
 
-    // Value - default value
-    value: createAttributeTrait('value', {
-      label: 'Default Value',
-      type: 'number',
-      default: 50,
-      removeDefaults: [''],
-    }),
+          // Sync to internal input and preserve value
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            const currentValue = parseFloat(input.value) || 50;
+            input.min = String(minValue);
+
+            // Clamp current value to new min/max range
+            const max = parseFloat(input.max) || 100;
+            const clampedValue = Math.max(minValue, Math.min(max, currentValue));
+
+            // Update both input and web component
+            input.value = String(clampedValue);
+            (element as any).value = clampedValue;
+          }
+
+          // Force Lit to re-render
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          // Read from Lit property first
+          if ((element as any).min !== undefined) {
+            return (element as any).min;
+          }
+          const attr = element.getAttribute('min');
+          if (attr !== null) return parseFloat(attr) || 0;
+          return 0;
+        },
+      },
+    },
+
+    // Max - maximum value (custom handler to sync to internal input)
+    max: {
+      definition: {
+        name: 'max',
+        label: 'Maximum',
+        type: 'number',
+        default: 100,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          // Parse value as number, default to 100 for empty/invalid
+          const parsed = parseFloat(value);
+          const maxValue = isNaN(parsed) ? 100 : parsed;
+
+          // Set property directly on web component (Lit reactive property)
+          (element as any).max = maxValue;
+
+          // Also set attribute for persistence
+          element.setAttribute('max', String(maxValue));
+
+          // Sync to internal input and preserve value
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            const currentValue = parseFloat(input.value) || 50;
+            input.max = String(maxValue);
+
+            // Clamp current value to new min/max range
+            const min = parseFloat(input.min) || 0;
+            const clampedValue = Math.max(min, Math.min(maxValue, currentValue));
+
+            // Update both input and web component
+            input.value = String(clampedValue);
+            (element as any).value = clampedValue;
+          }
+
+          // Force Lit to re-render
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          // Read from Lit property first
+          if ((element as any).max !== undefined) {
+            return (element as any).max;
+          }
+          const attr = element.getAttribute('max');
+          if (attr !== null) return parseFloat(attr) || 100;
+          return 100;
+        },
+      },
+    },
+
+    // Step - increment step (custom handler to sync to internal input)
+    step: {
+      definition: {
+        name: 'step',
+        label: 'Step',
+        type: 'number',
+        default: 1,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          // Parse value as number, default to 1 for empty/invalid
+          const parsed = parseFloat(value);
+          const stepValue = isNaN(parsed) || parsed <= 0 ? 1 : parsed;
+
+          // Always set step attribute
+          element.setAttribute('step', String(stepValue));
+
+          // Sync to internal input
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            input.step = String(stepValue);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const attr = element.getAttribute('step');
+          if (attr !== null) return parseFloat(attr) || 1;
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            return parseFloat(input.step) || 1;
+          }
+          return 1;
+        },
+      },
+    },
+
+    // Value - default value (custom handler to sync to internal input)
+    value: {
+      definition: {
+        name: 'value',
+        label: 'Default Value',
+        type: 'number',
+        default: 50,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          // Parse value as number, default to 50 for empty/invalid
+          const parsed = parseFloat(value);
+          const numValue = isNaN(parsed) ? 50 : parsed;
+
+          // Set attribute on web component
+          element.setAttribute('value', String(numValue));
+
+          // Sync to internal input element
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            input.value = String(numValue);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const attr = element.getAttribute('value');
+          if (attr !== null) return parseFloat(attr) || 50;
+          const input = element.querySelector('input[type="range"]');
+          if (input instanceof HTMLInputElement) {
+            return parseFloat(input.value) || 50;
+          }
+          return 50;
+        },
+      },
+    },
 
     // Disabled - boolean flag
     disabled: createBooleanTrait('disabled', {
@@ -936,21 +1152,859 @@ componentRegistry.register({
 });
 
 /**
+ * USA Date Picker Component
+ *
+ * Date input with calendar popup for date selection.
+ */
+componentRegistry.register({
+  tagName: 'usa-date-picker',
+  droppable: false,
+
+  traits: {
+    // Label
+    label: {
+      definition: {
+        name: 'label',
+        label: 'Label',
+        type: 'text',
+        default: 'Date',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const label = value || 'Date';
+          element.setAttribute('label', label);
+          (element as any).label = label;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Name
+    name: {
+      definition: {
+        name: 'name',
+        label: 'Field Name',
+        type: 'text',
+        default: 'date-picker',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const name = value || 'date-picker';
+          element.setAttribute('name', name);
+          (element as any).name = name;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Hint
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional helper text',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hint = value || '';
+          if (hint) {
+            element.setAttribute('hint', hint);
+          } else {
+            element.removeAttribute('hint');
+          }
+          (element as any).hint = hint;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Min Date
+    'min-date': {
+      definition: {
+        name: 'min-date',
+        label: 'Minimum Date',
+        type: 'text',
+        default: '',
+        placeholder: 'YYYY-MM-DD',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const minDate = value || '';
+          if (minDate) {
+            element.setAttribute('minDate', minDate);
+          } else {
+            element.removeAttribute('minDate');
+          }
+          (element as any).minDate = minDate;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Max Date
+    'max-date': {
+      definition: {
+        name: 'max-date',
+        label: 'Maximum Date',
+        type: 'text',
+        default: '',
+        placeholder: 'YYYY-MM-DD',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const maxDate = value || '';
+          if (maxDate) {
+            element.setAttribute('maxDate', maxDate);
+          } else {
+            element.removeAttribute('maxDate');
+          }
+          (element as any).maxDate = maxDate;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Required
+    required: {
+      definition: {
+        name: 'required',
+        label: 'Required',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isRequired = value === true || value === 'true' || value === '';
+          if (isRequired) {
+            element.setAttribute('required', '');
+          } else {
+            element.removeAttribute('required');
+          }
+          (element as any).required = isRequired;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Disabled
+    disabled: {
+      definition: {
+        name: 'disabled',
+        label: 'Disabled',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isDisabled = value === true || value === 'true' || value === '';
+          if (isDisabled) {
+            element.setAttribute('disabled', '');
+          } else {
+            element.removeAttribute('disabled');
+          }
+          (element as any).disabled = isDisabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Time Picker Component
+ *
+ * Time input with dropdown for time selection.
+ */
+componentRegistry.register({
+  tagName: 'usa-time-picker',
+  droppable: false,
+
+  traits: {
+    // Label
+    label: {
+      definition: {
+        name: 'label',
+        label: 'Label',
+        type: 'text',
+        default: 'Time',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const label = value || 'Time';
+          element.setAttribute('label', label);
+          (element as any).label = label;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Name
+    name: {
+      definition: {
+        name: 'name',
+        label: 'Field Name',
+        type: 'text',
+        default: 'time-picker',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const name = value || 'time-picker';
+          element.setAttribute('name', name);
+          (element as any).name = name;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Hint
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional helper text',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hint = value || '';
+          if (hint) {
+            element.setAttribute('hint', hint);
+          } else {
+            element.removeAttribute('hint');
+          }
+          (element as any).hint = hint;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Min Time
+    'min-time': {
+      definition: {
+        name: 'min-time',
+        label: 'Minimum Time',
+        type: 'text',
+        default: '',
+        placeholder: 'e.g., 09:00',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const minTime = value || '';
+          if (minTime) {
+            element.setAttribute('minTime', minTime);
+          } else {
+            element.removeAttribute('minTime');
+          }
+          (element as any).minTime = minTime;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Max Time
+    'max-time': {
+      definition: {
+        name: 'max-time',
+        label: 'Maximum Time',
+        type: 'text',
+        default: '',
+        placeholder: 'e.g., 17:00',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const maxTime = value || '';
+          if (maxTime) {
+            element.setAttribute('maxTime', maxTime);
+          } else {
+            element.removeAttribute('maxTime');
+          }
+          (element as any).maxTime = maxTime;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Step (minutes)
+    step: {
+      definition: {
+        name: 'step',
+        label: 'Step (minutes)',
+        type: 'select',
+        default: '30',
+        options: [
+          { id: '15', label: '15 minutes' },
+          { id: '30', label: '30 minutes' },
+          { id: '60', label: '1 hour' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const step = value || '30';
+          element.setAttribute('step', step);
+          (element as any).step = step;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Required
+    required: {
+      definition: {
+        name: 'required',
+        label: 'Required',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isRequired = value === true || value === 'true' || value === '';
+          if (isRequired) {
+            element.setAttribute('required', '');
+          } else {
+            element.removeAttribute('required');
+          }
+          (element as any).required = isRequired;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Disabled
+    disabled: {
+      definition: {
+        name: 'disabled',
+        label: 'Disabled',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isDisabled = value === true || value === 'true' || value === '';
+          if (isDisabled) {
+            element.setAttribute('disabled', '');
+          } else {
+            element.removeAttribute('disabled');
+          }
+          (element as any).disabled = isDisabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+  },
+});
+
+/**
+ * Helper to rebuild combo box options from individual traits
+ */
+function rebuildComboBoxOptions(element: HTMLElement, count: number): void {
+  const options: Array<{ value: string; label: string }> = [];
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`option${i}-label`) || `Option ${i}`;
+    const value = element.getAttribute(`option${i}-value`) || `option${i}`;
+    options.push({ value, label });
+  }
+  (element as any).options = options;
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper to create a combo box option trait
+ */
+function createComboBoxOptionTrait(
+  optionNum: number,
+  traitType: 'label' | 'value'
+): UnifiedTrait {
+  const attrName = `option${optionNum}-${traitType}`;
+  const label = traitType === 'label' ? `Option ${optionNum} Label` : `Option ${optionNum} Value`;
+  const defaultValue = traitType === 'label' ? `Option ${optionNum}` : `option${optionNum}`;
+
+  // Visibility function - only show if optionNum <= option-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['option-count'] || '3', 10);
+    return optionNum <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('option-count') || '3', 10);
+        if (optionNum <= count) {
+          rebuildComboBoxOptions(element, count);
+        }
+      },
+    },
+  };
+}
+
+/**
+ * USA Combo Box Component
+ *
+ * Searchable dropdown with typeahead filtering.
+ */
+componentRegistry.register({
+  tagName: 'usa-combo-box',
+  droppable: false,
+
+  traits: {
+    // Label
+    label: {
+      definition: {
+        name: 'label',
+        label: 'Label',
+        type: 'text',
+        default: 'Select an option',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const label = value || 'Select an option';
+          element.setAttribute('label', label);
+          (element as any).label = label;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Name
+    name: {
+      definition: {
+        name: 'name',
+        label: 'Field Name',
+        type: 'text',
+        default: 'combo-box',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const name = value || 'combo-box';
+          element.setAttribute('name', name);
+          (element as any).name = name;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Placeholder
+    placeholder: {
+      definition: {
+        name: 'placeholder',
+        label: 'Placeholder',
+        type: 'text',
+        default: 'Select...',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const placeholder = value || '';
+          if (placeholder) {
+            element.setAttribute('placeholder', placeholder);
+          } else {
+            element.removeAttribute('placeholder');
+          }
+          (element as any).placeholder = placeholder;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Hint
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional helper text',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hint = value || '';
+          if (hint) {
+            element.setAttribute('hint', hint);
+          } else {
+            element.removeAttribute('hint');
+          }
+          (element as any).hint = hint;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Option count
+    'option-count': {
+      definition: {
+        name: 'option-count',
+        label: 'Number of Options',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '1', label: '1 Option' },
+          { id: '2', label: '2 Options' },
+          { id: '3', label: '3 Options' },
+          { id: '4', label: '4 Options' },
+          { id: '5', label: '5 Options' },
+          { id: '6', label: '6 Options' },
+          { id: '7', label: '7 Options' },
+          { id: '8', label: '8 Options' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '3', 10);
+          element.setAttribute('option-count', String(count));
+          rebuildComboBoxOptions(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const count = parseInt(value || '3', 10);
+            rebuildComboBoxOptions(element, count);
+          }, 100);
+        },
+      },
+    },
+
+    // Option 1
+    'option1-label': createComboBoxOptionTrait(1, 'label'),
+    'option1-value': createComboBoxOptionTrait(1, 'value'),
+
+    // Option 2
+    'option2-label': createComboBoxOptionTrait(2, 'label'),
+    'option2-value': createComboBoxOptionTrait(2, 'value'),
+
+    // Option 3
+    'option3-label': createComboBoxOptionTrait(3, 'label'),
+    'option3-value': createComboBoxOptionTrait(3, 'value'),
+
+    // Option 4
+    'option4-label': createComboBoxOptionTrait(4, 'label'),
+    'option4-value': createComboBoxOptionTrait(4, 'value'),
+
+    // Option 5
+    'option5-label': createComboBoxOptionTrait(5, 'label'),
+    'option5-value': createComboBoxOptionTrait(5, 'value'),
+
+    // Option 6
+    'option6-label': createComboBoxOptionTrait(6, 'label'),
+    'option6-value': createComboBoxOptionTrait(6, 'value'),
+
+    // Option 7
+    'option7-label': createComboBoxOptionTrait(7, 'label'),
+    'option7-value': createComboBoxOptionTrait(7, 'value'),
+
+    // Option 8
+    'option8-label': createComboBoxOptionTrait(8, 'label'),
+    'option8-value': createComboBoxOptionTrait(8, 'value'),
+
+    // Disable Filtering
+    'disable-filtering': {
+      definition: {
+        name: 'disable-filtering',
+        label: 'Disable Filtering',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isDisabled = value === true || value === 'true' || value === '';
+          if (isDisabled) {
+            element.setAttribute('disableFiltering', '');
+          } else {
+            element.removeAttribute('disableFiltering');
+          }
+          (element as any).disableFiltering = isDisabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Required
+    required: {
+      definition: {
+        name: 'required',
+        label: 'Required',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isRequired = value === true || value === 'true' || value === '';
+          if (isRequired) {
+            element.setAttribute('required', '');
+          } else {
+            element.removeAttribute('required');
+          }
+          (element as any).required = isRequired;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Disabled
+    disabled: {
+      definition: {
+        name: 'disabled',
+        label: 'Disabled',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isDisabled = value === true || value === 'true' || value === '';
+          if (isDisabled) {
+            element.setAttribute('disabled', '');
+          } else {
+            element.removeAttribute('disabled');
+          }
+          (element as any).disabled = isDisabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+  },
+});
+
+/**
  * USA Link Component
  *
  * Link/anchor element with USWDS styling.
  */
+/**
+ * USA Fieldset Component
+ *
+ * A fieldset container for grouping form controls with a legend.
+ * Used for checkbox groups, radio groups, and other related form fields.
+ */
+componentRegistry.register({
+  tagName: 'fieldset',
+  droppable: true, // Can contain checkboxes, radios, etc.
+
+  traits: {
+    // Legend - group label displayed at the top
+    legend: {
+      definition: {
+        name: 'legend',
+        label: 'Group Label',
+        type: 'text',
+        default: 'Group Label',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const legendText = value || 'Group Label';
+          // Find or create the legend element
+          let legend = element.querySelector('legend');
+          if (!legend) {
+            legend = document.createElement('legend');
+            legend.className = 'usa-legend';
+            element.insertBefore(legend, element.firstChild);
+          }
+          legend.textContent = legendText;
+        },
+        getValue: (element: HTMLElement) => {
+          const legend = element.querySelector('legend');
+          return legend?.textContent || 'Group Label';
+        },
+      },
+    },
+
+    // Required - shows required indicator on the legend
+    required: {
+      definition: {
+        name: 'required',
+        label: 'Required',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isRequired = value === true || value === 'true' || value === '';
+          const legend = element.querySelector('legend');
+
+          if (!legend) return;
+
+          // Find or manage the required indicator
+          let requiredIndicator = legend.querySelector('.usa-hint--required');
+
+          if (isRequired) {
+            if (!requiredIndicator) {
+              requiredIndicator = document.createElement('abbr');
+              requiredIndicator.className = 'usa-hint usa-hint--required';
+              requiredIndicator.setAttribute('title', 'required');
+              requiredIndicator.textContent = '*';
+              legend.appendChild(requiredIndicator);
+            }
+          } else {
+            requiredIndicator?.remove();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const legend = element.querySelector('legend');
+          return !!legend?.querySelector('.usa-hint--required');
+        },
+      },
+    },
+
+    // Hint - optional hint text displayed below the legend
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional hint or instructions',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hintText = value?.trim() || '';
+          let hint = element.querySelector('.usa-hint');
+          const legend = element.querySelector('legend');
+
+          if (hintText) {
+            // Create or update hint element
+            if (!hint) {
+              hint = document.createElement('span');
+              hint.className = 'usa-hint';
+              // Insert after legend, before form controls
+              if (legend && legend.nextSibling) {
+                element.insertBefore(hint, legend.nextSibling);
+              } else if (legend) {
+                element.appendChild(hint);
+              } else {
+                element.insertBefore(hint, element.firstChild);
+              }
+            }
+            hint.textContent = hintText;
+          } else {
+            // Remove hint element if text is empty
+            hint?.remove();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const hint = element.querySelector('.usa-hint');
+          return hint?.textContent || '';
+        },
+      },
+    },
+
+    // Count - number of options in the group
+    count: {
+      definition: {
+        name: 'count',
+        label: 'Number of Options',
+        type: 'number',
+        default: 3,
+        min: 1,
+        max: 10,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const targetCount = Math.max(1, Math.min(10, parseInt(value) || 3));
+
+          // Find existing checkboxes or radios
+          const checkboxes = element.querySelectorAll('usa-checkbox');
+          const radios = element.querySelectorAll('usa-radio');
+
+          // Determine which type we're working with
+          const isCheckbox = checkboxes.length > 0;
+          const isRadio = radios.length > 0;
+          const existingItems = isCheckbox ? checkboxes : radios;
+          const tagName = isCheckbox ? 'usa-checkbox' : 'usa-radio';
+
+          // Get the group name from existing items
+          const firstItem = existingItems[0] as HTMLElement | undefined;
+          const groupName = firstItem?.getAttribute('name') || (isCheckbox ? 'checkbox-group' : 'radio-group');
+
+          const currentCount = existingItems.length;
+
+          if (targetCount > currentCount) {
+            // Add more items
+            for (let i = currentCount + 1; i <= targetCount; i++) {
+              const newItem = document.createElement(tagName);
+              newItem.setAttribute('label', `Option ${i}`);
+              newItem.setAttribute('name', groupName);
+              newItem.setAttribute('value', `option${i}`);
+              element.appendChild(newItem);
+            }
+          } else if (targetCount < currentCount) {
+            // Remove items from the end
+            for (let i = currentCount - 1; i >= targetCount; i--) {
+              existingItems[i]?.remove();
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const checkboxes = element.querySelectorAll('usa-checkbox');
+          const radios = element.querySelectorAll('usa-radio');
+          return Math.max(checkboxes.length, radios.length) || 3;
+        },
+      },
+    },
+  },
+});
+
 componentRegistry.register({
   tagName: 'usa-link',
   droppable: false,
 
   traits: {
-    // Text - link text content
-    text: createInternalSyncTrait('text', {
+    // Text - link text content (uses text property on web component)
+    text: createAttributeTrait('text', {
       label: 'Link Text',
+      type: 'text',
       default: 'Link',
-      internalSelector: 'a',
-      syncProperty: 'textContent',
     }),
 
     // Href - link URL
@@ -985,6 +2039,2849 @@ componentRegistry.register({
         { id: '_blank', label: 'New Window' },
       ],
     }),
+
+    // Modal ID - opens a modal when clicked
+    'modal-id': {
+      definition: {
+        name: 'modal-id',
+        label: 'Opens Modal (ID)',
+        type: 'text',
+        default: '',
+        placeholder: 'e.g., my-modal',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const modalId = value?.trim() || '';
+          if (modalId) {
+            element.setAttribute('data-open-modal', '');
+            element.setAttribute('aria-controls', modalId);
+            // Also set on internal anchor
+            const anchor = element.querySelector('a');
+            if (anchor) {
+              anchor.setAttribute('data-open-modal', '');
+              anchor.setAttribute('aria-controls', modalId);
+            }
+          } else {
+            element.removeAttribute('data-open-modal');
+            element.removeAttribute('aria-controls');
+            const anchor = element.querySelector('a');
+            if (anchor) {
+              anchor.removeAttribute('data-open-modal');
+              anchor.removeAttribute('aria-controls');
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('aria-controls') || '';
+        },
+      },
+    },
+
+    // Tooltip - adds tooltip on hover
+    tooltip: {
+      definition: {
+        name: 'tooltip',
+        label: 'Tooltip Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Tooltip text on hover',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const tooltipText = value?.trim() || '';
+          if (tooltipText) {
+            element.setAttribute('title', tooltipText);
+            element.classList.add('usa-tooltip');
+            // Also set on internal anchor
+            const anchor = element.querySelector('a');
+            if (anchor) {
+              anchor.setAttribute('title', tooltipText);
+              anchor.classList.add('usa-tooltip');
+            }
+          } else {
+            element.removeAttribute('title');
+            element.classList.remove('usa-tooltip');
+            const anchor = element.querySelector('a');
+            if (anchor) {
+              anchor.removeAttribute('title');
+              anchor.classList.remove('usa-tooltip');
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('title') || '';
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Button Group Component
+ *
+ * Groups multiple buttons together with proper spacing and optional segmented style.
+ * Uses dynamic traits for easy editing of individual buttons.
+ */
+
+// Helper function to rebuild button group buttons from individual traits
+function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
+  // Find the ul container (button group renders as ul > li > button)
+  let ul = element.querySelector('ul.usa-button-group');
+
+  // If no ul exists yet, the component may need to render first
+  if (!ul) {
+    // Try to trigger initial render
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+    }
+    return;
+  }
+
+  // Clear existing buttons
+  ul.innerHTML = '';
+
+  // Create new buttons based on traits
+  for (let i = 1; i <= count; i++) {
+    const text = element.getAttribute(`btn${i}-text`) || `Button ${i}`;
+    const variant = element.getAttribute(`btn${i}-variant`) || '';
+
+    const li = document.createElement('li');
+    li.className = 'usa-button-group__item';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'usa-button';
+    if (variant && variant !== 'default') {
+      button.classList.add(`usa-button--${variant}`);
+    }
+    button.textContent = text;
+
+    li.appendChild(button);
+    ul.appendChild(li);
+  }
+}
+
+// Helper to create a button group item trait
+function createButtonGroupItemTrait(index: number, type: 'text' | 'variant') {
+  const attrName = `btn${index}-${type}`;
+  const isText = type === 'text';
+
+  // Visibility function - only show if index <= btn-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['btn-count'] || '2', 10);
+    return index <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Button ${index} ${isText ? 'Text' : 'Variant'}`,
+      type: isText ? 'text' : 'select',
+      default: isText ? `Button ${index}` : (index === 1 ? 'default' : 'outline'),
+      visible: visibleFn,
+      ...(isText ? {} : {
+        options: [
+          { id: 'default', label: 'Default' },
+          { id: 'secondary', label: 'Secondary' },
+          { id: 'accent-cool', label: 'Accent Cool' },
+          { id: 'accent-warm', label: 'Accent Warm' },
+          { id: 'base', label: 'Base' },
+          { id: 'outline', label: 'Outline' },
+        ],
+      }),
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+        rebuildButtonGroupButtons(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-button-group',
+  droppable: false, // We manage buttons via traits now
+
+  traits: {
+    // Type - default or segmented
+    type: createAttributeTrait('type', {
+      label: 'Type',
+      type: 'select',
+      default: 'default',
+      removeDefaults: ['default'],
+      options: [
+        { id: 'default', label: 'Default' },
+        { id: 'segmented', label: 'Segmented' },
+      ],
+    }),
+
+    // Count - number of buttons
+    'btn-count': {
+      definition: {
+        name: 'btn-count',
+        label: 'Number of Buttons',
+        type: 'number',
+        default: 2,
+        min: 1,
+        max: 4,
+      },
+      handler: {
+        onInit: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(4, parseInt(value) || 2));
+          element.setAttribute('btn-count', String(count));
+          // Delay to ensure web component is ready
+          setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
+        },
+        onChange: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(4, parseInt(value) || 2));
+          element.setAttribute('btn-count', String(count));
+          rebuildButtonGroupButtons(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('btn-count') || '2') || 2;
+        },
+      },
+    },
+
+    // Individual button traits (up to 4 buttons)
+    'btn1-text': createButtonGroupItemTrait(1, 'text'),
+    'btn1-variant': createButtonGroupItemTrait(1, 'variant'),
+    'btn2-text': createButtonGroupItemTrait(2, 'text'),
+    'btn2-variant': createButtonGroupItemTrait(2, 'variant'),
+    'btn3-text': createButtonGroupItemTrait(3, 'text'),
+    'btn3-variant': createButtonGroupItemTrait(3, 'variant'),
+    'btn4-text': createButtonGroupItemTrait(4, 'text'),
+    'btn4-variant': createButtonGroupItemTrait(4, 'variant'),
+  },
+});
+
+/**
+ * USA Search Component
+ *
+ * Search input with button, available in multiple sizes.
+ */
+componentRegistry.register({
+  tagName: 'usa-search',
+  droppable: false,
+
+  traits: {
+    // Size - small, medium, or big
+    size: createAttributeTrait('size', {
+      label: 'Size',
+      type: 'select',
+      default: 'medium',
+      removeDefaults: ['medium'],
+      options: [
+        { id: 'small', label: 'Small (icon only)' },
+        { id: 'medium', label: 'Medium' },
+        { id: 'big', label: 'Big' },
+      ],
+    }),
+
+    // Placeholder text
+    placeholder: {
+      definition: {
+        name: 'placeholder',
+        label: 'Placeholder',
+        type: 'text',
+        default: 'Search',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Search';
+          (element as any).placeholder = text;
+          // Also update the internal input
+          const input = element.querySelector('.usa-search__input') as HTMLInputElement;
+          if (input) {
+            input.placeholder = text;
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).placeholder || 'Search';
+        },
+      },
+    },
+
+    // Label for accessibility
+    label: createAttributeTrait('label', {
+      label: 'Label (accessibility)',
+      type: 'text',
+      default: '',
+      placeholder: 'Search',
+    }),
+
+    // Button text - needs to set property directly (not attribute)
+    'button-text': {
+      definition: {
+        name: 'button-text',
+        label: 'Button Text',
+        type: 'text',
+        default: 'Search',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Search';
+          // Set the Lit property directly
+          (element as any).buttonText = text;
+          // Also update the internal button text
+          const buttonSpan = element.querySelector('.usa-search__submit-text');
+          if (buttonSpan) {
+            buttonSpan.textContent = text;
+          }
+          // Trigger re-render
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).buttonText || 'Search';
+        },
+      },
+    },
+
+    // Disabled state
+    disabled: createBooleanTrait('disabled', {
+      label: 'Disabled',
+      default: false,
+    }),
+  },
+});
+
+/**
+ * USA Breadcrumb Component
+ *
+ * Navigation breadcrumb trail showing the user's location in the site hierarchy.
+ * Uses dynamic traits for easy editing of individual breadcrumb items.
+ */
+
+// Helper function to rebuild breadcrumb items from individual traits
+function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
+  const items: Array<{ label: string; href: string; current?: boolean }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`item${i}-label`) || `Item ${i}`;
+    const href = element.getAttribute(`item${i}-href`) || '#';
+    const isLast = i === count;
+
+    items.push({
+      label,
+      href: isLast ? undefined! : href, // Last item doesn't need href
+      current: isLast,
+    });
+  }
+
+  // Update the web component's items property
+  (element as any).items = items;
+
+  // Trigger Lit component re-render
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+// Helper to create a breadcrumb item trait
+function createBreadcrumbItemTrait(index: number, type: 'label' | 'href') {
+  const attrName = `item${index}-${type}`;
+  const isLabel = type === 'label';
+
+  // Visibility function - only show if index <= count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
+    return index <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Item ${index} ${isLabel ? 'Label' : 'URL'}`,
+      type: 'text',
+      default: isLabel ? (index === 1 ? 'Home' : index === 2 ? 'Section' : 'Current Page') : '#',
+      placeholder: isLabel ? 'Link text' : 'https://...',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        rebuildBreadcrumbItems(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-breadcrumb',
+  droppable: false,
+
+  traits: {
+    // Count - number of breadcrumb items
+    count: {
+      definition: {
+        name: 'count',
+        label: 'Number of Items',
+        type: 'number',
+        default: 3,
+        min: 1,
+        max: 6,
+      },
+      handler: {
+        onInit: (element: HTMLElement, value: any) => {
+          // Initialize items on component mount
+          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          // Delay to ensure web component is ready
+          setTimeout(() => rebuildBreadcrumbItems(element, count), 100);
+        },
+        onChange: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          rebuildBreadcrumbItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('count') || '3') || 3;
+        },
+      },
+    },
+
+    // Wrap - allow breadcrumbs to wrap to multiple lines
+    wrap: createBooleanTrait('wrap', {
+      label: 'Allow Wrapping',
+      default: false,
+    }),
+
+    // Individual item traits (up to 6 items)
+    'item1-label': createBreadcrumbItemTrait(1, 'label'),
+    'item1-href': createBreadcrumbItemTrait(1, 'href'),
+    'item2-label': createBreadcrumbItemTrait(2, 'label'),
+    'item2-href': createBreadcrumbItemTrait(2, 'href'),
+    'item3-label': createBreadcrumbItemTrait(3, 'label'),
+    'item3-href': createBreadcrumbItemTrait(3, 'href'),
+    'item4-label': createBreadcrumbItemTrait(4, 'label'),
+    'item4-href': createBreadcrumbItemTrait(4, 'href'),
+    'item5-label': createBreadcrumbItemTrait(5, 'label'),
+    'item5-href': createBreadcrumbItemTrait(5, 'href'),
+    'item6-label': createBreadcrumbItemTrait(6, 'label'),
+    'item6-href': createBreadcrumbItemTrait(6, 'href'),
+  },
+});
+
+/**
+ * USA Pagination Component
+ *
+ * Page navigation with numbered pages and previous/next buttons.
+ */
+componentRegistry.register({
+  tagName: 'usa-pagination',
+  droppable: false,
+
+  traits: {
+    // Current page
+    'current-page': {
+      definition: {
+        name: 'current-page',
+        label: 'Current Page',
+        type: 'number',
+        default: 1,
+        min: 1,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const page = parseInt(value) || 1;
+          element.setAttribute('current-page', String(page));
+          (element as any).currentPage = page;
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('current-page') || '1') || 1;
+        },
+      },
+    },
+
+    // Total pages
+    'total-pages': {
+      definition: {
+        name: 'total-pages',
+        label: 'Total Pages',
+        type: 'number',
+        default: 5,
+        min: 1,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const pages = parseInt(value) || 5;
+          element.setAttribute('total-pages', String(pages));
+          (element as any).totalPages = pages;
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('total-pages') || '5') || 5;
+        },
+      },
+    },
+
+    // Max visible pages
+    'max-visible': {
+      definition: {
+        name: 'max-visible',
+        label: 'Max Visible Pages',
+        type: 'number',
+        default: 7,
+        min: 3,
+        max: 10,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const max = parseInt(value) || 7;
+          element.setAttribute('max-visible', String(max));
+          (element as any).maxVisible = max;
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('max-visible') || '7') || 7;
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Side Navigation Component
+ *
+ * Vertical navigation menu for secondary navigation within a section.
+ * Uses dynamic traits for easy editing of individual navigation items.
+ */
+
+// Helper function to rebuild side nav items from individual traits
+function rebuildSideNavItems(element: HTMLElement, count: number): void {
+  const items: Array<{ label: string; href: string; current?: boolean }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`item${i}-label`) || `Nav Item ${i}`;
+    const href = element.getAttribute(`item${i}-href`) || '#';
+    const current = element.getAttribute(`item${i}-current`) === 'true' || element.getAttribute(`item${i}-current`) === '';
+
+    items.push({
+      label,
+      href,
+      current,
+    });
+  }
+
+  // Update the web component's items property
+  (element as any).items = items;
+
+  // Trigger Lit component re-render
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+// Helper to create a side nav item trait
+function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current') {
+  const attrName = `item${index}-${type}`;
+  const isLabel = type === 'label';
+  const isCurrent = type === 'current';
+
+  // Visibility function - only show if index <= count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['count'] || '4', 10);
+    return index <= count;
+  };
+
+  if (isCurrent) {
+    // Boolean trait for "current" (active page)
+    return {
+      definition: {
+        name: attrName,
+        label: `Item ${index} Current`,
+        type: 'checkbox',
+        default: index === 3, // Third item is current by default
+        visible: visibleFn,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isCurrent = value === true || value === 'true' || value === '';
+          if (isCurrent) {
+            element.setAttribute(attrName, 'true');
+          } else {
+            element.removeAttribute(attrName);
+          }
+          const count = parseInt(element.getAttribute('count') || '4') || 4;
+          rebuildSideNavItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute(attrName) === 'true' || element.hasAttribute(attrName);
+        },
+      },
+    };
+  }
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Item ${index} ${isLabel ? 'Label' : 'URL'}`,
+      type: 'text',
+      default: isLabel
+        ? (index === 1 ? 'Home' : index === 2 ? 'About' : index === 3 ? 'Services' : 'Contact')
+        : '#',
+      placeholder: isLabel ? 'Link text' : 'https://...',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('count') || '4') || 4;
+        rebuildSideNavItems(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-side-navigation',
+  droppable: false,
+
+  traits: {
+    // Aria label
+    'aria-label': createAttributeTrait('aria-label', {
+      label: 'Aria Label',
+      type: 'text',
+      default: 'Secondary navigation',
+    }),
+
+    // Count - number of navigation items
+    count: {
+      definition: {
+        name: 'count',
+        label: 'Number of Items',
+        type: 'number',
+        default: 4,
+        min: 1,
+        max: 8,
+      },
+      handler: {
+        onInit: (element: HTMLElement, value: any) => {
+          // Initialize items on component mount
+          const count = Math.max(1, Math.min(8, parseInt(value) || 4));
+          element.setAttribute('count', String(count));
+          // Delay to ensure web component is ready
+          setTimeout(() => rebuildSideNavItems(element, count), 100);
+        },
+        onChange: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(8, parseInt(value) || 4));
+          element.setAttribute('count', String(count));
+          rebuildSideNavItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('count') || '4') || 4;
+        },
+      },
+    },
+
+    // Individual item traits (up to 8 items)
+    'item1-label': createSideNavItemTrait(1, 'label'),
+    'item1-href': createSideNavItemTrait(1, 'href'),
+    'item1-current': createSideNavItemTrait(1, 'current'),
+    'item2-label': createSideNavItemTrait(2, 'label'),
+    'item2-href': createSideNavItemTrait(2, 'href'),
+    'item2-current': createSideNavItemTrait(2, 'current'),
+    'item3-label': createSideNavItemTrait(3, 'label'),
+    'item3-href': createSideNavItemTrait(3, 'href'),
+    'item3-current': createSideNavItemTrait(3, 'current'),
+    'item4-label': createSideNavItemTrait(4, 'label'),
+    'item4-href': createSideNavItemTrait(4, 'href'),
+    'item4-current': createSideNavItemTrait(4, 'current'),
+    'item5-label': createSideNavItemTrait(5, 'label'),
+    'item5-href': createSideNavItemTrait(5, 'href'),
+    'item5-current': createSideNavItemTrait(5, 'current'),
+    'item6-label': createSideNavItemTrait(6, 'label'),
+    'item6-href': createSideNavItemTrait(6, 'href'),
+    'item6-current': createSideNavItemTrait(6, 'current'),
+    'item7-label': createSideNavItemTrait(7, 'label'),
+    'item7-href': createSideNavItemTrait(7, 'href'),
+    'item7-current': createSideNavItemTrait(7, 'current'),
+    'item8-label': createSideNavItemTrait(8, 'label'),
+    'item8-href': createSideNavItemTrait(8, 'href'),
+    'item8-current': createSideNavItemTrait(8, 'current'),
+  },
+});
+
+// ============================================================================
+// Data Display Components
+// ============================================================================
+
+/**
+ * USA Card Component
+ *
+ * A flexible card component for displaying content with optional media.
+ */
+componentRegistry.register({
+  tagName: 'usa-card',
+  droppable: false,
+
+  traits: {
+    // Heading - card title
+    heading: {
+      definition: {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Card Title',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('heading', text);
+          (element as any).heading = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).heading || element.getAttribute('heading') || '';
+        },
+      },
+    },
+
+    // Text - card body content
+    text: {
+      definition: {
+        name: 'text',
+        label: 'Body Text',
+        type: 'textarea',
+        default: 'Card content goes here.',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('text', text);
+          (element as any).text = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).text || element.getAttribute('text') || '';
+        },
+      },
+    },
+
+    // Heading level
+    'heading-level': {
+      definition: {
+        name: 'heading-level',
+        label: 'Heading Level',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '1', label: 'H1' },
+          { id: '2', label: 'H2' },
+          { id: '3', label: 'H3' },
+          { id: '4', label: 'H4' },
+          { id: '5', label: 'H5' },
+          { id: '6', label: 'H6' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const level = value || '3';
+          element.setAttribute('heading-level', level);
+          (element as any).headingLevel = level;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headingLevel || element.getAttribute('heading-level') || '3';
+        },
+      },
+    },
+
+    // Media type - with auto-placeholder when switching types
+    'media-type': {
+      definition: {
+        name: 'media-type',
+        label: 'Media Type',
+        type: 'select',
+        default: 'none',
+        options: [
+          { id: 'none', label: 'None' },
+          { id: 'image', label: 'Image' },
+          { id: 'video', label: 'Video' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const mediaType = value || 'none';
+          element.setAttribute('mediaType', mediaType);
+          (element as any).mediaType = mediaType;
+
+          // Auto-set placeholder media when switching to image/video if no src set
+          const currentSrc = element.getAttribute('mediaSrc') || '';
+          if (mediaType === 'image' && !currentSrc) {
+            const placeholderImage = 'https://picsum.photos/800/450';
+            element.setAttribute('mediaSrc', placeholderImage);
+            (element as any).mediaSrc = placeholderImage;
+            element.setAttribute('media-alt', 'Placeholder image');
+            (element as any).mediaAlt = 'Placeholder image';
+          } else if (mediaType === 'video' && !currentSrc) {
+            // Use a public domain sample video
+            const placeholderVideo = 'https://www.w3schools.com/html/mov_bbb.mp4';
+            element.setAttribute('mediaSrc', placeholderVideo);
+            (element as any).mediaSrc = placeholderVideo;
+            element.setAttribute('media-alt', 'Sample video');
+            (element as any).mediaAlt = 'Sample video';
+          }
+
+          // Trigger re-render
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('mediaType') || 'none';
+        },
+      },
+    },
+
+    // Media source URL
+    'media-src': {
+      definition: {
+        name: 'media-src',
+        label: 'Media URL',
+        type: 'text',
+        default: '',
+        placeholder: 'https://example.com/image.jpg',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('mediaSrc', value || '');
+          (element as any).mediaSrc = value || '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('mediaSrc') || '';
+        },
+      },
+    },
+
+    // Media alt text
+    'media-alt': {
+      definition: {
+        name: 'media-alt',
+        label: 'Media Alt Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Image description',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('media-alt', value || '');
+          (element as any).mediaAlt = value || '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('media-alt') || '';
+        },
+      },
+    },
+
+    // Media position
+    'media-position': {
+      definition: {
+        name: 'media-position',
+        label: 'Media Position',
+        type: 'select',
+        default: 'inset',
+        options: [
+          { id: 'inset', label: 'Inset' },
+          { id: 'exdent', label: 'Exdent' },
+          { id: 'right', label: 'Right (Flag)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const position = value || 'inset';
+          element.setAttribute('mediaPosition', position);
+          (element as any).mediaPosition = position;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).mediaPosition || element.getAttribute('mediaPosition') || 'inset';
+        },
+      },
+    },
+
+    // Flag layout (horizontal)
+    'flag-layout': {
+      definition: {
+        name: 'flag-layout',
+        label: 'Flag Layout (Horizontal)',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('flagLayout', '');
+          } else {
+            element.removeAttribute('flagLayout');
+          }
+          (element as any).flagLayout = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).flagLayout || element.hasAttribute('flagLayout');
+        },
+      },
+    },
+
+    // Header first
+    'header-first': {
+      definition: {
+        name: 'header-first',
+        label: 'Header Before Media',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('headerFirst', '');
+          } else {
+            element.removeAttribute('headerFirst');
+          }
+          (element as any).headerFirst = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headerFirst || element.hasAttribute('headerFirst');
+        },
+      },
+    },
+
+    // Footer text
+    'footer-text': {
+      definition: {
+        name: 'footer-text',
+        label: 'Footer Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional footer content',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('footer-text', text);
+          (element as any).footerText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).footerText || element.getAttribute('footer-text') || '';
+        },
+      },
+    },
+
+    // Actionable - entire card is clickable
+    actionable: {
+      definition: {
+        name: 'actionable',
+        label: 'Clickable Card',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('actionable', '');
+          } else {
+            element.removeAttribute('actionable');
+          }
+          (element as any).actionable = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).actionable || element.hasAttribute('actionable');
+        },
+      },
+    },
+
+    // Link URL for actionable cards
+    href: {
+      definition: {
+        name: 'href',
+        label: 'Link URL',
+        type: 'text',
+        default: '',
+        placeholder: 'https://...',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const url = value || '';
+          if (url) {
+            element.setAttribute('href', url);
+          } else {
+            element.removeAttribute('href');
+          }
+          (element as any).href = url;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).href || element.getAttribute('href') || '';
+        },
+      },
+    },
+
+    // Link target
+    target: {
+      definition: {
+        name: 'target',
+        label: 'Link Target',
+        type: 'select',
+        default: '',
+        options: [
+          { id: '', label: 'Same Window' },
+          { id: '_blank', label: 'New Window' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const target = value || '';
+          if (target) {
+            element.setAttribute('target', target);
+          } else {
+            element.removeAttribute('target');
+          }
+          (element as any).target = target;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).target || element.getAttribute('target') || '';
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Tag Component
+ *
+ * A small label for categorizing or marking items.
+ */
+componentRegistry.register({
+  tagName: 'usa-tag',
+  droppable: false,
+
+  traits: {
+    // Text content
+    text: {
+      definition: {
+        name: 'text',
+        label: 'Tag Text',
+        type: 'text',
+        default: 'Tag',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Tag';
+          element.setAttribute('text', text);
+          (element as any).text = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).text || element.getAttribute('text') || 'Tag';
+        },
+      },
+    },
+
+    // Big variant
+    big: {
+      definition: {
+        name: 'big',
+        label: 'Large Size',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('big', '');
+          } else {
+            element.removeAttribute('big');
+          }
+          (element as any).big = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).big || element.hasAttribute('big');
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA List Component
+ *
+ * Ordered or unordered list with USWDS styling.
+ * Uses dynamic traits for easy editing of list items.
+ */
+
+// Helper function to rebuild list items from individual traits
+function rebuildListItems(element: HTMLElement, count: number): void {
+  const type = element.getAttribute('type') || 'unordered';
+  const listTag = type === 'ordered' ? 'ol' : 'ul';
+
+  // Find the list element
+  let list = element.querySelector(listTag);
+  if (!list) {
+    // Try to trigger initial render
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+    }
+    return;
+  }
+
+  // Clear existing items
+  list.innerHTML = '';
+
+  // Create new items based on traits
+  for (let i = 1; i <= count; i++) {
+    const text = element.getAttribute(`item${i}`) || `Item ${i}`;
+    const li = document.createElement('li');
+    li.textContent = text;
+    list.appendChild(li);
+  }
+}
+
+// Helper to create a list item trait
+function createListItemTrait(index: number) {
+  const attrName = `item${index}`;
+
+  // Visibility function - only show if index <= count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
+    return index <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Item ${index}`,
+      type: 'text',
+      default: `List item ${index}`,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        rebuildListItems(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-list',
+  droppable: false,
+
+  traits: {
+    // List type
+    type: {
+      definition: {
+        name: 'type',
+        label: 'List Type',
+        type: 'select',
+        default: 'unordered',
+        options: [
+          { id: 'unordered', label: 'Bulleted' },
+          { id: 'ordered', label: 'Numbered' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('type', value || 'unordered');
+          // Trigger re-render to switch list type
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+          // Rebuild items after type change
+          setTimeout(() => {
+            const count = parseInt(element.getAttribute('count') || '3') || 3;
+            rebuildListItems(element, count);
+          }, 100);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('type') || 'unordered';
+        },
+      },
+    },
+
+    // Unstyled variant
+    unstyled: createBooleanTrait('unstyled', {
+      label: 'Unstyled',
+      default: false,
+    }),
+
+    // Count - number of list items
+    count: {
+      definition: {
+        name: 'count',
+        label: 'Number of Items',
+        type: 'number',
+        default: 3,
+        min: 1,
+        max: 10,
+      },
+      handler: {
+        onInit: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(10, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          setTimeout(() => rebuildListItems(element, count), 100);
+        },
+        onChange: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(10, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          rebuildListItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('count') || '3') || 3;
+        },
+      },
+    },
+
+    // Individual item traits (up to 10 items)
+    item1: createListItemTrait(1),
+    item2: createListItemTrait(2),
+    item3: createListItemTrait(3),
+    item4: createListItemTrait(4),
+    item5: createListItemTrait(5),
+    item6: createListItemTrait(6),
+    item7: createListItemTrait(7),
+    item8: createListItemTrait(8),
+    item9: createListItemTrait(9),
+    item10: createListItemTrait(10),
+  },
+});
+
+/**
+ * USA Collection Component
+ *
+ * A list of related items, like search results or article listings.
+ * Uses dynamic traits for easy editing of collection items.
+ */
+
+// Helper function to rebuild collection items from individual traits
+function rebuildCollectionItems(element: HTMLElement, count: number): void {
+  const items: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    href?: string;
+    date?: string;
+  }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const title = element.getAttribute(`item${i}-title`) || `Item ${i}`;
+    const description = element.getAttribute(`item${i}-description`) || '';
+    const href = element.getAttribute(`item${i}-href`) || '';
+    const date = element.getAttribute(`item${i}-date`) || '';
+
+    items.push({
+      id: `item-${i}`,
+      title,
+      description: description || undefined,
+      href: href || undefined,
+      date: date || undefined,
+    });
+  }
+
+  // Update the web component's items property
+  (element as any).items = items;
+
+  // Trigger Lit component re-render
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+// Helper to create a collection item trait
+function createCollectionItemTrait(index: number, type: 'title' | 'description' | 'href' | 'date') {
+  const attrName = `item${index}-${type}`;
+  const isTitle = type === 'title';
+  const isDescription = type === 'description';
+
+  const labels: Record<string, string> = {
+    title: 'Title',
+    description: 'Description',
+    href: 'URL',
+    date: 'Date',
+  };
+
+  const defaults: Record<string, string> = {
+    title: `Collection Item ${index}`,
+    description: '',
+    href: '',
+    date: '',
+  };
+
+  // Visibility function - only show if index <= count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
+    return index <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Item ${index} ${labels[type]}`,
+      type: isDescription ? 'textarea' : 'text',
+      default: defaults[type],
+      placeholder: isTitle ? 'Item title' : isDescription ? 'Optional description' : type === 'href' ? 'https://...' : 'YYYY-MM-DD',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        rebuildCollectionItems(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-collection',
+  droppable: false,
+
+  traits: {
+    // Count - number of collection items
+    count: {
+      definition: {
+        name: 'count',
+        label: 'Number of Items',
+        type: 'number',
+        default: 3,
+        min: 1,
+        max: 6,
+      },
+      handler: {
+        onInit: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          setTimeout(() => rebuildCollectionItems(element, count), 100);
+        },
+        onChange: (element: HTMLElement, value: any) => {
+          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          element.setAttribute('count', String(count));
+          rebuildCollectionItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return parseInt(element.getAttribute('count') || '3') || 3;
+        },
+      },
+    },
+
+    // Individual item traits (up to 6 items with title, description, href, date)
+    'item1-title': createCollectionItemTrait(1, 'title'),
+    'item1-description': createCollectionItemTrait(1, 'description'),
+    'item1-href': createCollectionItemTrait(1, 'href'),
+    'item1-date': createCollectionItemTrait(1, 'date'),
+    'item2-title': createCollectionItemTrait(2, 'title'),
+    'item2-description': createCollectionItemTrait(2, 'description'),
+    'item2-href': createCollectionItemTrait(2, 'href'),
+    'item2-date': createCollectionItemTrait(2, 'date'),
+    'item3-title': createCollectionItemTrait(3, 'title'),
+    'item3-description': createCollectionItemTrait(3, 'description'),
+    'item3-href': createCollectionItemTrait(3, 'href'),
+    'item3-date': createCollectionItemTrait(3, 'date'),
+    'item4-title': createCollectionItemTrait(4, 'title'),
+    'item4-description': createCollectionItemTrait(4, 'description'),
+    'item4-href': createCollectionItemTrait(4, 'href'),
+    'item4-date': createCollectionItemTrait(4, 'date'),
+    'item5-title': createCollectionItemTrait(5, 'title'),
+    'item5-description': createCollectionItemTrait(5, 'description'),
+    'item5-href': createCollectionItemTrait(5, 'href'),
+    'item5-date': createCollectionItemTrait(5, 'date'),
+    'item6-title': createCollectionItemTrait(6, 'title'),
+    'item6-description': createCollectionItemTrait(6, 'description'),
+    'item6-href': createCollectionItemTrait(6, 'href'),
+    'item6-date': createCollectionItemTrait(6, 'date'),
+  },
+});
+
+/**
+ * USA Summary Box Component
+ *
+ * A callout box for highlighting key information.
+ */
+componentRegistry.register({
+  tagName: 'usa-summary-box',
+  droppable: false,
+
+  traits: {
+    // Heading
+    heading: {
+      definition: {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Key Information',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Key Information';
+          element.setAttribute('heading', text);
+          (element as any).heading = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).heading || element.getAttribute('heading') || 'Key Information';
+        },
+      },
+    },
+
+    // Content
+    content: {
+      definition: {
+        name: 'content',
+        label: 'Content',
+        type: 'textarea',
+        default: 'Summary content goes here.',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('content', text);
+          (element as any).content = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).content || element.getAttribute('content') || '';
+        },
+      },
+    },
+
+    // Heading level
+    'heading-level': {
+      definition: {
+        name: 'heading-level',
+        label: 'Heading Level',
+        type: 'select',
+        default: 'h3',
+        options: [
+          { id: 'h1', label: 'H1' },
+          { id: 'h2', label: 'H2' },
+          { id: 'h3', label: 'H3' },
+          { id: 'h4', label: 'H4' },
+          { id: 'h5', label: 'H5' },
+          { id: 'h6', label: 'H6' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const level = value || 'h3';
+          element.setAttribute('heading-level', level);
+          (element as any).headingLevel = level;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headingLevel || element.getAttribute('heading-level') || 'h3';
+        },
+      },
+    },
+  },
+});
+
+// ============================================================================
+// Feedback Components
+// ============================================================================
+
+/**
+ * USA Alert Component
+ *
+ * Displays important messages to the user with different severity levels.
+ */
+componentRegistry.register({
+  tagName: 'usa-alert',
+  droppable: false,
+
+  traits: {
+    // Variant/type
+    variant: {
+      definition: {
+        name: 'variant',
+        label: 'Type',
+        type: 'select',
+        default: 'info',
+        options: [
+          { id: 'info', label: 'Info' },
+          { id: 'success', label: 'Success' },
+          { id: 'warning', label: 'Warning' },
+          { id: 'error', label: 'Error' },
+          { id: 'emergency', label: 'Emergency' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const variant = value || 'info';
+          element.setAttribute('variant', variant);
+          (element as any).variant = variant;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).variant || element.getAttribute('variant') || 'info';
+        },
+      },
+    },
+
+    // Heading
+    heading: {
+      definition: {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Alert heading',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('heading', text);
+          (element as any).heading = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).heading || element.getAttribute('heading') || '';
+        },
+      },
+    },
+
+    // Text content
+    text: {
+      definition: {
+        name: 'text',
+        label: 'Message',
+        type: 'textarea',
+        default: 'This is an alert message.',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('text', text);
+          (element as any).text = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).text || element.getAttribute('text') || '';
+        },
+      },
+    },
+
+    // Slim variant
+    slim: {
+      definition: {
+        name: 'slim',
+        label: 'Slim Style',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('slim', '');
+          } else {
+            element.removeAttribute('slim');
+          }
+          (element as any).slim = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).slim || element.hasAttribute('slim');
+        },
+      },
+    },
+
+    // No icon
+    'no-icon': {
+      definition: {
+        name: 'no-icon',
+        label: 'Hide Icon',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('no-icon', '');
+          } else {
+            element.removeAttribute('no-icon');
+          }
+          (element as any).noIcon = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).noIcon || element.hasAttribute('no-icon');
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Banner Component
+ *
+ * Official government website banner - required on all .gov websites.
+ */
+componentRegistry.register({
+  tagName: 'usa-banner',
+  droppable: false,
+
+  traits: {
+    // Header text
+    'header-text': {
+      definition: {
+        name: 'header-text',
+        label: 'Header Text',
+        type: 'text',
+        default: 'An official website of the United States government',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'An official website of the United States government';
+          element.setAttribute('headerText', text);
+          (element as any).headerText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headerText || 'An official website of the United States government';
+        },
+      },
+    },
+
+    // Action text
+    'action-text': {
+      definition: {
+        name: 'action-text',
+        label: 'Action Text',
+        type: 'text',
+        default: "Here's how you know",
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || "Here's how you know";
+          element.setAttribute('actionText', text);
+          (element as any).actionText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).actionText || "Here's how you know";
+        },
+      },
+    },
+
+    // Expanded
+    expanded: {
+      definition: {
+        name: 'expanded',
+        label: 'Expanded',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('expanded', '');
+          } else {
+            element.removeAttribute('expanded');
+          }
+          (element as any).expanded = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).expanded || element.hasAttribute('expanded');
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Site Alert Component
+ *
+ * Site-wide alert for important announcements.
+ */
+componentRegistry.register({
+  tagName: 'usa-site-alert',
+  droppable: false,
+
+  traits: {
+    // Type/variant
+    type: {
+      definition: {
+        name: 'type',
+        label: 'Type',
+        type: 'select',
+        default: 'info',
+        options: [
+          { id: 'info', label: 'Info' },
+          { id: 'emergency', label: 'Emergency' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const type = value || 'info';
+          element.setAttribute('type', type);
+          (element as any).type = type;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).type || element.getAttribute('type') || 'info';
+        },
+      },
+    },
+
+    // Heading
+    heading: {
+      definition: {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Site Alert',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('heading', text);
+          (element as any).heading = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).heading || element.getAttribute('heading') || '';
+        },
+      },
+    },
+
+    // Content
+    content: {
+      definition: {
+        name: 'content',
+        label: 'Content',
+        type: 'textarea',
+        default: 'This is a site-wide alert message.',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('content', text);
+          (element as any).content = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).content || element.getAttribute('content') || '';
+        },
+      },
+    },
+
+    // Slim
+    slim: {
+      definition: {
+        name: 'slim',
+        label: 'Slim Style',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('slim', '');
+          } else {
+            element.removeAttribute('slim');
+          }
+          (element as any).slim = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).slim || element.hasAttribute('slim');
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Modal Component
+ *
+ * Dialog/modal window for focused user interactions.
+ */
+componentRegistry.register({
+  tagName: 'usa-modal',
+  droppable: false,
+
+  traits: {
+    // Modal ID (for linking with buttons)
+    id: {
+      definition: {
+        name: 'id',
+        label: 'Modal ID',
+        type: 'text',
+        default: 'my-modal',
+        placeholder: 'Unique ID for the modal',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const id = value || 'my-modal';
+          element.id = id;
+        },
+        getValue: (element: HTMLElement) => {
+          return element.id || 'my-modal';
+        },
+      },
+    },
+
+    // Heading
+    heading: {
+      definition: {
+        name: 'heading',
+        label: 'Heading',
+        type: 'text',
+        default: 'Modal Title',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('heading', text);
+          (element as any).heading = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).heading || element.getAttribute('heading') || '';
+        },
+      },
+    },
+
+    // Description
+    description: {
+      definition: {
+        name: 'description',
+        label: 'Description',
+        type: 'textarea',
+        default: 'Modal content goes here.',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('description', text);
+          (element as any).description = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).description || element.getAttribute('description') || '';
+        },
+      },
+    },
+
+    // Trigger text
+    'trigger-text': {
+      definition: {
+        name: 'trigger-text',
+        label: 'Button Text',
+        type: 'text',
+        default: 'Open Modal',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Open Modal';
+          element.setAttribute('trigger-text', text);
+          (element as any).triggerText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).triggerText || element.getAttribute('trigger-text') || 'Open Modal';
+        },
+      },
+    },
+
+    // Show trigger button
+    'show-trigger': {
+      definition: {
+        name: 'show-trigger',
+        label: 'Show Button',
+        type: 'checkbox',
+        default: true,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('show-trigger', '');
+          } else {
+            element.removeAttribute('show-trigger');
+          }
+          (element as any).showTrigger = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showTrigger !== false;
+        },
+      },
+    },
+
+    // Large variant
+    large: {
+      definition: {
+        name: 'large',
+        label: 'Large Size',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('large', '');
+          } else {
+            element.removeAttribute('large');
+          }
+          (element as any).large = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).large || element.hasAttribute('large');
+        },
+      },
+    },
+
+    // Force action
+    'force-action': {
+      definition: {
+        name: 'force-action',
+        label: 'Force Action',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('force-action', '');
+          } else {
+            element.removeAttribute('force-action');
+          }
+          (element as any).forceAction = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).forceAction || element.hasAttribute('force-action');
+        },
+      },
+    },
+
+    // Primary button text
+    'primary-button-text': {
+      definition: {
+        name: 'primary-button-text',
+        label: 'Primary Button',
+        type: 'text',
+        default: 'Continue',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Continue';
+          element.setAttribute('primary-button-text', text);
+          (element as any).primaryButtonText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).primaryButtonText || 'Continue';
+        },
+      },
+    },
+
+    // Secondary button text
+    'secondary-button-text': {
+      definition: {
+        name: 'secondary-button-text',
+        label: 'Secondary Button',
+        type: 'text',
+        default: 'Cancel',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Cancel';
+          element.setAttribute('secondary-button-text', text);
+          (element as any).secondaryButtonText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).secondaryButtonText || 'Cancel';
+        },
+      },
+    },
+
+    // Show secondary button
+    'show-secondary-button': {
+      definition: {
+        name: 'show-secondary-button',
+        label: 'Show Secondary Button',
+        type: 'checkbox',
+        default: true,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isEnabled = value === true || value === 'true' || value === '';
+          if (isEnabled) {
+            element.setAttribute('show-secondary-button', '');
+          } else {
+            element.removeAttribute('show-secondary-button');
+          }
+          (element as any).showSecondaryButton = isEnabled;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showSecondaryButton !== false;
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Tooltip Component
+ *
+ * Displays additional information on hover.
+ */
+componentRegistry.register({
+  tagName: 'usa-tooltip',
+  droppable: false,
+
+  traits: {
+    // Tooltip text
+    text: {
+      definition: {
+        name: 'text',
+        label: 'Tooltip Text',
+        type: 'text',
+        default: 'Helpful information',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('text', text);
+          (element as any).text = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).text || element.getAttribute('text') || '';
+        },
+      },
+    },
+
+    // Label (trigger text)
+    label: {
+      definition: {
+        name: 'label',
+        label: 'Trigger Label',
+        type: 'text',
+        default: 'Hover me',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Hover me';
+          element.setAttribute('label', text);
+          (element as any).label = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).label || element.getAttribute('label') || 'Hover me';
+        },
+      },
+    },
+
+    // Position
+    position: {
+      definition: {
+        name: 'position',
+        label: 'Position',
+        type: 'select',
+        default: 'top',
+        options: [
+          { id: 'top', label: 'Top' },
+          { id: 'bottom', label: 'Bottom' },
+          { id: 'left', label: 'Left' },
+          { id: 'right', label: 'Right' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const position = value || 'top';
+          element.setAttribute('position', position);
+          (element as any).position = position;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).position || element.getAttribute('position') || 'top';
+        },
+      },
+    },
+  },
+});
+
+// ============================================================================
+// LAYOUT COMPONENTS
+// ============================================================================
+
+/**
+ * Helper function to rebuild accordion items from individual traits
+ */
+function rebuildAccordionItems(element: HTMLElement, count: number): void {
+  const items: Array<{ title: string; content: string; expanded?: boolean }> = [];
+  for (let i = 1; i <= count; i++) {
+    const title = element.getAttribute(`section${i}-title`) || `Section ${i}`;
+    const content = element.getAttribute(`section${i}-content`) || `Content for section ${i}`;
+    const expanded = element.getAttribute(`section${i}-expanded`) === 'true';
+    items.push({ title, content, expanded });
+  }
+  (element as any).items = items;
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper to create an accordion section trait (title, content, or expanded)
+ */
+function createAccordionSectionTrait(
+  sectionNum: number,
+  traitType: 'title' | 'content' | 'expanded',
+  maxSections: number = 8
+): UnifiedTrait {
+  const attrName = `section${sectionNum}-${traitType}`;
+
+  // Visibility function - only show if sectionNum <= section-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
+    return sectionNum <= count;
+  };
+
+  if (traitType === 'expanded') {
+    return {
+      definition: {
+        name: attrName,
+        label: `Section ${sectionNum} Expanded`,
+        type: 'checkbox',
+        default: sectionNum === 1, // First section expanded by default
+        visible: visibleFn,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isExpanded = value === true || value === 'true' || value === '';
+          element.setAttribute(attrName, String(isExpanded));
+          const count = parseInt(element.getAttribute('section-count') || '3', 10);
+          if (sectionNum <= count) {
+            rebuildAccordionItems(element, count);
+          }
+        },
+      },
+    };
+  }
+
+  const label = traitType === 'title' ? `Section ${sectionNum} Title` : `Section ${sectionNum} Content`;
+  const defaultValue = traitType === 'title' ? `Section ${sectionNum}` : `Content for section ${sectionNum}`;
+
+  return {
+    definition: {
+      name: attrName,
+      label,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('section-count') || '3', 10);
+        if (sectionNum <= count) {
+          rebuildAccordionItems(element, count);
+        }
+      },
+    },
+  };
+}
+
+/**
+ * USA Accordion Component
+ *
+ * Expandable/collapsible content sections.
+ */
+componentRegistry.register({
+  tagName: 'usa-accordion',
+  droppable: false,
+
+  traits: {
+    // Number of sections
+    'section-count': {
+      definition: {
+        name: 'section-count',
+        label: 'Number of Sections',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '1', label: '1 Section' },
+          { id: '2', label: '2 Sections' },
+          { id: '3', label: '3 Sections' },
+          { id: '4', label: '4 Sections' },
+          { id: '5', label: '5 Sections' },
+          { id: '6', label: '6 Sections' },
+          { id: '7', label: '7 Sections' },
+          { id: '8', label: '8 Sections' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '3', 10);
+          element.setAttribute('section-count', String(count));
+          rebuildAccordionItems(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const count = parseInt(value || '3', 10);
+            rebuildAccordionItems(element, count);
+          }, 100);
+        },
+      },
+    },
+
+    // Multiselectable
+    multiselectable: {
+      definition: {
+        name: 'multiselectable',
+        label: 'Allow Multiple Open',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isMulti = value === true || value === 'true' || value === '';
+          if (isMulti) {
+            element.setAttribute('multiselectable', '');
+          } else {
+            element.removeAttribute('multiselectable');
+          }
+          (element as any).multiselectable = isMulti;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Bordered
+    bordered: {
+      definition: {
+        name: 'bordered',
+        label: 'Bordered Style',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isBordered = value === true || value === 'true' || value === '';
+          if (isBordered) {
+            element.setAttribute('bordered', '');
+          } else {
+            element.removeAttribute('bordered');
+          }
+          (element as any).bordered = isBordered;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Section 1 traits
+    'section1-title': createAccordionSectionTrait(1, 'title'),
+    'section1-content': createAccordionSectionTrait(1, 'content'),
+    'section1-expanded': createAccordionSectionTrait(1, 'expanded'),
+
+    // Section 2 traits
+    'section2-title': createAccordionSectionTrait(2, 'title'),
+    'section2-content': createAccordionSectionTrait(2, 'content'),
+    'section2-expanded': createAccordionSectionTrait(2, 'expanded'),
+
+    // Section 3 traits
+    'section3-title': createAccordionSectionTrait(3, 'title'),
+    'section3-content': createAccordionSectionTrait(3, 'content'),
+    'section3-expanded': createAccordionSectionTrait(3, 'expanded'),
+
+    // Section 4 traits
+    'section4-title': createAccordionSectionTrait(4, 'title'),
+    'section4-content': createAccordionSectionTrait(4, 'content'),
+    'section4-expanded': createAccordionSectionTrait(4, 'expanded'),
+
+    // Section 5 traits
+    'section5-title': createAccordionSectionTrait(5, 'title'),
+    'section5-content': createAccordionSectionTrait(5, 'content'),
+    'section5-expanded': createAccordionSectionTrait(5, 'expanded'),
+
+    // Section 6 traits
+    'section6-title': createAccordionSectionTrait(6, 'title'),
+    'section6-content': createAccordionSectionTrait(6, 'content'),
+    'section6-expanded': createAccordionSectionTrait(6, 'expanded'),
+
+    // Section 7 traits
+    'section7-title': createAccordionSectionTrait(7, 'title'),
+    'section7-content': createAccordionSectionTrait(7, 'content'),
+    'section7-expanded': createAccordionSectionTrait(7, 'expanded'),
+
+    // Section 8 traits
+    'section8-title': createAccordionSectionTrait(8, 'title'),
+    'section8-content': createAccordionSectionTrait(8, 'content'),
+    'section8-expanded': createAccordionSectionTrait(8, 'expanded'),
+  },
+});
+
+/**
+ * Helper function to rebuild step indicator steps from individual traits
+ */
+function rebuildStepIndicatorSteps(element: HTMLElement, count: number): void {
+  const steps: Array<{ label: string; status?: 'complete' | 'current' | 'incomplete' }> = [];
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`step${i}-label`) || `Step ${i}`;
+    const status = element.getAttribute(`step${i}-status`) as 'complete' | 'current' | 'incomplete' || 'incomplete';
+    steps.push({ label, status });
+  }
+  (element as any).steps = steps;
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper to create a step indicator step trait
+ */
+function createStepTrait(
+  stepNum: number,
+  traitType: 'label' | 'status'
+): UnifiedTrait {
+  const attrName = `step${stepNum}-${traitType}`;
+
+  // Visibility function - only show if stepNum <= step-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['step-count'] || '4', 10);
+    return stepNum <= count;
+  };
+
+  if (traitType === 'status') {
+    return {
+      definition: {
+        name: attrName,
+        label: `Step ${stepNum} Status`,
+        type: 'select',
+        default: stepNum === 1 ? 'current' : 'incomplete',
+        options: [
+          { id: 'incomplete', label: 'Incomplete' },
+          { id: 'current', label: 'Current' },
+          { id: 'complete', label: 'Complete' },
+        ],
+        visible: visibleFn,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute(attrName, value || 'incomplete');
+          const count = parseInt(element.getAttribute('step-count') || '4', 10);
+          if (stepNum <= count) {
+            rebuildStepIndicatorSteps(element, count);
+          }
+        },
+      },
+    };
+  }
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Step ${stepNum} Label`,
+      type: 'text',
+      default: `Step ${stepNum}`,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('step-count') || '4', 10);
+        if (stepNum <= count) {
+          rebuildStepIndicatorSteps(element, count);
+        }
+      },
+    },
+  };
+}
+
+/**
+ * USA Step Indicator Component
+ *
+ * Shows progress through a multi-step process.
+ */
+componentRegistry.register({
+  tagName: 'usa-step-indicator',
+  droppable: false,
+
+  traits: {
+    // Number of steps
+    'step-count': {
+      definition: {
+        name: 'step-count',
+        label: 'Number of Steps',
+        type: 'select',
+        default: '4',
+        options: [
+          { id: '2', label: '2 Steps' },
+          { id: '3', label: '3 Steps' },
+          { id: '4', label: '4 Steps' },
+          { id: '5', label: '5 Steps' },
+          { id: '6', label: '6 Steps' },
+          { id: '7', label: '7 Steps' },
+          { id: '8', label: '8 Steps' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '4', 10);
+          element.setAttribute('step-count', String(count));
+          rebuildStepIndicatorSteps(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const count = parseInt(value || '4', 10);
+            rebuildStepIndicatorSteps(element, count);
+          }, 100);
+        },
+      },
+    },
+
+    // Show labels
+    'show-labels': {
+      definition: {
+        name: 'show-labels',
+        label: 'Show Labels',
+        type: 'checkbox',
+        default: true,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const showLabels = value === true || value === 'true' || value === '';
+          if (showLabels) {
+            element.setAttribute('show-labels', '');
+          } else {
+            element.removeAttribute('show-labels');
+          }
+          (element as any).showLabels = showLabels;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Counters style
+    counters: {
+      definition: {
+        name: 'counters',
+        label: 'Counter Style',
+        type: 'select',
+        default: '',
+        options: [
+          { id: '', label: 'None' },
+          { id: 'default', label: 'Numbers' },
+          { id: 'small', label: 'Small Numbers' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('counters', value);
+          } else {
+            element.removeAttribute('counters');
+          }
+          (element as any).counters = value || '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Centered
+    centered: {
+      definition: {
+        name: 'centered',
+        label: 'Center Align',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isCentered = value === true || value === 'true' || value === '';
+          if (isCentered) {
+            element.setAttribute('centered', '');
+          } else {
+            element.removeAttribute('centered');
+          }
+          (element as any).centered = isCentered;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Small variant
+    small: {
+      definition: {
+        name: 'small',
+        label: 'Small Size',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isSmall = value === true || value === 'true' || value === '';
+          if (isSmall) {
+            element.setAttribute('small', '');
+          } else {
+            element.removeAttribute('small');
+          }
+          (element as any).small = isSmall;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Step 1 traits
+    'step1-label': createStepTrait(1, 'label'),
+    'step1-status': createStepTrait(1, 'status'),
+
+    // Step 2 traits
+    'step2-label': createStepTrait(2, 'label'),
+    'step2-status': createStepTrait(2, 'status'),
+
+    // Step 3 traits
+    'step3-label': createStepTrait(3, 'label'),
+    'step3-status': createStepTrait(3, 'status'),
+
+    // Step 4 traits
+    'step4-label': createStepTrait(4, 'label'),
+    'step4-status': createStepTrait(4, 'status'),
+
+    // Step 5 traits
+    'step5-label': createStepTrait(5, 'label'),
+    'step5-status': createStepTrait(5, 'status'),
+
+    // Step 6 traits
+    'step6-label': createStepTrait(6, 'label'),
+    'step6-status': createStepTrait(6, 'status'),
+
+    // Step 7 traits
+    'step7-label': createStepTrait(7, 'label'),
+    'step7-status': createStepTrait(7, 'status'),
+
+    // Step 8 traits
+    'step8-label': createStepTrait(8, 'label'),
+    'step8-status': createStepTrait(8, 'status'),
+  },
+});
+
+/**
+ * Helper function to rebuild process list items from individual traits
+ */
+function rebuildProcessListItems(element: HTMLElement, count: number): void {
+  const items: Array<{ heading: string; content: string }> = [];
+  for (let i = 1; i <= count; i++) {
+    const heading = element.getAttribute(`item${i}-heading`) || `Step ${i}`;
+    const content = element.getAttribute(`item${i}-content`) || `Description for step ${i}`;
+    items.push({ heading, content });
+  }
+  (element as any).items = items;
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper to create a process list item trait
+ */
+function createProcessListItemTrait(
+  itemNum: number,
+  traitType: 'heading' | 'content'
+): UnifiedTrait {
+  const attrName = `item${itemNum}-${traitType}`;
+  const label = traitType === 'heading' ? `Step ${itemNum} Heading` : `Step ${itemNum} Content`;
+  const defaultValue = traitType === 'heading' ? `Step ${itemNum}` : `Description for step ${itemNum}`;
+
+  // Visibility function - only show if itemNum <= item-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['item-count'] || '3', 10);
+    return itemNum <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('item-count') || '3', 10);
+        if (itemNum <= count) {
+          rebuildProcessListItems(element, count);
+        }
+      },
+    },
+  };
+}
+
+/**
+ * USA Process List Component
+ *
+ * Displays a numbered list of steps in a process.
+ */
+componentRegistry.register({
+  tagName: 'usa-process-list',
+  droppable: false,
+
+  traits: {
+    // Number of items
+    'item-count': {
+      definition: {
+        name: 'item-count',
+        label: 'Number of Steps',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '1', label: '1 Step' },
+          { id: '2', label: '2 Steps' },
+          { id: '3', label: '3 Steps' },
+          { id: '4', label: '4 Steps' },
+          { id: '5', label: '5 Steps' },
+          { id: '6', label: '6 Steps' },
+          { id: '7', label: '7 Steps' },
+          { id: '8', label: '8 Steps' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '3', 10);
+          element.setAttribute('item-count', String(count));
+          rebuildProcessListItems(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const count = parseInt(value || '3', 10);
+            rebuildProcessListItems(element, count);
+          }, 100);
+        },
+      },
+    },
+
+    // Heading level
+    'heading-level': {
+      definition: {
+        name: 'heading-level',
+        label: 'Heading Level',
+        type: 'select',
+        default: 'h4',
+        options: [
+          { id: 'h2', label: 'H2' },
+          { id: 'h3', label: 'H3' },
+          { id: 'h4', label: 'H4' },
+          { id: 'h5', label: 'H5' },
+          { id: 'h6', label: 'H6' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const level = value || 'h4';
+          element.setAttribute('heading-level', level);
+          (element as any).headingLevel = level;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Item 1 traits
+    'item1-heading': createProcessListItemTrait(1, 'heading'),
+    'item1-content': createProcessListItemTrait(1, 'content'),
+
+    // Item 2 traits
+    'item2-heading': createProcessListItemTrait(2, 'heading'),
+    'item2-content': createProcessListItemTrait(2, 'content'),
+
+    // Item 3 traits
+    'item3-heading': createProcessListItemTrait(3, 'heading'),
+    'item3-content': createProcessListItemTrait(3, 'content'),
+
+    // Item 4 traits
+    'item4-heading': createProcessListItemTrait(4, 'heading'),
+    'item4-content': createProcessListItemTrait(4, 'content'),
+
+    // Item 5 traits
+    'item5-heading': createProcessListItemTrait(5, 'heading'),
+    'item5-content': createProcessListItemTrait(5, 'content'),
+
+    // Item 6 traits
+    'item6-heading': createProcessListItemTrait(6, 'heading'),
+    'item6-content': createProcessListItemTrait(6, 'content'),
+
+    // Item 7 traits
+    'item7-heading': createProcessListItemTrait(7, 'heading'),
+    'item7-content': createProcessListItemTrait(7, 'content'),
+
+    // Item 8 traits
+    'item8-heading': createProcessListItemTrait(8, 'heading'),
+    'item8-content': createProcessListItemTrait(8, 'content'),
+  },
+});
+
+/**
+ * USA Prose Component
+ *
+ * Typography wrapper for long-form content.
+ */
+componentRegistry.register({
+  tagName: 'usa-prose',
+  droppable: true, // Allow dropping content inside
+
+  traits: {
+    // Content (for slotted content)
+    content: {
+      definition: {
+        name: 'content',
+        label: 'Content',
+        type: 'text',
+        default: 'Enter your prose content here...',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const content = value || '';
+          // For prose, we update the innerHTML/textContent
+          element.textContent = content;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
   },
 });
 

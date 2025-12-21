@@ -77,28 +77,40 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-textarea': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z"/></svg>`,
   'usa-select': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>`,
   'usa-checkbox': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z"/></svg>`,
+  'checkbox-group': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10l2 2 4-4-1-1-3 3-1-1z"/><path d="M7 15l2 2 4-4-1-1-3 3-1-1z"/></svg>`,
   'usa-radio': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="12" cy="12" r="5"/></svg>`,
+  'radio-group': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="3"/><circle cx="9" cy="17" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
   'usa-date-picker': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>`,
+  'usa-time-picker': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
+  'usa-combo-box': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10l5 5 5-5z"/><path d="M7 7h10v2H7z"/></svg>`,
 
   // Navigation
   'usa-header': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v4H3z"/><path d="M3 9h18v12H3z" opacity="0.3"/></svg>`,
   'usa-footer': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v12H3z" opacity="0.3"/><path d="M3 17h18v4H3z"/></svg>`,
   'usa-breadcrumb': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>`,
   'usa-pagination': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" transform="translate(6,0)"/></svg>`,
+  'usa-side-navigation': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h12v2H3zm0 6h18v2H3z"/></svg>`,
 
   // Data Display
   'usa-card': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 7h10v3H7z"/></svg>`,
   'usa-table': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v2h14V7zm0 4H5v2h14v-2zm0 4H5v2h14v-2z"/></svg>`,
   'usa-tag': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`,
+  'usa-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><path d="M8 5h14v2H8z"/><circle cx="4" cy="12" r="2"/><path d="M8 11h14v2H8z"/><circle cx="4" cy="18" r="2"/><path d="M8 17h14v2H8z"/></svg>`,
+  'usa-collection': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v4H4zm0 6h16v4H4zm0 6h16v4H4z"/></svg>`,
+  'usa-summary-box': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z"/></svg>`,
 
   // Feedback
   'usa-alert': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`,
   'usa-banner': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3z"/><path d="M3 9h18v10H3z" opacity="0.5"/></svg>`,
+  'usa-site-alert': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
   'usa-modal': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12z"/><path d="M7 8h10v2H7zm0 4h10v2H7z"/></svg>`,
+  'usa-tooltip': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>`,
 
   // Layout
   'usa-accordion': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/></svg>`,
   'usa-step-indicator': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="18" cy="12" r="3" opacity="0.3"/></svg>`,
+  'usa-process-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="5" r="3"/><path d="M10 4h12v2H10z"/><circle cx="6" cy="12" r="3"/><path d="M10 11h12v2H10z"/><circle cx="6" cy="19" r="3"/><path d="M10 18h12v2H10z"/></svg>`,
+  'usa-prose': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 4h14v2H3zm0 4h18v2H3zm0 4h10v2H3z"/></svg>`,
 
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
@@ -110,21 +122,60 @@ export const COMPONENT_ICONS: Record<string, string> = {
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Actions
   'usa-button': 'Click me',
-  'usa-link': '',
-  // 'usa-button-group': `<usa-button-group>
-  // <usa-button>Button 1</usa-button>
-  // <usa-button variant="outline">Button 2</usa-button>
-  // </usa-button-group>`,
-  // 'usa-search': '<usa-search label="Search" size="small"></usa-search>',
+  'usa-button-group': '__FULL_HTML__<usa-button-group btn-count="2" btn1-text="Button 1" btn1-variant="default" btn2-text="Button 2" btn2-variant="outline"></usa-button-group>',
+  'usa-link': '__FULL_HTML__<usa-link text="Link" href="#"></usa-link>',
+  'usa-search': '__FULL_HTML__<usa-search placeholder="Search" size="medium"></usa-search>',
+
+  // Navigation
+  'usa-breadcrumb': '__FULL_HTML__<usa-breadcrumb count="3" item1-label="Home" item1-href="#" item2-label="Section" item2-href="#" item3-label="Current Page"></usa-breadcrumb>',
+  'usa-pagination': '__FULL_HTML__<usa-pagination current-page="1" total-pages="5"></usa-pagination>',
+  'usa-side-navigation': '__FULL_HTML__<usa-side-navigation count="4" item1-label="Home" item1-href="#" item2-label="About" item2-href="#" item3-label="Services" item3-href="#" item3-current="true" item4-label="Contact" item4-href="#"></usa-side-navigation>',
 
   // Forms
-  'usa-text-input': '',
-  'usa-textarea': '',
-  'usa-select': '',
-  'usa-checkbox': '',
-  'usa-radio': '',
-  'usa-file-input': '',
-  'usa-range-slider': '',
+  'usa-text-input': '__FULL_HTML__<usa-text-input label="Text Input" name="text-field"></usa-text-input>',
+  'usa-textarea': '__FULL_HTML__<usa-textarea label="Textarea" name="textarea-field"></usa-textarea>',
+  'usa-select': '__FULL_HTML__<usa-select label="Select" name="select-field"></usa-select>',
+  'usa-checkbox': '__FULL_HTML__<usa-checkbox label="Checkbox option" name="checkbox-group" value="option1"></usa-checkbox>',
+  'checkbox-group': `__FULL_HTML__<fieldset class="usa-fieldset">
+  <legend class="usa-legend">Select your options</legend>
+  <usa-checkbox label="Option 1" name="checkbox-group" value="option1"></usa-checkbox>
+  <usa-checkbox label="Option 2" name="checkbox-group" value="option2"></usa-checkbox>
+  <usa-checkbox label="Option 3" name="checkbox-group" value="option3"></usa-checkbox>
+</fieldset>`,
+  'usa-radio': '__FULL_HTML__<usa-radio label="Radio option" name="radio-group" value="option1"></usa-radio>',
+  'radio-group': `__FULL_HTML__<fieldset class="usa-fieldset">
+  <legend class="usa-legend">Select one option</legend>
+  <usa-radio label="Option 1" name="radio-group" value="option1"></usa-radio>
+  <usa-radio label="Option 2" name="radio-group" value="option2"></usa-radio>
+  <usa-radio label="Option 3" name="radio-group" value="option3"></usa-radio>
+</fieldset>`,
+  'usa-file-input': '__FULL_HTML__<usa-file-input label="File Input" name="file-field"></usa-file-input>',
+  'usa-range-slider': '__FULL_HTML__<usa-range-slider label="Range" min="0" max="100" value="50"></usa-range-slider>',
+  'usa-date-picker': '__FULL_HTML__<usa-date-picker label="Date" name="date-picker"></usa-date-picker>',
+  'usa-time-picker': '__FULL_HTML__<usa-time-picker label="Time" name="time-picker"></usa-time-picker>',
+  'usa-combo-box': '__FULL_HTML__<usa-combo-box label="Select an option" name="combo-box" placeholder="Select..." option-count="3" option1-label="Option 1" option1-value="option1" option2-label="Option 2" option2-value="option2" option3-label="Option 3" option3-value="option3"></usa-combo-box>',
+
+  // Data Display
+  'usa-card': '__FULL_HTML__<usa-card heading="Card Title" text="Card content goes here."></usa-card>',
+  'usa-tag': '__FULL_HTML__<usa-tag text="Tag"></usa-tag>',
+  'usa-list': '__FULL_HTML__<usa-list count="3" item1="First item" item2="Second item" item3="Third item"></usa-list>',
+  'usa-collection': '__FULL_HTML__<usa-collection count="3" item1-title="First Article" item1-description="A brief description of the first article." item2-title="Second Article" item2-description="A brief description of the second article." item3-title="Third Article" item3-description="A brief description of the third article."></usa-collection>',
+  'usa-summary-box': '__FULL_HTML__<usa-summary-box heading="Key Information" content="This is important information that you should know."></usa-summary-box>',
+
+  // Feedback
+  'usa-alert': '__FULL_HTML__<usa-alert variant="info" heading="Alert heading" text="This is an alert message."></usa-alert>',
+  'usa-banner': '__FULL_HTML__<usa-banner></usa-banner>',
+  'usa-site-alert': '__FULL_HTML__<usa-site-alert type="info" heading="Site Alert" content="This is a site-wide alert message."></usa-site-alert>',
+  // Modal and Tooltip are added via button/link properties (modal-id, tooltip traits)
+  // 'usa-modal': '__FULL_HTML__<usa-modal heading="Modal Title" description="Modal content goes here." trigger-text="Open Modal"></usa-modal>',
+  // 'usa-tooltip': '__FULL_HTML__<usa-tooltip text="Helpful information" label="Hover me" position="top"></usa-tooltip>',
+
+  // Layout
+  'usa-accordion': '__FULL_HTML__<usa-accordion section-count="3" section1-title="Section 1" section1-content="Content for section 1" section1-expanded="true" section2-title="Section 2" section2-content="Content for section 2" section3-title="Section 3" section3-content="Content for section 3"></usa-accordion>',
+  'usa-step-indicator': '__FULL_HTML__<usa-step-indicator step-count="4" show-labels step1-label="Step 1" step1-status="complete" step2-label="Step 2" step2-status="current" step3-label="Step 3" step3-status="incomplete" step4-label="Step 4" step4-status="incomplete"></usa-step-indicator>',
+  'usa-process-list': '__FULL_HTML__<usa-process-list item-count="3" item1-heading="Step 1" item1-content="Description for step 1" item2-heading="Step 2" item2-content="Description for step 2" item3-heading="Step 3" item3-content="Description for step 3"></usa-process-list>',
+  'usa-prose': '__FULL_HTML__<usa-prose>Enter your prose content here. This component applies USWDS typography styles to the text within.</usa-prose>',
+
   // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
   // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
   // 'usa-combo-box': '<usa-combo-box label="Combo box" name="combo"></usa-combo-box>',
@@ -252,7 +303,7 @@ export const USWDS_VERSION = '3.8.1';
  * USWDS-WC Bundle version
  * The bundle package includes all components with Lit bundled in
  */
-export const USWDS_WC_BUNDLE_VERSION = '2.5.6';
+export const USWDS_WC_BUNDLE_VERSION = '2.5.7';
 
 /**
  * USWDS-WC package names for loading

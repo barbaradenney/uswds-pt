@@ -60,8 +60,8 @@ const uswdsComponentsPlugin = (editor: any) => {
           droppable: registration.droppable ?? false,
           // Define the traits that will show in the properties panel
           traits: traitDefinitions,
-          // Set default values from traits
-          ...traitDefaults,
+          // Set default attribute values from traits (must be in attributes object)
+          attributes: traitDefaults,
           // Web components handle their own rendering
           components: false,
         },
@@ -208,20 +208,28 @@ export function Editor() {
 
   // Generate blocks from USWDS components
   // Use HTML string format - GrapesJS will recognize the tag and apply our component type
-  const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => ({
-    id: tagName,
-    label: tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    // Use HTML string - GrapesJS's isComponent will match the tag and apply our type
-    content: `<${tagName}>${content}</${tagName}>`,
-    media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
-    category: getCategoryForComponent(tagName),
-  }));
+  const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => {
+    // Check if content is full HTML (prefixed with __FULL_HTML__)
+    const isFullHtml = content.startsWith('__FULL_HTML__');
+    const blockContent = isFullHtml
+      ? content.replace('__FULL_HTML__', '')
+      : `<${tagName}>${content}</${tagName}>`;
+
+    return {
+      id: tagName,
+      label: tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      // Use HTML string - GrapesJS's isComponent will match the tag and apply our type
+      content: blockContent,
+      media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
+      category: getCategoryForComponent(tagName),
+    };
+  });
 
   function getCategoryForComponent(tagName: string): string {
     const categoryMap: Record<string, string[]> = {
       'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
-      'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'usa-radio', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
-      'Navigation': ['usa-header', 'usa-footer', 'usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-skip-link'],
+      'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
+      'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link'],
       'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
       'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
       'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],

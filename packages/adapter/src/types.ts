@@ -35,6 +35,10 @@ export interface GrapesTrait {
     id: string;
     label: string;
   };
+  /**
+   * Conditional visibility - function receives component model, returns boolean
+   */
+  visible?: boolean | ((component: any) => boolean);
 }
 
 export interface GrapesTraitOption {
