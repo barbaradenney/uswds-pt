@@ -127,6 +127,8 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-search': '__FULL_HTML__<usa-search placeholder="Search" size="medium"></usa-search>',
 
   // Navigation
+  'usa-header': '__FULL_HTML__<usa-header logo-text="Site Name" logo-href="/" nav-count="4" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#" nav3-label="Services" nav3-href="#" nav4-label="Contact" nav4-href="#"></usa-header>',
+  'usa-footer': '__FULL_HTML__<usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>',
   'usa-breadcrumb': '__FULL_HTML__<usa-breadcrumb count="3" item1-label="Home" item1-href="#" item2-label="Section" item2-href="#" item3-label="Current Page"></usa-breadcrumb>',
   'usa-pagination': '__FULL_HTML__<usa-pagination current-page="1" total-pages="5"></usa-pagination>',
   'usa-side-navigation': '__FULL_HTML__<usa-side-navigation count="4" item1-label="Home" item1-href="#" item2-label="About" item2-href="#" item3-label="Services" item3-href="#" item3-current="true" item4-label="Contact" item4-href="#"></usa-side-navigation>',

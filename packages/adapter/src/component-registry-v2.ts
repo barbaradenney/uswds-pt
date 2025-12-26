@@ -4885,3 +4885,675 @@ componentRegistry.register({
   },
 });
 
+// ============================================================================
+// Header & Footer Components
+// ============================================================================
+
+/**
+ * Helper function to rebuild header nav items array from attributes
+ */
+function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
+  const navItems: Array<{ label: string; href: string; current?: boolean }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`nav${i}-label`) || `Nav ${i}`;
+    const href = element.getAttribute(`nav${i}-href`) || '#';
+    const current = element.hasAttribute(`nav${i}-current`);
+
+    navItems.push({ label, href, current: current || undefined });
+  }
+
+  // Set the navItems property on the Lit component
+  (element as any).navItems = navItems;
+
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper function to create header nav item traits
+ */
+function createHeaderNavItemTrait(
+  index: number,
+  type: 'label' | 'href' | 'current'
+): UnifiedTrait {
+  const attrName = `nav${index}-${type}`;
+
+  // Visibility function - only show if index <= nav-count
+  const visibleFn = (component: any) => {
+    const count = parseInt(component.get('attributes')?.['nav-count'] || '4', 10);
+    return index <= count;
+  };
+
+  if (type === 'current') {
+    return {
+      definition: {
+        name: attrName,
+        label: `Nav ${index} Current`,
+        type: 'checkbox',
+        default: false,
+        visible: visibleFn,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isCurrent = value === true || value === 'true' || value === '';
+          if (isCurrent) {
+            element.setAttribute(attrName, '');
+          } else {
+            element.removeAttribute(attrName);
+          }
+          const count = parseInt(element.getAttribute('nav-count') || '4', 10);
+          rebuildHeaderNavItems(element, count);
+        },
+      },
+    };
+  }
+
+  const isLabel = type === 'label';
+  return {
+    definition: {
+      name: attrName,
+      label: `Nav ${index} ${isLabel ? 'Label' : 'URL'}`,
+      type: 'text',
+      default: isLabel ? `Link ${index}` : '#',
+      placeholder: isLabel ? 'Link text' : 'URL',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('nav-count') || '4', 10);
+        rebuildHeaderNavItems(element, count);
+      },
+    },
+  };
+}
+
+/**
+ * USA Header Component
+ *
+ * Site header with logo, navigation, and optional search.
+ */
+componentRegistry.register({
+  tagName: 'usa-header',
+  droppable: false,
+
+  traits: {
+    // Logo Text
+    'logo-text': {
+      definition: {
+        name: 'logo-text',
+        label: 'Logo Text',
+        type: 'text',
+        default: 'Site Name',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Site Name';
+          element.setAttribute('logoText', text);
+          (element as any).logoText = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Logo URL
+    'logo-href': {
+      definition: {
+        name: 'logo-href',
+        label: 'Logo URL',
+        type: 'text',
+        default: '/',
+        placeholder: 'URL when logo is clicked',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const href = value || '/';
+          element.setAttribute('logoHref', href);
+          (element as any).logoHref = href;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Logo Image Source (optional)
+    'logo-image-src': {
+      definition: {
+        name: 'logo-image-src',
+        label: 'Logo Image URL',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional image URL',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('logoImageSrc', value);
+            (element as any).logoImageSrc = value;
+          } else {
+            element.removeAttribute('logoImageSrc');
+            (element as any).logoImageSrc = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Logo Image Alt Text
+    'logo-image-alt': {
+      definition: {
+        name: 'logo-image-alt',
+        label: 'Logo Image Alt',
+        type: 'text',
+        default: '',
+        placeholder: 'Alt text for logo image',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('logoImageAlt', value);
+            (element as any).logoImageAlt = value;
+          } else {
+            element.removeAttribute('logoImageAlt');
+            (element as any).logoImageAlt = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Extended header style
+    extended: {
+      definition: {
+        name: 'extended',
+        label: 'Extended Style',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isExtended = value === true || value === 'true' || value === '';
+          if (isExtended) {
+            element.setAttribute('extended', '');
+          } else {
+            element.removeAttribute('extended');
+          }
+          (element as any).extended = isExtended;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Show Search
+    'show-search': {
+      definition: {
+        name: 'show-search',
+        label: 'Show Search',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const showSearch = value === true || value === 'true' || value === '';
+          if (showSearch) {
+            element.setAttribute('showSearch', '');
+          } else {
+            element.removeAttribute('showSearch');
+          }
+          (element as any).showSearch = showSearch;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Search Placeholder
+    'search-placeholder': {
+      definition: {
+        name: 'search-placeholder',
+        label: 'Search Placeholder',
+        type: 'text',
+        default: 'Search',
+        placeholder: 'Search placeholder text',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const placeholder = value || 'Search';
+          element.setAttribute('searchPlaceholder', placeholder);
+          (element as any).searchPlaceholder = placeholder;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Navigation item count
+    'nav-count': {
+      definition: {
+        name: 'nav-count',
+        label: 'Number of Nav Items',
+        type: 'select',
+        default: '4',
+        options: [
+          { id: '1', label: '1 Item' },
+          { id: '2', label: '2 Items' },
+          { id: '3', label: '3 Items' },
+          { id: '4', label: '4 Items' },
+          { id: '5', label: '5 Items' },
+          { id: '6', label: '6 Items' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '4', 10);
+          element.setAttribute('nav-count', String(count));
+          rebuildHeaderNavItems(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const count = parseInt(value || '4', 10);
+            rebuildHeaderNavItems(element, count);
+          }, 100);
+        },
+      },
+    },
+
+    // Nav item traits (up to 6)
+    'nav1-label': createHeaderNavItemTrait(1, 'label'),
+    'nav1-href': createHeaderNavItemTrait(1, 'href'),
+    'nav1-current': createHeaderNavItemTrait(1, 'current'),
+    'nav2-label': createHeaderNavItemTrait(2, 'label'),
+    'nav2-href': createHeaderNavItemTrait(2, 'href'),
+    'nav2-current': createHeaderNavItemTrait(2, 'current'),
+    'nav3-label': createHeaderNavItemTrait(3, 'label'),
+    'nav3-href': createHeaderNavItemTrait(3, 'href'),
+    'nav3-current': createHeaderNavItemTrait(3, 'current'),
+    'nav4-label': createHeaderNavItemTrait(4, 'label'),
+    'nav4-href': createHeaderNavItemTrait(4, 'href'),
+    'nav4-current': createHeaderNavItemTrait(4, 'current'),
+    'nav5-label': createHeaderNavItemTrait(5, 'label'),
+    'nav5-href': createHeaderNavItemTrait(5, 'href'),
+    'nav5-current': createHeaderNavItemTrait(5, 'current'),
+    'nav6-label': createHeaderNavItemTrait(6, 'label'),
+    'nav6-href': createHeaderNavItemTrait(6, 'href'),
+    'nav6-current': createHeaderNavItemTrait(6, 'current'),
+  },
+});
+
+/**
+ * Helper function to rebuild footer sections array from attributes
+ */
+function rebuildFooterSections(element: HTMLElement, count: number): void {
+  const sections: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const title = element.getAttribute(`section${i}-title`) || `Section ${i}`;
+
+    // Get links for this section (up to 4 links per section)
+    const links: Array<{ label: string; href: string }> = [];
+    for (let j = 1; j <= 4; j++) {
+      const linkLabel = element.getAttribute(`section${i}-link${j}-label`);
+      const linkHref = element.getAttribute(`section${i}-link${j}-href`) || '#';
+
+      if (linkLabel) {
+        links.push({ label: linkLabel, href: linkHref });
+      }
+    }
+
+    sections.push({ title, links });
+  }
+
+  // Set the sections property on the Lit component
+  (element as any).sections = sections;
+
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Helper function to create footer section title trait
+ */
+function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
+  const attrName = `section${sectionNum}-title`;
+
+  // Visibility function - only show if sectionNum <= section-count
+  const visibleFn = (component: any) => {
+    const variant = component.get('attributes')?.['variant'] || 'medium';
+    // Only 'big' variant shows sections
+    if (variant !== 'big') return false;
+    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
+    return sectionNum <= count;
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Section ${sectionNum} Title`,
+      type: 'text',
+      default: `Section ${sectionNum}`,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('section-count') || '3', 10);
+        rebuildFooterSections(element, count);
+      },
+    },
+  };
+}
+
+/**
+ * Helper function to create footer section link traits
+ */
+function createFooterSectionLinkTrait(
+  sectionNum: number,
+  linkNum: number,
+  type: 'label' | 'href'
+): UnifiedTrait {
+  const attrName = `section${sectionNum}-link${linkNum}-${type}`;
+
+  // Visibility function - only show if sectionNum <= section-count and variant is 'big'
+  const visibleFn = (component: any) => {
+    const variant = component.get('attributes')?.['variant'] || 'medium';
+    if (variant !== 'big') return false;
+    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
+    return sectionNum <= count;
+  };
+
+  const isLabel = type === 'label';
+  return {
+    definition: {
+      name: attrName,
+      label: `S${sectionNum} Link ${linkNum} ${isLabel ? 'Text' : 'URL'}`,
+      type: 'text',
+      default: isLabel ? (linkNum === 1 ? 'Link 1' : '') : '#',
+      placeholder: isLabel ? 'Link text' : 'URL',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        if (value) {
+          element.setAttribute(attrName, value);
+        } else {
+          element.removeAttribute(attrName);
+        }
+        const count = parseInt(element.getAttribute('section-count') || '3', 10);
+        rebuildFooterSections(element, count);
+      },
+    },
+  };
+}
+
+/**
+ * USA Footer Component
+ *
+ * Site footer with agency info and optional link sections.
+ */
+componentRegistry.register({
+  tagName: 'usa-footer',
+  droppable: false,
+
+  traits: {
+    // Variant
+    variant: {
+      definition: {
+        name: 'variant',
+        label: 'Variant',
+        type: 'select',
+        default: 'medium',
+        options: [
+          { id: 'slim', label: 'Slim' },
+          { id: 'medium', label: 'Medium' },
+          { id: 'big', label: 'Big (with sections)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const variant = value || 'medium';
+          element.setAttribute('variant', variant);
+          (element as any).variant = variant;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Agency Name
+    'agency-name': {
+      definition: {
+        name: 'agency-name',
+        label: 'Agency Name',
+        type: 'text',
+        default: 'Agency Name',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const name = value || 'Agency Name';
+          element.setAttribute('agencyName', name);
+          (element as any).agencyName = name;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Agency URL
+    'agency-url': {
+      definition: {
+        name: 'agency-url',
+        label: 'Agency URL',
+        type: 'text',
+        default: '#',
+        placeholder: 'Agency website URL',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const url = value || '#';
+          element.setAttribute('agencyUrl', url);
+          (element as any).agencyUrl = url;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Logo Source (optional)
+    'logo-src': {
+      definition: {
+        name: 'logo-src',
+        label: 'Logo Image URL',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional footer logo URL',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('logoSrc', value);
+            (element as any).logoSrc = value;
+          } else {
+            element.removeAttribute('logoSrc');
+            (element as any).logoSrc = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Logo Alt Text
+    'logo-alt': {
+      definition: {
+        name: 'logo-alt',
+        label: 'Logo Alt Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Alt text for logo',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('logoAlt', value);
+            (element as any).logoAlt = value;
+          } else {
+            element.removeAttribute('logoAlt');
+            (element as any).logoAlt = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Contact Phone
+    'contact-phone': {
+      definition: {
+        name: 'contact-phone',
+        label: 'Contact Phone',
+        type: 'text',
+        default: '',
+        placeholder: '(555) 555-5555',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('contactPhone', value);
+            (element as any).contactPhone = value;
+          } else {
+            element.removeAttribute('contactPhone');
+            (element as any).contactPhone = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Contact Email
+    'contact-email': {
+      definition: {
+        name: 'contact-email',
+        label: 'Contact Email',
+        type: 'text',
+        default: '',
+        placeholder: 'contact@agency.gov',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('contactEmail', value);
+            (element as any).contactEmail = value;
+          } else {
+            element.removeAttribute('contactEmail');
+            (element as any).contactEmail = '';
+          }
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+      },
+    },
+
+    // Section count (for 'big' variant)
+    'section-count': {
+      definition: {
+        name: 'section-count',
+        label: 'Number of Sections',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '1', label: '1 Section' },
+          { id: '2', label: '2 Sections' },
+          { id: '3', label: '3 Sections' },
+          { id: '4', label: '4 Sections' },
+        ],
+        visible: (component: any) => {
+          const variant = component.get('attributes')?.['variant'] || 'medium';
+          return variant === 'big';
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '3', 10);
+          element.setAttribute('section-count', String(count));
+          rebuildFooterSections(element, count);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          setTimeout(() => {
+            const variant = element.getAttribute('variant') || 'medium';
+            if (variant === 'big') {
+              const count = parseInt(value || '3', 10);
+              rebuildFooterSections(element, count);
+            }
+          }, 100);
+        },
+      },
+    },
+
+    // Section 1 traits
+    'section1-title': createFooterSectionTitleTrait(1),
+    'section1-link1-label': createFooterSectionLinkTrait(1, 1, 'label'),
+    'section1-link1-href': createFooterSectionLinkTrait(1, 1, 'href'),
+    'section1-link2-label': createFooterSectionLinkTrait(1, 2, 'label'),
+    'section1-link2-href': createFooterSectionLinkTrait(1, 2, 'href'),
+    'section1-link3-label': createFooterSectionLinkTrait(1, 3, 'label'),
+    'section1-link3-href': createFooterSectionLinkTrait(1, 3, 'href'),
+    'section1-link4-label': createFooterSectionLinkTrait(1, 4, 'label'),
+    'section1-link4-href': createFooterSectionLinkTrait(1, 4, 'href'),
+
+    // Section 2 traits
+    'section2-title': createFooterSectionTitleTrait(2),
+    'section2-link1-label': createFooterSectionLinkTrait(2, 1, 'label'),
+    'section2-link1-href': createFooterSectionLinkTrait(2, 1, 'href'),
+    'section2-link2-label': createFooterSectionLinkTrait(2, 2, 'label'),
+    'section2-link2-href': createFooterSectionLinkTrait(2, 2, 'href'),
+    'section2-link3-label': createFooterSectionLinkTrait(2, 3, 'label'),
+    'section2-link3-href': createFooterSectionLinkTrait(2, 3, 'href'),
+    'section2-link4-label': createFooterSectionLinkTrait(2, 4, 'label'),
+    'section2-link4-href': createFooterSectionLinkTrait(2, 4, 'href'),
+
+    // Section 3 traits
+    'section3-title': createFooterSectionTitleTrait(3),
+    'section3-link1-label': createFooterSectionLinkTrait(3, 1, 'label'),
+    'section3-link1-href': createFooterSectionLinkTrait(3, 1, 'href'),
+    'section3-link2-label': createFooterSectionLinkTrait(3, 2, 'label'),
+    'section3-link2-href': createFooterSectionLinkTrait(3, 2, 'href'),
+    'section3-link3-label': createFooterSectionLinkTrait(3, 3, 'label'),
+    'section3-link3-href': createFooterSectionLinkTrait(3, 3, 'href'),
+    'section3-link4-label': createFooterSectionLinkTrait(3, 4, 'label'),
+    'section3-link4-href': createFooterSectionLinkTrait(3, 4, 'href'),
+
+    // Section 4 traits
+    'section4-title': createFooterSectionTitleTrait(4),
+    'section4-link1-label': createFooterSectionLinkTrait(4, 1, 'label'),
+    'section4-link1-href': createFooterSectionLinkTrait(4, 1, 'href'),
+    'section4-link2-label': createFooterSectionLinkTrait(4, 2, 'label'),
+    'section4-link2-href': createFooterSectionLinkTrait(4, 2, 'href'),
+    'section4-link3-label': createFooterSectionLinkTrait(4, 3, 'label'),
+    'section4-link3-href': createFooterSectionLinkTrait(4, 3, 'href'),
+    'section4-link4-label': createFooterSectionLinkTrait(4, 4, 'label'),
+    'section4-link4-href': createFooterSectionLinkTrait(4, 4, 'href'),
+  },
+});
+
