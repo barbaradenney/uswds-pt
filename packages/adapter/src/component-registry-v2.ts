@@ -634,6 +634,110 @@ function createModalTraits(): Record<string, UnifiedTrait> {
 }
 
 // ============================================================================
+// Tooltip Helper Functions
+// ============================================================================
+
+/**
+ * Create tooltip-related traits for button/link components
+ */
+function createTooltipTraits(): Record<string, UnifiedTrait> {
+  // Visibility function - only show position when tooltip text exists
+  const tooltipPositionVisible = (component: any) => {
+    try {
+      if (!component) return false;
+      const text = component.get?.('attributes')?.['tooltip'];
+      return Boolean(text?.trim());
+    } catch {
+      return false;
+    }
+  };
+
+  return {
+    tooltip: {
+      definition: {
+        name: 'tooltip',
+        label: 'Tooltip Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Tooltip text on hover',
+        category: { id: 'tooltip', label: 'Tooltip' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const tooltipText = value?.trim() || '';
+          const position = element.getAttribute('tooltip-position') || 'top';
+
+          if (tooltipText) {
+            element.setAttribute('title', tooltipText);
+            element.setAttribute('data-position', position);
+            element.classList.add('usa-tooltip');
+
+            // Also set on internal trigger element
+            const trigger = element.querySelector('button, a');
+            if (trigger) {
+              trigger.setAttribute('title', tooltipText);
+              trigger.setAttribute('data-position', position);
+              trigger.classList.add('usa-tooltip');
+            }
+          } else {
+            element.removeAttribute('title');
+            element.removeAttribute('data-position');
+            element.classList.remove('usa-tooltip');
+
+            const trigger = element.querySelector('button, a');
+            if (trigger) {
+              trigger.removeAttribute('title');
+              trigger.removeAttribute('data-position');
+              trigger.classList.remove('usa-tooltip');
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('title') || '';
+        },
+      },
+    },
+
+    'tooltip-position': {
+      definition: {
+        name: 'tooltip-position',
+        label: 'Tooltip Position',
+        type: 'select',
+        default: 'top',
+        options: [
+          { id: 'top', label: 'Top' },
+          { id: 'bottom', label: 'Bottom' },
+          { id: 'left', label: 'Left' },
+          { id: 'right', label: 'Right' },
+        ],
+        visible: tooltipPositionVisible,
+        category: { id: 'tooltip', label: 'Tooltip' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const position = value || 'top';
+          element.setAttribute('tooltip-position', position);
+
+          // Only update data-position if tooltip text exists
+          const tooltipText = element.getAttribute('title');
+          if (tooltipText) {
+            element.setAttribute('data-position', position);
+
+            const trigger = element.querySelector('button, a');
+            if (trigger) {
+              trigger.setAttribute('data-position', position);
+            }
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('tooltip-position') || 'top';
+        },
+      },
+    },
+  };
+}
+
+// ============================================================================
 // Component Definitions
 // ============================================================================
 
@@ -704,42 +808,8 @@ componentRegistry.register({
     // Modal traits - configure inline modal
     ...createModalTraits(),
 
-    // Tooltip - adds tooltip on hover
-    tooltip: {
-      definition: {
-        name: 'tooltip',
-        label: 'Tooltip Text',
-        type: 'text',
-        default: '',
-        placeholder: 'Tooltip text on hover',
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const tooltipText = value?.trim() || '';
-          if (tooltipText) {
-            element.setAttribute('title', tooltipText);
-            element.classList.add('usa-tooltip');
-            // Also set on internal button
-            const button = element.querySelector('button');
-            if (button) {
-              button.setAttribute('title', tooltipText);
-              button.classList.add('usa-tooltip');
-            }
-          } else {
-            element.removeAttribute('title');
-            element.classList.remove('usa-tooltip');
-            const button = element.querySelector('button');
-            if (button) {
-              button.removeAttribute('title');
-              button.classList.remove('usa-tooltip');
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('title') || '';
-        },
-      },
-    },
+    // Tooltip traits - adds tooltip on hover with position
+    ...createTooltipTraits(),
   },
 });
 
@@ -2278,42 +2348,8 @@ componentRegistry.register({
     // Modal traits - configure inline modal
     ...createModalTraits(),
 
-    // Tooltip - adds tooltip on hover
-    tooltip: {
-      definition: {
-        name: 'tooltip',
-        label: 'Tooltip Text',
-        type: 'text',
-        default: '',
-        placeholder: 'Tooltip text on hover',
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const tooltipText = value?.trim() || '';
-          if (tooltipText) {
-            element.setAttribute('title', tooltipText);
-            element.classList.add('usa-tooltip');
-            // Also set on internal anchor
-            const anchor = element.querySelector('a');
-            if (anchor) {
-              anchor.setAttribute('title', tooltipText);
-              anchor.classList.add('usa-tooltip');
-            }
-          } else {
-            element.removeAttribute('title');
-            element.classList.remove('usa-tooltip');
-            const anchor = element.querySelector('a');
-            if (anchor) {
-              anchor.removeAttribute('title');
-              anchor.classList.remove('usa-tooltip');
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('title') || '';
-        },
-      },
-    },
+    // Tooltip traits - adds tooltip on hover with position
+    ...createTooltipTraits(),
   },
 });
 

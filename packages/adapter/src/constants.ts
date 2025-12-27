@@ -103,8 +103,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-alert': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`,
   'usa-banner': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3z"/><path d="M3 9h18v10H3z" opacity="0.5"/></svg>`,
   'usa-site-alert': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
-  'usa-modal': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12z"/><path d="M7 8h10v2H7zm0 4h10v2H7z"/></svg>`,
-  'usa-tooltip': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>`,
+  // Note: usa-modal and usa-tooltip are configured via button/link traits, not as standalone icons
 
   // Layout
   'usa-accordion': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/></svg>`,
@@ -168,8 +167,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-alert': '__FULL_HTML__<usa-alert variant="info" heading="Alert heading" text="This is an alert message."></usa-alert>',
   'usa-banner': '__FULL_HTML__<usa-banner></usa-banner>',
   'usa-site-alert': '__FULL_HTML__<usa-site-alert type="info" heading="Site Alert" content="This is a site-wide alert message."></usa-site-alert>',
-  'usa-tooltip': '__FULL_HTML__<usa-tooltip text="Helpful information" label="Hover me" position="top"></usa-tooltip>',
-  // Note: usa-modal is configured via button/link traits, not as a standalone component
+  // Note: usa-modal and usa-tooltip are configured via button/link traits, not as standalone components
 
   // Layout
   'usa-accordion': '__FULL_HTML__<usa-accordion section-count="3" section1-title="Section 1" section1-content="Content for section 1" section1-expanded="true" section2-title="Section 2" section2-content="Content for section 2" section3-title="Section 3" section3-content="Content for section 3"></usa-accordion>',
