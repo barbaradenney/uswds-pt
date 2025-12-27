@@ -365,6 +365,275 @@ class ComponentRegistry {
 export const componentRegistry = new ComponentRegistry();
 
 // ============================================================================
+// Modal Helper Functions
+// ============================================================================
+
+/**
+ * Generate a unique modal ID for an element
+ */
+function getModalIdForElement(element: HTMLElement): string {
+  // Use a data attribute to store the modal ID
+  let modalId = element.getAttribute('data-modal-id');
+  if (!modalId) {
+    modalId = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    element.setAttribute('data-modal-id', modalId);
+  }
+  return modalId;
+}
+
+/**
+ * Create or update an inline modal for a trigger element (button/link)
+ */
+function updateInlineModal(triggerElement: HTMLElement): void {
+  const hasModal = triggerElement.getAttribute('has-modal') === 'true';
+  const modalId = getModalIdForElement(triggerElement);
+
+  // Find existing modal sibling
+  let modal = triggerElement.nextElementSibling as HTMLElement | null;
+  if (modal?.tagName?.toLowerCase() !== 'usa-modal') {
+    modal = null;
+  }
+
+  if (!hasModal) {
+    // Remove modal if it exists
+    if (modal) {
+      modal.remove();
+    }
+    // Remove trigger attributes
+    triggerElement.removeAttribute('data-open-modal');
+    triggerElement.removeAttribute('aria-controls');
+    const internalTrigger = triggerElement.querySelector('button, a');
+    if (internalTrigger) {
+      internalTrigger.removeAttribute('data-open-modal');
+      internalTrigger.removeAttribute('aria-controls');
+    }
+    return;
+  }
+
+  // Create modal if it doesn't exist
+  if (!modal) {
+    modal = document.createElement('usa-modal');
+    modal.id = modalId;
+    triggerElement.insertAdjacentElement('afterend', modal);
+  }
+
+  // Update modal attributes from trigger element's modal-* attributes
+  const heading = triggerElement.getAttribute('modal-heading') || 'Modal Title';
+  const description = triggerElement.getAttribute('modal-description') || '';
+  const primaryText = triggerElement.getAttribute('modal-primary-text') || 'Continue';
+  const secondaryText = triggerElement.getAttribute('modal-secondary-text') || 'Cancel';
+  const showSecondary = triggerElement.getAttribute('modal-show-secondary') !== 'false';
+  const large = triggerElement.getAttribute('modal-large') === 'true';
+  const forceAction = triggerElement.getAttribute('modal-force-action') === 'true';
+
+  modal.setAttribute('heading', heading);
+  modal.setAttribute('description', description);
+  modal.setAttribute('primary-button-text', primaryText);
+  modal.setAttribute('secondary-button-text', secondaryText);
+  modal.setAttribute('show-trigger', 'false'); // We're using the button as trigger
+
+  if (showSecondary) {
+    modal.setAttribute('show-secondary-button', '');
+  } else {
+    modal.removeAttribute('show-secondary-button');
+  }
+
+  if (large) {
+    modal.setAttribute('large', '');
+  } else {
+    modal.removeAttribute('large');
+  }
+
+  if (forceAction) {
+    modal.setAttribute('force-action', '');
+  } else {
+    modal.removeAttribute('force-action');
+  }
+
+  // Set Lit properties for reactivity
+  (modal as any).heading = heading;
+  (modal as any).description = description;
+  (modal as any).primaryButtonText = primaryText;
+  (modal as any).secondaryButtonText = secondaryText;
+  (modal as any).showSecondaryButton = showSecondary;
+  (modal as any).large = large;
+  (modal as any).forceAction = forceAction;
+  (modal as any).showTrigger = false;
+
+  if (typeof (modal as any).requestUpdate === 'function') {
+    (modal as any).requestUpdate();
+  }
+
+  // Set trigger attributes on the button/link
+  triggerElement.setAttribute('data-open-modal', '');
+  triggerElement.setAttribute('aria-controls', modalId);
+
+  // Also set on internal trigger element
+  const internalTrigger = triggerElement.querySelector('button, a');
+  if (internalTrigger) {
+    internalTrigger.setAttribute('data-open-modal', '');
+    internalTrigger.setAttribute('aria-controls', modalId);
+  }
+}
+
+/**
+ * Create modal-related traits for button/link components
+ */
+function createModalTraits(): Record<string, UnifiedTrait> {
+  // Visibility function - only show modal config when has-modal is true
+  const modalTraitVisible = (component: any) => {
+    try {
+      if (!component) return false;
+      return component.get?.('attributes')?.['has-modal'] === 'true';
+    } catch {
+      return false;
+    }
+  };
+
+  return {
+    'has-modal': {
+      definition: {
+        name: 'has-modal',
+        label: 'Opens Modal',
+        type: 'checkbox',
+        default: false,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hasModal = value === true || value === 'true' || value === '';
+          element.setAttribute('has-modal', String(hasModal));
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-heading': {
+      definition: {
+        name: 'modal-heading',
+        label: 'Modal Heading',
+        type: 'text',
+        default: 'Modal Title',
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('modal-heading', value || 'Modal Title');
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-description': {
+      definition: {
+        name: 'modal-description',
+        label: 'Modal Content',
+        type: 'textarea',
+        default: '',
+        placeholder: 'Modal description or content...',
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('modal-description', value || '');
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-primary-text': {
+      definition: {
+        name: 'modal-primary-text',
+        label: 'Primary Button',
+        type: 'text',
+        default: 'Continue',
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('modal-primary-text', value || 'Continue');
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-secondary-text': {
+      definition: {
+        name: 'modal-secondary-text',
+        label: 'Secondary Button',
+        type: 'text',
+        default: 'Cancel',
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('modal-secondary-text', value || 'Cancel');
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-show-secondary': {
+      definition: {
+        name: 'modal-show-secondary',
+        label: 'Show Secondary Button',
+        type: 'checkbox',
+        default: true,
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const show = value === true || value === 'true' || value === '';
+          element.setAttribute('modal-show-secondary', String(show));
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-large': {
+      definition: {
+        name: 'modal-large',
+        label: 'Large Modal',
+        type: 'checkbox',
+        default: false,
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const large = value === true || value === 'true' || value === '';
+          element.setAttribute('modal-large', String(large));
+          updateInlineModal(element);
+        },
+      },
+    },
+
+    'modal-force-action': {
+      definition: {
+        name: 'modal-force-action',
+        label: 'Force Action',
+        type: 'checkbox',
+        default: false,
+        visible: modalTraitVisible,
+        category: { id: 'modal', label: 'Modal' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const force = value === true || value === 'true' || value === '';
+          element.setAttribute('modal-force-action', String(force));
+          updateInlineModal(element);
+        },
+      },
+    },
+  };
+}
+
+// ============================================================================
 // Component Definitions
 // ============================================================================
 
@@ -432,42 +701,8 @@ componentRegistry.register({
       removeDefaults: [''],
     }),
 
-    // Modal ID - opens a modal when clicked
-    'modal-id': {
-      definition: {
-        name: 'modal-id',
-        label: 'Opens Modal (ID)',
-        type: 'text',
-        default: '',
-        placeholder: 'e.g., my-modal',
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const modalId = value?.trim() || '';
-          if (modalId) {
-            element.setAttribute('data-open-modal', '');
-            element.setAttribute('aria-controls', modalId);
-            // Also set on internal button
-            const button = element.querySelector('button');
-            if (button) {
-              button.setAttribute('data-open-modal', '');
-              button.setAttribute('aria-controls', modalId);
-            }
-          } else {
-            element.removeAttribute('data-open-modal');
-            element.removeAttribute('aria-controls');
-            const button = element.querySelector('button');
-            if (button) {
-              button.removeAttribute('data-open-modal');
-              button.removeAttribute('aria-controls');
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('aria-controls') || '';
-        },
-      },
-    },
+    // Modal traits - configure inline modal
+    ...createModalTraits(),
 
     // Tooltip - adds tooltip on hover
     tooltip: {
@@ -2040,42 +2275,8 @@ componentRegistry.register({
       ],
     }),
 
-    // Modal ID - opens a modal when clicked
-    'modal-id': {
-      definition: {
-        name: 'modal-id',
-        label: 'Opens Modal (ID)',
-        type: 'text',
-        default: '',
-        placeholder: 'e.g., my-modal',
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const modalId = value?.trim() || '';
-          if (modalId) {
-            element.setAttribute('data-open-modal', '');
-            element.setAttribute('aria-controls', modalId);
-            // Also set on internal anchor
-            const anchor = element.querySelector('a');
-            if (anchor) {
-              anchor.setAttribute('data-open-modal', '');
-              anchor.setAttribute('aria-controls', modalId);
-            }
-          } else {
-            element.removeAttribute('data-open-modal');
-            element.removeAttribute('aria-controls');
-            const anchor = element.querySelector('a');
-            if (anchor) {
-              anchor.removeAttribute('data-open-modal');
-              anchor.removeAttribute('aria-controls');
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('aria-controls') || '';
-        },
-      },
-    },
+    // Modal traits - configure inline modal
+    ...createModalTraits(),
 
     // Tooltip - adds tooltip on hover
     tooltip: {

@@ -168,8 +168,8 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-alert': '__FULL_HTML__<usa-alert variant="info" heading="Alert heading" text="This is an alert message."></usa-alert>',
   'usa-banner': '__FULL_HTML__<usa-banner></usa-banner>',
   'usa-site-alert': '__FULL_HTML__<usa-site-alert type="info" heading="Site Alert" content="This is a site-wide alert message."></usa-site-alert>',
-  'usa-modal': '__FULL_HTML__<usa-modal heading="Modal Title" description="Modal content goes here." trigger-text="Open Modal" primary-button-text="Continue" secondary-button-text="Cancel"></usa-modal>',
   'usa-tooltip': '__FULL_HTML__<usa-tooltip text="Helpful information" label="Hover me" position="top"></usa-tooltip>',
+  // Note: usa-modal is configured via button/link traits, not as a standalone component
 
   // Layout
   'usa-accordion': '__FULL_HTML__<usa-accordion section-count="3" section1-title="Section 1" section1-content="Content for section 1" section1-expanded="true" section2-title="Section 2" section2-content="Content for section 2" section3-title="Section 3" section3-content="Content for section 3"></usa-accordion>',
