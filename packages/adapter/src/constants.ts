@@ -113,6 +113,12 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-prose': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 4h14v2H3zm0 4h18v2H3zm0 4h10v2H3z"/></svg>`,
   'usa-identifier': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 16.54V9.09l7 3.5v7.45l-7-3.5zm9 3.5v-7.45l7-3.5v7.45l-7 3.5z"/></svg>`,
 
+  // Templates
+  'landing-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 4h18v10H3V7zm0 12h18v2H3v-2z"/><path d="M5 9h14v2H5V9zm0 4h10v2H5v-2z" opacity="0.5"/></svg>`,
+  'form-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v2H5V7zm0 4h14v2H5v-2zm0 4h8v2H5v-2z" opacity="0.5"/></svg>`,
+  'sign-in-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14z"/><path d="M8 10h8v2H8v-2zm0 4h8v2H8v-2z" opacity="0.5"/><circle cx="12" cy="7" r="2" opacity="0.5"/></svg>`,
+  'error-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M12 7l-5 9h10l-5-9zm0 3v3m0 1v1" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.7"/></svg>`,
+
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
 };
@@ -178,6 +184,123 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-process-list': '__FULL_HTML__<usa-process-list item-count="3" item1-heading="Step 1" item1-content="Description for step 1" item2-heading="Step 2" item2-content="Description for step 2" item3-heading="Step 3" item3-content="Description for step 3"></usa-process-list>',
   'usa-prose': '__FULL_HTML__<usa-prose>Enter your prose content here. This component applies USWDS typography styles to the text within.</usa-prose>',
   'usa-identifier': '__FULL_HTML__<usa-identifier domain="example.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>',
+
+  // Templates - Full page layouts
+  'landing-template': `__FULL_HTML__<div class="landing-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="4" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#about" nav3-label="Services" nav3-href="#services" nav4-label="Contact" nav4-href="#contact" show-skip-link="true"></usa-header>
+  <main id="main-content">
+    <section class="usa-hero" style="background-color: #112f4e; padding: 2rem 0;">
+      <div class="grid-container">
+        <div class="usa-hero__callout" style="background-color: #1a4480; padding: 2rem; max-width: 30rem;">
+          <h1 class="usa-hero__heading" style="color: white; font-size: 2.5rem; margin: 0 0 1rem;">Welcome to Our Agency</h1>
+          <p style="color: white; margin: 0 0 1.5rem;">We are committed to serving you with excellence. Discover our services and how we can help you today.</p>
+          <usa-button text="Learn More" variant="outline-inverse"></usa-button>
+        </div>
+      </div>
+    </section>
+    <section class="usa-section" style="padding: 3rem 0;">
+      <div class="grid-container">
+        <h2 style="margin-bottom: 2rem;">Our Services</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+          <usa-card heading="Service One" text="Description of the first service we offer to help citizens."></usa-card>
+          <usa-card heading="Service Two" text="Description of the second service available to the public."></usa-card>
+          <usa-card heading="Service Three" text="Description of another important service we provide."></usa-card>
+        </div>
+      </div>
+    </section>
+    <section class="usa-section usa-section--light" style="padding: 3rem 0; background-color: #f0f0f0;">
+      <div class="grid-container">
+        <h2 style="margin-bottom: 1rem;">Latest Updates</h2>
+        <usa-collection count="2" item1-title="Important Announcement" item1-description="Stay informed about the latest news and updates from our agency." item2-title="New Program Available" item2-description="Learn about our newest program designed to serve you better."></usa-collection>
+      </div>
+    </section>
+  </main>
+  <usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+
+  'form-template': `__FULL_HTML__<div class="form-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="3" nav1-label="Home" nav1-href="#" nav2-label="Forms" nav2-href="#" nav2-current nav3-label="Help" nav3-href="#" show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 2rem 0;">
+    <div style="max-width: 40rem;">
+      <h1>Application Form</h1>
+      <p class="usa-intro">Please complete all required fields below. Fields marked with (*) are required.</p>
+      <usa-alert variant="info" heading="Before you begin" text="Make sure you have all required documents ready before starting this application."></usa-alert>
+      <form style="margin-top: 2rem;">
+        <fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0 0 2rem;">
+          <legend class="usa-legend usa-legend--large">Personal Information</legend>
+          <usa-text-input label="First Name" name="first-name" required></usa-text-input>
+          <usa-text-input label="Last Name" name="last-name" required></usa-text-input>
+          <usa-text-input label="Email Address" name="email" type="email" required></usa-text-input>
+          <usa-text-input label="Phone Number" name="phone" type="tel"></usa-text-input>
+        </fieldset>
+        <fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0 0 2rem;">
+          <legend class="usa-legend usa-legend--large">Additional Details</legend>
+          <usa-select label="Reason for Contact" name="reason"></usa-select>
+          <usa-textarea label="Message" name="message" required></usa-textarea>
+          <usa-checkbox label="I agree to the terms and conditions" name="terms" required></usa-checkbox>
+        </fieldset>
+        <usa-button text="Submit Application" variant="default"></usa-button>
+      </form>
+    </div>
+  </main>
+  <usa-footer variant="slim" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+
+  'sign-in-template': `__FULL_HTML__<div class="sign-in-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="2" nav1-label="Home" nav1-href="#" nav2-label="Help" nav2-href="#" show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 3rem 0;">
+    <div style="max-width: 24rem; margin: 0 auto;">
+      <h1>Sign In</h1>
+      <p>Access your account to manage your information and services.</p>
+      <form style="margin-top: 2rem;">
+        <usa-text-input label="Email Address" name="email" type="email" required></usa-text-input>
+        <usa-text-input label="Password" name="password" type="password" required></usa-text-input>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;">
+          <usa-checkbox label="Remember me" name="remember"></usa-checkbox>
+          <usa-link text="Forgot password?" href="#"></usa-link>
+        </div>
+        <usa-button text="Sign In" variant="default" style="width: 100%;"></usa-button>
+      </form>
+      <hr style="margin: 2rem 0; border: none; border-top: 1px solid #dfe1e2;">
+      <p style="text-align: center;">Don't have an account? <usa-link text="Create one" href="#"></usa-link></p>
+    </div>
+  </main>
+  <usa-footer variant="slim" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+
+  'error-template': `__FULL_HTML__<div class="error-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="3" nav1-label="Home" nav1-href="#" nav2-label="About" nav2-href="#" nav3-label="Contact" nav3-href="#" show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 4rem 0; text-align: center;">
+    <div style="max-width: 40rem; margin: 0 auto;">
+      <h1 style="font-size: 4rem; color: #d63e04; margin-bottom: 1rem;">404</h1>
+      <h2>Page Not Found</h2>
+      <p class="usa-intro">We're sorry, we can't find the page you're looking for. It might have been removed, changed its name, or is otherwise unavailable.</p>
+      <usa-alert variant="warning" heading="What you can do:" text="Check the URL for typos, use the navigation menu above, or return to the homepage."></usa-alert>
+      <div style="margin-top: 2rem;">
+        <usa-button text="Return to Homepage" variant="default"></usa-button>
+        <usa-button text="Contact Support" variant="outline"></usa-button>
+      </div>
+      <div style="margin-top: 3rem;">
+        <h3>Popular Pages</h3>
+        <ul class="usa-list" style="text-align: left; display: inline-block;">
+          <li><usa-link text="About Us" href="#"></usa-link></li>
+          <li><usa-link text="Services" href="#"></usa-link></li>
+          <li><usa-link text="Contact" href="#"></usa-link></li>
+          <li><usa-link text="Help Center" href="#"></usa-link></li>
+        </ul>
+      </div>
+    </div>
+  </main>
+  <usa-footer variant="slim" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
 
   // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
   // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
