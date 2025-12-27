@@ -111,6 +111,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-step-indicator': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="18" cy="12" r="3" opacity="0.3"/></svg>`,
   'usa-process-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="5" r="3"/><path d="M10 4h12v2H10z"/><circle cx="6" cy="12" r="3"/><path d="M10 11h12v2H10z"/><circle cx="6" cy="19" r="3"/><path d="M10 18h12v2H10z"/></svg>`,
   'usa-prose': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 4h14v2H3zm0 4h18v2H3zm0 4h10v2H3z"/></svg>`,
+  'usa-identifier': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 16.54V9.09l7 3.5v7.45l-7-3.5zm9 3.5v-7.45l7-3.5v7.45l-7 3.5z"/></svg>`,
 
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
@@ -176,6 +177,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-step-indicator': '__FULL_HTML__<usa-step-indicator step-count="4" show-labels step1-label="Step 1" step1-status="complete" step2-label="Step 2" step2-status="current" step3-label="Step 3" step3-status="incomplete" step4-label="Step 4" step4-status="incomplete"></usa-step-indicator>',
   'usa-process-list': '__FULL_HTML__<usa-process-list item-count="3" item1-heading="Step 1" item1-content="Description for step 1" item2-heading="Step 2" item2-content="Description for step 2" item3-heading="Step 3" item3-content="Description for step 3"></usa-process-list>',
   'usa-prose': '__FULL_HTML__<usa-prose>Enter your prose content here. This component applies USWDS typography styles to the text within.</usa-prose>',
+  'usa-identifier': '__FULL_HTML__<usa-identifier domain="example.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>',
 
   // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
   // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',

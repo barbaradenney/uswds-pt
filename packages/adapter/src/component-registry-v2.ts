@@ -5335,6 +5335,179 @@ componentRegistry.register({
   },
 });
 
+/**
+ * USA Identifier Component
+ *
+ * Agency identifier footer that displays parent agency info and required federal links.
+ * Used at the bottom of government websites.
+ */
+componentRegistry.register({
+  tagName: 'usa-identifier',
+  droppable: false,
+
+  traits: {
+    // Domain name
+    domain: {
+      definition: {
+        name: 'domain',
+        label: 'Domain Name',
+        type: 'text',
+        default: 'domain.gov',
+        placeholder: 'example.gov',
+        category: { id: 'identity', label: 'Identity' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const domain = value || 'domain.gov';
+          element.setAttribute('domain', domain);
+          (element as any).domain = domain;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).domain || element.getAttribute('domain') || 'domain.gov';
+        },
+      },
+    },
+
+    // Parent Agency name
+    'parent-agency': {
+      definition: {
+        name: 'parent-agency',
+        label: 'Parent Agency',
+        type: 'text',
+        default: 'Parent Agency',
+        placeholder: 'e.g., Department of Example',
+        category: { id: 'identity', label: 'Identity' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const agency = value || 'Parent Agency';
+          element.setAttribute('parent-agency', agency);
+          (element as any).parentAgency = agency;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).parentAgency || element.getAttribute('parent-agency') || 'Parent Agency';
+        },
+      },
+    },
+
+    // Parent Agency URL
+    'parent-agency-href': {
+      definition: {
+        name: 'parent-agency-href',
+        label: 'Parent Agency URL',
+        type: 'text',
+        default: '#',
+        placeholder: 'https://agency.gov',
+        category: { id: 'identity', label: 'Identity' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const href = value || '#';
+          element.setAttribute('parent-agency-href', href);
+          (element as any).parentAgencyHref = href;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).parentAgencyHref || element.getAttribute('parent-agency-href') || '#';
+        },
+      },
+    },
+
+    // Masthead Logo Alt Text
+    'masthead-logo-alt': {
+      definition: {
+        name: 'masthead-logo-alt',
+        label: 'Logo Alt Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Agency logo',
+        category: { id: 'identity', label: 'Identity' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const alt = value || '';
+          if (alt) {
+            element.setAttribute('masthead-logo-alt', alt);
+          } else {
+            element.removeAttribute('masthead-logo-alt');
+          }
+          (element as any).mastheadLogoAlt = alt;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).mastheadLogoAlt || element.getAttribute('masthead-logo-alt') || '';
+        },
+      },
+    },
+
+    // Show Required Links toggle
+    'show-required-links': {
+      definition: {
+        name: 'show-required-links',
+        label: 'Show Required Links',
+        type: 'checkbox',
+        default: true,
+        category: { id: 'display', label: 'Display' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const show = value === true || value === 'true';
+          if (show) {
+            element.setAttribute('show-required-links', '');
+          } else {
+            element.removeAttribute('show-required-links');
+          }
+          (element as any).showRequiredLinks = show;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showRequiredLinks !== false;
+        },
+      },
+    },
+
+    // Show Logos toggle
+    'show-logos': {
+      definition: {
+        name: 'show-logos',
+        label: 'Show Logos',
+        type: 'checkbox',
+        default: true,
+        category: { id: 'display', label: 'Display' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const show = value === true || value === 'true';
+          if (show) {
+            element.setAttribute('show-logos', '');
+          } else {
+            element.removeAttribute('show-logos');
+          }
+          (element as any).showLogos = show;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showLogos !== false;
+        },
+      },
+    },
+  },
+});
+
 // ============================================================================
 // Header & Footer Components
 // ============================================================================
