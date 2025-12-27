@@ -5513,6 +5513,44 @@ componentRegistry.register({
 // ============================================================================
 
 /**
+ * Helper function to update/create/remove skip link for header
+ * The skip link is inserted as a sibling before the usa-header element
+ */
+function updateHeaderSkipLink(element: HTMLElement): void {
+  const showSkipLink = element.getAttribute('show-skip-link') !== 'false';
+  const skipLinkText = element.getAttribute('skip-link-text') || 'Skip to main content';
+  const skipLinkHref = element.getAttribute('skip-link-href') || '#main-content';
+
+  // Find existing skip link (look for sibling with data-header-skip-link attribute)
+  const existingSkipLink = element.previousElementSibling?.hasAttribute('data-header-skip-link')
+    ? element.previousElementSibling as HTMLElement
+    : null;
+
+  if (showSkipLink) {
+    if (existingSkipLink) {
+      // Update existing skip link
+      existingSkipLink.textContent = skipLinkText;
+      existingSkipLink.setAttribute('href', skipLinkHref);
+    } else {
+      // Create new skip link
+      const skipLink = document.createElement('a');
+      skipLink.className = 'usa-skipnav';
+      skipLink.setAttribute('href', skipLinkHref);
+      skipLink.setAttribute('data-header-skip-link', 'true');
+      skipLink.textContent = skipLinkText;
+
+      // Insert before the header element
+      element.parentNode?.insertBefore(skipLink, element);
+    }
+  } else {
+    // Remove skip link if it exists
+    if (existingSkipLink) {
+      existingSkipLink.remove();
+    }
+  }
+}
+
+/**
  * Helper function to rebuild header nav items array from attributes
  */
 function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
@@ -5653,6 +5691,85 @@ componentRegistry.register({
   droppable: false,
 
   traits: {
+    // Skip Link - Include skip navigation for accessibility
+    'show-skip-link': {
+      definition: {
+        name: 'show-skip-link',
+        label: 'Include Skip Link',
+        type: 'checkbox',
+        default: true,
+        category: { id: 'accessibility', label: 'Accessibility' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const showSkipLink = value === true || value === 'true';
+          element.setAttribute('show-skip-link', showSkipLink ? 'true' : 'false');
+          updateHeaderSkipLink(element);
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          const showSkipLink = value === true || value === 'true' || value === undefined;
+          if (showSkipLink) {
+            // Delay to ensure element is in DOM
+            setTimeout(() => updateHeaderSkipLink(element), 100);
+          }
+        },
+      },
+    },
+
+    'skip-link-text': {
+      definition: {
+        name: 'skip-link-text',
+        label: 'Skip Link Text',
+        type: 'text',
+        default: 'Skip to main content',
+        placeholder: 'Skip to main content',
+        visible: (component: any) => {
+          try {
+            if (!component) return false;
+            const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
+            return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
+          } catch {
+            return true;
+          }
+        },
+        category: { id: 'accessibility', label: 'Accessibility' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Skip to main content';
+          element.setAttribute('skip-link-text', text);
+          updateHeaderSkipLink(element);
+        },
+      },
+    },
+
+    'skip-link-href': {
+      definition: {
+        name: 'skip-link-href',
+        label: 'Skip Link Target',
+        type: 'text',
+        default: '#main-content',
+        placeholder: '#main-content',
+        visible: (component: any) => {
+          try {
+            if (!component) return false;
+            const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
+            return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
+          } catch {
+            return true;
+          }
+        },
+        category: { id: 'accessibility', label: 'Accessibility' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const href = value || '#main-content';
+          element.setAttribute('skip-link-href', href);
+          updateHeaderSkipLink(element);
+        },
+      },
+    },
+
     // Logo Text
     'logo-text': {
       definition: {
