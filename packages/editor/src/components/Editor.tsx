@@ -12,6 +12,7 @@ import {
 } from '@uswds-pt/adapter';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
+import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 
 // Debug logging flag
 const DEBUG = false; // Set to true for verbose logging
@@ -96,6 +97,93 @@ const uswdsComponentsPlugin = (editor: any) => {
       console.warn('Invalid options JSON:', e);
     }
   });
+};
+
+// Plugin to apply USWDS styling to tables created by tableComponent
+const uswdsTablePlugin = (editor: any) => {
+  const Components = editor.Components || editor.DomComponents;
+
+  // Extend the table component type to add USWDS class and traits
+  const originalTableType = Components.getType('table');
+  if (originalTableType) {
+    Components.addType('table', {
+      model: {
+        defaults: {
+          ...originalTableType.model?.prototype?.defaults,
+          classes: ['usa-table'],
+          traits: [
+            {
+              name: 'table-variant',
+              label: 'Variant',
+              type: 'select',
+              default: 'default',
+              options: [
+                { id: 'default', label: 'Default' },
+                { id: 'borderless', label: 'Borderless' },
+              ],
+            },
+            {
+              name: 'table-striped',
+              label: 'Striped Rows',
+              type: 'checkbox',
+              default: false,
+            },
+            {
+              name: 'table-compact',
+              label: 'Compact',
+              type: 'checkbox',
+              default: false,
+            },
+            {
+              name: 'table-stacked',
+              label: 'Stacked (Mobile)',
+              type: 'select',
+              default: 'none',
+              options: [
+                { id: 'none', label: 'None' },
+                { id: 'stacked', label: 'Always Stacked' },
+                { id: 'stacked-header', label: 'Stacked with Header' },
+              ],
+            },
+          ],
+        },
+        init(this: any) {
+          // Apply USWDS class on init
+          this.addClass('usa-table');
+
+          // Listen for trait changes
+          this.on('change:attributes:table-variant', this.updateTableClasses);
+          this.on('change:attributes:table-striped', this.updateTableClasses);
+          this.on('change:attributes:table-compact', this.updateTableClasses);
+          this.on('change:attributes:table-stacked', this.updateTableClasses);
+        },
+        updateTableClasses(this: any) {
+          const attrs = this.getAttributes();
+          const classes = ['usa-table'];
+
+          if (attrs['table-variant'] === 'borderless') {
+            classes.push('usa-table--borderless');
+          }
+          if (attrs['table-striped'] === true || attrs['table-striped'] === 'true') {
+            classes.push('usa-table--striped');
+          }
+          if (attrs['table-compact'] === true || attrs['table-compact'] === 'true') {
+            classes.push('usa-table--compact');
+          }
+          if (attrs['table-stacked'] === 'stacked') {
+            classes.push('usa-table--stacked');
+          } else if (attrs['table-stacked'] === 'stacked-header') {
+            classes.push('usa-table--stacked-header');
+          }
+
+          // Update classes
+          this.setClass(classes);
+        },
+      },
+    });
+  }
+
+  debug('USWDS table styling plugin initialized');
 };
 
 // License key from environment variable
@@ -343,7 +431,19 @@ export function Editor() {
           options={{
             licenseKey: LICENSE_KEY,
             // Register USWDS component types via plugin (runs before content parsing)
-            plugins: [uswdsComponentsPlugin],
+            // Order matters: tableComponent first, then uswdsTablePlugin to extend it, then uswdsComponentsPlugin
+            plugins: [
+              // Wrap tableComponent with options for USWDS integration
+              (editor: any) => tableComponent(editor, {
+                block: {
+                  label: 'Table',
+                  category: 'Data Display',
+                  media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v12h14V7zm-8 4h6v2h-6v-2zm0 4h6v2h-6v-2zm-6-4h4v6H5v-6z"/></svg>`,
+                },
+              }),
+              uswdsTablePlugin,
+              uswdsComponentsPlugin,
+            ],
             project: {
               type: 'web',
               default: {
