@@ -3395,6 +3395,219 @@ componentRegistry.register({
 });
 
 /**
+ * USA Icon Component
+ *
+ * USWDS icons for visual communication.
+ * Supports all USWDS icons with configurable size and accessibility options.
+ */
+componentRegistry.register({
+  tagName: 'usa-icon',
+  droppable: false,
+
+  traits: {
+    // Icon name - the USWDS icon identifier
+    name: {
+      definition: {
+        name: 'name',
+        label: 'Icon',
+        type: 'select',
+        default: 'info',
+        options: [
+          // Status & Feedback
+          { id: 'info', label: 'Info' },
+          { id: 'check_circle', label: 'Check Circle' },
+          { id: 'error', label: 'Error' },
+          { id: 'warning', label: 'Warning' },
+          { id: 'help', label: 'Help' },
+          { id: 'cancel', label: 'Cancel' },
+          // Navigation & Actions
+          { id: 'arrow_forward', label: 'Arrow Forward' },
+          { id: 'arrow_back', label: 'Arrow Back' },
+          { id: 'arrow_upward', label: 'Arrow Upward' },
+          { id: 'arrow_downward', label: 'Arrow Downward' },
+          { id: 'expand_more', label: 'Expand More' },
+          { id: 'expand_less', label: 'Expand Less' },
+          { id: 'navigate_next', label: 'Navigate Next' },
+          { id: 'navigate_before', label: 'Navigate Before' },
+          { id: 'first_page', label: 'First Page' },
+          { id: 'last_page', label: 'Last Page' },
+          // Common UI
+          { id: 'search', label: 'Search' },
+          { id: 'close', label: 'Close' },
+          { id: 'menu', label: 'Menu' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'home', label: 'Home' },
+          { id: 'lock', label: 'Lock' },
+          { id: 'lock_open', label: 'Lock Open' },
+          { id: 'visibility', label: 'Visibility' },
+          { id: 'visibility_off', label: 'Visibility Off' },
+          { id: 'edit', label: 'Edit' },
+          { id: 'delete', label: 'Delete' },
+          { id: 'add', label: 'Add' },
+          { id: 'remove', label: 'Remove' },
+          // Files & Documents
+          { id: 'file_download', label: 'File Download' },
+          { id: 'file_upload', label: 'File Upload' },
+          { id: 'file_present', label: 'File Present' },
+          { id: 'attach_file', label: 'Attach File' },
+          { id: 'content_copy', label: 'Content Copy' },
+          { id: 'print', label: 'Print' },
+          // Communication
+          { id: 'mail', label: 'Mail' },
+          { id: 'phone', label: 'Phone' },
+          { id: 'chat', label: 'Chat' },
+          { id: 'notifications', label: 'Notifications' },
+          { id: 'share', label: 'Share' },
+          // People & Account
+          { id: 'person', label: 'Person' },
+          { id: 'people', label: 'People' },
+          { id: 'account_circle', label: 'Account Circle' },
+          { id: 'groups', label: 'Groups' },
+          // Location & Maps
+          { id: 'location_on', label: 'Location' },
+          { id: 'directions', label: 'Directions' },
+          { id: 'map', label: 'Map' },
+          { id: 'near_me', label: 'Near Me' },
+          // Time & Calendar
+          { id: 'schedule', label: 'Schedule' },
+          { id: 'event', label: 'Event' },
+          { id: 'today', label: 'Today' },
+          { id: 'access_time', label: 'Access Time' },
+          // Data & Analytics
+          { id: 'assessment', label: 'Assessment' },
+          { id: 'trending_up', label: 'Trending Up' },
+          { id: 'trending_down', label: 'Trending Down' },
+          { id: 'bar_chart', label: 'Bar Chart' },
+          // Government & Official
+          { id: 'flag', label: 'Flag' },
+          { id: 'account_balance', label: 'Account Balance' },
+          { id: 'gavel', label: 'Gavel' },
+          { id: 'verified', label: 'Verified' },
+          { id: 'security', label: 'Security' },
+          // Misc
+          { id: 'favorite', label: 'Favorite' },
+          { id: 'star', label: 'Star' },
+          { id: 'thumb_up', label: 'Thumb Up' },
+          { id: 'thumb_down', label: 'Thumb Down' },
+          { id: 'link', label: 'Link' },
+          { id: 'launch', label: 'Launch' },
+          { id: 'logout', label: 'Logout' },
+          { id: 'login', label: 'Login' },
+        ],
+        category: { id: 'icon', label: 'Icon' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const name = value || 'info';
+          element.setAttribute('name', name);
+          (element as any).name = name;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).name || element.getAttribute('name') || 'info';
+        },
+      },
+    },
+
+    // Size - USWDS icon size classes
+    size: {
+      definition: {
+        name: 'size',
+        label: 'Size',
+        type: 'select',
+        default: '',
+        options: [
+          { id: '', label: 'Default' },
+          { id: '3', label: 'Size 3 (24px)' },
+          { id: '4', label: 'Size 4 (32px)' },
+          { id: '5', label: 'Size 5 (40px)' },
+          { id: '6', label: 'Size 6 (48px)' },
+          { id: '7', label: 'Size 7 (56px)' },
+          { id: '8', label: 'Size 8 (64px)' },
+          { id: '9', label: 'Size 9 (72px)' },
+        ],
+        category: { id: 'icon', label: 'Icon' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value && value !== '') {
+            element.setAttribute('size', value);
+          } else {
+            element.removeAttribute('size');
+          }
+          (element as any).size = value || '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).size || element.getAttribute('size') || '';
+        },
+      },
+    },
+
+    // Aria Label - for accessible icons
+    'aria-label': {
+      definition: {
+        name: 'aria-label',
+        label: 'Accessible Label',
+        type: 'text',
+        default: '',
+        placeholder: 'Describe the icon for screen readers',
+        category: { id: 'accessibility', label: 'Accessibility' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const label = value?.trim() || '';
+          if (label) {
+            element.setAttribute('aria-label', label);
+          } else {
+            element.removeAttribute('aria-label');
+          }
+          (element as any).ariaLabel = label;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).ariaLabel || element.getAttribute('aria-label') || '';
+        },
+      },
+    },
+
+    // Decorative - mark icon as decorative (hidden from screen readers)
+    decorative: {
+      definition: {
+        name: 'decorative',
+        label: 'Decorative Only',
+        type: 'checkbox',
+        default: false,
+        category: { id: 'accessibility', label: 'Accessibility' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const isDecorative = value === true || value === 'true';
+          if (isDecorative) {
+            element.setAttribute('decorative', 'true');
+          } else {
+            element.removeAttribute('decorative');
+          }
+          (element as any).decorative = isDecorative ? 'true' : '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('decorative') === 'true';
+        },
+      },
+    },
+  },
+});
+
+/**
  * USA List Component
  *
  * Ordered or unordered list with USWDS styling.
