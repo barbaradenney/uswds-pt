@@ -435,6 +435,22 @@ class ComponentRegistry {
     }
     return handlers;
   }
+
+  /**
+   * Extract trait default values (for initialization)
+   */
+  getTraitDefaults(tagName: string): Record<string, any> {
+    const component = this.components.get(tagName);
+    if (!component) return {};
+
+    const defaults: Record<string, any> = {};
+    for (const [name, trait] of Object.entries(component.traits)) {
+      if (trait.definition.default !== undefined) {
+        defaults[name] = trait.definition.default;
+      }
+    }
+    return defaults;
+  }
 }
 
 export const componentRegistry = new ComponentRegistry();
@@ -2436,6 +2452,7 @@ componentRegistry.register({
  */
 
 // Helper function to rebuild button group buttons from individual traits
+// Uses DOM methods instead of innerHTML to preserve event listeners
 function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
   // Find the ul container (button group renders as ul > li > button)
   let ul = element.querySelector('ul.usa-button-group');
@@ -2449,27 +2466,51 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
     return;
   }
 
-  // Clear existing buttons
-  ul.innerHTML = '';
+  // Get existing list items
+  const existingItems = ul.querySelectorAll('li.usa-button-group__item');
+  const existingCount = existingItems.length;
 
-  // Create new buttons based on traits
+  // Update existing buttons or create new ones
   for (let i = 1; i <= count; i++) {
     const text = element.getAttribute(`btn${i}-text`) || `Button ${i}`;
     const variant = element.getAttribute(`btn${i}-variant`) || '';
 
-    const li = document.createElement('li');
-    li.className = 'usa-button-group__item';
+    if (i <= existingCount) {
+      // Update existing button in place
+      const li = existingItems[i - 1];
+      const button = li.querySelector('button');
+      if (button) {
+        button.textContent = text;
+        // Reset button classes and apply variant
+        button.className = 'usa-button';
+        if (variant && variant !== 'default') {
+          button.classList.add(`usa-button--${variant}`);
+        }
+      }
+    } else {
+      // Create new button
+      const li = document.createElement('li');
+      li.className = 'usa-button-group__item';
 
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'usa-button';
-    if (variant && variant !== 'default') {
-      button.classList.add(`usa-button--${variant}`);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'usa-button';
+      if (variant && variant !== 'default') {
+        button.classList.add(`usa-button--${variant}`);
+      }
+      button.textContent = text;
+
+      li.appendChild(button);
+      ul.appendChild(li);
     }
-    button.textContent = text;
+  }
 
-    li.appendChild(button);
-    ul.appendChild(li);
+  // Remove extra buttons if count decreased
+  for (let i = existingCount; i > count; i--) {
+    const li = existingItems[i - 1];
+    if (li && li.parentNode) {
+      li.parentNode.removeChild(li);
+    }
   }
 }
 
@@ -3690,6 +3731,7 @@ componentRegistry.register({
  */
 
 // Helper function to rebuild list items from individual traits
+// Uses DOM methods instead of innerHTML to preserve event listeners
 function rebuildListItems(element: HTMLElement, count: number): void {
   const type = element.getAttribute('type') || 'unordered';
   const listTag = type === 'ordered' ? 'ol' : 'ul';
@@ -3704,15 +3746,31 @@ function rebuildListItems(element: HTMLElement, count: number): void {
     return;
   }
 
-  // Clear existing items
-  list.innerHTML = '';
+  // Get existing list items
+  const existingItems = list.querySelectorAll('li');
+  const existingCount = existingItems.length;
 
-  // Create new items based on traits
+  // Update existing items or create new ones
   for (let i = 1; i <= count; i++) {
     const text = element.getAttribute(`item${i}`) || `Item ${i}`;
-    const li = document.createElement('li');
-    li.textContent = text;
-    list.appendChild(li);
+
+    if (i <= existingCount) {
+      // Update existing item in place
+      existingItems[i - 1].textContent = text;
+    } else {
+      // Create new item
+      const li = document.createElement('li');
+      li.textContent = text;
+      list.appendChild(li);
+    }
+  }
+
+  // Remove extra items if count decreased
+  for (let i = existingCount; i > count; i--) {
+    const li = existingItems[i - 1];
+    if (li && li.parentNode) {
+      li.parentNode.removeChild(li);
+    }
   }
 }
 

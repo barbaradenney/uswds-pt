@@ -6,7 +6,7 @@
  * and prevents sync loops.
  */
 
-import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals } from './component-registry-v2.js';
+import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals, type TraitHandler as RegistryTraitHandler } from './component-registry-v2.js';
 
 // Debug logging flag - only log verbose output in development with explicit flag
 const DEBUG = false; // Set to true during development for detailed logs
@@ -225,85 +225,131 @@ export class WebComponentTraitManager {
 
   /**
    * Initialize traits with their default values
+   * This ensures that default values are applied even when not explicitly set
    */
   private initializeTraits(component: any, element: HTMLElement, handlers: Record<string, TraitHandler>): void {
     const attributes = component.get('attributes') || {};
+    const tagName = component.get('tagName')?.toLowerCase();
+
+    // Get trait defaults from registry
+    const traitDefaults = tagName ? componentRegistry.getTraitDefaults(tagName) : {};
 
     Object.entries(handlers).forEach(([traitName, handler]) => {
-      const value = attributes[traitName];
+      // Get the value from attributes, falling back to the default
+      let value = attributes[traitName];
+      const hasValue = value !== undefined && value !== null;
+      const defaultValue = traitDefaults[traitName];
 
-      // Call onInit if it exists
+      // If no value is set but there's a default, use the default
+      if (!hasValue && defaultValue !== undefined) {
+        value = defaultValue;
+        debug(`Using default value for '${traitName}':`, defaultValue);
+      }
+
+      // Call onInit if it exists (with value or default)
       if (handler.onInit && value !== undefined) {
-        handler.onInit(element, value);
+        try {
+          handler.onInit(element, value);
+        } catch (err) {
+          console.warn(`WebComponentTraitManager: Error in onInit for '${traitName}':`, err);
+        }
       }
 
       // For traits without onInit, call onChange to initialize
       // This ensures the DOM is in sync with the attribute value
       if (!handler.onInit && value !== undefined) {
-        handler.onChange(element, value);
+        try {
+          handler.onChange(element, value);
+        } catch (err) {
+          console.warn(`WebComponentTraitManager: Error in onChange for '${traitName}':`, err);
+        }
       }
     });
   }
 
   /**
-   * Set up MutationObserver to watch for attribute changes and keep DOM in sync
+   * Set up MutationObserver to watch for attribute and nested element changes
+   * USWDS-WC uses Light DOM, so we need to observe the subtree for changes
    */
   private setupAttributeObservers(component: any, element: HTMLElement, tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
 
-    // Create a MutationObserver to watch for attribute changes
+    // Debounce flag to prevent rapid-fire mutations from causing loops
+    let isProcessingMutation = false;
+
+    // Create a MutationObserver to watch for attribute and nested changes
     const observer = new MutationObserver((mutations) => {
+      // Skip if we're already processing to prevent loops
+      if (isProcessingMutation) return;
+
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes') {
-          const attributeName = mutation.attributeName;
-          if (!attributeName) return;
+          // Handle attribute changes on the web component itself
+          if (mutation.target === element) {
+            const attributeName = mutation.attributeName;
+            if (!attributeName) return;
 
-          const handler = handlers[attributeName];
-          if (handler) {
-            const newValue = element.getAttribute(attributeName);
-            debug(`Observed attribute '${attributeName}' changed to:`, newValue);
+            const handler = handlers[attributeName];
+            if (handler) {
+              const newValue = element.getAttribute(attributeName);
+              debug(`Observed attribute '${attributeName}' changed to:`, newValue);
 
-            // For text attributes, ensure button textContent stays in sync
-            if (attributeName === 'text') {
-              const syncButtonText = () => {
-                const button = element.querySelector('button');
-                if (button) {
-                  if (button.textContent !== newValue) {
-                    button.textContent = newValue || '';
-                    debug(`Synced button textContent to:`, newValue);
+              // For text attributes, ensure button textContent stays in sync
+              if (attributeName === 'text') {
+                isProcessingMutation = true;
+                const syncButtonText = () => {
+                  const button = element.querySelector('button');
+                  if (button) {
+                    if (button.textContent !== newValue) {
+                      button.textContent = newValue || '';
+                      debug(`Synced button textContent to:`, newValue);
+                    }
+                    return true;
                   }
-                  return true;
+                  return false;
+                };
+
+                // Try immediately
+                if (!syncButtonText()) {
+                  // Button doesn't exist yet, wait for it
+                  debug(`Button not found for sync, will retry...`);
+                  setTimeout(() => {
+                    syncButtonText();
+                    isProcessingMutation = false;
+                  }, 100);
+                } else {
+                  isProcessingMutation = false;
                 }
-                return false;
-              };
-
-              // Try immediately
-              if (!syncButtonText()) {
-                // Button doesn't exist yet, wait for it
-                debug(`Button not found for sync, will retry...`);
-                setTimeout(() => {
-                  if (!syncButtonText()) {
-                    console.warn(`WebComponentTraitManager: Button element still not found after delay`);
-                  }
-                }, 100);
               }
             }
           }
+        } else if (mutation.type === 'childList') {
+          // Handle child node additions/removals (Light DOM changes)
+          // This helps detect when web component initially renders its content
+          debug(`Child nodes changed in ${tagName}`);
+        } else if (mutation.type === 'characterData') {
+          // Handle text content changes in nested elements
+          debug(`Text content changed in ${tagName}`);
         }
       });
     });
 
-    // Observe attribute changes
+    // Observe attribute changes, child list changes, and text content changes
+    // subtree: true is critical for Light DOM web components
     observer.observe(element, {
       attributes: true,
       attributeOldValue: true,
+      childList: true,           // Watch for child node additions/removals
+      subtree: true,             // Watch all descendants (Light DOM)
+      characterData: true,       // Watch for text content changes
+      characterDataOldValue: true,
     });
 
     // Store observer for cleanup
     const observerId = `${componentId}-observer`;
     this.activeListeners.set(observerId, () => observer.disconnect());
 
-    debug(`Set up attribute observer for ${component.get('tagName')}`);
+    debug(`Set up attribute observer for ${component.get('tagName')} with subtree watching`);
   }
 
   /**
