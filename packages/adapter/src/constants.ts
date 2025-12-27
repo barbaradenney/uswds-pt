@@ -120,6 +120,14 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'sign-in-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14z"/><path d="M8 10h8v2H8v-2zm0 4h8v2H8v-2z" opacity="0.5"/><circle cx="12" cy="7" r="2" opacity="0.5"/></svg>`,
   'error-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M12 7l-5 9h10l-5-9zm0 3v3m0 1v1" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.7"/></svg>`,
 
+  // Form Patterns
+  'usa-name-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2c0-2.2 3.6-4 8-4s8 1.8 8 4v2H4z"/></svg>`,
+  'usa-address-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 7v13h16V7l-8-5zm0 2.5L18 8v10H6V8l6-3.5zM8 11h8v2H8v-2zm0 3h6v2H8v-2z"/></svg>`,
+  'usa-phone-number-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`,
+  'usa-email-address-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`,
+  'usa-date-of-birth-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" opacity="0.3"/></svg>`,
+  'usa-ssn-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`,
+
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
 };
@@ -313,95 +321,61 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
 </div>`,
 
-  // 'usa-date-picker': '<usa-date-picker label="Date" name="date"></usa-date-picker>',
-  // 'usa-time-picker': '<usa-time-picker label="Time" name="time"></usa-time-picker>',
-  // 'usa-combo-box': '<usa-combo-box label="Combo box" name="combo"></usa-combo-box>',
+  // Form Patterns - Pre-built form field combinations following USWDS guidelines
+  'usa-name-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Full Name</legend>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <usa-text-input label="First Name" name="first-name" required></usa-text-input>
+    <usa-text-input label="Middle Name" name="middle-name"></usa-text-input>
+    <usa-text-input label="Last Name" name="last-name" required></usa-text-input>
+  </div>
+  <usa-text-input label="Suffix" name="suffix" hint="e.g., Jr., Sr., III" width="sm" style="max-width: 8rem;"></usa-text-input>
+</fieldset>`,
 
-  // // Navigation
-  // 'usa-header': `<usa-header>
-  // <span slot="title">Site Title</span>
-  // </usa-header>`,
-  // 'usa-footer': '<usa-footer></usa-footer>',
-  // 'usa-breadcrumb': `<usa-breadcrumb>
-  // <a href="#">Home</a>
-  // <a href="#">Section</a>
-  // <span>Current page</span>
-  // </usa-breadcrumb>`,
-  // 'usa-pagination': '<usa-pagination current-page="1" total-pages="5"></usa-pagination>',
-  // 'usa-side-navigation': '<usa-side-navigation></usa-side-navigation>',
-  // 'usa-skip-link': '<usa-skip-link href="#main">Skip to main content</usa-skip-link>',
+  'usa-address-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Mailing Address</legend>
+  <usa-text-input label="Street Address" name="street-address-1" required></usa-text-input>
+  <usa-text-input label="Street Address Line 2" name="street-address-2" hint="Apartment, suite, unit, building, floor, etc."></usa-text-input>
+  <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
+    <usa-text-input label="City" name="city" required></usa-text-input>
+    <usa-select label="State" name="state" required option-count="56" option1-label="Alabama" option1-value="AL" option2-label="Alaska" option2-value="AK" option3-label="Arizona" option3-value="AZ" option4-label="Arkansas" option4-value="AR" option5-label="California" option5-value="CA" option6-label="Colorado" option6-value="CO" option7-label="Connecticut" option7-value="CT" option8-label="Delaware" option8-value="DE" option9-label="District of Columbia" option9-value="DC" option10-label="Florida" option10-value="FL" option11-label="Georgia" option11-value="GA" option12-label="Hawaii" option12-value="HI" option13-label="Idaho" option13-value="ID" option14-label="Illinois" option14-value="IL" option15-label="Indiana" option15-value="IN" option16-label="Iowa" option16-value="IA" option17-label="Kansas" option17-value="KS" option18-label="Kentucky" option18-value="KY" option19-label="Louisiana" option19-value="LA" option20-label="Maine" option20-value="ME" option21-label="Maryland" option21-value="MD" option22-label="Massachusetts" option22-value="MA" option23-label="Michigan" option23-value="MI" option24-label="Minnesota" option24-value="MN" option25-label="Mississippi" option25-value="MS" option26-label="Missouri" option26-value="MO" option27-label="Montana" option27-value="MT" option28-label="Nebraska" option28-value="NE" option29-label="Nevada" option29-value="NV" option30-label="New Hampshire" option30-value="NH" option31-label="New Jersey" option31-value="NJ" option32-label="New Mexico" option32-value="NM" option33-label="New York" option33-value="NY" option34-label="North Carolina" option34-value="NC" option35-label="North Dakota" option35-value="ND" option36-label="Ohio" option36-value="OH" option37-label="Oklahoma" option37-value="OK" option38-label="Oregon" option38-value="OR" option39-label="Pennsylvania" option39-value="PA" option40-label="Rhode Island" option40-value="RI" option41-label="South Carolina" option41-value="SC" option42-label="South Dakota" option42-value="SD" option43-label="Tennessee" option43-value="TN" option44-label="Texas" option44-value="TX" option45-label="Utah" option45-value="UT" option46-label="Vermont" option46-value="VT" option47-label="Virginia" option47-value="VA" option48-label="Washington" option48-value="WA" option49-label="West Virginia" option49-value="WV" option50-label="Wisconsin" option50-value="WI" option51-label="Wyoming" option51-value="WY" option52-label="American Samoa" option52-value="AS" option53-label="Guam" option53-value="GU" option54-label="Northern Mariana Islands" option54-value="MP" option55-label="Puerto Rico" option55-value="PR" option56-label="U.S. Virgin Islands" option56-value="VI"></usa-select>
+    <usa-text-input label="ZIP Code" name="zip-code" inputmode="numeric" pattern="[\\d]{5}(-[\\d]{4})?" required></usa-text-input>
+  </div>
+</fieldset>`,
 
-  // // Data Display
-  // 'usa-card': `<usa-card>
-  // <span slot="header">Card Title</span>
-  // <p>Card content goes here.</p>
-  // </usa-card>`,
-  // 'usa-table': `<usa-table>
-  // <thead>
-  //   <tr><th>Column 1</th><th>Column 2</th></tr>
-  // </thead>
-  // <tbody>
-  //   <tr><td>Data 1</td><td>Data 2</td></tr>
-  // </tbody>
-  // </usa-table>`,
-  // 'usa-tag': '<usa-tag>Tag</usa-tag>',
-  // 'usa-list': `<usa-list>
-  // <li>Item 1</li>
-  // <li>Item 2</li>
-  // <li>Item 3</li>
-  // </usa-list>`,
-  // 'usa-icon': '<usa-icon icon="check"></usa-icon>',
-  // 'usa-collection': '<usa-collection></usa-collection>',
-  // 'usa-summary-box': `<usa-summary-box heading="Key information">
-  // <p>Summary content here.</p>
-  // </usa-summary-box>`,
+  'usa-phone-number-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Phone Number</legend>
+  <usa-text-input label="Phone Number" name="phone" type="tel" hint="10-digit phone number, e.g., 202-555-0123" inputmode="tel" required></usa-text-input>
+  <fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 1rem 0 0;">
+    <legend class="usa-legend">Phone type</legend>
+    <usa-radio label="Mobile" name="phone-type" value="mobile"></usa-radio>
+    <usa-radio label="Home" name="phone-type" value="home"></usa-radio>
+    <usa-radio label="Work" name="phone-type" value="work"></usa-radio>
+  </fieldset>
+</fieldset>`,
 
-  // // Feedback
-  // 'usa-alert': `<usa-alert variant="info">
-  // <span slot="heading">Alert heading</span>
-  // Alert message content.
-  // </usa-alert>`,
-  // 'usa-banner': '<usa-banner></usa-banner>',
-  // 'usa-site-alert': `<usa-site-alert variant="info">
-  // Important site-wide message.
-  // </usa-site-alert>`,
-  // 'usa-modal': `<usa-modal>
-  // <span slot="heading">Modal Title</span>
-  // <p>Modal content goes here.</p>
-  // </usa-modal>`,
-  // 'usa-tooltip': '<usa-tooltip content="Tooltip text">Hover me</usa-tooltip>',
+  'usa-email-address-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Email Address</legend>
+  <usa-text-input label="Email Address" name="email" type="email" hint="Enter your email address" required></usa-text-input>
+  <usa-text-input label="Confirm Email Address" name="email-confirm" type="email" hint="Re-enter your email address" required></usa-text-input>
+</fieldset>`,
 
-  // // Layout
-  // 'usa-accordion': `<usa-accordion>
-  // <usa-accordion-item heading="Section 1">
-  //   <p>Content for section 1</p>
-  // </usa-accordion-item>
-  // <usa-accordion-item heading="Section 2">
-  //   <p>Content for section 2</p>
-  // </usa-accordion-item>
-  // </usa-accordion>`,
-  // 'usa-step-indicator': '<usa-step-indicator current-step="1" total-steps="4"></usa-step-indicator>',
-  // 'usa-process-list': '<usa-process-list></usa-process-list>',
-  // 'usa-identifier': '<usa-identifier></usa-identifier>',
-  // 'usa-prose': '<usa-prose><p>Prose content with proper typography.</p></usa-prose>',
+  'usa-date-of-birth-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Date of Birth</legend>
+  <p class="usa-hint" style="margin: 0 0 0.5rem;">For example: January 19, 2000</p>
+  <div style="display: flex; gap: 1rem;">
+    <usa-select label="Month" name="dob-month" required option-count="12" option1-label="January" option1-value="01" option2-label="February" option2-value="02" option3-label="March" option3-value="03" option4-label="April" option4-value="04" option5-label="May" option5-value="05" option6-label="June" option6-value="06" option7-label="July" option7-value="07" option8-label="August" option8-value="08" option9-label="September" option9-value="09" option10-label="October" option10-value="10" option11-label="November" option11-value="11" option12-label="December" option12-value="12" style="min-width: 10rem;"></usa-select>
+    <usa-text-input label="Day" name="dob-day" inputmode="numeric" maxlength="2" pattern="[0-9]*" required style="max-width: 5rem;"></usa-text-input>
+    <usa-text-input label="Year" name="dob-year" inputmode="numeric" minlength="4" maxlength="4" pattern="[0-9]{4}" required style="max-width: 6rem;"></usa-text-input>
+  </div>
+</fieldset>`,
 
-  // // Patterns
-  // 'usa-name-pattern': '<usa-name-pattern label="Full Name"></usa-name-pattern>',
-  // 'usa-address-pattern': '<usa-address-pattern label="Mailing Address"></usa-address-pattern>',
-  // 'usa-phone-number-pattern': '<usa-phone-number-pattern label="Phone Number"></usa-phone-number-pattern>',
-  // 'usa-email-address-pattern': '<usa-email-address-pattern label="Email Address"></usa-email-address-pattern>',
-  // 'usa-date-of-birth-pattern': '<usa-date-of-birth-pattern label="Date of Birth"></usa-date-of-birth-pattern>',
-  // 'usa-ssn-pattern': '<usa-ssn-pattern label="Social Security Number"></usa-ssn-pattern>',
-
-  // // Templates
-  // 'usa-landing-template': `<usa-landing-template
-  // hero-heading="Welcome"
-  // hero-description="Your agency description here."
-  // hero-cta-text="Learn More">
-  // </usa-landing-template>`,
-  // 'usa-form-template': '<usa-form-template heading="Form Title"></usa-form-template>',
-  // 'usa-sign-in-template': '<usa-sign-in-template></usa-sign-in-template>',
-  // 'usa-error-template': '<usa-error-template error-code="404"></usa-error-template>',
+  'usa-ssn-pattern': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend usa-legend--large">Social Security Number</legend>
+  <usa-alert variant="info" heading="Why we need this" text="We use your Social Security Number to verify your identity. Your information is protected and encrypted." slim></usa-alert>
+  <usa-text-input label="Social Security Number" name="ssn" type="password" hint="Enter the 9 digits of your SSN" inputmode="numeric" pattern="^(?!(000|666|9))\\d{3}-(?!00)\\d{2}-(?!0000)\\d{4}$" maxlength="11" required style="max-width: 12rem; margin-top: 1rem;"></usa-text-input>
+  <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
+</fieldset>`,
 };
 
 /**
