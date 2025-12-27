@@ -4918,18 +4918,42 @@ function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
 function initHeaderNavItems(element: HTMLElement): void {
   const count = parseInt(element.getAttribute('nav-count') || '4', 10);
 
+  // Build nav items from attributes
+  const navItems: Array<{ label: string; href: string; current?: boolean }> = [];
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`nav${i}-label`) || `Link ${i}`;
+    const href = element.getAttribute(`nav${i}-href`) || '#';
+    const current = element.hasAttribute(`nav${i}-current`);
+    navItems.push({ label, href, current: current || undefined });
+  }
+
   const trySetNavItems = (attempt: number = 0): void => {
-    // Check if the component is ready (has requestUpdate method)
+    // Set navItems property directly
+    (element as any).navItems = navItems;
+
+    // Also try to trigger update if available
     if (typeof (element as any).requestUpdate === 'function') {
-      rebuildHeaderNavItems(element, count);
-    } else if (attempt < 20) {
-      // Retry up to 20 times with 50ms delay (1 second total)
-      setTimeout(() => trySetNavItems(attempt + 1), 50);
+      (element as any).requestUpdate();
+    }
+
+    // If component isn't ready yet, retry
+    if (!(element as any).navItems?.length && attempt < 30) {
+      setTimeout(() => trySetNavItems(attempt + 1), 100);
     }
   };
 
-  // Try immediately
+  // Try immediately, then retry
   trySetNavItems();
+
+  // Also try after a longer delay to catch late initialization
+  setTimeout(() => {
+    if (!(element as any).navItems?.length) {
+      (element as any).navItems = navItems;
+      if (typeof (element as any).requestUpdate === 'function') {
+        (element as any).requestUpdate();
+      }
+    }
+  }, 500);
 }
 
 /**
@@ -5023,6 +5047,13 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        // Also initialize nav items when logo-text initializes (backup entry point)
+        onInit: (element: HTMLElement, value: any) => {
+          const text = value || 'Site Name';
+          (element as any).logoText = text;
+          // Initialize nav items as well
+          initHeaderNavItems(element);
+        },
       },
     },
 
@@ -5098,6 +5129,7 @@ componentRegistry.register({
     },
 
     // Extended header style
+    // Note: usa-header blocks re-renders after USWDS init, so we manipulate DOM directly
     extended: {
       definition: {
         name: 'extended',
@@ -5114,6 +5146,14 @@ componentRegistry.register({
             element.removeAttribute('extended');
           }
           (element as any).extended = isExtended;
+
+          // Directly update the header class since shouldUpdate blocks re-renders
+          const header = element.querySelector('.usa-header');
+          if (header) {
+            header.classList.toggle('usa-header--extended', isExtended);
+            header.classList.toggle('usa-header--basic', !isExtended);
+          }
+
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
@@ -5122,6 +5162,7 @@ componentRegistry.register({
     },
 
     // Show Search
+    // Note: usa-header blocks re-renders after USWDS init, so we manipulate DOM directly
     'show-search': {
       definition: {
         name: 'show-search',
@@ -5138,6 +5179,13 @@ componentRegistry.register({
             element.removeAttribute('showSearch');
           }
           (element as any).showSearch = showSearch;
+
+          // Directly show/hide search since shouldUpdate blocks re-renders
+          const secondaryDiv = element.querySelector('.usa-nav__secondary');
+          if (secondaryDiv) {
+            (secondaryDiv as HTMLElement).style.display = showSearch ? '' : 'none';
+          }
+
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
