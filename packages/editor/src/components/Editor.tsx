@@ -322,7 +322,7 @@ export function Editor() {
       'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
       'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
       'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
-      'Templates': ['landing-template', 'form-template', 'sign-in-template', 'error-template'],
+      'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
     };
 
     for (const [category, components] of Object.entries(categoryMap)) {

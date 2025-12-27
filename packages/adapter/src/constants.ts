@@ -114,6 +114,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-identifier': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 16.54V9.09l7 3.5v7.45l-7-3.5zm9 3.5v-7.45l7-3.5v7.45l-7 3.5z"/></svg>`,
 
   // Templates
+  'blank-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><rect x="5" y="7" width="14" height="10" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
   'landing-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 4h18v10H3V7zm0 12h18v2H3v-2z"/><path d="M5 9h14v2H5V9zm0 4h10v2H5v-2z" opacity="0.5"/></svg>`,
   'form-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v2H5V7zm0 4h14v2H5v-2zm0 4h8v2H5v-2z" opacity="0.5"/></svg>`,
   'sign-in-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14z"/><path d="M8 10h8v2H8v-2zm0 4h8v2H8v-2z" opacity="0.5"/><circle cx="12" cy="7" r="2" opacity="0.5"/></svg>`,
@@ -186,6 +187,16 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-identifier': '__FULL_HTML__<usa-identifier domain="example.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>',
 
   // Templates - Full page layouts
+  'blank-template': `__FULL_HTML__<div class="blank-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="4" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#" nav3-label="Services" nav3-href="#" nav4-label="Contact" nav4-href="#" show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
+    <p style="color: #71767a; text-align: center; padding: 4rem 0;">Drag components here to build your page</p>
+  </main>
+  <usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+
   'landing-template': `__FULL_HTML__<div class="landing-template">
   <usa-banner></usa-banner>
   <usa-header logo-text="Agency Name" logo-href="/" nav-count="4" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#about" nav3-label="Services" nav3-href="#services" nav4-label="Contact" nav4-href="#contact" show-skip-link="true"></usa-header>
