@@ -6,7 +6,7 @@
  * and prevents sync loops.
  */
 
-import { componentRegistry } from './component-registry-v2.js';
+import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals } from './component-registry-v2.js';
 
 // Debug logging flag - only log verbose output in development with explicit flag
 const DEBUG = false; // Set to true during development for detailed logs
@@ -109,6 +109,16 @@ export class WebComponentTraitManager {
       this.handleComponentMount(component);
     });
 
+    // Listen for component removal (unmount) - critical for cleanup
+    this.editor.on('component:remove', (component: any) => {
+      this.handleComponentRemove(component);
+    });
+
+    // Listen for editor destroy to clean up all resources
+    this.editor.on('destroy', () => {
+      this.destroy();
+    });
+
     console.log('WebComponentTraitManager: Global listeners initialized');
   }
 
@@ -153,6 +163,42 @@ export class WebComponentTraitManager {
       }
       this.activeListeners.delete(key);
     });
+  }
+
+  /**
+   * Handle component removal - clean up all resources including intervals
+   * This is critical for preventing memory leaks
+   */
+  private handleComponentRemove(component: any): void {
+    const componentId = component.getId();
+    const tagName = component.get('tagName')?.toLowerCase();
+
+    debug(`Removing component ${tagName} (${componentId})`);
+
+    // Clean up all listeners for this component
+    const keysToDelete = Array.from(this.activeListeners.keys()).filter(key =>
+      key.startsWith(componentId)
+    );
+
+    keysToDelete.forEach(key => {
+      const cleanup = this.activeListeners.get(key);
+      if (typeof cleanup === 'function') {
+        try {
+          cleanup();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+      this.activeListeners.delete(key);
+    });
+
+    // Clean up any pending intervals for this element's traits
+    const element = component.getEl();
+    if (element) {
+      cleanupElementIntervals(element);
+    }
+
+    debug(`Cleaned up resources for ${tagName} (${componentId})`);
   }
 
   /**
@@ -388,13 +434,30 @@ export class WebComponentTraitManager {
   }
 
   /**
-   * Destroy the manager and clean up listeners
+   * Destroy the manager and clean up all resources
+   * Called when editor is destroyed or page is unloaded
    */
   destroy(): void {
-    this.activeListeners.forEach((listener, key) => {
-      // Listeners are already cleaned up via deselect events
+    debug('Destroying WebComponentTraitManager');
+
+    // Clean up all active listeners (observers, etc.)
+    this.activeListeners.forEach((cleanup, key) => {
+      if (typeof cleanup === 'function') {
+        try {
+          cleanup();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
     });
     this.activeListeners.clear();
+
+    // Clean up all pending intervals from component registry
+    cleanupAllIntervals();
+
+    // Clear component configs
     this.componentConfigs.clear();
+
+    debug('WebComponentTraitManager destroyed');
   }
 }

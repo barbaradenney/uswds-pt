@@ -28,6 +28,8 @@ export {
   createAttributeTrait,
   createBooleanTrait,
   createInternalSyncTrait,
+  cleanupElementIntervals,
+  cleanupAllIntervals,
 } from './component-registry-v2.js';
 
 export type {

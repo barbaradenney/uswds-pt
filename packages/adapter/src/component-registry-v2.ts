@@ -64,6 +64,67 @@ export interface RetryConfig {
 }
 
 // ============================================================================
+// Interval Tracking for Memory Leak Prevention
+// ============================================================================
+
+/**
+ * Track active intervals by element to prevent memory leaks.
+ * Key format: element-id:trait-name
+ */
+const activeIntervals = new Map<string, ReturnType<typeof setInterval>>();
+
+/**
+ * Generate a unique key for tracking intervals per element/trait
+ */
+function getIntervalKey(element: HTMLElement, traitName: string): string {
+  // Use a data attribute to give elements a stable ID for tracking
+  let elementId = element.getAttribute('data-uswds-pt-id');
+  if (!elementId) {
+    elementId = `uswds-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    element.setAttribute('data-uswds-pt-id', elementId);
+  }
+  return `${elementId}:${traitName}`;
+}
+
+/**
+ * Cancel any pending interval for a specific element/trait
+ */
+function cancelPendingSync(element: HTMLElement, traitName: string): void {
+  const key = getIntervalKey(element, traitName);
+  const existingInterval = activeIntervals.get(key);
+  if (existingInterval) {
+    clearInterval(existingInterval);
+    activeIntervals.delete(key);
+  }
+}
+
+/**
+ * Clean up all intervals for a specific element (call on unmount)
+ */
+export function cleanupElementIntervals(element: HTMLElement): void {
+  const elementId = element.getAttribute('data-uswds-pt-id');
+  if (!elementId) return;
+
+  const keysToDelete: string[] = [];
+  activeIntervals.forEach((interval, key) => {
+    if (key.startsWith(`${elementId}:`)) {
+      clearInterval(interval);
+      keysToDelete.push(key);
+    }
+  });
+
+  keysToDelete.forEach(key => activeIntervals.delete(key));
+}
+
+/**
+ * Clean up all active intervals (call on editor destroy)
+ */
+export function cleanupAllIntervals(): void {
+  activeIntervals.forEach(interval => clearInterval(interval));
+  activeIntervals.clear();
+}
+
+// ============================================================================
 // Trait Handler Factories
 // ============================================================================
 
@@ -247,10 +308,19 @@ export function createInternalSyncTrait(
   };
 
   /**
-   * Consolidated retry logic - single implementation
+   * Consolidated retry logic - single implementation with proper cleanup
    */
   const syncWithRetry = (element: HTMLElement, value: string): void => {
+    // Cancel any existing interval for this element/trait to prevent accumulation
+    cancelPendingSync(element, traitName);
+
     const attemptSync = (): boolean => {
+      // Check if element is still in DOM before attempting sync
+      if (!element.isConnected) {
+        cancelPendingSync(element, traitName);
+        return true; // Return true to stop retrying
+      }
+
       const internal = element.querySelector(config.internalSelector);
       if (internal instanceof HTMLElement) {
         (internal as any)[config.syncProperty] = value;
@@ -262,20 +332,25 @@ export function createInternalSyncTrait(
     // Try immediately
     if (attemptSync()) return;
 
-    // Retry with interval
+    // Retry with interval (tracked for cleanup)
     let attempts = 0;
+    const key = getIntervalKey(element, traitName);
 
     const intervalId = setInterval(() => {
       attempts++;
       if (attemptSync() || attempts >= retryConfig.maxAttempts) {
         clearInterval(intervalId);
-        if (attempts >= retryConfig.maxAttempts) {
+        activeIntervals.delete(key);
+        if (attempts >= retryConfig.maxAttempts && element.isConnected) {
           console.warn(
             `USWDS-PT: Could not sync '${traitName}' to '${config.internalSelector}' after ${retryConfig.maxAttempts} attempts`
           );
         }
       }
     }, retryConfig.delayMs);
+
+    // Track the interval for cleanup
+    activeIntervals.set(key, intervalId);
   };
 
   return {
