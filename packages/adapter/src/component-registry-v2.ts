@@ -4896,7 +4896,7 @@ function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
   const navItems: Array<{ label: string; href: string; current?: boolean }> = [];
 
   for (let i = 1; i <= count; i++) {
-    const label = element.getAttribute(`nav${i}-label`) || `Nav ${i}`;
+    const label = element.getAttribute(`nav${i}-label`) || `Link ${i}`;
     const href = element.getAttribute(`nav${i}-href`) || '#';
     const current = element.hasAttribute(`nav${i}-current`);
 
@@ -4909,6 +4909,27 @@ function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
   if (typeof (element as any).requestUpdate === 'function') {
     (element as any).requestUpdate();
   }
+}
+
+/**
+ * Initialize header nav items with retry logic
+ * Waits for the Lit component to be ready before setting navItems
+ */
+function initHeaderNavItems(element: HTMLElement): void {
+  const count = parseInt(element.getAttribute('nav-count') || '4', 10);
+
+  const trySetNavItems = (attempt: number = 0): void => {
+    // Check if the component is ready (has requestUpdate method)
+    if (typeof (element as any).requestUpdate === 'function') {
+      rebuildHeaderNavItems(element, count);
+    } else if (attempt < 20) {
+      // Retry up to 20 times with 50ms delay (1 second total)
+      setTimeout(() => trySetNavItems(attempt + 1), 50);
+    }
+  };
+
+  // Try immediately
+  trySetNavItems();
 }
 
 /**
@@ -5167,11 +5188,9 @@ componentRegistry.register({
           element.setAttribute('nav-count', String(count));
           rebuildHeaderNavItems(element, count);
         },
-        onInit: (element: HTMLElement, value: any) => {
-          setTimeout(() => {
-            const count = parseInt(value || '4', 10);
-            rebuildHeaderNavItems(element, count);
-          }, 100);
+        onInit: (element: HTMLElement, _value: any) => {
+          // Use retry logic to wait for Lit component to be ready
+          initHeaderNavItems(element);
         },
       },
     },
@@ -5227,6 +5246,32 @@ function rebuildFooterSections(element: HTMLElement, count: number): void {
   if (typeof (element as any).requestUpdate === 'function') {
     (element as any).requestUpdate();
   }
+}
+
+/**
+ * Initialize footer sections with retry logic
+ * Waits for the Lit component to be ready before setting sections
+ */
+function initFooterSections(element: HTMLElement): void {
+  const variant = element.getAttribute('variant') || 'medium';
+
+  // Only initialize sections for 'big' variant
+  if (variant !== 'big') return;
+
+  const count = parseInt(element.getAttribute('section-count') || '3', 10);
+
+  const trySetSections = (attempt: number = 0): void => {
+    // Check if the component is ready (has requestUpdate method)
+    if (typeof (element as any).requestUpdate === 'function') {
+      rebuildFooterSections(element, count);
+    } else if (attempt < 20) {
+      // Retry up to 20 times with 50ms delay (1 second total)
+      setTimeout(() => trySetSections(attempt + 1), 50);
+    }
+  };
+
+  // Try immediately
+  trySetSections();
 }
 
 /**
@@ -5519,14 +5564,9 @@ componentRegistry.register({
           element.setAttribute('section-count', String(count));
           rebuildFooterSections(element, count);
         },
-        onInit: (element: HTMLElement, value: any) => {
-          setTimeout(() => {
-            const variant = element.getAttribute('variant') || 'medium';
-            if (variant === 'big') {
-              const count = parseInt(value || '3', 10);
-              rebuildFooterSections(element, count);
-            }
-          }, 100);
+        onInit: (element: HTMLElement, _value: any) => {
+          // Use retry logic to wait for Lit component to be ready
+          initFooterSections(element);
         },
       },
     },
