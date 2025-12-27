@@ -4922,8 +4922,13 @@ function createHeaderNavItemTrait(
 
   // Visibility function - only show if index <= nav-count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['nav-count'] || '4', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['nav-count'] || '4', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   if (type === 'current') {
@@ -5232,11 +5237,16 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
 
   // Visibility function - only show if sectionNum <= section-count
   const visibleFn = (component: any) => {
-    const variant = component.get('attributes')?.['variant'] || 'medium';
-    // Only 'big' variant shows sections
-    if (variant !== 'big') return false;
-    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
-    return sectionNum <= count;
+    try {
+      if (!component) return false;
+      const variant = component.get?.('attributes')?.['variant'] || 'medium';
+      // Only 'big' variant shows sections
+      if (variant !== 'big') return false;
+      const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
+      return sectionNum <= count;
+    } catch {
+      return false;
+    }
   };
 
   return {
@@ -5269,10 +5279,15 @@ function createFooterSectionLinkTrait(
 
   // Visibility function - only show if sectionNum <= section-count and variant is 'big'
   const visibleFn = (component: any) => {
-    const variant = component.get('attributes')?.['variant'] || 'medium';
-    if (variant !== 'big') return false;
-    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
-    return sectionNum <= count;
+    try {
+      if (!component) return false;
+      const variant = component.get?.('attributes')?.['variant'] || 'medium';
+      if (variant !== 'big') return false;
+      const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
+      return sectionNum <= count;
+    } catch {
+      return false;
+    }
   };
 
   const isLabel = type === 'label';
@@ -5489,8 +5504,13 @@ componentRegistry.register({
           { id: '4', label: '4 Sections' },
         ],
         visible: (component: any) => {
-          const variant = component.get('attributes')?.['variant'] || 'medium';
-          return variant === 'big';
+          try {
+            if (!component) return false;
+            const variant = component.get?.('attributes')?.['variant'] || 'medium';
+            return variant === 'big';
+          } catch {
+            return false;
+          }
         },
       },
       handler: {
