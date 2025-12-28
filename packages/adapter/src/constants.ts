@@ -395,56 +395,61 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <p style="color: #71767a; text-align: center; width: 100%;">Grid Row - Drop columns here</p>
 </div>`,
 
-  'grid-2-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-  <div class="grid-col-6" style="flex: 1 1 calc(50% - 0.5rem); min-width: 200px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  // Responsive 2-column: full width on mobile, 50/50 on tablet+
+  'grid-2-col': `__FULL_HTML__<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-6" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Column 1</p>
   </div>
-  <div class="grid-col-6" style="flex: 1 1 calc(50% - 0.5rem); min-width: 200px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-6" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Column 2</p>
   </div>
 </div>`,
 
-  'grid-3-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  // Responsive 3-column: full width on mobile, 33/33/33 on tablet+
+  'grid-3-col': `__FULL_HTML__<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-4" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Column 1</p>
   </div>
-  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-4" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Column 2</p>
   </div>
-  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-4" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Column 3</p>
   </div>
 </div>`,
 
-  'grid-4-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  // Responsive 4-column: full width on mobile, 50/50 on tablet, 25/25/25/25 on desktop
+  'grid-4-col': `__FULL_HTML__<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-6 desktop:grid-col-3" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Col 1</p>
   </div>
-  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-6 desktop:grid-col-3" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Col 2</p>
   </div>
-  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-6 desktop:grid-col-3" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Col 3</p>
   </div>
-  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+  <div class="grid-col-12 tablet:grid-col-6 desktop:grid-col-3" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
     <p style="color: #71767a;">Col 4</p>
   </div>
 </div>`,
 
-  'grid-sidebar-left': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-  <div class="grid-col-4" style="flex: 0 0 250px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+  // Responsive sidebar left: full width stacked on mobile, sidebar/main on tablet+
+  'grid-sidebar-left': `__FULL_HTML__<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-4" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
     <p style="color: #71767a;">Sidebar</p>
   </div>
-  <div class="grid-col-8" style="flex: 1 1 0; min-width: 300px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+  <div class="grid-col-12 tablet:grid-col-8" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
     <p style="color: #71767a;">Main Content</p>
   </div>
 </div>`,
 
-  'grid-sidebar-right': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-  <div class="grid-col-8" style="flex: 1 1 0; min-width: 300px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+  // Responsive sidebar right: full width stacked on mobile, main/sidebar on tablet+
+  'grid-sidebar-right': `__FULL_HTML__<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-8" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
     <p style="color: #71767a;">Main Content</p>
   </div>
-  <div class="grid-col-4" style="flex: 0 0 250px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+  <div class="grid-col-12 tablet:grid-col-4" style="padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
     <p style="color: #71767a;">Sidebar</p>
   </div>
 </div>`,

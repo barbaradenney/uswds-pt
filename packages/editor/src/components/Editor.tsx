@@ -566,7 +566,6 @@ export function Editor() {
 
             // Helper function to force canvas visual update
             // GrapesJS's editor.refresh() only updates spots/tools positioning, not content
-            // We need to trigger frame:updated and use Canvas.refresh() for proper updates
             const forceCanvasUpdate = () => {
               debug('Forcing canvas update...');
               try {
@@ -582,20 +581,13 @@ export function Editor() {
                 // Also call editor.refresh() for tool positioning
                 editor.refresh();
 
-                // Fallback: Force iframe repaint if still not updating
-                // This triggers a browser repaint of the canvas iframe
+                // Force iframe repaint by triggering reflow
                 const frameEl = canvas?.getFrameEl?.();
                 if (frameEl) {
                   const doc = frameEl.contentDocument;
                   if (doc?.body) {
-                    // Force reflow/repaint by reading and modifying a layout property
-                    const body = doc.body;
-                    const originalDisplay = body.style.display;
-                    body.style.display = 'none';
-                    // Force reflow
-                    void body.offsetHeight;
-                    body.style.display = originalDisplay || '';
-                    debug('Iframe repaint triggered');
+                    void doc.body.offsetHeight;
+                    debug('Iframe reflow triggered');
                   }
                 }
 
@@ -607,9 +599,10 @@ export function Editor() {
 
             // Force canvas refresh after component removal
             editor.on('component:remove', (component: any) => {
-              debug('Component removed:', component?.get?.('tagName'));
-              // Trigger canvas update after a short delay to ensure DOM is updated
-              setTimeout(forceCanvasUpdate, 50);
+              const tagName = component?.get?.('tagName') || component?.get?.('type');
+              debug('Component removed:', tagName);
+              // Trigger canvas update after a short delay
+              setTimeout(forceCanvasUpdate, 100);
             });
 
             // Handle DomComponents.clear() calls (used by Clear Page)
@@ -619,6 +612,11 @@ export function Editor() {
                 debug('DomComponents.clear() called');
                 const result = originalClear(...args);
                 setTimeout(forceCanvasUpdate, 100);
+                // Close any open modal after clearing
+                if (editor.Modal?.close) {
+                  editor.Modal.close();
+                  debug('Modal closed');
+                }
                 return result;
               };
             }
@@ -627,6 +625,13 @@ export function Editor() {
             editor.on('run:core:canvas-clear', () => {
               debug('core:canvas-clear command executed');
               setTimeout(forceCanvasUpdate, 100);
+              // Close modal after clear command
+              setTimeout(() => {
+                if (editor.Modal?.close) {
+                  editor.Modal.close();
+                  debug('Modal closed after clear command');
+                }
+              }, 50);
             });
 
             // Also listen for page changes which might need refresh
