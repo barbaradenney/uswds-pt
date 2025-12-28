@@ -16,7 +16,7 @@ import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 
 // Debug logging flag
-const DEBUG = false; // Set to true for verbose logging
+const DEBUG = true; // Set to true for verbose logging
 
 function debug(...args: any[]): void {
   if (DEBUG) {
@@ -493,6 +493,16 @@ export function Editor() {
           onReady={(editor) => {
             editorRef.current = editor;
             debug('Editor ready');
+
+            // Debug: Listen for component removal events
+            editor.on('component:remove', (component: any) => {
+              debug('Component removed:', component?.get?.('tagName'));
+            });
+
+            // Debug: Listen for all commands
+            editor.on('run', (commandId: string) => {
+              debug('Command run:', commandId);
+            });
 
             // WebComponentTraitManager handles all trait synchronization automatically
             // No manual sync code needed!
