@@ -567,108 +567,116 @@ export function Editor() {
               editor.loadProjectData(prototype.grapesData as any);
             }
 
-            // Add USWDS styles and web components to canvas iframe
-            const canvas = editor.Canvas;
-            if (canvas) {
-              const doc = canvas.getDocument();
-              if (doc) {
-                debug('Loading USWDS resources into canvas iframe');
+            // Helper to wait for a resource to load
+            const waitForLoad = (element: HTMLElement, type: string): Promise<void> => {
+              return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                  reject(new Error(`${type} load timeout after 10s`));
+                }, 10000);
 
-                // Helper to wait for a resource to load
-                const waitForLoad = (element: HTMLElement, type: string): Promise<void> => {
-                  return new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                      reject(new Error(`${type} load timeout after 10s`));
-                    }, 10000);
-
-                    element.onload = () => {
-                      clearTimeout(timeout);
-                      debug(`${type} loaded`);
-                      resolve();
-                    };
-                    element.onerror = (e) => {
-                      clearTimeout(timeout);
-                      console.error(`USWDS-PT: ${type} failed to load`, e);
-                      reject(e);
-                    };
-                  });
+                element.onload = () => {
+                  clearTimeout(timeout);
+                  debug(`${type} loaded`);
+                  resolve();
                 };
-
-                // Helper to wait for custom elements to be defined
-                const waitForCustomElements = async (
-                  iframeWindow: Window,
-                  elements: string[],
-                  maxWaitMs = 5000
-                ): Promise<boolean> => {
-                  const startTime = Date.now();
-                  const customElements = iframeWindow.customElements;
-
-                  while (Date.now() - startTime < maxWaitMs) {
-                    const allDefined = elements.every(el => customElements.get(el) !== undefined);
-                    if (allDefined) {
-                      debug('All custom elements registered:', elements);
-                      return true;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                  }
-
-                  const missing = elements.filter(el => customElements.get(el) === undefined);
-                  console.warn('USWDS-PT: Some custom elements not registered after timeout:', missing);
-                  return false;
+                element.onerror = (e) => {
+                  clearTimeout(timeout);
+                  console.error(`USWDS-PT: ${type} failed to load`, e);
+                  reject(e);
                 };
+              });
+            };
 
-                // Load resources with proper sequencing
-                const loadResources = async () => {
-                  try {
-                    // 1. Load CSS files in parallel (they don't depend on each other)
-                    const uswdsCss = doc.createElement('link');
-                    uswdsCss.rel = 'stylesheet';
-                    uswdsCss.href = CDN_URLS.uswdsCss;
+            // Helper to wait for custom elements to be defined
+            const waitForCustomElements = async (
+              iframeWindow: Window,
+              elements: string[],
+              maxWaitMs = 5000
+            ): Promise<boolean> => {
+              const startTime = Date.now();
+              const customElements = iframeWindow.customElements;
 
-                    const uswdsWcCss = doc.createElement('link');
-                    uswdsWcCss.rel = 'stylesheet';
-                    uswdsWcCss.href = CDN_URLS.uswdsWcCss;
-
-                    doc.head.appendChild(uswdsCss);
-                    doc.head.appendChild(uswdsWcCss);
-
-                    await Promise.all([
-                      waitForLoad(uswdsCss, 'USWDS CSS'),
-                      waitForLoad(uswdsWcCss, 'USWDS-WC CSS'),
-                    ]);
-
-                    // 2. Load USWDS-WC bundle JS (all web components with Lit bundled)
-                    const uswdsWcScript = doc.createElement('script');
-                    uswdsWcScript.type = 'module';
-                    uswdsWcScript.src = CDN_URLS.uswdsWcJs;
-                    doc.head.appendChild(uswdsWcScript);
-
-                    await waitForLoad(uswdsWcScript, 'USWDS-WC JS');
-
-                    // 3. Wait for critical custom elements to be registered
-                    const iframeWindow = canvas.getWindow();
-                    if (iframeWindow) {
-                      const criticalElements = ['usa-button', 'usa-header', 'usa-footer', 'usa-alert'];
-                      await waitForCustomElements(iframeWindow, criticalElements);
-                    }
-
-                    debug('All USWDS resources loaded successfully');
-
-                    // 4. Trigger a canvas refresh to re-render components now that elements are defined
-                    setTimeout(() => {
-                      editor.refresh();
-                      debug('Canvas refreshed after resource load');
-                    }, 100);
-
-                  } catch (err) {
-                    console.error('USWDS-PT: Error loading resources:', err);
-                  }
-                };
-
-                // Start loading resources
-                loadResources();
+              while (Date.now() - startTime < maxWaitMs) {
+                const allDefined = elements.every(el => customElements.get(el) !== undefined);
+                if (allDefined) {
+                  debug('All custom elements registered:', elements);
+                  return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
               }
-            }
+
+              const missing = elements.filter(el => customElements.get(el) === undefined);
+              console.warn('USWDS-PT: Some custom elements not registered after timeout:', missing);
+              return false;
+            };
+
+            // Load USWDS resources into the current canvas iframe
+            const loadUSWDSResources = async () => {
+              const canvas = editor.Canvas;
+              if (!canvas) return;
+
+              const doc = canvas.getDocument();
+              if (!doc) return;
+
+              // Check if resources are already loaded in this document
+              if (doc.querySelector('link[href*="uswds"]')) {
+                debug('USWDS resources already loaded in this canvas');
+                return;
+              }
+
+              debug('Loading USWDS resources into canvas iframe');
+
+              try {
+                // 1. Load CSS files in parallel
+                const uswdsCss = doc.createElement('link');
+                uswdsCss.rel = 'stylesheet';
+                uswdsCss.href = CDN_URLS.uswdsCss;
+
+                const uswdsWcCss = doc.createElement('link');
+                uswdsWcCss.rel = 'stylesheet';
+                uswdsWcCss.href = CDN_URLS.uswdsWcCss;
+
+                doc.head.appendChild(uswdsCss);
+                doc.head.appendChild(uswdsWcCss);
+
+                await Promise.all([
+                  waitForLoad(uswdsCss, 'USWDS CSS'),
+                  waitForLoad(uswdsWcCss, 'USWDS-WC CSS'),
+                ]);
+
+                // 2. Load USWDS-WC bundle JS
+                const uswdsWcScript = doc.createElement('script');
+                uswdsWcScript.type = 'module';
+                uswdsWcScript.src = CDN_URLS.uswdsWcJs;
+                doc.head.appendChild(uswdsWcScript);
+
+                await waitForLoad(uswdsWcScript, 'USWDS-WC JS');
+
+                // 3. Wait for critical custom elements to be registered
+                const iframeWindow = canvas.getWindow();
+                if (iframeWindow) {
+                  const criticalElements = ['usa-button', 'usa-header', 'usa-footer', 'usa-alert'];
+                  await waitForCustomElements(iframeWindow, criticalElements);
+                }
+
+                debug('All USWDS resources loaded successfully');
+
+                // 4. Trigger a canvas refresh
+                setTimeout(() => {
+                  editor.refresh();
+                  debug('Canvas refreshed after resource load');
+                }, 100);
+
+              } catch (err) {
+                console.error('USWDS-PT: Error loading resources:', err);
+              }
+            };
+
+            // Load resources on initial canvas load and when pages change
+            editor.on('canvas:frame:load', loadUSWDSResources);
+
+            // Also load on initial ready
+            loadUSWDSResources();
           }}
         />
       </div>

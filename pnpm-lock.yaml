@@ -51,6 +51,9 @@ importers:
       bcrypt:
         specifier: ^5.1.0
         version: 5.1.1
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(@types/react@18.3.27)(postgres@3.4.7)(react@18.3.1)
@@ -1225,6 +1228,10 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
+    engines: {node: '>=12'}
 
   drizzle-kit@0.24.2:
     resolution: {integrity: sha512-nXOaTSFiuIaTMhS8WJC2d4EBeIcN9OSt2A2cyFbQYBAZbi7lRsVGJNqDpEwPqYfJz38yxbY/UtbvBBahBfnExQ==}
@@ -2941,6 +2948,8 @@ snapshots:
   delegates@1.0.0: {}
 
   detect-libc@2.1.2: {}
+
+  dotenv@17.2.3: {}
 
   drizzle-kit@0.24.2:
     dependencies:

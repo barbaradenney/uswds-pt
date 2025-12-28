@@ -3,6 +3,7 @@
  * Main entry point
  */
 
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { authPlugin } from './plugins/auth.js';
