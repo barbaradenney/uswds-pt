@@ -11,23 +11,14 @@ export interface CleanOptions {
 }
 
 /**
- * Attributes added by GrapesJS that should be removed
+ * Regex patterns for GrapesJS attributes that should be removed.
+ * Using patterns instead of a hardcoded list ensures we catch all
+ * data-gjs-* attributes even if GrapesJS adds new ones.
  */
-const GRAPES_ATTRIBUTES = [
-  'data-gjs-type',
-  'data-gjs-highlightable',
-  'data-gjs-droppable',
-  'data-gjs-draggable',
-  'data-gjs-editable',
-  'data-gjs-stylable',
-  'data-gjs-hoverable',
-  'data-gjs-textable',
-  'data-gjs-badgable',
-  'data-gjs-copyable',
-  'data-gjs-removable',
-  'data-gjs-selectable',
-  'data-gjs-propagate',
-  'data-highlightable',
+const GRAPES_ATTR_PATTERNS = [
+  /\s+data-gjs-[a-z-]+(?:="[^"]*")?/gi,  // All data-gjs-* attributes
+  /\s+data-highlightable(?:="[^"]*")?/gi, // data-highlightable (no gjs prefix)
+  /\s+data-uswds-pt-id(?:="[^"]*")?/gi,   // Internal tracking IDs
 ];
 
 /**
@@ -80,15 +71,14 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
 }
 
 /**
- * Remove data-gjs-* attributes
+ * Remove data-gjs-* and other GrapesJS-related attributes using regex patterns.
+ * This is more maintainable than a hardcoded list and catches all variants.
  */
 function removeGrapesAttrs(html: string): string {
   let result = html;
 
-  for (const attr of GRAPES_ATTRIBUTES) {
-    // Match attribute with or without value
-    const regex = new RegExp(`\\s*${attr}(="[^"]*")?`, 'gi');
-    result = result.replace(regex, '');
+  for (const pattern of GRAPES_ATTR_PATTERNS) {
+    result = result.replace(pattern, '');
   }
 
   return result;

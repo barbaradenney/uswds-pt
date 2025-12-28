@@ -125,6 +125,47 @@ export function cleanupAllIntervals(): void {
 }
 
 // ============================================================================
+// Type Coercion Utilities
+// ============================================================================
+
+/**
+ * Consistently coerce a value to boolean.
+ * Handles all the ways a boolean can be represented:
+ * - boolean true/false
+ * - string 'true'/'false'
+ * - empty string '' (truthy for HTML boolean attributes)
+ * - null/undefined (falsy)
+ *
+ * @example
+ * coerceBoolean(true)      // true
+ * coerceBoolean('true')    // true
+ * coerceBoolean('')        // true (HTML boolean attribute)
+ * coerceBoolean(false)     // false
+ * coerceBoolean('false')   // false
+ * coerceBoolean(null)      // false
+ * coerceBoolean(undefined) // false
+ */
+export function coerceBoolean(value: any): boolean {
+  if (coerceBoolean(value)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Check if an element has a boolean attribute set to true.
+ * Uses consistent coercion logic.
+ */
+export function hasAttributeTrue(element: HTMLElement, attributeName: string): boolean {
+  if (!element.hasAttribute(attributeName)) {
+    return false;
+  }
+  const value = element.getAttribute(attributeName);
+  // For boolean attributes, presence means true (even with empty string or 'true')
+  return value === '' || value === 'true' || value === attributeName;
+}
+
+// ============================================================================
 // Trait Handler Factories
 // ============================================================================
 
@@ -218,10 +259,7 @@ export function createBooleanTrait(
     syncToInternal?: string; // CSS selector for internal element (Light DOM)
   }
 ): UnifiedTrait {
-  // Shared boolean coercion logic
-  const coerceBoolean = (value: any): boolean => {
-    return value === true || value === 'true' || value === '';
-  };
+  // Uses global coerceBoolean helper for consistent boolean handling
 
   return {
     definition: {
@@ -476,7 +514,7 @@ function getModalIdForElement(element: HTMLElement): string {
  * Create or update an inline modal for a trigger element (button/link)
  */
 function updateInlineModal(triggerElement: HTMLElement): void {
-  const hasModal = triggerElement.getAttribute('has-modal') === 'true';
+  const hasModal = hasAttributeTrue(triggerElement, 'has-modal');
   const modalId = getModalIdForElement(triggerElement);
 
   // Find existing modal sibling
@@ -514,8 +552,8 @@ function updateInlineModal(triggerElement: HTMLElement): void {
   const primaryText = triggerElement.getAttribute('modal-primary-text') || 'Continue';
   const secondaryText = triggerElement.getAttribute('modal-secondary-text') || 'Cancel';
   const showSecondary = triggerElement.getAttribute('modal-show-secondary') !== 'false';
-  const large = triggerElement.getAttribute('modal-large') === 'true';
-  const forceAction = triggerElement.getAttribute('modal-force-action') === 'true';
+  const large = hasAttributeTrue(triggerElement, 'modal-large');
+  const forceAction = hasAttributeTrue(triggerElement, 'modal-force-action');
 
   modal.setAttribute('heading', heading);
   modal.setAttribute('description', description);
@@ -572,10 +610,13 @@ function updateInlineModal(triggerElement: HTMLElement): void {
  */
 function createModalTraits(): Record<string, UnifiedTrait> {
   // Visibility function - only show modal config when has-modal is true
+  // Uses coerceBoolean to handle all boolean representations consistently
   const modalTraitVisible = (component: any) => {
     try {
-      if (!component) return false;
-      return component.get?.('attributes')?.['has-modal'] === 'true';
+      if (!component?.get) return false;
+      const attrs = component.get('attributes');
+      if (!attrs) return false;
+      return coerceBoolean(attrs['has-modal']);
     } catch {
       return false;
     }
@@ -592,7 +633,7 @@ function createModalTraits(): Record<string, UnifiedTrait> {
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const hasModal = value === true || value === 'true' || value === '';
+          const hasModal = coerceBoolean(value);
           element.setAttribute('has-modal', String(hasModal));
           updateInlineModal(element);
         },
@@ -679,7 +720,7 @@ function createModalTraits(): Record<string, UnifiedTrait> {
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const show = value === true || value === 'true' || value === '';
+          const show = coerceBoolean(value);
           element.setAttribute('modal-show-secondary', String(show));
           updateInlineModal(element);
         },
@@ -697,7 +738,7 @@ function createModalTraits(): Record<string, UnifiedTrait> {
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const large = value === true || value === 'true' || value === '';
+          const large = coerceBoolean(value);
           element.setAttribute('modal-large', String(large));
           updateInlineModal(element);
         },
@@ -715,7 +756,7 @@ function createModalTraits(): Record<string, UnifiedTrait> {
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const force = value === true || value === 'true' || value === '';
+          const force = coerceBoolean(value);
           element.setAttribute('modal-force-action', String(force));
           updateInlineModal(element);
         },
@@ -1682,7 +1723,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isRequired = value === true || value === 'true' || value === '';
+          const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
           } else {
@@ -1706,7 +1747,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isDisabled = value === true || value === 'true' || value === '';
+          const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');
           } else {
@@ -1882,7 +1923,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isRequired = value === true || value === 'true' || value === '';
+          const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
           } else {
@@ -1906,7 +1947,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isDisabled = value === true || value === 'true' || value === '';
+          const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');
           } else {
@@ -2149,7 +2190,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isDisabled = value === true || value === 'true' || value === '';
+          const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disableFiltering', '');
           } else {
@@ -2173,7 +2214,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isRequired = value === true || value === 'true' || value === '';
+          const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
           } else {
@@ -2197,7 +2238,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isDisabled = value === true || value === 'true' || value === '';
+          const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');
           } else {
@@ -2266,7 +2307,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isRequired = value === true || value === 'true' || value === '';
+          const isRequired = coerceBoolean(value);
           const legend = element.querySelector('legend');
 
           if (!legend) return;
@@ -2919,7 +2960,7 @@ function rebuildSideNavItems(element: HTMLElement, count: number): void {
   for (let i = 1; i <= count; i++) {
     const label = element.getAttribute(`item${i}-label`) || `Nav Item ${i}`;
     const href = element.getAttribute(`item${i}-href`) || '#';
-    const current = element.getAttribute(`item${i}-current`) === 'true' || element.getAttribute(`item${i}-current`) === '';
+    const current = hasAttributeTrue(element, `item${i}-current`);
 
     items.push({
       label,
@@ -2961,7 +3002,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isCurrent = value === true || value === 'true' || value === '';
+          const isCurrent = coerceBoolean(value);
           if (isCurrent) {
             element.setAttribute(attrName, 'true');
           } else {
@@ -2971,7 +3012,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
           rebuildSideNavItems(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return element.getAttribute(attrName) === 'true' || element.hasAttribute(attrName);
+          return hasAttributeTrue(element, attrName);
         },
       },
     };
@@ -3292,7 +3333,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('flagLayout', '');
           } else {
@@ -3319,7 +3360,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('headerFirst', '');
           } else {
@@ -3370,7 +3411,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('actionable', '');
           } else {
@@ -3491,7 +3532,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('big', '');
           } else {
@@ -3716,7 +3757,7 @@ componentRegistry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          return element.getAttribute('decorative') === 'true';
+          return hasAttributeTrue(element, 'decorative');
         },
       },
     },
@@ -4226,7 +4267,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('slim', '');
           } else {
@@ -4253,7 +4294,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('no-icon', '');
           } else {
@@ -4338,7 +4379,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('expanded', '');
           } else {
@@ -4450,7 +4491,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('slim', '');
           } else {
@@ -4578,7 +4619,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('show-trigger', '');
           } else {
@@ -4605,7 +4646,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('large', '');
           } else {
@@ -4632,7 +4673,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('force-action', '');
           } else {
@@ -4705,7 +4746,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isEnabled = value === true || value === 'true' || value === '';
+          const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('show-secondary-button', '');
           } else {
@@ -4823,7 +4864,7 @@ function rebuildAccordionItems(element: HTMLElement, count: number): void {
   for (let i = 1; i <= count; i++) {
     const title = element.getAttribute(`section${i}-title`) || `Section ${i}`;
     const content = element.getAttribute(`section${i}-content`) || `Content for section ${i}`;
-    const expanded = element.getAttribute(`section${i}-expanded`) === 'true';
+    const expanded = hasAttributeTrue(element, `section${i}-expanded`);
     items.push({ title, content, expanded });
   }
   (element as any).items = items;
@@ -4859,7 +4900,7 @@ function createAccordionSectionTrait(
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isExpanded = value === true || value === 'true' || value === '';
+          const isExpanded = coerceBoolean(value);
           element.setAttribute(attrName, String(isExpanded));
           const count = parseInt(element.getAttribute('section-count') || '3', 10);
           if (sectionNum <= count) {
@@ -4946,7 +4987,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isMulti = value === true || value === 'true' || value === '';
+          const isMulti = coerceBoolean(value);
           if (isMulti) {
             element.setAttribute('multiselectable', '');
           } else {
@@ -4970,7 +5011,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isBordered = value === true || value === 'true' || value === '';
+          const isBordered = coerceBoolean(value);
           if (isBordered) {
             element.setAttribute('bordered', '');
           } else {
@@ -5155,7 +5196,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const showLabels = value === true || value === 'true' || value === '';
+          const showLabels = coerceBoolean(value);
           if (showLabels) {
             element.setAttribute('show-labels', '');
           } else {
@@ -5207,7 +5248,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isCentered = value === true || value === 'true' || value === '';
+          const isCentered = coerceBoolean(value);
           if (isCentered) {
             element.setAttribute('centered', '');
           } else {
@@ -5231,7 +5272,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isSmall = value === true || value === 'true' || value === '';
+          const isSmall = coerceBoolean(value);
           if (isSmall) {
             element.setAttribute('small', '');
           } else {
@@ -5646,6 +5687,41 @@ componentRegistry.register({
 // ============================================================================
 
 /**
+ * WORKAROUND: usa-header blocks re-renders after USWDS JavaScript initializes.
+ *
+ * The USWDS JavaScript (accordion behavior, etc.) sets up event listeners and
+ * modifies the DOM. After this initialization, the Lit component's shouldUpdate
+ * returns false to prevent the USWDS JavaScript state from being lost.
+ *
+ * This means we need to manipulate the DOM directly for visual changes.
+ * This helper function encapsulates this pattern and ensures we try both
+ * the Lit way (requestUpdate) and direct DOM manipulation as a fallback.
+ *
+ * @param element The usa-header element
+ * @param callback Function to perform direct DOM manipulation
+ */
+function updateHeaderWithFallback(
+  element: HTMLElement,
+  callback: () => void
+): void {
+  // First, try to update via Lit
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+
+  // Then, perform direct DOM manipulation as a fallback
+  // This ensures the visual state is correct even if Lit's update is blocked
+  callback();
+
+  // Schedule another requestUpdate in case the component becomes responsive
+  setTimeout(() => {
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+    }
+  }, 50);
+}
+
+/**
  * Helper function to update/create/remove skip link for header
  * The skip link is inserted as a sibling before the usa-header element
  */
@@ -5781,7 +5857,7 @@ function createHeaderNavItemTrait(
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isCurrent = value === true || value === 'true' || value === '';
+          const isCurrent = coerceBoolean(value);
           if (isCurrent) {
             element.setAttribute(attrName, '');
           } else {
@@ -6001,8 +6077,7 @@ componentRegistry.register({
       },
     },
 
-    // Extended header style
-    // Note: usa-header blocks re-renders after USWDS init, so we manipulate DOM directly
+    // Extended header style (uses workaround for USWDS init blocking)
     extended: {
       definition: {
         name: 'extended',
@@ -6012,7 +6087,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const isExtended = value === true || value === 'true' || value === '';
+          const isExtended = coerceBoolean(value);
           if (isExtended) {
             element.setAttribute('extended', '');
           } else {
@@ -6020,22 +6095,19 @@ componentRegistry.register({
           }
           (element as any).extended = isExtended;
 
-          // Directly update the header class since shouldUpdate blocks re-renders
-          const header = element.querySelector('.usa-header');
-          if (header) {
-            header.classList.toggle('usa-header--extended', isExtended);
-            header.classList.toggle('usa-header--basic', !isExtended);
-          }
-
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
-          }
+          // Use workaround helper for header DOM updates
+          updateHeaderWithFallback(element, () => {
+            const header = element.querySelector('.usa-header');
+            if (header) {
+              header.classList.toggle('usa-header--extended', isExtended);
+              header.classList.toggle('usa-header--basic', !isExtended);
+            }
+          });
         },
       },
     },
 
-    // Show Search
-    // Note: usa-header blocks re-renders after USWDS init, so we manipulate DOM directly
+    // Show Search (uses workaround for USWDS init blocking)
     'show-search': {
       definition: {
         name: 'show-search',
@@ -6045,7 +6117,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const showSearch = value === true || value === 'true' || value === '';
+          const showSearch = coerceBoolean(value);
           if (showSearch) {
             element.setAttribute('showSearch', '');
           } else {
@@ -6053,15 +6125,13 @@ componentRegistry.register({
           }
           (element as any).showSearch = showSearch;
 
-          // Directly show/hide search since shouldUpdate blocks re-renders
-          const secondaryDiv = element.querySelector('.usa-nav__secondary');
-          if (secondaryDiv) {
-            (secondaryDiv as HTMLElement).style.display = showSearch ? '' : 'none';
-          }
-
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
-          }
+          // Use workaround helper for header DOM updates
+          updateHeaderWithFallback(element, () => {
+            const secondaryDiv = element.querySelector('.usa-nav__secondary');
+            if (secondaryDiv) {
+              (secondaryDiv as HTMLElement).style.display = showSearch ? '' : 'none';
+            }
+          });
         },
       },
     },
