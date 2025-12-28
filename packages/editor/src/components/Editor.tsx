@@ -74,27 +74,72 @@ const uswdsComponentsPlugin = (editor: any) => {
   debug('Component types registered successfully');
 
   // Register grid layout component types (plain HTML divs with specific classes)
-  const gridTypes = [
-    { name: 'grid-container', className: 'grid-container', label: 'Grid Container' },
-    { name: 'grid-row', className: 'grid-row', label: 'Grid Row' },
-    { name: 'grid-col', className: 'grid-col', label: 'Grid Column' },
-  ];
-
-  for (const gridType of gridTypes) {
-    Components.addType(gridType.name, {
-      isComponent: (el: HTMLElement) => el.classList?.contains(gridType.className),
-      model: {
-        defaults: {
-          name: gridType.label,
-          draggable: true,
-          droppable: true,
-          removable: true,
-          copyable: true,
-          resizable: true,
-        },
+  // Grid container and row use exact class matching
+  Components.addType('grid-container', {
+    isComponent: (el: HTMLElement) => el.classList?.contains('grid-container'),
+    model: {
+      defaults: {
+        name: 'Grid Container',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
       },
-    });
-  }
+    },
+  });
+
+  Components.addType('grid-row', {
+    isComponent: (el: HTMLElement) => el.classList?.contains('grid-row'),
+    model: {
+      defaults: {
+        name: 'Grid Row',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+      },
+    },
+  });
+
+  // Grid columns use classes like grid-col-6, grid-col-4, etc.
+  // Match any class that starts with "grid-col"
+  Components.addType('grid-col', {
+    isComponent: (el: HTMLElement) => {
+      if (!el.classList) return false;
+      return Array.from(el.classList).some(cls => cls.startsWith('grid-col'));
+    },
+    model: {
+      defaults: {
+        name: 'Grid Column',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+        // Allow editing text content directly
+        editable: true,
+      },
+    },
+  });
+
+  // Make paragraph elements inside grid columns selectable and removable
+  Components.addType('text-block', {
+    isComponent: (el: HTMLElement) => el.tagName === 'P',
+    model: {
+      defaults: {
+        name: 'Text',
+        draggable: true,
+        droppable: false,
+        removable: true,
+        copyable: true,
+        editable: true,
+        // Allow double-click to edit text
+        textable: true,
+      },
+    },
+  });
 
   debug('Grid layout component types registered');
 
