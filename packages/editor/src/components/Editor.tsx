@@ -16,7 +16,7 @@ import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 
 // Debug logging flag
-const DEBUG = true; // Set to true for verbose logging
+const DEBUG = false; // Set to true for verbose logging
 
 function debug(...args: any[]): void {
   if (DEBUG) {
@@ -72,6 +72,31 @@ const uswdsComponentsPlugin = (editor: any) => {
   }
 
   debug('Component types registered successfully');
+
+  // Register grid layout component types (plain HTML divs with specific classes)
+  const gridTypes = [
+    { name: 'grid-container', className: 'grid-container', label: 'Grid Container' },
+    { name: 'grid-row', className: 'grid-row', label: 'Grid Row' },
+    { name: 'grid-col', className: 'grid-col', label: 'Grid Column' },
+  ];
+
+  for (const gridType of gridTypes) {
+    Components.addType(gridType.name, {
+      isComponent: (el: HTMLElement) => el.classList?.contains(gridType.className),
+      model: {
+        defaults: {
+          name: gridType.label,
+          draggable: true,
+          droppable: true,
+          removable: true,
+          copyable: true,
+          resizable: true,
+        },
+      },
+    });
+  }
+
+  debug('Grid layout component types registered');
 
   // Initialize WebComponentTraitManager to handle trait ↔ web component sync
   debug('Initializing WebComponentTraitManager...');
