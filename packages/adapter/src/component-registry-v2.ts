@@ -870,6 +870,136 @@ function createTooltipTraits(): Record<string, UnifiedTrait> {
 }
 
 // ============================================================================
+// Page Link Traits
+// ============================================================================
+
+/**
+ * Create page link traits for button/link components.
+ * Allows users to easily link to other pages in the prototype.
+ *
+ * The page-link select options are populated dynamically by the Editor
+ * when a component is selected (see Editor.tsx).
+ */
+function createPageLinkTraits(): Record<string, UnifiedTrait> {
+  // Visibility for page-link: only when link-type is 'page'
+  const pageLinkVisible = (component: any) => {
+    try {
+      if (!component?.get) return false;
+      const attrs = component.get('attributes');
+      return attrs?.['link-type'] === 'page';
+    } catch {
+      return false;
+    }
+  };
+
+  // Visibility for href: only when link-type is 'external'
+  const externalLinkVisible = (component: any) => {
+    try {
+      if (!component?.get) return false;
+      const attrs = component.get('attributes');
+      return attrs?.['link-type'] === 'external';
+    } catch {
+      return false;
+    }
+  };
+
+  return {
+    'link-type': {
+      definition: {
+        name: 'link-type',
+        label: 'Link To',
+        type: 'select',
+        default: 'none',
+        options: [
+          { id: 'none', label: 'None (Button Only)' },
+          { id: 'page', label: 'Page in Prototype' },
+          { id: 'external', label: 'External URL' },
+        ],
+        category: { id: 'link', label: 'Link' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const linkType = value || 'none';
+          element.setAttribute('link-type', linkType);
+
+          // Clear href when switching to 'none'
+          if (linkType === 'none') {
+            element.removeAttribute('href');
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          // Infer link-type from existing href if not set
+          const linkType = element.getAttribute('link-type');
+          if (linkType) return linkType;
+
+          const href = element.getAttribute('href');
+          if (!href) return 'none';
+          if (href.startsWith('#page-')) return 'page';
+          return 'external';
+        },
+      },
+    },
+
+    'page-link': {
+      definition: {
+        name: 'page-link',
+        label: 'Select Page',
+        type: 'select',
+        default: '',
+        // Options are populated dynamically by Editor.tsx
+        options: [
+          { id: '', label: '-- Select a page --' },
+        ],
+        visible: pageLinkVisible,
+        category: { id: 'link', label: 'Link' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            // Set href to page anchor format
+            element.setAttribute('href', `#page-${value}`);
+            element.setAttribute('page-link', value);
+          } else {
+            element.removeAttribute('href');
+            element.removeAttribute('page-link');
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('page-link') || '';
+        },
+      },
+    },
+
+    href: {
+      definition: {
+        name: 'href',
+        label: 'URL',
+        type: 'text',
+        default: '',
+        placeholder: 'https://example.com',
+        visible: externalLinkVisible,
+        category: { id: 'link', label: 'Link' },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (value) {
+            element.setAttribute('href', value);
+          } else {
+            element.removeAttribute('href');
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          const href = element.getAttribute('href') || '';
+          // Only return href if it's not a page link
+          if (href.startsWith('#page-')) return '';
+          return href;
+        },
+      },
+    },
+  };
+}
+
+// ============================================================================
 // Component Definitions
 // ============================================================================
 
@@ -929,13 +1059,8 @@ componentRegistry.register({
       syncToInternal: 'button',
     }),
 
-    // Href - simple attribute
-    href: createAttributeTrait('href', {
-      label: 'Link URL',
-      type: 'text',
-      placeholder: 'https://...',
-      removeDefaults: [''],
-    }),
+    // Page link traits - link to pages or external URLs
+    ...createPageLinkTraits(),
 
     // Modal traits - configure inline modal
     ...createModalTraits(),
@@ -2444,13 +2569,8 @@ componentRegistry.register({
       default: 'Link',
     }),
 
-    // Href - link URL
-    href: createAttributeTrait('href', {
-      label: 'URL',
-      type: 'text',
-      default: '#',
-      placeholder: 'https://...',
-    }),
+    // Page link traits - link to pages or external URLs
+    ...createPageLinkTraits(),
 
     // Variant - link variant
     variant: createAttributeTrait('variant', {

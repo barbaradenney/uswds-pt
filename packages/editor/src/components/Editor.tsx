@@ -484,6 +484,84 @@ export function Editor() {
             // WebComponentTraitManager handles all trait synchronization automatically
             // No manual sync code needed!
 
+            // Helper function to update page-link trait options with available pages
+            const updatePageLinkOptions = (component: any) => {
+              if (!component) return;
+
+              // Check if component has a page-link trait
+              const pageLinkTrait = component.getTrait?.('page-link');
+              if (!pageLinkTrait) return;
+
+              // Get all pages from the editor
+              const pages = editor.Pages?.getAll?.() || [];
+              const currentPage = editor.Pages?.getSelected?.();
+
+              // Build options from pages, excluding the current page
+              const pageOptions = [
+                { id: '', label: '-- Select a page --' },
+                ...pages
+                  .filter((page: any) => page !== currentPage)
+                  .map((page: any) => ({
+                    id: page.getId?.() || page.id,
+                    label: page.get?.('name') || page.getName?.() || `Page ${page.getId?.() || page.id}`,
+                  })),
+              ];
+
+              // Update the trait options
+              pageLinkTrait.set('options', pageOptions);
+              debug('Updated page-link options:', pageOptions);
+            };
+
+            // Listen for component selection to update page-link options
+            editor.on('component:selected', (component: any) => {
+              updatePageLinkOptions(component);
+            });
+
+            // Also update when pages change
+            editor.on('page', () => {
+              const selected = editor.getSelected?.();
+              if (selected) {
+                updatePageLinkOptions(selected);
+              }
+            });
+
+            // Handle page link clicks in the canvas
+            // This allows users to test page navigation while in preview mode
+            const handledDocs = new WeakSet<Document>();
+            const setupPageLinkHandler = () => {
+              const canvas = editor.Canvas;
+              const doc = canvas?.getDocument?.();
+              if (doc && !handledDocs.has(doc)) {
+                handledDocs.add(doc);
+                doc.addEventListener('click', (e: MouseEvent) => {
+                  // Only handle clicks in preview mode (not editing mode)
+                  const isPreviewMode = editor.Commands?.isActive?.('preview');
+                  if (!isPreviewMode) return;
+
+                  const target = e.target as HTMLElement;
+                  const link = target.closest('[href^="#page-"]') as HTMLElement;
+                  if (link) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const href = link.getAttribute('href');
+                    if (href) {
+                      const pageId = href.replace('#page-', '');
+                      const pages = editor.Pages;
+                      const targetPage = pages?.get?.(pageId);
+                      if (targetPage) {
+                        pages.select(targetPage);
+                        debug('Navigated to page:', pageId);
+                      }
+                    }
+                  }
+                });
+              }
+            };
+
+            // Set up handler when canvas is ready and on page changes
+            editor.on('canvas:frame:load', setupPageLinkHandler);
+            editor.on('page:select', setupPageLinkHandler);
+
             // Load project data if available
             if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {
               editor.loadProjectData(prototype.grapesData as any);
