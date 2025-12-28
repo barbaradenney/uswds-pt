@@ -2,10 +2,15 @@
  * Prototype Routes
  */
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { eq, desc, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { db, prototypes, prototypeVersions } from '../db/index.js';
+
+// Type helper to get user from JWT-verified request
+function getUser(request: FastifyRequest): { id: string; email: string } {
+  return request.user as { id: string; email: string };
+}
 
 interface CreatePrototypeBody {
   name: string;
@@ -40,7 +45,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
       preHandler: [app.authenticate],
     },
     async (request) => {
-      const userId = request.user.id;
+      const userId = getUser(request).id;
 
       const items = await db
         .select()
@@ -63,7 +68,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
 
       const [prototype] = await db
         .select()
@@ -107,7 +112,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const { name, description, htmlContent, grapesData } = request.body;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
       const slug = nanoid(10);
 
       const [prototype] = await db
@@ -149,7 +154,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { slug } = request.params;
       const { name, description, htmlContent, grapesData } = request.body;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
 
       // Get current prototype
       const [current] = await db
@@ -214,7 +219,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
 
       const result = await db
         .delete(prototypes)
@@ -245,7 +250,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
 
       // Get prototype
       const [prototype] = await db
@@ -289,7 +294,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug, version } = request.params;
-      const userId = request.user.id;
+      const userId = getUser(request).id;
       const versionNumber = parseInt(version, 10);
 
       if (isNaN(versionNumber)) {

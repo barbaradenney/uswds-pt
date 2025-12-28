@@ -192,19 +192,29 @@ function isSelfClosingTag(tag: string): boolean {
 }
 
 /**
+ * CDN URLs for USWDS resources (keep in sync with adapter constants)
+ */
+const USWDS_VERSION = '3.8.1';
+const USWDS_WC_BUNDLE_VERSION = '2.5.7';
+
+const PREVIEW_CDN_URLS = {
+  uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
+  uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
+};
+
+/**
  * Generate a full HTML document with USWDS imports
  */
 export function generateFullDocument(
   content: string,
   options: {
     title?: string;
-    cdnBase?: string;
     lang?: string;
   } = {}
 ): string {
   const {
     title = 'Prototype',
-    cdnBase = 'https://unpkg.com/@uswds-wc/all@latest',
     lang = 'en',
   } = options;
 
@@ -215,14 +225,42 @@ export function generateFullDocument(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
 
-  <!-- USWDS Web Components -->
-  <link rel="stylesheet" href="${cdnBase}/dist/styles.css">
-  <script type="module" src="${cdnBase}/dist/index.js"></script>
+  <!-- USWDS Base CSS -->
+  <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsCss}">
+  <!-- USWDS Web Components CSS -->
+  <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
+  <!-- USWDS Web Components JS -->
+  <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
 </head>
 <body>
 ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </body>
 </html>`;
+}
+
+/**
+ * Open a preview of the HTML content in a new browser tab
+ */
+export function openPreviewInNewTab(html: string, title: string = 'Prototype Preview'): void {
+  // Clean the HTML first
+  const cleanedHtml = cleanExport(html);
+
+  // Generate full document
+  const fullDocument = generateFullDocument(cleanedHtml, { title });
+
+  // Create a blob URL and open in new tab
+  const blob = new Blob([fullDocument], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  // Open in new tab
+  const newTab = window.open(url, '_blank');
+
+  // Clean up the blob URL after a delay (give time for the page to load)
+  if (newTab) {
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
 }
 
 /**

@@ -9,6 +9,11 @@ import {
   verifyPassword,
 } from '../plugins/auth.js';
 
+// Type helper to get user from JWT-verified request
+function getUser(request: FastifyRequest): { id: string; email: string } {
+  return request.user as { id: string; email: string };
+}
+
 interface LoginBody {
   email: string;
   password: string;
@@ -134,9 +139,10 @@ export async function authRoutes(app: FastifyInstance) {
       preHandler: [app.authenticate],
     },
     async (request, reply) => {
+      const user = getUser(request);
       return {
-        id: request.user.id,
-        email: request.user.email,
+        id: user.id,
+        email: user.email,
       };
     }
   );

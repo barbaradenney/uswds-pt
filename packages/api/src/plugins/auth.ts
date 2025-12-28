@@ -9,13 +9,6 @@ import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db, users, type User } from '../db/index.js';
 
-// Extend FastifyRequest to include user
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: { id: string; email: string };
-  }
-}
-
 // JWT payload type
 interface JWTPayload {
   id: string;

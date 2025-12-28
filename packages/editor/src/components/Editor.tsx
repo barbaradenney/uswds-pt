@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
+import { openPreviewInNewTab } from '../lib/export';
 import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
@@ -294,6 +295,14 @@ export function Editor() {
     setShowExport(true);
   }, []);
 
+  const handlePreview = useCallback(() => {
+    const editor = editorRef.current;
+    if (editor) {
+      const html = editor.getHtml();
+      openPreviewInNewTab(html, name || 'Prototype Preview');
+    }
+  }, [name]);
+
   // Generate blocks from USWDS components
   // Use HTML string format - GrapesJS will recognize the tag and apply our component type
   const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => {
@@ -410,6 +419,12 @@ export function Editor() {
               {error}
             </span>
           )}
+          <button
+            className="btn btn-secondary"
+            onClick={handlePreview}
+          >
+            Preview
+          </button>
           <button
             className="btn btn-secondary"
             onClick={handleExport}

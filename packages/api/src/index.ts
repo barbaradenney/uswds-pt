@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { prototypeRoutes } from './routes/prototypes.js';
+import { previewRoutes } from './routes/preview.js';
 
 // Extend Fastify types
 declare module 'fastify' {
@@ -45,6 +46,7 @@ async function main() {
   // Register routes
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
+  await app.register(previewRoutes, { prefix: '/api/preview' });
 
   // Health check endpoint
   app.get('/api/health', async () => {
