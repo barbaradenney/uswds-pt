@@ -519,13 +519,75 @@ export function Editor() {
             editorRef.current = editor;
             debug('Editor ready');
 
-            // Force canvas refresh after component removal to ensure visual update
+            // Helper function to force canvas visual update
+            // GrapesJS's editor.refresh() only updates spots/tools positioning, not content
+            // We need to trigger frame:updated and use Canvas.refresh() for proper updates
+            const forceCanvasUpdate = () => {
+              debug('Forcing canvas update...');
+              try {
+                // Trigger events that help clear internal caches
+                editor.trigger('frame:updated');
+
+                // Use Canvas.refresh() with spots update
+                const canvas = editor.Canvas;
+                if (canvas?.refresh) {
+                  canvas.refresh({ spots: true });
+                }
+
+                // Also call editor.refresh() for tool positioning
+                editor.refresh();
+
+                // Fallback: Force iframe repaint if still not updating
+                // This triggers a browser repaint of the canvas iframe
+                const frameEl = canvas?.getFrameEl?.();
+                if (frameEl) {
+                  const doc = frameEl.contentDocument;
+                  if (doc?.body) {
+                    // Force reflow/repaint by reading and modifying a layout property
+                    const body = doc.body;
+                    const originalDisplay = body.style.display;
+                    body.style.display = 'none';
+                    // Force reflow
+                    void body.offsetHeight;
+                    body.style.display = originalDisplay || '';
+                    debug('Iframe repaint triggered');
+                  }
+                }
+
+                debug('Canvas update complete');
+              } catch (err) {
+                console.warn('USWDS-PT: Canvas update warning:', err);
+              }
+            };
+
+            // Force canvas refresh after component removal
             editor.on('component:remove', (component: any) => {
               debug('Component removed:', component?.get?.('tagName'));
-              // Trigger canvas refresh after a short delay to ensure DOM is updated
-              setTimeout(() => {
-                editor.refresh();
-              }, 50);
+              // Trigger canvas update after a short delay to ensure DOM is updated
+              setTimeout(forceCanvasUpdate, 50);
+            });
+
+            // Handle DomComponents.clear() calls (used by Clear Page)
+            const originalClear = editor.DomComponents?.clear?.bind(editor.DomComponents);
+            if (originalClear && editor.DomComponents) {
+              editor.DomComponents.clear = (...args: any[]) => {
+                debug('DomComponents.clear() called');
+                const result = originalClear(...args);
+                setTimeout(forceCanvasUpdate, 100);
+                return result;
+              };
+            }
+
+            // Listen for command execution (for core:canvas-clear and similar)
+            editor.on('run:core:canvas-clear', () => {
+              debug('core:canvas-clear command executed');
+              setTimeout(forceCanvasUpdate, 100);
+            });
+
+            // Also listen for page changes which might need refresh
+            editor.on('page:select', () => {
+              debug('Page selected');
+              setTimeout(forceCanvasUpdate, 100);
             });
 
             // WebComponentTraitManager handles all trait synchronization automatically
