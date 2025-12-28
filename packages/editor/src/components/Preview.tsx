@@ -4,7 +4,7 @@ import { cleanExport } from '../lib/export';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.7';
+const USWDS_WC_BUNDLE_VERSION = '2.5.8';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
