@@ -128,6 +128,15 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-date-of-birth-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" opacity="0.3"/></svg>`,
   'usa-ssn-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`,
 
+  // Grid Layout
+  'grid-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
+  'grid-row': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="8" width="18" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
+  'grid-2-col': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="8" height="14" rx="1"/><rect x="13" y="5" width="8" height="14" rx="1"/></svg>`,
+  'grid-3-col': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="5" width="5.5" height="14" rx="1"/><rect x="9.25" y="5" width="5.5" height="14" rx="1"/><rect x="16.5" y="5" width="5.5" height="14" rx="1"/></svg>`,
+  'grid-4-col': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6" width="4" height="12" rx="1"/><rect x="7.33" y="6" width="4" height="12" rx="1"/><rect x="12.66" y="6" width="4" height="12" rx="1"/><rect x="18" y="6" width="4" height="12" rx="1"/></svg>`,
+  'grid-sidebar-left': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="11" height="14" rx="1"/></svg>`,
+  'grid-sidebar-right': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="11" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>`,
+
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
 };
@@ -376,6 +385,69 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-text-input label="Social Security Number" name="ssn" type="password" hint="Enter the 9 digits of your SSN" inputmode="numeric" pattern="^(?!(000|666|9))\\d{3}-(?!00)\\d{2}-(?!0000)\\d{4}$" maxlength="11" required style="max-width: 12rem; margin-top: 1rem;"></usa-text-input>
   <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
 </fieldset>`,
+
+  // Grid Layout - USWDS Grid System
+  'grid-container': `__FULL_HTML__<div class="grid-container" style="padding: 1rem; min-height: 100px; background: rgba(0,0,0,0.02);">
+  <p style="color: #71767a; text-align: center;">Grid Container - Drop content here</p>
+</div>`,
+
+  'grid-row': `__FULL_HTML__<div class="grid-row" style="display: flex; flex-wrap: wrap; min-height: 60px; background: rgba(0,0,0,0.02);">
+  <p style="color: #71767a; text-align: center; width: 100%;">Grid Row - Drop columns here</p>
+</div>`,
+
+  'grid-2-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  <div class="grid-col-6" style="flex: 1 1 calc(50% - 0.5rem); min-width: 200px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Column 1</p>
+  </div>
+  <div class="grid-col-6" style="flex: 1 1 calc(50% - 0.5rem); min-width: 200px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Column 2</p>
+  </div>
+</div>`,
+
+  'grid-3-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Column 1</p>
+  </div>
+  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Column 2</p>
+  </div>
+  <div class="grid-col-4" style="flex: 1 1 calc(33.333% - 0.67rem); min-width: 150px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Column 3</p>
+  </div>
+</div>`,
+
+  'grid-4-col': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Col 1</p>
+  </div>
+  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Col 2</p>
+  </div>
+  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Col 3</p>
+  </div>
+  <div class="grid-col-3" style="flex: 1 1 calc(25% - 0.75rem); min-width: 120px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 80px;">
+    <p style="color: #71767a;">Col 4</p>
+  </div>
+</div>`,
+
+  'grid-sidebar-left': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  <div class="grid-col-4" style="flex: 0 0 250px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+    <p style="color: #71767a;">Sidebar</p>
+  </div>
+  <div class="grid-col-8" style="flex: 1 1 0; min-width: 300px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+    <p style="color: #71767a;">Main Content</p>
+  </div>
+</div>`,
+
+  'grid-sidebar-right': `__FULL_HTML__<div class="grid-row grid-gap" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  <div class="grid-col-8" style="flex: 1 1 0; min-width: 300px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+    <p style="color: #71767a;">Main Content</p>
+  </div>
+  <div class="grid-col-4" style="flex: 0 0 250px; padding: 1rem; background: rgba(0,0,0,0.03); min-height: 100px;">
+    <p style="color: #71767a;">Sidebar</p>
+  </div>
+</div>`,
 };
 
 /**
