@@ -519,14 +519,13 @@ export function Editor() {
             editorRef.current = editor;
             debug('Editor ready');
 
-            // Debug: Listen for component removal events
+            // Force canvas refresh after component removal to ensure visual update
             editor.on('component:remove', (component: any) => {
               debug('Component removed:', component?.get?.('tagName'));
-            });
-
-            // Debug: Listen for all commands
-            editor.on('run', (commandId: string) => {
-              debug('Command run:', commandId);
+              // Trigger canvas refresh after a short delay to ensure DOM is updated
+              setTimeout(() => {
+                editor.refresh();
+              }, 50);
             });
 
             // WebComponentTraitManager handles all trait synchronization automatically
