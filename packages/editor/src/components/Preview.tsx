@@ -22,12 +22,62 @@ export function Preview() {
   const [data, setData] = useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stylesLoaded, setStylesLoaded] = useState(false);
+
+  // Inject stylesheets into document head
+  useEffect(() => {
+    const head = document.head;
+    const existingLinks = head.querySelectorAll('link[data-uswds-preview]');
+
+    // Only add if not already present
+    if (existingLinks.length === 0) {
+      // Add USWDS CSS
+      const uswdsCssLink = document.createElement('link');
+      uswdsCssLink.rel = 'stylesheet';
+      uswdsCssLink.href = PREVIEW_CDN_URLS.uswdsCss;
+      uswdsCssLink.setAttribute('data-uswds-preview', 'true');
+      head.appendChild(uswdsCssLink);
+
+      // Add USWDS Web Components CSS
+      const wcCssLink = document.createElement('link');
+      wcCssLink.rel = 'stylesheet';
+      wcCssLink.href = PREVIEW_CDN_URLS.uswdsWcCss;
+      wcCssLink.setAttribute('data-uswds-preview', 'true');
+      head.appendChild(wcCssLink);
+
+      // Add USWDS Web Components JS
+      const wcScript = document.createElement('script');
+      wcScript.type = 'module';
+      wcScript.src = PREVIEW_CDN_URLS.uswdsWcJs;
+      wcScript.setAttribute('data-uswds-preview', 'true');
+      head.appendChild(wcScript);
+
+      // Wait for CSS to load
+      uswdsCssLink.onload = () => setStylesLoaded(true);
+      uswdsCssLink.onerror = () => setStylesLoaded(true); // Continue even if CSS fails
+    } else {
+      setStylesLoaded(true);
+    }
+
+    return () => {
+      // Cleanup on unmount
+      const links = head.querySelectorAll('[data-uswds-preview]');
+      links.forEach(link => link.remove());
+    };
+  }, []);
 
   useEffect(() => {
     if (slug) {
       loadPreview(slug);
     }
   }, [slug]);
+
+  // Set document title when data is loaded
+  useEffect(() => {
+    if (data?.name) {
+      document.title = `${data.name} - Preview`;
+    }
+  }, [data?.name]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
@@ -116,22 +166,26 @@ export function Preview() {
     return null;
   }
 
+  // Wait for both data and styles before rendering
+  if (!stylesLoaded) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontFamily: 'system-ui, sans-serif',
+      }}>
+        <p style={{ color: '#71767a' }}>Loading styles...</p>
+      </div>
+    );
+  }
+
   // Clean the HTML content
   const cleanedHtml = cleanExport(data.htmlContent);
 
-  // Render the full preview with USWDS resources
+  // Render the prototype content (styles are injected via useEffect into document head)
   return (
-    <>
-      {/* Inject USWDS styles */}
-      <link rel="stylesheet" href={PREVIEW_CDN_URLS.uswdsCss} />
-      <link rel="stylesheet" href={PREVIEW_CDN_URLS.uswdsWcCss} />
-      <script type="module" src={PREVIEW_CDN_URLS.uswdsWcJs} />
-
-      {/* Set document title */}
-      <title>{data.name} - Preview</title>
-
-      {/* Render the prototype content */}
-      <div dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
-    </>
+    <div dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
   );
 }
