@@ -79,6 +79,7 @@ const uswdsComponentsPlugin = (editor: any) => {
     isComponent: (el: HTMLElement) => el.classList?.contains('grid-container'),
     model: {
       defaults: {
+        tagName: 'div',
         name: 'Grid Container',
         draggable: true,
         droppable: true,
@@ -93,6 +94,7 @@ const uswdsComponentsPlugin = (editor: any) => {
     isComponent: (el: HTMLElement) => el.classList?.contains('grid-row'),
     model: {
       defaults: {
+        tagName: 'div',
         name: 'Grid Row',
         draggable: true,
         droppable: true,
@@ -112,6 +114,7 @@ const uswdsComponentsPlugin = (editor: any) => {
     },
     model: {
       defaults: {
+        tagName: 'div',
         name: 'Grid Column',
         draggable: true,
         droppable: true,
@@ -129,6 +132,7 @@ const uswdsComponentsPlugin = (editor: any) => {
     isComponent: (el: HTMLElement) => el.tagName === 'P',
     model: {
       defaults: {
+        tagName: 'p',
         name: 'Text',
         draggable: true,
         droppable: false,
