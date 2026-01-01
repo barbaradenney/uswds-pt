@@ -295,6 +295,23 @@ export function Editor() {
   const navigate = useNavigate();
   const editorRef = useRef<EditorInstance | null>(null);
 
+  // Check if we're in demo mode (no API URL configured)
+  const isDemoMode = !import.meta.env.VITE_API_URL;
+
+  // Handle back navigation - use browser history if available, otherwise navigate to list
+  const handleBack = useCallback(() => {
+    if (isDemoMode) {
+      // In demo mode, use browser history if we came from somewhere
+      if (window.history.length > 1) {
+        window.history.back();
+      }
+      // Otherwise do nothing in demo mode - there's no list to go back to
+    } else {
+      // In authenticated mode, navigate to the prototype list
+      navigate('/');
+    }
+  }, [isDemoMode, navigate]);
+
   const [prototype, setPrototype] = useState<Prototype | null>(null);
   const [name, setName] = useState('Untitled Prototype');
   const [isLoading, setIsLoading] = useState(true);
@@ -473,7 +490,7 @@ export function Editor() {
           <div className="editor-header-left">
             <button
               className="btn btn-secondary"
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               style={{ padding: '6px 12px' }}
             >
               ← Back
@@ -505,7 +522,7 @@ export function Editor() {
         <div className="editor-header-left">
           <button
             className="btn btn-secondary"
-            onClick={() => navigate('/')}
+            onClick={handleBack}
             style={{ padding: '6px 12px' }}
           >
             ← Back
