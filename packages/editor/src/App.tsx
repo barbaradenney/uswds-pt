@@ -3,6 +3,7 @@ import { Editor } from './components/Editor';
 import { PrototypeList } from './components/PrototypeList';
 import { Login } from './components/Login';
 import { Preview } from './components/Preview';
+import { Embed } from './components/Embed';
 import { useAuth } from './hooks/useAuth';
 
 // Check if we're in demo mode (no API URL configured)
@@ -19,6 +20,7 @@ function App() {
         <Route path="/edit/:slug" element={<Editor />} />
         <Route path="/new" element={<Editor />} />
         <Route path="/preview/:slug" element={<Preview />} />
+        <Route path="/embed/:slug" element={<Embed />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -36,8 +38,9 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      {/* Preview route is public - no auth required */}
+      {/* Preview and embed routes are public - no auth required */}
       <Route path="/preview/:slug" element={<Preview />} />
+      <Route path="/embed/:slug" element={<Embed />} />
       <Route
         path="/"
         element={
