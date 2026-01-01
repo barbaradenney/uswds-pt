@@ -121,6 +121,10 @@ const uswdsComponentsPlugin = (editor: any) => {
         removable: true,
         copyable: true,
         resizable: true,
+        selectable: true,
+        hoverable: true,
+        highlightable: true,
+        layerable: true,
         // Allow editing text content directly
         editable: true,
       },
@@ -139,11 +143,30 @@ const uswdsComponentsPlugin = (editor: any) => {
         removable: true,
         copyable: true,
         editable: true,
+        selectable: true,
+        hoverable: true,
         // Allow double-click to edit text
         textable: true,
       },
     },
   });
+
+  // Also handle any default/text components that might be inside columns
+  // Override the default component type to ensure children are selectable
+  const defaultType = Components.getType('default');
+  if (defaultType) {
+    Components.addType('default', {
+      ...defaultType,
+      model: {
+        defaults: {
+          ...defaultType.model?.prototype?.defaults,
+          selectable: true,
+          hoverable: true,
+          removable: true,
+        },
+      },
+    });
+  }
 
   debug('Grid layout component types registered');
 
@@ -637,6 +660,93 @@ export function Editor() {
                 }
               }, 50);
             });
+
+            // Log ALL commands being run for debugging
+            editor.on('run', (commandId: string) => {
+              debug('Command run:', commandId);
+            });
+
+            // Log ALL events for debugging (temporary - to find the clear event)
+            const originalTrigger = editor.trigger.bind(editor);
+            (editor as any).trigger = function(event: any, ...args: any[]) {
+              if (typeof event === 'string' && (event.includes('clear') || event.includes('delete') || event.includes('remove') || event.includes('reset'))) {
+                debug('Event triggered:', event, args);
+              }
+              return originalTrigger(event, ...args);
+            };
+
+            // Listen for any component deletion command
+            editor.on('run:core:component-delete', () => {
+              debug('core:component-delete command executed');
+              setTimeout(forceCanvasUpdate, 100);
+            });
+
+            // Override the clear command to ensure it works properly
+            const Commands = editor.Commands;
+            if (Commands) {
+              // Store reference to original clear command
+              const originalClearCmd = Commands.get('core:canvas-clear');
+
+              // Register our own clear command that ensures proper clearing
+              Commands.add('core:canvas-clear', {
+                run(editor: any) {
+                  debug('Running custom core:canvas-clear command');
+
+                  // Get the wrapper component (root of the canvas)
+                  const wrapper = editor.DomComponents?.getWrapper();
+                  if (wrapper) {
+                    // Remove all children from the wrapper
+                    const components = wrapper.components();
+                    debug('Clearing', components.length, 'components from wrapper');
+
+                    // Clear all components
+                    components.reset();
+
+                    // Alternative: remove each component
+                    // while (components.length > 0) {
+                    //   components.at(0).remove();
+                    // }
+                  }
+
+                  // Also clear styles if needed
+                  const cssComposer = editor.CssComposer;
+                  if (cssComposer?.clear) {
+                    cssComposer.clear();
+                    debug('CSS cleared');
+                  }
+
+                  // Force canvas update
+                  setTimeout(forceCanvasUpdate, 100);
+
+                  // Close any modal
+                  if (editor.Modal?.close) {
+                    editor.Modal.close();
+                  }
+
+                  debug('Canvas cleared successfully');
+                },
+              });
+
+              debug('Custom core:canvas-clear command registered');
+            }
+
+            // Expose helper function for debugging from console
+            (window as any).__clearCanvas = () => {
+              debug('Manual clear triggered from console');
+              const wrapper = editor.DomComponents?.getWrapper();
+              if (wrapper) {
+                const components = wrapper.components();
+                debug('Found', components.length, 'components');
+                components.forEach((c: any) => debug('  -', c.get('tagName') || c.get('type')));
+                components.reset();
+                debug('Components cleared');
+              }
+              setTimeout(forceCanvasUpdate, 100);
+            };
+
+            // Also expose editor for debugging
+            (window as any).__editor = editor;
+            debug('Debug helpers exposed: window.__clearCanvas(), window.__editor');
 
             // Also listen for page changes which might need refresh
             editor.on('page:select', () => {

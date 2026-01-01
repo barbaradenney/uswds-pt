@@ -74,14 +74,34 @@ export interface RetryConfig {
 const activeIntervals = new Map<string, ReturnType<typeof setInterval>>();
 
 /**
+ * WeakMap to track elements currently being assigned IDs (prevents infinite recursion)
+ */
+const settingIdElements = new WeakSet<HTMLElement>();
+
+/**
  * Generate a unique key for tracking intervals per element/trait
  */
 function getIntervalKey(element: HTMLElement, traitName: string): string {
+  // Guard: check if element is a valid HTMLElement
+  if (!element || typeof element.getAttribute !== 'function') {
+    return `invalid-element:${traitName}`;
+  }
+
   // Use a data attribute to give elements a stable ID for tracking
   let elementId = element.getAttribute('data-uswds-pt-id');
   if (!elementId) {
-    elementId = `uswds-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    element.setAttribute('data-uswds-pt-id', elementId);
+    // Prevent infinite recursion: if we're already setting ID for this element, use a temp ID
+    if (settingIdElements.has(element)) {
+      return `temp-${Date.now()}:${traitName}`;
+    }
+
+    settingIdElements.add(element);
+    try {
+      elementId = `uswds-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      element.setAttribute('data-uswds-pt-id', elementId);
+    } finally {
+      settingIdElements.delete(element);
+    }
   }
   return `${elementId}:${traitName}`;
 }
@@ -102,6 +122,11 @@ function cancelPendingSync(element: HTMLElement, traitName: string): void {
  * Clean up all intervals for a specific element (call on unmount)
  */
 export function cleanupElementIntervals(element: HTMLElement): void {
+  // Guard: check if element is a valid HTMLElement
+  if (!element || typeof element.getAttribute !== 'function') {
+    return;
+  }
+
   const elementId = element.getAttribute('data-uswds-pt-id');
   if (!elementId) return;
 

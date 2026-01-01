@@ -194,7 +194,7 @@ export class WebComponentTraitManager {
 
     // Clean up any pending intervals for this element's traits
     const element = component.getEl();
-    if (element) {
+    if (element && element instanceof HTMLElement) {
       cleanupElementIntervals(element);
     }
 
