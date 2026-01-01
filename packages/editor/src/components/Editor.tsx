@@ -632,6 +632,23 @@ export function Editor() {
               setTimeout(forceCanvasUpdate, 100);
             });
 
+            // Force canvas refresh after component move/reorder (from layers panel or drag)
+            editor.on('component:drag:end', () => {
+              debug('Component drag ended');
+              setTimeout(forceCanvasUpdate, 100);
+            });
+
+            editor.on('sorter:drag:end', () => {
+              debug('Sorter drag ended');
+              setTimeout(forceCanvasUpdate, 100);
+            });
+
+            // Listen for any component update that might affect ordering
+            editor.on('component:update', () => {
+              debug('Component updated');
+              setTimeout(forceCanvasUpdate, 100);
+            });
+
             // Handle DomComponents.clear() calls (used by Clear Page)
             const originalClear = editor.DomComponents?.clear?.bind(editor.DomComponents);
             if (originalClear && editor.DomComponents) {
