@@ -584,12 +584,32 @@ export function Editor() {
               },
             },
             blocks: {
+              // Only use our USWDS blocks
               default: blocks,
             },
           }}
           onReady={(editor) => {
             editorRef.current = editor;
             debug('Editor ready');
+
+            // Remove any default GrapesJS blocks that aren't ours
+            const blockManager = editor.Blocks;
+            if (blockManager) {
+              const allBlocks = blockManager.getAll();
+              const ourBlockIds = new Set(blocks.map((b: any) => b.id));
+
+              // Find and remove blocks that aren't in our list
+              const blocksToRemove = allBlocks.filter((block: any) => {
+                const blockId = block.get('id');
+                return !ourBlockIds.has(blockId);
+              });
+
+              blocksToRemove.forEach((block: any) => {
+                const blockId = block.get('id');
+                debug('Removing default block:', blockId);
+                blockManager.remove(blockId);
+              });
+            }
 
             // Helper function to force canvas visual update
             // GrapesJS's editor.refresh() only updates spots/tools positioning, not content
