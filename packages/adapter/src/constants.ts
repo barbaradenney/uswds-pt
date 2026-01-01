@@ -491,7 +491,7 @@ export const USWDS_VERSION = '3.8.1';
  * USWDS-WC Bundle version
  * The bundle package includes all components with Lit bundled in
  */
-export const USWDS_WC_BUNDLE_VERSION = '2.5.8';
+export const USWDS_WC_BUNDLE_VERSION = '2.5.10';
 
 /**
  * USWDS-WC package names for loading
