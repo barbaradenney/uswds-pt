@@ -596,6 +596,72 @@ export function Editor() {
             editorRef.current = editor;
             debug('Editor ready');
 
+            // Add spacing trait to all components
+            const spacingOptions = [
+              { id: '', label: 'None' },
+              { id: 'margin-top-1', label: '8px (1 unit)' },
+              { id: 'margin-top-2', label: '16px (2 units)' },
+              { id: 'margin-top-3', label: '24px (3 units)' },
+              { id: 'margin-top-4', label: '32px (4 units)' },
+              { id: 'margin-top-5', label: '40px (5 units)' },
+              { id: 'margin-top-6', label: '48px (6 units)' },
+              { id: 'margin-top-8', label: '64px (8 units)' },
+              { id: 'margin-top-10', label: '80px (10 units)' },
+            ];
+
+            // Helper to update margin class on a component
+            const updateSpacingClass = (component: any, newClass: string) => {
+              const el = component.getEl();
+              if (!el) return;
+
+              // Remove any existing margin-top-* classes
+              const currentClasses = component.getClasses();
+              const classesToRemove = currentClasses.filter((cls: string) =>
+                cls.startsWith('margin-top-')
+              );
+              classesToRemove.forEach((cls: string) => component.removeClass(cls));
+
+              // Add new class if specified
+              if (newClass) {
+                component.addClass(newClass);
+              }
+            };
+
+            // Listen for component selection to add spacing trait dynamically
+            editor.on('component:selected', (component: any) => {
+              const traits = component.get('traits');
+
+              // Check if spacing trait already exists
+              const hasSpacingTrait = traits.where({ name: 'top-spacing' }).length > 0;
+
+              if (!hasSpacingTrait) {
+                // Get current margin class from element
+                const currentClasses = component.getClasses();
+                const currentMargin = currentClasses.find((cls: string) =>
+                  cls.startsWith('margin-top-')
+                ) || '';
+
+                // Add the spacing trait
+                traits.add({
+                  type: 'select',
+                  name: 'top-spacing',
+                  label: 'Top Spacing',
+                  default: currentMargin,
+                  options: spacingOptions,
+                  changeProp: false,
+                });
+              }
+            });
+
+            // Listen for trait changes
+            editor.on('component:update', (component: any) => {
+              const topSpacing = component.getTrait('top-spacing');
+              if (topSpacing) {
+                const value = topSpacing.getValue();
+                updateSpacingClass(component, value);
+              }
+            });
+
             // Remove any default GrapesJS blocks that aren't ours
             const blockManager = editor.Blocks;
             if (blockManager) {
