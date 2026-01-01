@@ -137,6 +137,10 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'grid-sidebar-left': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="10" y="5" width="11" height="14" rx="1"/></svg>`,
   'grid-sidebar-right': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="11" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>`,
 
+  // Basic Elements
+  'heading': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4v3h5.5v12h3V7H19V4H5z"/></svg>`,
+  'text': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3V5zm0 4h18v2H3V9zm0 4h14v2H3v-2zm0 4h18v2H3v-2z"/></svg>`,
+
   // Default icon
   default: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
 };
@@ -145,6 +149,10 @@ export const COMPONENT_ICONS: Record<string, string> = {
  * Default content templates for drag-and-drop
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
+  // Basic Elements
+  'heading': '__FULL_HTML__<h2>Heading</h2>',
+  'text': '__FULL_HTML__<p>This is a paragraph of text. Click to edit.</p>',
+
   // Actions
   'usa-button': 'Click me',
   'usa-button-group': '__FULL_HTML__<usa-button-group btn-count="2" btn1-text="Button 1" btn1-variant="default" btn2-text="Button 2" btn2-variant="outline"></usa-button-group>',

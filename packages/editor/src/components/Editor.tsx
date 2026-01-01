@@ -409,8 +409,10 @@ export function Editor() {
       ? content.replace('__FULL_HTML__', '')
       : `<${tagName}>${content}</${tagName}>`;
 
-    // Custom labels for grid layout blocks
+    // Custom labels for blocks
     const labelMap: Record<string, string> = {
+      'heading': 'Heading',
+      'text': 'Text',
       'grid-2-col': '2 Columns',
       'grid-3-col': '3 Columns',
       'grid-4-col': '4 Columns',
@@ -434,6 +436,7 @@ export function Editor() {
 
   function getCategoryForComponent(tagName: string): string {
     const categoryMap: Record<string, string[]> = {
+      'Basics': ['heading', 'text'],
       'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
       'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
       'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link'],
