@@ -4,6 +4,7 @@ import { PrototypeList } from './components/PrototypeList';
 import { Login } from './components/Login';
 import { Preview } from './components/Preview';
 import { Embed } from './components/Embed';
+import { Home } from './components/Home';
 import { useAuth } from './hooks/useAuth';
 
 // Check if we're in demo mode (no API URL configured)
@@ -12,11 +13,11 @@ const isDemoMode = !import.meta.env.VITE_API_URL;
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // In demo mode, skip auth entirely and go straight to editor
+  // In demo mode, skip auth entirely - show home page with option to create prototype
   if (isDemoMode) {
     return (
       <Routes>
-        <Route path="/" element={<Editor />} />
+        <Route path="/" element={<Home />} />
         <Route path="/edit/:slug" element={<Editor />} />
         <Route path="/new" element={<Editor />} />
         <Route path="/preview/:slug" element={<Preview />} />
