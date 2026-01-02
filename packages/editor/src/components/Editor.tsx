@@ -628,6 +628,8 @@ export function Editor() {
 
       <div className="editor-main" style={{ flex: 1 }}>
         <StudioEditor
+          // Key forces complete remount when switching prototypes
+          key={slug || 'new'}
           options={{
             licenseKey: LICENSE_KEY,
             // Register USWDS component types via plugin (runs before content parsing)
@@ -649,7 +651,8 @@ export function Editor() {
               default: {
                 pages: [{
                   name: 'Prototype',
-                  component: prototype?.htmlContent || `
+                  // Use correct content source based on mode
+                  component: (isDemoMode ? localPrototype?.htmlContent : prototype?.htmlContent) || `
                     <div style="padding: 20px;">
                       <h1>Start Building</h1>
                       <p>Drag USWDS components from the left panel to build your prototype.</p>
