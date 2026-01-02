@@ -2541,10 +2541,15 @@ componentRegistry.register({
       definition: {
         name: 'count',
         label: 'Number of Options',
-        type: 'number',
-        default: 3,
-        min: 1,
-        max: 10,
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2 Options' },
+          { id: '3', label: '3 Options' },
+          { id: '4', label: '4 Options' },
+          { id: '5', label: '5 Options' },
+          { id: '6', label: '6 Options' },
+        ],
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
@@ -2774,16 +2779,18 @@ componentRegistry.register({
       definition: {
         name: 'btn-count',
         label: 'Number of Buttons',
-        type: 'number',
-        default: 2,
-        min: 1,
-        max: 4,
+        type: 'select',
+        default: '2',
+        options: [
+          { id: '2', label: '2 Buttons' },
+          { id: '3', label: '3 Buttons' },
+          { id: '4', label: '4 Buttons' },
+        ],
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
           const count = Math.max(1, Math.min(4, parseInt(value) || 2));
           element.setAttribute('btn-count', String(count));
-          // Delay to ensure web component is ready
           setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
@@ -2792,20 +2799,10 @@ componentRegistry.register({
           rebuildButtonGroupButtons(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('btn-count') || '2') || 2;
+          return element.getAttribute('btn-count') || '2';
         },
       },
     },
-
-    // Individual button traits (up to 4 buttons)
-    'btn1-text': createButtonGroupItemTrait(1, 'text'),
-    'btn1-variant': createButtonGroupItemTrait(1, 'variant'),
-    'btn2-text': createButtonGroupItemTrait(2, 'text'),
-    'btn2-variant': createButtonGroupItemTrait(2, 'variant'),
-    'btn3-text': createButtonGroupItemTrait(3, 'text'),
-    'btn3-variant': createButtonGroupItemTrait(3, 'variant'),
-    'btn4-text': createButtonGroupItemTrait(4, 'text'),
-    'btn4-variant': createButtonGroupItemTrait(4, 'variant'),
   },
 });
 
@@ -2979,17 +2976,20 @@ componentRegistry.register({
       definition: {
         name: 'count',
         label: 'Number of Items',
-        type: 'number',
-        default: 3,
-        min: 1,
-        max: 6,
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2 Items' },
+          { id: '3', label: '3 Items' },
+          { id: '4', label: '4 Items' },
+          { id: '5', label: '5 Items' },
+          { id: '6', label: '6 Items' },
+        ],
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          // Initialize items on component mount
           const count = Math.max(1, Math.min(6, parseInt(value) || 3));
           element.setAttribute('count', String(count));
-          // Delay to ensure web component is ready
           setTimeout(() => rebuildBreadcrumbItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
@@ -2998,7 +2998,7 @@ componentRegistry.register({
           rebuildBreadcrumbItems(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('count') || '3') || 3;
+          return element.getAttribute('count') || '3';
         },
       },
     },
@@ -3008,20 +3008,6 @@ componentRegistry.register({
       label: 'Allow Wrapping',
       default: false,
     }),
-
-    // Individual item traits (up to 6 items)
-    'item1-label': createBreadcrumbItemTrait(1, 'label'),
-    'item1-href': createBreadcrumbItemTrait(1, 'href'),
-    'item2-label': createBreadcrumbItemTrait(2, 'label'),
-    'item2-href': createBreadcrumbItemTrait(2, 'href'),
-    'item3-label': createBreadcrumbItemTrait(3, 'label'),
-    'item3-href': createBreadcrumbItemTrait(3, 'href'),
-    'item4-label': createBreadcrumbItemTrait(4, 'label'),
-    'item4-href': createBreadcrumbItemTrait(4, 'href'),
-    'item5-label': createBreadcrumbItemTrait(5, 'label'),
-    'item5-href': createBreadcrumbItemTrait(5, 'href'),
-    'item6-label': createBreadcrumbItemTrait(6, 'label'),
-    'item6-href': createBreadcrumbItemTrait(6, 'href'),
   },
 });
 
@@ -3040,9 +3026,20 @@ componentRegistry.register({
       definition: {
         name: 'current-page',
         label: 'Current Page',
-        type: 'number',
-        default: 1,
-        min: 1,
+        type: 'select',
+        default: '1',
+        options: [
+          { id: '1', label: '1' },
+          { id: '2', label: '2' },
+          { id: '3', label: '3' },
+          { id: '4', label: '4' },
+          { id: '5', label: '5' },
+          { id: '6', label: '6' },
+          { id: '7', label: '7' },
+          { id: '8', label: '8' },
+          { id: '9', label: '9' },
+          { id: '10', label: '10' },
+        ],
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
@@ -3051,7 +3048,7 @@ componentRegistry.register({
           (element as any).currentPage = page;
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('current-page') || '1') || 1;
+          return element.getAttribute('current-page') || '1';
         },
       },
     },
@@ -3061,9 +3058,16 @@ componentRegistry.register({
       definition: {
         name: 'total-pages',
         label: 'Total Pages',
-        type: 'number',
-        default: 5,
-        min: 1,
+        type: 'select',
+        default: '5',
+        options: [
+          { id: '3', label: '3' },
+          { id: '5', label: '5' },
+          { id: '7', label: '7' },
+          { id: '10', label: '10' },
+          { id: '15', label: '15' },
+          { id: '20', label: '20' },
+        ],
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
@@ -3072,29 +3076,7 @@ componentRegistry.register({
           (element as any).totalPages = pages;
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('total-pages') || '5') || 5;
-        },
-      },
-    },
-
-    // Max visible pages
-    'max-visible': {
-      definition: {
-        name: 'max-visible',
-        label: 'Max Visible Pages',
-        type: 'number',
-        default: 7,
-        min: 3,
-        max: 10,
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const max = parseInt(value) || 7;
-          element.setAttribute('max-visible', String(max));
-          (element as any).maxVisible = max;
-        },
-        getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('max-visible') || '7') || 7;
+          return element.getAttribute('total-pages') || '5';
         },
       },
     },
@@ -3214,17 +3196,20 @@ componentRegistry.register({
       definition: {
         name: 'count',
         label: 'Number of Items',
-        type: 'number',
-        default: 4,
-        min: 1,
-        max: 8,
+        type: 'select',
+        default: '4',
+        options: [
+          { id: '2', label: '2 Items' },
+          { id: '3', label: '3 Items' },
+          { id: '4', label: '4 Items' },
+          { id: '5', label: '5 Items' },
+          { id: '6', label: '6 Items' },
+        ],
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          // Initialize items on component mount
           const count = Math.max(1, Math.min(8, parseInt(value) || 4));
           element.setAttribute('count', String(count));
-          // Delay to ensure web component is ready
           setTimeout(() => rebuildSideNavItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
@@ -3237,32 +3222,6 @@ componentRegistry.register({
         },
       },
     },
-
-    // Individual item traits (up to 8 items)
-    'item1-label': createSideNavItemTrait(1, 'label'),
-    'item1-href': createSideNavItemTrait(1, 'href'),
-    'item1-current': createSideNavItemTrait(1, 'current'),
-    'item2-label': createSideNavItemTrait(2, 'label'),
-    'item2-href': createSideNavItemTrait(2, 'href'),
-    'item2-current': createSideNavItemTrait(2, 'current'),
-    'item3-label': createSideNavItemTrait(3, 'label'),
-    'item3-href': createSideNavItemTrait(3, 'href'),
-    'item3-current': createSideNavItemTrait(3, 'current'),
-    'item4-label': createSideNavItemTrait(4, 'label'),
-    'item4-href': createSideNavItemTrait(4, 'href'),
-    'item4-current': createSideNavItemTrait(4, 'current'),
-    'item5-label': createSideNavItemTrait(5, 'label'),
-    'item5-href': createSideNavItemTrait(5, 'href'),
-    'item5-current': createSideNavItemTrait(5, 'current'),
-    'item6-label': createSideNavItemTrait(6, 'label'),
-    'item6-href': createSideNavItemTrait(6, 'href'),
-    'item6-current': createSideNavItemTrait(6, 'current'),
-    'item7-label': createSideNavItemTrait(7, 'label'),
-    'item7-href': createSideNavItemTrait(7, 'href'),
-    'item7-current': createSideNavItemTrait(7, 'current'),
-    'item8-label': createSideNavItemTrait(8, 'label'),
-    'item8-href': createSideNavItemTrait(8, 'href'),
-    'item8-current': createSideNavItemTrait(8, 'current'),
   },
 });
 
@@ -4048,10 +4007,14 @@ componentRegistry.register({
       definition: {
         name: 'count',
         label: 'Number of Items',
-        type: 'number',
-        default: 3,
-        min: 1,
-        max: 10,
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '3', label: '3 Items' },
+          { id: '4', label: '4 Items' },
+          { id: '5', label: '5 Items' },
+          { id: '6', label: '6 Items' },
+        ],
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
@@ -4065,22 +4028,10 @@ componentRegistry.register({
           rebuildListItems(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('count') || '3') || 3;
+          return element.getAttribute('count') || '3';
         },
       },
     },
-
-    // Individual item traits (up to 10 items)
-    item1: createListItemTrait(1),
-    item2: createListItemTrait(2),
-    item3: createListItemTrait(3),
-    item4: createListItemTrait(4),
-    item5: createListItemTrait(5),
-    item6: createListItemTrait(6),
-    item7: createListItemTrait(7),
-    item8: createListItemTrait(8),
-    item9: createListItemTrait(9),
-    item10: createListItemTrait(10),
   },
 });
 
@@ -4183,10 +4134,14 @@ componentRegistry.register({
       definition: {
         name: 'count',
         label: 'Number of Items',
-        type: 'number',
-        default: 3,
-        min: 1,
-        max: 6,
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2 Items' },
+          { id: '3', label: '3 Items' },
+          { id: '4', label: '4 Items' },
+          { id: '5', label: '5 Items' },
+        ],
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
@@ -4200,36 +4155,10 @@ componentRegistry.register({
           rebuildCollectionItems(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('count') || '3') || 3;
+          return element.getAttribute('count') || '3';
         },
       },
     },
-
-    // Individual item traits (up to 6 items with title, description, href, date)
-    'item1-title': createCollectionItemTrait(1, 'title'),
-    'item1-description': createCollectionItemTrait(1, 'description'),
-    'item1-href': createCollectionItemTrait(1, 'href'),
-    'item1-date': createCollectionItemTrait(1, 'date'),
-    'item2-title': createCollectionItemTrait(2, 'title'),
-    'item2-description': createCollectionItemTrait(2, 'description'),
-    'item2-href': createCollectionItemTrait(2, 'href'),
-    'item2-date': createCollectionItemTrait(2, 'date'),
-    'item3-title': createCollectionItemTrait(3, 'title'),
-    'item3-description': createCollectionItemTrait(3, 'description'),
-    'item3-href': createCollectionItemTrait(3, 'href'),
-    'item3-date': createCollectionItemTrait(3, 'date'),
-    'item4-title': createCollectionItemTrait(4, 'title'),
-    'item4-description': createCollectionItemTrait(4, 'description'),
-    'item4-href': createCollectionItemTrait(4, 'href'),
-    'item4-date': createCollectionItemTrait(4, 'date'),
-    'item5-title': createCollectionItemTrait(5, 'title'),
-    'item5-description': createCollectionItemTrait(5, 'description'),
-    'item5-href': createCollectionItemTrait(5, 'href'),
-    'item5-date': createCollectionItemTrait(5, 'date'),
-    'item6-title': createCollectionItemTrait(6, 'title'),
-    'item6-description': createCollectionItemTrait(6, 'description'),
-    'item6-href': createCollectionItemTrait(6, 'href'),
-    'item6-date': createCollectionItemTrait(6, 'date'),
   },
 });
 
@@ -5180,45 +5109,6 @@ componentRegistry.register({
       },
     },
 
-    // Section 1 traits
-    'section1-title': createAccordionSectionTrait(1, 'title'),
-    'section1-content': createAccordionSectionTrait(1, 'content'),
-    'section1-expanded': createAccordionSectionTrait(1, 'expanded'),
-
-    // Section 2 traits
-    'section2-title': createAccordionSectionTrait(2, 'title'),
-    'section2-content': createAccordionSectionTrait(2, 'content'),
-    'section2-expanded': createAccordionSectionTrait(2, 'expanded'),
-
-    // Section 3 traits
-    'section3-title': createAccordionSectionTrait(3, 'title'),
-    'section3-content': createAccordionSectionTrait(3, 'content'),
-    'section3-expanded': createAccordionSectionTrait(3, 'expanded'),
-
-    // Section 4 traits
-    'section4-title': createAccordionSectionTrait(4, 'title'),
-    'section4-content': createAccordionSectionTrait(4, 'content'),
-    'section4-expanded': createAccordionSectionTrait(4, 'expanded'),
-
-    // Section 5 traits
-    'section5-title': createAccordionSectionTrait(5, 'title'),
-    'section5-content': createAccordionSectionTrait(5, 'content'),
-    'section5-expanded': createAccordionSectionTrait(5, 'expanded'),
-
-    // Section 6 traits
-    'section6-title': createAccordionSectionTrait(6, 'title'),
-    'section6-content': createAccordionSectionTrait(6, 'content'),
-    'section6-expanded': createAccordionSectionTrait(6, 'expanded'),
-
-    // Section 7 traits
-    'section7-title': createAccordionSectionTrait(7, 'title'),
-    'section7-content': createAccordionSectionTrait(7, 'content'),
-    'section7-expanded': createAccordionSectionTrait(7, 'expanded'),
-
-    // Section 8 traits
-    'section8-title': createAccordionSectionTrait(8, 'title'),
-    'section8-content': createAccordionSectionTrait(8, 'content'),
-    'section8-expanded': createAccordionSectionTrait(8, 'expanded'),
   },
 });
 
@@ -5440,38 +5330,6 @@ componentRegistry.register({
         },
       },
     },
-
-    // Step 1 traits
-    'step1-label': createStepTrait(1, 'label'),
-    'step1-status': createStepTrait(1, 'status'),
-
-    // Step 2 traits
-    'step2-label': createStepTrait(2, 'label'),
-    'step2-status': createStepTrait(2, 'status'),
-
-    // Step 3 traits
-    'step3-label': createStepTrait(3, 'label'),
-    'step3-status': createStepTrait(3, 'status'),
-
-    // Step 4 traits
-    'step4-label': createStepTrait(4, 'label'),
-    'step4-status': createStepTrait(4, 'status'),
-
-    // Step 5 traits
-    'step5-label': createStepTrait(5, 'label'),
-    'step5-status': createStepTrait(5, 'status'),
-
-    // Step 6 traits
-    'step6-label': createStepTrait(6, 'label'),
-    'step6-status': createStepTrait(6, 'status'),
-
-    // Step 7 traits
-    'step7-label': createStepTrait(7, 'label'),
-    'step7-status': createStepTrait(7, 'status'),
-
-    // Step 8 traits
-    'step8-label': createStepTrait(8, 'label'),
-    'step8-status': createStepTrait(8, 'status'),
   },
 });
 
@@ -5597,38 +5455,6 @@ componentRegistry.register({
         },
       },
     },
-
-    // Item 1 traits
-    'item1-heading': createProcessListItemTrait(1, 'heading'),
-    'item1-content': createProcessListItemTrait(1, 'content'),
-
-    // Item 2 traits
-    'item2-heading': createProcessListItemTrait(2, 'heading'),
-    'item2-content': createProcessListItemTrait(2, 'content'),
-
-    // Item 3 traits
-    'item3-heading': createProcessListItemTrait(3, 'heading'),
-    'item3-content': createProcessListItemTrait(3, 'content'),
-
-    // Item 4 traits
-    'item4-heading': createProcessListItemTrait(4, 'heading'),
-    'item4-content': createProcessListItemTrait(4, 'content'),
-
-    // Item 5 traits
-    'item5-heading': createProcessListItemTrait(5, 'heading'),
-    'item5-content': createProcessListItemTrait(5, 'content'),
-
-    // Item 6 traits
-    'item6-heading': createProcessListItemTrait(6, 'heading'),
-    'item6-content': createProcessListItemTrait(6, 'content'),
-
-    // Item 7 traits
-    'item7-heading': createProcessListItemTrait(7, 'heading'),
-    'item7-content': createProcessListItemTrait(7, 'content'),
-
-    // Item 8 traits
-    'item8-heading': createProcessListItemTrait(8, 'heading'),
-    'item8-content': createProcessListItemTrait(8, 'content'),
   },
 });
 
