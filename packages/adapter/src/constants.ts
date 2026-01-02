@@ -105,6 +105,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-banner': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3z"/><path d="M3 9h18v10H3z" opacity="0.5"/></svg>`,
   'usa-site-alert': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
   'usa-modal': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5z"/><path d="M7 9h10v2H7zm0 4h6v2H7z" opacity="0.7"/></svg>`,
+  'usa-tooltip': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/><path d="M20 2l2 2-3 3-2-2 3-3z" opacity="0.5"/></svg>`,
 
   // Layout
   'usa-accordion': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/></svg>`,
@@ -203,6 +204,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-banner': '__FULL_HTML__<usa-banner></usa-banner>',
   'usa-site-alert': '__FULL_HTML__<usa-site-alert type="info" heading="Site Alert" content="This is a site-wide alert message."></usa-site-alert>',
   'usa-modal': '__FULL_HTML__<usa-modal heading="Modal Title" description="Modal content goes here." trigger-text="Open Modal" show-trigger></usa-modal>',
+  'usa-tooltip': '__FULL_HTML__<usa-tooltip text="Helpful information" label="Hover me" position="top"></usa-tooltip>',
 
   // Layout
   'usa-accordion': '__FULL_HTML__<usa-accordion section-count="3" section1-title="Section 1" section1-content="Content for section 1" section1-expanded="true" section2-title="Section 2" section2-content="Content for section 2" section3-title="Section 3" section3-content="Content for section 3"></usa-accordion>',

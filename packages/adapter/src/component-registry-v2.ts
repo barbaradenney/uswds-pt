@@ -529,110 +529,6 @@ class ComponentRegistry {
 export const componentRegistry = new ComponentRegistry();
 
 // ============================================================================
-// Tooltip Helper Functions
-// ============================================================================
-
-/**
- * Create tooltip-related traits for button/link components
- */
-function createTooltipTraits(): Record<string, UnifiedTrait> {
-  // Visibility function - only show position when tooltip text exists
-  const tooltipPositionVisible = (component: any) => {
-    try {
-      if (!component) return false;
-      const text = component.get?.('attributes')?.['tooltip'];
-      return Boolean(text?.trim());
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    tooltip: {
-      definition: {
-        name: 'tooltip',
-        label: 'Tooltip Text',
-        type: 'text',
-        default: '',
-        placeholder: 'Tooltip text on hover',
-        category: { id: 'tooltip', label: 'Tooltip' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const tooltipText = value?.trim() || '';
-          const position = element.getAttribute('tooltip-position') || 'top';
-
-          if (tooltipText) {
-            element.setAttribute('title', tooltipText);
-            element.setAttribute('data-position', position);
-            element.classList.add('usa-tooltip');
-
-            // Also set on internal trigger element
-            const trigger = element.querySelector('button, a');
-            if (trigger) {
-              trigger.setAttribute('title', tooltipText);
-              trigger.setAttribute('data-position', position);
-              trigger.classList.add('usa-tooltip');
-            }
-          } else {
-            element.removeAttribute('title');
-            element.removeAttribute('data-position');
-            element.classList.remove('usa-tooltip');
-
-            const trigger = element.querySelector('button, a');
-            if (trigger) {
-              trigger.removeAttribute('title');
-              trigger.removeAttribute('data-position');
-              trigger.classList.remove('usa-tooltip');
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('title') || '';
-        },
-      },
-    },
-
-    'tooltip-position': {
-      definition: {
-        name: 'tooltip-position',
-        label: 'Tooltip Position',
-        type: 'select',
-        default: 'top',
-        options: [
-          { id: 'top', label: 'Top' },
-          { id: 'bottom', label: 'Bottom' },
-          { id: 'left', label: 'Left' },
-          { id: 'right', label: 'Right' },
-        ],
-        visible: tooltipPositionVisible,
-        category: { id: 'tooltip', label: 'Tooltip' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const position = value || 'top';
-          element.setAttribute('tooltip-position', position);
-
-          // Only update data-position if tooltip text exists
-          const tooltipText = element.getAttribute('title');
-          if (tooltipText) {
-            element.setAttribute('data-position', position);
-
-            const trigger = element.querySelector('button, a');
-            if (trigger) {
-              trigger.setAttribute('data-position', position);
-            }
-          }
-        },
-        getValue: (element: HTMLElement) => {
-          return element.getAttribute('tooltip-position') || 'top';
-        },
-      },
-    },
-  };
-}
-
-// ============================================================================
 // Page Link Traits
 // ============================================================================
 
@@ -824,9 +720,6 @@ componentRegistry.register({
 
     // Page link traits - link to pages or external URLs
     ...createPageLinkTraits(),
-
-    // Tooltip traits - adds tooltip on hover with position
-    ...createTooltipTraits(),
   },
 });
 
@@ -2361,9 +2254,6 @@ componentRegistry.register({
         { id: '_blank', label: 'New Window' },
       ],
     }),
-
-    // Tooltip traits - adds tooltip on hover with position
-    ...createTooltipTraits(),
   },
 });
 
@@ -4698,6 +4588,35 @@ componentRegistry.register({
       },
     },
 
+    // Trigger type
+    'trigger-type': {
+      definition: {
+        name: 'trigger-type',
+        label: 'Trigger Type',
+        type: 'select',
+        default: 'text',
+        options: [
+          { id: 'text', label: 'Text' },
+          { id: 'button', label: 'Button' },
+          { id: 'link', label: 'Link' },
+          { id: 'icon', label: 'Icon' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const type = value || 'text';
+          element.setAttribute('trigger-type', type);
+          (element as any).triggerType = type;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).triggerType || element.getAttribute('trigger-type') || 'text';
+        },
+      },
+    },
+
     // Label (trigger text)
     label: {
       definition: {
@@ -4717,6 +4636,37 @@ componentRegistry.register({
         },
         getValue: (element: HTMLElement) => {
           return (element as any).label || element.getAttribute('label') || 'Hover me';
+        },
+      },
+    },
+
+    // Trigger icon (for icon trigger type)
+    'trigger-icon': {
+      definition: {
+        name: 'trigger-icon',
+        label: 'Trigger Icon',
+        type: 'select',
+        default: 'info',
+        options: [
+          { id: 'info', label: 'Info' },
+          { id: 'help', label: 'Help' },
+          { id: 'info_outline', label: 'Info Outline' },
+          { id: 'help_outline', label: 'Help Outline' },
+          { id: 'error', label: 'Error' },
+          { id: 'warning', label: 'Warning' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const icon = value || 'info';
+          element.setAttribute('trigger-icon', icon);
+          (element as any).triggerIcon = icon;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).triggerIcon || element.getAttribute('trigger-icon') || 'info';
         },
       },
     },
