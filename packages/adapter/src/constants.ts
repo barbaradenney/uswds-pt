@@ -194,7 +194,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
 
   // Data Display
   'usa-card': '__FULL_HTML__<usa-card heading="Card Title" text="Card content goes here."></usa-card>',
-  'card-container': `__FULL_HTML__<div class="usa-card">
+  'card-container': `__FULL_HTML__<div class="usa-card uswds-card-container">
   <div class="usa-card__container">
     <div class="usa-card__body">
       <p style="color: #71767a; text-align: center;">Drop content here</p>

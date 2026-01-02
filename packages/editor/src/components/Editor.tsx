@@ -140,7 +140,7 @@ const uswdsComponentsPlugin = (editor: any) => {
 
   // Card container - a droppable USWDS card that can contain any content
   Components.addType('card-container', {
-    isComponent: (el: HTMLElement) => el.classList?.contains('usa-card'),
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-card-container'),
     model: {
       defaults: {
         tagName: 'div',
