@@ -318,7 +318,7 @@ export function Editor() {
   const [error, setError] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState('');
 
-  // Load existing prototype if editing
+  // Load existing prototype if editing, or reset state for new prototype
   useEffect(() => {
     if (slug) {
       if (isDemoMode) {
@@ -327,6 +327,11 @@ export function Editor() {
         loadPrototype(slug);
       }
     } else {
+      // Reset all state for a new prototype
+      setLocalPrototype(null);
+      setPrototype(null);
+      setName('Untitled Prototype');
+      setHtmlContent('');
       setIsLoading(false);
     }
   }, [slug, isDemoMode]);
@@ -651,13 +656,8 @@ export function Editor() {
               default: {
                 pages: [{
                   name: 'Prototype',
-                  // Use correct content source based on mode
-                  component: (isDemoMode ? localPrototype?.htmlContent : prototype?.htmlContent) || `
-                    <div style="padding: 20px;">
-                      <h1>Start Building</h1>
-                      <p>Drag USWDS components from the left panel to build your prototype.</p>
-                    </div>
-                  `,
+                  // Use correct content source based on mode, or empty for new prototype
+                  component: (isDemoMode ? localPrototype?.htmlContent : prototype?.htmlContent) || '',
                 }],
               },
             },
