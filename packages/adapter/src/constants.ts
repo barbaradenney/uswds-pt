@@ -152,7 +152,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Basic Elements
-  'heading': '__FULL_HTML__<h2 style="margin: 0;">Heading</h2>',
+  'heading': '__FULL_HTML__<h2>Heading</h2>',
   'text': '__FULL_HTML__<p>This is a paragraph of text. Click to edit.</p>',
 
   // Actions

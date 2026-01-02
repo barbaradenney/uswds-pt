@@ -756,6 +756,28 @@ export function Editor() {
               }
             }
 
+            // Add custom CSS to canvas for card container content
+            const canvasFrame = editor.Canvas?.getFrameEl();
+            if (canvasFrame?.contentDocument) {
+              const style = canvasFrame.contentDocument.createElement('style');
+              style.textContent = `
+                /* Remove default margins from elements inside card containers */
+                .uswds-card-container h1,
+                .uswds-card-container h2,
+                .uswds-card-container h3,
+                .uswds-card-container h4,
+                .uswds-card-container h5,
+                .uswds-card-container h6,
+                .uswds-card-container p,
+                .uswds-card-container ul,
+                .uswds-card-container ol {
+                  margin: 0;
+                }
+              `;
+              canvasFrame.contentDocument.head.appendChild(style);
+              debug('Added card container CSS to canvas');
+            }
+
             // Add spacing trait to all components
             const spacingOptions = [
               { id: '', label: 'None' },
