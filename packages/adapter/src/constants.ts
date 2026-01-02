@@ -93,6 +93,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
 
   // Data Display
   'usa-card': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 7h10v3H7z"/></svg>`,
+  'card-container': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
   'usa-table': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v2h14V7zm0 4H5v2h14v-2zm0 4H5v2h14v-2z"/></svg>`,
   'usa-tag': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`,
   'usa-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><path d="M8 5h14v2H8z"/><circle cx="4" cy="12" r="2"/><path d="M8 11h14v2H8z"/><circle cx="4" cy="18" r="2"/><path d="M8 17h14v2H8z"/></svg>`,
@@ -193,6 +194,13 @@ export const DEFAULT_CONTENT: Record<string, string> = {
 
   // Data Display
   'usa-card': '__FULL_HTML__<usa-card heading="Card Title" text="Card content goes here."></usa-card>',
+  'card-container': `__FULL_HTML__<div class="usa-card">
+  <div class="usa-card__container">
+    <div class="usa-card__body" style="padding: 1.5rem;">
+      <p style="color: #71767a; text-align: center;">Drop content here</p>
+    </div>
+  </div>
+</div>`,
   'usa-tag': '__FULL_HTML__<usa-tag text="Tag"></usa-tag>',
   'usa-list': '__FULL_HTML__<usa-list count="3" item1="First item" item2="Second item" item3="Third item"></usa-list>',
   'usa-collection': '__FULL_HTML__<usa-collection count="3" item1-title="First Article" item1-description="A brief description of the first article." item2-title="Second Article" item2-description="A brief description of the second article." item3-title="Third Article" item3-description="A brief description of the third article."></usa-collection>',

@@ -138,6 +138,37 @@ const uswdsComponentsPlugin = (editor: any) => {
     },
   });
 
+  // Card container - a droppable USWDS card that can contain any content
+  Components.addType('card-container', {
+    isComponent: (el: HTMLElement) => el.classList?.contains('usa-card'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        name: 'Card Container',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+      },
+    },
+  });
+
+  // Card body - the inner content area of a card container
+  Components.addType('card-body', {
+    isComponent: (el: HTMLElement) => el.classList?.contains('usa-card__body'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        name: 'Card Body',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+      },
+    },
+  });
+
   // Make paragraph elements inside grid columns selectable and removable
   Components.addType('text-block', {
     isComponent: (el: HTMLElement) => el.tagName === 'P',
