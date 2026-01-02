@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
+import { EmbedModal } from './EmbedModal';
 import { openPreviewInNewTab } from '../lib/export';
 import {
   getPrototype,
@@ -318,6 +319,7 @@ export function Editor() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState('');
 
@@ -626,6 +628,14 @@ export function Editor() {
           >
             Export
           </button>
+          {(slug || localPrototype) && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowEmbed(true)}
+            >
+              Embed
+            </button>
+          )}
           <button
             className="btn btn-primary"
             onClick={handleSave}
@@ -1184,6 +1194,13 @@ export function Editor() {
         <ExportModal
           htmlContent={htmlContent}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showEmbed && (slug || localPrototype?.id) && (
+        <EmbedModal
+          prototypeId={slug || localPrototype?.id || ''}
+          onClose={() => setShowEmbed(false)}
         />
       )}
     </div>
