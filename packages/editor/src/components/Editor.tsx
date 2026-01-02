@@ -670,6 +670,25 @@ export function Editor() {
             editorRef.current = editor;
             debug('Editor ready');
 
+            // Load saved project data if editing an existing prototype
+            // This must happen in onReady because the editor isn't available before
+            if (isDemoMode && localPrototype?.gjsData) {
+              try {
+                const projectData = JSON.parse(localPrototype.gjsData);
+                editor.loadProjectData(projectData);
+                debug('Loaded project data from localStorage');
+              } catch (e) {
+                console.warn('Failed to load project data:', e);
+              }
+            } else if (!isDemoMode && prototype?.grapesData) {
+              try {
+                editor.loadProjectData(prototype.grapesData as any);
+                debug('Loaded project data from API');
+              } catch (e) {
+                console.warn('Failed to load project data:', e);
+              }
+            }
+
             // Add spacing trait to all components
             const spacingOptions = [
               { id: '', label: 'None' },
