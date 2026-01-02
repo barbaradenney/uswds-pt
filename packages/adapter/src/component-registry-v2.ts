@@ -171,7 +171,7 @@ export function cleanupAllIntervals(): void {
  * coerceBoolean(undefined) // false
  */
 export function coerceBoolean(value: any): boolean {
-  if (coerceBoolean(value)) {
+  if (value === true || value === 'true' || value === '') {
     return true;
   }
   return false;
