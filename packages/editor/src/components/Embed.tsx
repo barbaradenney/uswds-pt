@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { cleanExport } from '../lib/export';
+import { getPrototype, createPrototype } from '../lib/localStorage';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
@@ -12,9 +13,13 @@ const EMBED_CDN_URLS = {
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
 
+// Check if we're in demo mode
+const isDemoMode = !import.meta.env.VITE_API_URL;
+
 interface EmbedData {
   name: string;
   htmlContent: string;
+  gjsData?: string;
 }
 
 /**
@@ -25,9 +30,11 @@ interface EmbedData {
  * - bg: Background color (default: white, use 'transparent' for no background)
  * - maxWidth: Max width of content (default: none)
  * - hideOverflow: Hide overflow content (default: false)
+ * - copy: Show "Make a Copy" button (default: true, use 'false' to hide)
  *
  * Example usage:
  * <iframe src="https://site.com/embed/my-prototype?padding=24&bg=f5f5f5" />
+ * <iframe src="https://site.com/embed/my-prototype?copy=false" /> <!-- Hide copy button -->
  */
 export function Embed() {
   const { slug } = useParams<{ slug: string }>();
@@ -42,6 +49,7 @@ export function Embed() {
   const bg = searchParams.get('bg') || 'white';
   const maxWidth = searchParams.get('maxWidth') || '';
   const hideOverflow = searchParams.get('hideOverflow') === 'true';
+  const showCopyButton = searchParams.get('copy') !== 'false'; // Show by default
 
   // Inject stylesheets into document head
   useEffect(() => {
@@ -103,6 +111,19 @@ export function Embed() {
       setIsLoading(true);
       setError(null);
 
+      // In demo mode, try to load from localStorage first
+      if (isDemoMode) {
+        const localProto = getPrototype(prototypeSlug);
+        if (localProto) {
+          setData({
+            name: localProto.name,
+            htmlContent: localProto.htmlContent,
+            gjsData: localProto.gjsData,
+          });
+          return;
+        }
+      }
+
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`);
 
@@ -121,6 +142,18 @@ export function Embed() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleMakeCopy() {
+    if (!data) return;
+
+    // Create a copy of the prototype in localStorage
+    const copyName = `${data.name} (Copy)`;
+    const newPrototype = createPrototype(copyName, data.htmlContent, data.gjsData);
+
+    // Open the editor with the new prototype
+    const baseUrl = window.location.origin;
+    window.open(`${baseUrl}/edit/${newPrototype.id}`, '_blank');
   }
 
   // Minimal loading state for embeds
@@ -163,7 +196,35 @@ export function Embed() {
     overflow: hideOverflow ? 'hidden' : undefined,
   };
 
+  const copyButtonStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '16px',
+    right: '16px',
+    padding: '8px 16px',
+    backgroundColor: '#005ea2',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif',
+    cursor: 'pointer',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    zIndex: 1000,
+  };
+
   return (
-    <div style={containerStyle} dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+    <>
+      <div style={containerStyle} dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+      {showCopyButton && (
+        <button
+          style={copyButtonStyle}
+          onClick={handleMakeCopy}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1a4480')}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#005ea2')}
+        >
+          Make a Copy
+        </button>
+      )}
+    </>
   );
 }
