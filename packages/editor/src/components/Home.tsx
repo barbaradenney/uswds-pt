@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPrototypes, deletePrototype, type LocalPrototype } from '../lib/localStorage';
+import { getPrototypes, deletePrototype, createPrototype, type LocalPrototype } from '../lib/localStorage';
 
 /**
  * Home page for demo mode (when no API is configured)
@@ -29,6 +29,17 @@ export function Home() {
     }
     deletePrototype(id);
     setPrototypes(getPrototypes());
+  }
+
+  function handleCopy(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const prototype = prototypes.find(p => p.id === id);
+    if (!prototype) return;
+
+    const copyName = `${prototype.name} (Copy)`;
+    const newPrototype = createPrototype(copyName, prototype.htmlContent, prototype.gjsData);
+    setPrototypes(getPrototypes());
+    navigate(`/edit/${newPrototype.id}`);
   }
 
   function handleNewPrototype() {
@@ -96,17 +107,30 @@ export function Home() {
                 }}
               >
                 <h3 className="prototype-card-title">{prototype.name}</h3>
-                <button
-                  className="btn"
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '0.875rem',
-                    color: 'var(--color-base-light)',
-                  }}
-                  onClick={(e) => handleDelete(prototype.id, e)}
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    className="btn"
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '0.875rem',
+                      color: 'var(--color-base-light)',
+                    }}
+                    onClick={(e) => handleCopy(prototype.id, e)}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    className="btn"
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '0.875rem',
+                      color: 'var(--color-base-light)',
+                    }}
+                    onClick={(e) => handleDelete(prototype.id, e)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
               <div className="prototype-card-meta">
                 Updated {formatDate(prototype.updatedAt)}

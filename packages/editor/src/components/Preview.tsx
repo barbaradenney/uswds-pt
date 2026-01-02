@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { cleanExport } from '../lib/export';
+import { getPrototype, createPrototype } from '../lib/localStorage';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
@@ -12,9 +13,13 @@ const PREVIEW_CDN_URLS = {
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
 
+// Check if we're in demo mode
+const isDemoMode = !import.meta.env.VITE_API_URL;
+
 interface PreviewData {
   name: string;
   htmlContent: string;
+  gjsData?: string;
 }
 
 export function Preview() {
@@ -84,6 +89,19 @@ export function Preview() {
       setIsLoading(true);
       setError(null);
 
+      // In demo mode, try to load from localStorage first
+      if (isDemoMode) {
+        const localProto = getPrototype(prototypeSlug);
+        if (localProto) {
+          setData({
+            name: localProto.name,
+            htmlContent: localProto.htmlContent,
+            gjsData: localProto.gjsData,
+          });
+          return;
+        }
+      }
+
       // Use the public preview API endpoint (no auth required)
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`);
@@ -103,6 +121,18 @@ export function Preview() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleMakeCopy() {
+    if (!data) return;
+
+    // Create a copy of the prototype in localStorage
+    const copyName = `${data.name} (Copy)`;
+    const newPrototype = createPrototype(copyName, data.htmlContent, data.gjsData);
+
+    // Open the editor with the new prototype
+    const baseUrl = window.location.origin;
+    window.open(`${baseUrl}/edit/${newPrototype.id}`, '_blank');
   }
 
   if (isLoading) {
@@ -184,8 +214,34 @@ export function Preview() {
   // Clean the HTML content
   const cleanedHtml = cleanExport(data.htmlContent);
 
+  const copyButtonStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '16px',
+    right: '16px',
+    padding: '8px 16px',
+    backgroundColor: '#005ea2',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontFamily: 'system-ui, sans-serif',
+    cursor: 'pointer',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    zIndex: 1000,
+  };
+
   // Render the prototype content (styles are injected via useEffect into document head)
   return (
-    <div dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+    <>
+      <div dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+      <button
+        style={copyButtonStyle}
+        onClick={handleMakeCopy}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1a4480')}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#005ea2')}
+      >
+        Make a Copy
+      </button>
+    </>
   );
 }
