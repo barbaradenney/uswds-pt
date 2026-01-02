@@ -301,6 +301,9 @@ export function Editor() {
   const navigate = useNavigate();
   const editorRef = useRef<EditorInstance | null>(null);
 
+  // Unique key for each editor session - changes when slug changes or on new prototype
+  const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
+
   // Check if we're in demo mode (no API URL configured)
   const isDemoMode = !import.meta.env.VITE_API_URL;
 
@@ -321,13 +324,15 @@ export function Editor() {
   // Load existing prototype if editing, or reset state for new prototype
   useEffect(() => {
     if (slug) {
+      setEditorKey(slug);
       if (isDemoMode) {
         loadLocalPrototype(slug);
       } else {
         loadPrototype(slug);
       }
     } else {
-      // Reset all state for a new prototype
+      // Reset all state for a new prototype with a unique key
+      setEditorKey(`new-${Date.now()}`);
       setLocalPrototype(null);
       setPrototype(null);
       setName('Untitled Prototype');
@@ -634,7 +639,7 @@ export function Editor() {
       <div className="editor-main" style={{ flex: 1 }}>
         <StudioEditor
           // Key forces complete remount when switching prototypes
-          key={slug || 'new'}
+          key={editorKey}
           options={{
             licenseKey: LICENSE_KEY,
             // Register USWDS component types via plugin (runs before content parsing)
@@ -670,9 +675,30 @@ export function Editor() {
             editorRef.current = editor;
             debug('Editor ready');
 
-            // Load saved project data if editing an existing prototype
-            // This must happen in onReady because the editor isn't available before
-            if (isDemoMode && localPrototype?.gjsData) {
+            // Clear any GrapesJS internal storage to prevent state bleeding
+            const storageManager = editor.Storage;
+            if (storageManager) {
+              try {
+                // Clear local storage used by GrapesJS
+                const storageKeys = Object.keys(localStorage).filter(key =>
+                  key.startsWith('gjs-') || key.startsWith('gjsProject')
+                );
+                storageKeys.forEach(key => localStorage.removeItem(key));
+                debug('Cleared GrapesJS storage keys:', storageKeys);
+              } catch (e) {
+                console.warn('Failed to clear GrapesJS storage:', e);
+              }
+            }
+
+            // For new prototypes (no slug), ensure canvas is empty
+            if (!slug) {
+              debug('New prototype - ensuring empty canvas');
+              const wrapper = editor.DomComponents?.getWrapper();
+              if (wrapper) {
+                wrapper.components().reset();
+              }
+            } else if (isDemoMode && localPrototype?.gjsData) {
+              // Load saved project data if editing an existing prototype
               try {
                 const projectData = JSON.parse(localPrototype.gjsData);
                 editor.loadProjectData(projectData);
