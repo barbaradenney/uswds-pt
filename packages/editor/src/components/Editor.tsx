@@ -298,19 +298,16 @@ export function Editor() {
   // Check if we're in demo mode (no API URL configured)
   const isDemoMode = !import.meta.env.VITE_API_URL;
 
-  // Handle back navigation - use browser history if available, otherwise navigate to list
-  const handleBack = useCallback(() => {
+  // Handle back navigation - navigate to prototype list or use browser history
+  const handleBack = () => {
     if (isDemoMode) {
-      // In demo mode, use browser history if we came from somewhere
-      if (window.history.length > 1) {
-        window.history.back();
-      }
-      // Otherwise do nothing in demo mode - there's no list to go back to
+      // In demo mode, go back in browser history (works if came from docs/external page)
+      window.history.back();
     } else {
       // In authenticated mode, navigate to the prototype list
       navigate('/');
     }
-  }, [isDemoMode, navigate]);
+  };
 
   const [prototype, setPrototype] = useState<Prototype | null>(null);
   const [name, setName] = useState('Untitled Prototype');
