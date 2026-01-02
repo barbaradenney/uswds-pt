@@ -529,278 +529,6 @@ class ComponentRegistry {
 export const componentRegistry = new ComponentRegistry();
 
 // ============================================================================
-// Modal Helper Functions
-// ============================================================================
-
-/**
- * Generate a unique modal ID for an element
- */
-function getModalIdForElement(element: HTMLElement): string {
-  // Use a data attribute to store the modal ID
-  let modalId = element.getAttribute('data-modal-id');
-  if (!modalId) {
-    modalId = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    element.setAttribute('data-modal-id', modalId);
-  }
-  return modalId;
-}
-
-/**
- * Create or update an inline modal for a trigger element (button/link)
- */
-function updateInlineModal(triggerElement: HTMLElement): void {
-  const hasModal = hasAttributeTrue(triggerElement, 'has-modal');
-  const modalId = getModalIdForElement(triggerElement);
-
-  // Find existing modal sibling
-  let modal = triggerElement.nextElementSibling as HTMLElement | null;
-  if (modal?.tagName?.toLowerCase() !== 'usa-modal') {
-    modal = null;
-  }
-
-  if (!hasModal) {
-    // Remove modal if it exists
-    if (modal) {
-      modal.remove();
-    }
-    // Remove trigger attributes
-    triggerElement.removeAttribute('data-open-modal');
-    triggerElement.removeAttribute('aria-controls');
-    const internalTrigger = triggerElement.querySelector('button, a');
-    if (internalTrigger) {
-      internalTrigger.removeAttribute('data-open-modal');
-      internalTrigger.removeAttribute('aria-controls');
-    }
-    return;
-  }
-
-  // Create modal if it doesn't exist
-  if (!modal) {
-    modal = document.createElement('usa-modal');
-    modal.id = modalId;
-    triggerElement.insertAdjacentElement('afterend', modal);
-  }
-
-  // Update modal attributes from trigger element's modal-* attributes
-  const heading = triggerElement.getAttribute('modal-heading') || 'Modal Title';
-  const description = triggerElement.getAttribute('modal-description') || '';
-  const primaryText = triggerElement.getAttribute('modal-primary-text') || 'Continue';
-  const secondaryText = triggerElement.getAttribute('modal-secondary-text') || 'Cancel';
-  const showSecondary = triggerElement.getAttribute('modal-show-secondary') !== 'false';
-  const large = hasAttributeTrue(triggerElement, 'modal-large');
-  const forceAction = hasAttributeTrue(triggerElement, 'modal-force-action');
-
-  modal.setAttribute('heading', heading);
-  modal.setAttribute('description', description);
-  modal.setAttribute('primary-button-text', primaryText);
-  modal.setAttribute('secondary-button-text', secondaryText);
-  modal.setAttribute('show-trigger', 'false'); // We're using the button as trigger
-
-  if (showSecondary) {
-    modal.setAttribute('show-secondary-button', '');
-  } else {
-    modal.removeAttribute('show-secondary-button');
-  }
-
-  if (large) {
-    modal.setAttribute('large', '');
-  } else {
-    modal.removeAttribute('large');
-  }
-
-  if (forceAction) {
-    modal.setAttribute('force-action', '');
-  } else {
-    modal.removeAttribute('force-action');
-  }
-
-  // Set Lit properties for reactivity
-  (modal as any).heading = heading;
-  (modal as any).description = description;
-  (modal as any).primaryButtonText = primaryText;
-  (modal as any).secondaryButtonText = secondaryText;
-  (modal as any).showSecondaryButton = showSecondary;
-  (modal as any).large = large;
-  (modal as any).forceAction = forceAction;
-  (modal as any).showTrigger = false;
-
-  if (typeof (modal as any).requestUpdate === 'function') {
-    (modal as any).requestUpdate();
-  }
-
-  // Set trigger attributes on the button/link
-  triggerElement.setAttribute('data-open-modal', '');
-  triggerElement.setAttribute('aria-controls', modalId);
-
-  // Also set on internal trigger element
-  const internalTrigger = triggerElement.querySelector('button, a');
-  if (internalTrigger) {
-    internalTrigger.setAttribute('data-open-modal', '');
-    internalTrigger.setAttribute('aria-controls', modalId);
-  }
-}
-
-/**
- * Create modal-related traits for button/link components
- */
-function createModalTraits(): Record<string, UnifiedTrait> {
-  // Visibility function - only show modal config when has-modal is true
-  // Uses coerceBoolean to handle all boolean representations consistently
-  const modalTraitVisible = (component: any) => {
-    try {
-      if (!component?.get) return false;
-      const attrs = component.get('attributes');
-      if (!attrs) return false;
-      return coerceBoolean(attrs['has-modal']);
-    } catch {
-      return false;
-    }
-  };
-
-  return {
-    'has-modal': {
-      definition: {
-        name: 'has-modal',
-        label: 'Opens Modal',
-        type: 'checkbox',
-        default: false,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const hasModal = coerceBoolean(value);
-          element.setAttribute('has-modal', String(hasModal));
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-heading': {
-      definition: {
-        name: 'modal-heading',
-        label: 'Modal Heading',
-        type: 'text',
-        default: 'Modal Title',
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          element.setAttribute('modal-heading', value || 'Modal Title');
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-description': {
-      definition: {
-        name: 'modal-description',
-        label: 'Modal Content',
-        type: 'textarea',
-        default: '',
-        placeholder: 'Modal description or content...',
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          element.setAttribute('modal-description', value || '');
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-primary-text': {
-      definition: {
-        name: 'modal-primary-text',
-        label: 'Primary Button',
-        type: 'text',
-        default: 'Continue',
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          element.setAttribute('modal-primary-text', value || 'Continue');
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-secondary-text': {
-      definition: {
-        name: 'modal-secondary-text',
-        label: 'Secondary Button',
-        type: 'text',
-        default: 'Cancel',
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          element.setAttribute('modal-secondary-text', value || 'Cancel');
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-show-secondary': {
-      definition: {
-        name: 'modal-show-secondary',
-        label: 'Show Secondary Button',
-        type: 'checkbox',
-        default: true,
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const show = coerceBoolean(value);
-          element.setAttribute('modal-show-secondary', String(show));
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-large': {
-      definition: {
-        name: 'modal-large',
-        label: 'Large Modal',
-        type: 'checkbox',
-        default: false,
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const large = coerceBoolean(value);
-          element.setAttribute('modal-large', String(large));
-          updateInlineModal(element);
-        },
-      },
-    },
-
-    'modal-force-action': {
-      definition: {
-        name: 'modal-force-action',
-        label: 'Force Action',
-        type: 'checkbox',
-        default: false,
-        visible: modalTraitVisible,
-        category: { id: 'modal', label: 'Modal' },
-      },
-      handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const force = coerceBoolean(value);
-          element.setAttribute('modal-force-action', String(force));
-          updateInlineModal(element);
-        },
-      },
-    },
-  };
-}
-
-// ============================================================================
 // Tooltip Helper Functions
 // ============================================================================
 
@@ -1096,9 +824,6 @@ componentRegistry.register({
 
     // Page link traits - link to pages or external URLs
     ...createPageLinkTraits(),
-
-    // Modal traits - configure inline modal
-    ...createModalTraits(),
 
     // Tooltip traits - adds tooltip on hover with position
     ...createTooltipTraits(),
@@ -2636,9 +2361,6 @@ componentRegistry.register({
         { id: '_blank', label: 'New Window' },
       ],
     }),
-
-    // Modal traits - configure inline modal
-    ...createModalTraits(),
 
     // Tooltip traits - adds tooltip on hover with position
     ...createTooltipTraits(),
@@ -4704,11 +4426,39 @@ componentRegistry.register({
       },
     },
 
+    // Trigger type (button, link, or icon)
+    'trigger-type': {
+      definition: {
+        name: 'trigger-type',
+        label: 'Trigger Type',
+        type: 'select',
+        default: 'button',
+        options: [
+          { id: 'button', label: 'Button' },
+          { id: 'link', label: 'Link' },
+          { id: 'icon', label: 'Icon' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const type = value || 'button';
+          element.setAttribute('trigger-type', type);
+          (element as any).triggerType = type;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).triggerType || element.getAttribute('trigger-type') || 'button';
+        },
+      },
+    },
+
     // Trigger text
     'trigger-text': {
       definition: {
         name: 'trigger-text',
-        label: 'Button Text',
+        label: 'Trigger Text',
         type: 'text',
         default: 'Open Modal',
       },
@@ -4727,11 +4477,43 @@ componentRegistry.register({
       },
     },
 
-    // Show trigger button
+    // Trigger icon (for icon trigger type)
+    'trigger-icon': {
+      definition: {
+        name: 'trigger-icon',
+        label: 'Trigger Icon',
+        type: 'select',
+        default: 'info',
+        options: [
+          { id: 'info', label: 'Info' },
+          { id: 'help', label: 'Help' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'more_vert', label: 'More (Vertical)' },
+          { id: 'more_horiz', label: 'More (Horizontal)' },
+          { id: 'launch', label: 'Launch' },
+          { id: 'open_in_new', label: 'Open in New' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const icon = value || 'info';
+          element.setAttribute('trigger-icon', icon);
+          (element as any).triggerIcon = icon;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).triggerIcon || element.getAttribute('trigger-icon') || 'info';
+        },
+      },
+    },
+
+    // Show trigger
     'show-trigger': {
       definition: {
         name: 'show-trigger',
-        label: 'Show Button',
+        label: 'Show Trigger',
         type: 'checkbox',
         default: true,
       },

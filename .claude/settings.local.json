@@ -34,7 +34,12 @@
       "WebFetch(domain:github.com)",
       "Bash(pnpm build:*)",
       "Bash(awk:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "WebFetch(domain:barbaradenney.github.io)",
+      "Bash(pnpm --filter @uswds-pt/editor dev:*)",
+      "Bash(pnpm changeset publish:*)",
+      "Bash(git reset:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
