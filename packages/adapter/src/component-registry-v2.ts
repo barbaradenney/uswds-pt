@@ -3008,6 +3008,20 @@ componentRegistry.register({
       label: 'Allow Wrapping',
       default: false,
     }),
+
+    // Individual item traits (up to 6 items)
+    'item1-label': createBreadcrumbItemTrait(1, 'label'),
+    'item1-href': createBreadcrumbItemTrait(1, 'href'),
+    'item2-label': createBreadcrumbItemTrait(2, 'label'),
+    'item2-href': createBreadcrumbItemTrait(2, 'href'),
+    'item3-label': createBreadcrumbItemTrait(3, 'label'),
+    'item3-href': createBreadcrumbItemTrait(3, 'href'),
+    'item4-label': createBreadcrumbItemTrait(4, 'label'),
+    'item4-href': createBreadcrumbItemTrait(4, 'href'),
+    'item5-label': createBreadcrumbItemTrait(5, 'label'),
+    'item5-href': createBreadcrumbItemTrait(5, 'href'),
+    'item6-label': createBreadcrumbItemTrait(6, 'label'),
+    'item6-href': createBreadcrumbItemTrait(6, 'href'),
   },
 });
 
@@ -3222,6 +3236,26 @@ componentRegistry.register({
         },
       },
     },
+
+    // Individual item traits
+    'item1-label': createSideNavItemTrait(1, 'label'),
+    'item1-href': createSideNavItemTrait(1, 'href'),
+    'item1-current': createSideNavItemTrait(1, 'current'),
+    'item2-label': createSideNavItemTrait(2, 'label'),
+    'item2-href': createSideNavItemTrait(2, 'href'),
+    'item2-current': createSideNavItemTrait(2, 'current'),
+    'item3-label': createSideNavItemTrait(3, 'label'),
+    'item3-href': createSideNavItemTrait(3, 'href'),
+    'item3-current': createSideNavItemTrait(3, 'current'),
+    'item4-label': createSideNavItemTrait(4, 'label'),
+    'item4-href': createSideNavItemTrait(4, 'href'),
+    'item4-current': createSideNavItemTrait(4, 'current'),
+    'item5-label': createSideNavItemTrait(5, 'label'),
+    'item5-href': createSideNavItemTrait(5, 'href'),
+    'item5-current': createSideNavItemTrait(5, 'current'),
+    'item6-label': createSideNavItemTrait(6, 'label'),
+    'item6-href': createSideNavItemTrait(6, 'href'),
+    'item6-current': createSideNavItemTrait(6, 'current'),
   },
 });
 
@@ -5109,6 +5143,25 @@ componentRegistry.register({
       },
     },
 
+    // Section traits
+    'section1-title': createAccordionSectionTrait(1, 'title'),
+    'section1-content': createAccordionSectionTrait(1, 'content'),
+    'section1-expanded': createAccordionSectionTrait(1, 'expanded'),
+    'section2-title': createAccordionSectionTrait(2, 'title'),
+    'section2-content': createAccordionSectionTrait(2, 'content'),
+    'section2-expanded': createAccordionSectionTrait(2, 'expanded'),
+    'section3-title': createAccordionSectionTrait(3, 'title'),
+    'section3-content': createAccordionSectionTrait(3, 'content'),
+    'section3-expanded': createAccordionSectionTrait(3, 'expanded'),
+    'section4-title': createAccordionSectionTrait(4, 'title'),
+    'section4-content': createAccordionSectionTrait(4, 'content'),
+    'section4-expanded': createAccordionSectionTrait(4, 'expanded'),
+    'section5-title': createAccordionSectionTrait(5, 'title'),
+    'section5-content': createAccordionSectionTrait(5, 'content'),
+    'section5-expanded': createAccordionSectionTrait(5, 'expanded'),
+    'section6-title': createAccordionSectionTrait(6, 'title'),
+    'section6-content': createAccordionSectionTrait(6, 'content'),
+    'section6-expanded': createAccordionSectionTrait(6, 'expanded'),
   },
 });
 
@@ -5330,6 +5383,20 @@ componentRegistry.register({
         },
       },
     },
+
+    // Step traits
+    'step1-label': createStepTrait(1, 'label'),
+    'step1-status': createStepTrait(1, 'status'),
+    'step2-label': createStepTrait(2, 'label'),
+    'step2-status': createStepTrait(2, 'status'),
+    'step3-label': createStepTrait(3, 'label'),
+    'step3-status': createStepTrait(3, 'status'),
+    'step4-label': createStepTrait(4, 'label'),
+    'step4-status': createStepTrait(4, 'status'),
+    'step5-label': createStepTrait(5, 'label'),
+    'step5-status': createStepTrait(5, 'status'),
+    'step6-label': createStepTrait(6, 'label'),
+    'step6-status': createStepTrait(6, 'status'),
   },
 });
 
@@ -5455,6 +5522,20 @@ componentRegistry.register({
         },
       },
     },
+
+    // Item traits
+    'item1-heading': createProcessListItemTrait(1, 'heading'),
+    'item1-content': createProcessListItemTrait(1, 'content'),
+    'item2-heading': createProcessListItemTrait(2, 'heading'),
+    'item2-content': createProcessListItemTrait(2, 'content'),
+    'item3-heading': createProcessListItemTrait(3, 'heading'),
+    'item3-content': createProcessListItemTrait(3, 'content'),
+    'item4-heading': createProcessListItemTrait(4, 'heading'),
+    'item4-content': createProcessListItemTrait(4, 'content'),
+    'item5-heading': createProcessListItemTrait(5, 'heading'),
+    'item5-content': createProcessListItemTrait(5, 'content'),
+    'item6-heading': createProcessListItemTrait(6, 'heading'),
+    'item6-content': createProcessListItemTrait(6, 'content'),
   },
 });
 
