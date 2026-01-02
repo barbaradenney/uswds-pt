@@ -474,15 +474,25 @@ class ComponentRegistry {
 
   /**
    * Extract trait definitions for GrapesJS (UI only)
+   * Note: Function-based properties (like 'visible') are stripped as they can't be serialized
    */
   getTraitDefinitions(tagName: string): GrapesTrait[] {
     const component = this.components.get(tagName);
     if (!component) return [];
 
-    return Object.entries(component.traits).map(([name, trait]) => ({
-      ...trait.definition,
-      name, // Ensure name is set
-    }));
+    return Object.entries(component.traits).map(([name, trait]) => {
+      // Create a clean copy of the definition without function properties
+      const cleanDefinition: Record<string, any> = { name };
+
+      for (const [key, value] of Object.entries(trait.definition)) {
+        // Skip function-based properties that can't be serialized
+        if (typeof value !== 'function') {
+          cleanDefinition[key] = value;
+        }
+      }
+
+      return cleanDefinition as GrapesTrait;
+    });
   }
 
   /**
