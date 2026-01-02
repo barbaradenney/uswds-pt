@@ -5,6 +5,12 @@ import { authFetch } from '../hooks/useAuth';
 import { ExportModal } from './ExportModal';
 import { openPreviewInNewTab } from '../lib/export';
 import {
+  getPrototype,
+  createPrototype,
+  updatePrototype,
+  type LocalPrototype,
+} from '../lib/localStorage';
+import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
   CDN_URLS,
@@ -295,12 +301,16 @@ export function Editor() {
   const navigate = useNavigate();
   const editorRef = useRef<EditorInstance | null>(null);
 
+  // Check if we're in demo mode (no API URL configured)
+  const isDemoMode = !import.meta.env.VITE_API_URL;
+
   // Handle back navigation - go to home/prototype list
   const handleBack = () => {
     navigate('/');
   };
 
   const [prototype, setPrototype] = useState<Prototype | null>(null);
+  const [localPrototype, setLocalPrototype] = useState<LocalPrototype | null>(null);
   const [name, setName] = useState('Untitled Prototype');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -311,12 +321,43 @@ export function Editor() {
   // Load existing prototype if editing
   useEffect(() => {
     if (slug) {
-      loadPrototype(slug);
+      if (isDemoMode) {
+        loadLocalPrototype(slug);
+      } else {
+        loadPrototype(slug);
+      }
     } else {
       setIsLoading(false);
     }
-  }, [slug]);
+  }, [slug, isDemoMode]);
 
+  // Load from localStorage (demo mode)
+  function loadLocalPrototype(prototypeId: string) {
+    setIsLoading(true);
+    const data = getPrototype(prototypeId);
+
+    if (!data) {
+      navigate('/');
+      return;
+    }
+
+    setLocalPrototype(data);
+    setName(data.name);
+    setHtmlContent(data.htmlContent);
+
+    // Load project data into editor if available
+    if (editorRef.current && data.gjsData) {
+      try {
+        editorRef.current.loadProjectData(JSON.parse(data.gjsData));
+      } catch (e) {
+        console.warn('Failed to load project data:', e);
+      }
+    }
+
+    setIsLoading(false);
+  }
+
+  // Load from API (authenticated mode)
   async function loadPrototype(prototypeSlug: string) {
     try {
       setIsLoading(true);
@@ -355,39 +396,64 @@ export function Editor() {
       const currentHtml = editor ? editor.getHtml() : htmlContent;
       const grapesData = editor ? editor.getProjectData() : {};
 
-      const url = prototype
-        ? `/api/prototypes/${prototype.slug}`
-        : '/api/prototypes';
-      const method = prototype ? 'PUT' : 'POST';
+      if (isDemoMode) {
+        // Save to localStorage in demo mode
+        const gjsDataStr = JSON.stringify(grapesData);
 
-      const response = await authFetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          htmlContent: currentHtml,
-          grapesData,
-        }),
-      });
+        if (localPrototype) {
+          // Update existing
+          const updated = updatePrototype(localPrototype.id, {
+            name,
+            htmlContent: currentHtml,
+            gjsData: gjsDataStr,
+          });
+          if (updated) {
+            setLocalPrototype(updated);
+          }
+        } else {
+          // Create new
+          const created = createPrototype(name, currentHtml, gjsDataStr);
+          setLocalPrototype(created);
+          navigate(`/edit/${created.id}`, { replace: true });
+        }
 
-      if (!response.ok) {
-        throw new Error('Failed to save prototype');
+        setHtmlContent(currentHtml);
+      } else {
+        // Save to API in authenticated mode
+        const url = prototype
+          ? `/api/prototypes/${prototype.slug}`
+          : '/api/prototypes';
+        const method = prototype ? 'PUT' : 'POST';
+
+        const response = await authFetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            htmlContent: currentHtml,
+            grapesData,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save prototype');
+        }
+
+        const data: Prototype = await response.json();
+
+        if (!prototype) {
+          navigate(`/edit/${data.slug}`, { replace: true });
+        }
+
+        setPrototype(data);
+        setHtmlContent(currentHtml);
       }
-
-      const data: Prototype = await response.json();
-
-      if (!prototype) {
-        navigate(`/edit/${data.slug}`, { replace: true });
-      }
-
-      setPrototype(data);
-      setHtmlContent(currentHtml);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setIsSaving(false);
     }
-  }, [prototype, name, htmlContent, navigate]);
+  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode]);
 
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
