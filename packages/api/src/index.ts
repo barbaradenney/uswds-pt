@@ -22,22 +22,32 @@ declare module 'fastify' {
 }
 
 async function main() {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const app = Fastify({
-    logger: {
-      level: process.env.LOG_LEVEL || 'info',
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
+    logger: isProduction
+      ? { level: process.env.LOG_LEVEL || 'info' }
+      : {
+          level: process.env.LOG_LEVEL || 'info',
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              translateTime: 'HH:MM:ss Z',
+              ignore: 'pid,hostname',
+            },
+          },
         },
-      },
-    },
   });
 
-  // Register CORS
+  // Register CORS - allow frontend URL and GitHub Pages
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'https://barbaradenney.github.io',
+    'http://localhost:5173', // Vite dev server
+  ].filter(Boolean);
+
   await app.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   });
 
