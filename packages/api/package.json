@@ -17,21 +17,21 @@
   "dependencies": {
     "@fastify/cors": "^9.0.0",
     "@fastify/jwt": "^8.0.0",
+    "@types/bcrypt": "^5.0.0",
+    "@types/node": "^20.10.0",
     "@uswds-pt/shared": "workspace:*",
     "bcrypt": "^5.1.0",
     "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.24.0",
     "drizzle-orm": "^0.33.0",
     "fastify": "^4.28.0",
     "fastify-plugin": "^5.1.0",
     "nanoid": "^5.0.0",
     "pino-pretty": "^13.1.3",
-    "postgres": "^3.4.0"
+    "postgres": "^3.4.0",
+    "typescript": "^5.3.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.0",
-    "@types/node": "^20.10.0",
-    "drizzle-kit": "^0.24.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.3.0"
+    "tsx": "^4.19.0"
   }
 }

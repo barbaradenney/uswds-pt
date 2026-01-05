@@ -45,6 +45,12 @@ importers:
       '@fastify/jwt':
         specifier: ^8.0.0
         version: 8.0.1
+      '@types/bcrypt':
+        specifier: ^5.0.0
+        version: 5.0.2
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
       '@uswds-pt/shared':
         specifier: workspace:*
         version: link:../shared
@@ -54,6 +60,9 @@ importers:
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
+      drizzle-kit:
+        specifier: ^0.24.0
+        version: 0.24.2
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(@types/react@18.3.27)(postgres@3.4.7)(react@18.3.1)
@@ -72,22 +81,13 @@ importers:
       postgres:
         specifier: ^3.4.0
         version: 3.4.7
-    devDependencies:
-      '@types/bcrypt':
-        specifier: ^5.0.0
-        version: 5.0.2
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.19.25
-      drizzle-kit:
-        specifier: ^0.24.0
-        version: 0.24.2
-      tsx:
-        specifier: ^4.19.0
-        version: 4.21.0
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+    devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
 
   packages/editor:
     dependencies:
