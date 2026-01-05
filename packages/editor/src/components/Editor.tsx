@@ -784,12 +784,14 @@ export function Editor() {
               }
             }
 
-            // For new prototypes (no slug), ensure canvas is empty
+            // For new prototypes (no slug), load the blank template with header/footer
             if (!slug) {
-              debug('New prototype - ensuring empty canvas');
+              debug('New prototype - loading blank template');
               const wrapper = editor.DomComponents?.getWrapper();
               if (wrapper) {
-                wrapper.components().reset();
+                // Get blank template content (header, main area, footer)
+                const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+                wrapper.components(blankTemplate);
               }
             } else if (isDemoMode && localPrototype?.gjsData) {
               // Load saved project data if editing an existing prototype
