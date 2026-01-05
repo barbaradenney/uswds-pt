@@ -204,6 +204,82 @@ const PREVIEW_CDN_URLS = {
 };
 
 /**
+ * Generate initialization script for web components that need JS setup
+ * This is necessary because some components (like usa-header) need their
+ * properties set via JavaScript, not just HTML attributes.
+ */
+function generateInitScript(): string {
+  return `
+<script type="module">
+  // Wait for web components to be defined and DOM to be ready
+  async function initializeComponents() {
+    // Wait for custom elements to be defined
+    await Promise.all([
+      customElements.whenDefined('usa-header'),
+      customElements.whenDefined('usa-footer'),
+    ]).catch(() => {});
+
+    // Initialize usa-header components
+    document.querySelectorAll('usa-header').forEach(header => {
+      const count = parseInt(header.getAttribute('nav-count') || '4', 10);
+      const navItems = [];
+
+      for (let i = 1; i <= count; i++) {
+        const label = header.getAttribute('nav' + i + '-label') || 'Link ' + i;
+        const href = header.getAttribute('nav' + i + '-href') || '#';
+        const current = header.hasAttribute('nav' + i + '-current');
+        navItems.push({ label, href, current: current || undefined });
+      }
+
+      // Set the navItems property
+      header.navItems = navItems;
+
+      // Set other properties
+      header.logoText = header.getAttribute('logo-text') || 'Site Name';
+      header.logoHref = header.getAttribute('logo-href') || '/';
+
+      const logoImageSrc = header.getAttribute('logo-image-src');
+      if (logoImageSrc) {
+        header.logoImageSrc = logoImageSrc;
+        header.logoImageAlt = header.getAttribute('logo-image-alt') || '';
+      }
+
+      header.extended = header.hasAttribute('extended');
+      header.showSearch = header.hasAttribute('showSearch');
+
+      const searchPlaceholder = header.getAttribute('search-placeholder');
+      if (searchPlaceholder) {
+        header.searchPlaceholder = searchPlaceholder;
+      }
+
+      // Request update if available
+      if (typeof header.requestUpdate === 'function') {
+        header.requestUpdate();
+      }
+    });
+
+    // Initialize usa-footer components
+    document.querySelectorAll('usa-footer').forEach(footer => {
+      footer.variant = footer.getAttribute('variant') || 'medium';
+      footer.agencyName = footer.getAttribute('agency-name') || '';
+      footer.agencyUrl = footer.getAttribute('agency-url') || '#';
+
+      if (typeof footer.requestUpdate === 'function') {
+        footer.requestUpdate();
+      }
+    });
+  }
+
+  // Run when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeComponents);
+  } else {
+    initializeComponents();
+  }
+</script>`;
+}
+
+/**
  * Generate a full HTML document with USWDS imports
  */
 export function generateFullDocument(
@@ -231,6 +307,7 @@ export function generateFullDocument(
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
   <!-- USWDS Web Components JS -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
+  ${generateInitScript()}
 </head>
 <body>
 ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
