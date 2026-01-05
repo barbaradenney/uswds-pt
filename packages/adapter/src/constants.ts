@@ -226,7 +226,9 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-banner></usa-banner>
   <usa-header logo-text="Agency Name" logo-href="/" nav-count="4" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#" nav3-label="Services" nav3-href="#" nav4-label="Contact" nav4-href="#" show-skip-link="true"></usa-header>
   <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
-    <p style="color: #71767a; text-align: center; padding: 4rem 0;">Drag components here to build your page</p>
+    <div class="grid-row">
+      <div class="grid-col-12"></div>
+    </div>
   </main>
   <usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>
   <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
