@@ -2198,7 +2198,9 @@ componentRegistry.register({
             for (let i = currentCount + 1; i <= targetCount; i++) {
               if (component && component.components) {
                 // Use GrapesJS API to add components - they'll be properly tracked
+                // Must include 'type' so GrapesJS recognizes it and applies the correct traits
                 component.components().add({
+                  type: tagName,
                   tagName: tagName,
                   attributes: {
                     label: `Option ${i}`,
