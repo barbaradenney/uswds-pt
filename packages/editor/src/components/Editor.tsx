@@ -829,7 +829,7 @@ export function Editor() {
               }
             }
 
-            // Add custom CSS to canvas for card container content and header desktop mode
+            // Add custom CSS to canvas for card container content
             const canvasFrame = editor.Canvas?.getFrameEl();
             if (canvasFrame?.contentDocument) {
               const style = canvasFrame.contentDocument.createElement('style');
@@ -845,31 +845,6 @@ export function Editor() {
                 .uswds-card-container ul,
                 .uswds-card-container ol {
                   margin: 0;
-                }
-
-                /* Force header to always show desktop layout in the editor canvas */
-                /* This overrides USWDS responsive breakpoints since canvas may be narrower */
-                .usa-header .usa-nav-container {
-                  display: flex !important;
-                }
-                .usa-header .usa-nav {
-                  display: block !important;
-                  position: static !important;
-                  padding: 0 !important;
-                  width: auto !important;
-                  overflow: visible !important;
-                }
-                .usa-header .usa-nav__primary {
-                  display: flex !important;
-                }
-                .usa-header .usa-nav__primary-item {
-                  position: relative !important;
-                }
-                .usa-header .usa-menu-btn {
-                  display: none !important;
-                }
-                .usa-header .usa-navbar {
-                  border-bottom: none !important;
                 }
               `;
               canvasFrame.contentDocument.head.appendChild(style);
