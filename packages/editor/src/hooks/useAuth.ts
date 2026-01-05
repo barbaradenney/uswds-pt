@@ -18,6 +18,7 @@ interface UseAuthReturn extends AuthState {
 
 const TOKEN_KEY = 'uswds_pt_token';
 const USER_KEY = 'uswds_pt_user';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function useAuth(): UseAuthReturn {
   const [state, setState] = useState<AuthState>({
@@ -58,7 +59,7 @@ export function useAuth(): UseAuthReturn {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -95,7 +96,7 @@ export function useAuth(): UseAuthReturn {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, name }),
@@ -164,6 +165,7 @@ export function getAuthToken(): string | null {
 
 /**
  * Create an authenticated fetch function
+ * Automatically prepends API_URL for relative paths
  */
 export function authFetch(
   input: RequestInfo | URL,
@@ -176,5 +178,11 @@ export function authFetch(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  return fetch(input, { ...init, headers });
+  // Prepend API_URL for relative paths
+  let url = input;
+  if (typeof input === 'string' && input.startsWith('/')) {
+    url = `${API_URL}${input}`;
+  }
+
+  return fetch(url, { ...init, headers });
 }
