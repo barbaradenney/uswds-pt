@@ -140,37 +140,66 @@ const uswdsComponentsPlugin = (editor: any) => {
 
   // Card container - a droppable USWDS card that can contain any content
   Components.addType('card-container', {
+    // Extend default div component
+    extend: 'default',
     isComponent: (el: HTMLElement) => el.classList?.contains('uswds-card-container'),
     model: {
       defaults: {
         tagName: 'div',
+        type: 'card-container', // Explicit type for serialization
         name: 'Card Container',
         draggable: true,
         droppable: true,
         removable: true,
         copyable: true,
         resizable: true,
+        // Explicitly set classes to ensure they're preserved in project data
+        classes: ['usa-card', 'uswds-card-container'],
+      },
+    },
+  });
+
+  // Card inner container - the usa-card__container div inside card-container
+  Components.addType('card-inner-container', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('usa-card__container'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'card-inner-container', // Explicit type for serialization
+        name: 'Card Inner Container',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+        // Explicitly set class to ensure it's preserved
+        classes: ['usa-card__container'],
       },
     },
   });
 
   // Card body - the inner content area of a card container
   Components.addType('card-body', {
+    extend: 'default',
     isComponent: (el: HTMLElement) => el.classList?.contains('usa-card__body'),
     model: {
       defaults: {
         tagName: 'div',
+        type: 'card-body', // Explicit type for serialization
         name: 'Card Body',
         draggable: false,
         droppable: true,
         removable: false,
         copyable: false,
+        // Explicitly set class to ensure it's preserved
+        classes: ['usa-card__body'],
       },
     },
   });
 
-  // Make paragraph elements inside grid columns selectable and removable
+  // Make paragraph elements editable - extend built-in 'text' type for proper RTE support
   Components.addType('text-block', {
+    extend: 'text',
     isComponent: (el: HTMLElement) => el.tagName === 'P',
     model: {
       defaults: {
@@ -183,7 +212,26 @@ const uswdsComponentsPlugin = (editor: any) => {
         editable: true,
         selectable: true,
         hoverable: true,
-        // Allow double-click to edit text
+        textable: true,
+      },
+    },
+  });
+
+  // Make heading elements editable - extend built-in 'text' type for proper RTE support
+  Components.addType('heading-block', {
+    extend: 'text',
+    isComponent: (el: HTMLElement) => /^H[1-6]$/.test(el.tagName),
+    model: {
+      defaults: {
+        tagName: 'h2',
+        name: 'Heading',
+        draggable: true,
+        droppable: false,
+        removable: true,
+        copyable: true,
+        editable: true,
+        selectable: true,
+        hoverable: true,
         textable: true,
       },
     },
@@ -438,6 +486,11 @@ export function Editor() {
       const editor = editorRef.current;
       const currentHtml = editor ? editor.getHtml() : htmlContent;
       const grapesData = editor ? editor.getProjectData() : {};
+
+      // Debug: log what we're saving
+      debug('Saving - HTML:', currentHtml.substring(0, 500));
+      debug('Saving - Project data contains card-container:', JSON.stringify(grapesData).includes('card-container'));
+      debug('Saving - HTML contains uswds-card-container:', currentHtml.includes('uswds-card-container'));
 
       if (isDemoMode) {
         // Save to localStorage in demo mode
@@ -742,8 +795,26 @@ export function Editor() {
               // Load saved project data if editing an existing prototype
               try {
                 const projectData = JSON.parse(localPrototype.gjsData);
+                debug('Project data to load:', JSON.stringify(projectData, null, 2).substring(0, 2000));
+
+                // Check if project data contains card-container
+                const hasCardContainer = JSON.stringify(projectData).includes('card-container');
+                debug('Project data contains card-container:', hasCardContainer);
+
                 editor.loadProjectData(projectData);
                 debug('Loaded project data from localStorage');
+
+                // After loading, check components
+                setTimeout(() => {
+                  const wrapper = editor.DomComponents?.getWrapper();
+                  if (wrapper) {
+                    const allComponents = wrapper.components();
+                    debug('Components after load:', allComponents.length);
+                    allComponents.forEach((c: any) => {
+                      debug('  -', c.get('type'), c.getClasses?.());
+                    });
+                  }
+                }, 500);
               } catch (e) {
                 console.warn('Failed to load project data:', e);
               }

@@ -23,8 +23,12 @@ function debug(...args: any[]): void {
 export interface TraitHandler {
   /**
    * Called when a trait value changes in GrapesJS
+   * @param element - The DOM element
+   * @param value - The new value
+   * @param oldValue - The previous value (optional)
+   * @param component - The GrapesJS component (optional, for advanced handlers)
    */
-  onChange: (element: HTMLElement, value: any, oldValue?: any) => void;
+  onChange: (element: HTMLElement, value: any, oldValue?: any, component?: any) => void;
 
   /**
    * Optional: Read the current value from the web component
@@ -259,7 +263,7 @@ export class WebComponentTraitManager {
       // This ensures the DOM is in sync with the attribute value
       if (!handler.onInit && value !== undefined) {
         try {
-          handler.onChange(element, value);
+          handler.onChange(element, value, undefined, component);
         } catch (err) {
           console.warn(`WebComponentTraitManager: Error in onChange for '${traitName}':`, err);
         }
@@ -403,7 +407,7 @@ export class WebComponentTraitManager {
         debug(`Trait '${traitName}' changed from`, oldValue, 'to', newValue);
 
         try {
-          handler.onChange(element, newValue, oldValue);
+          handler.onChange(element, newValue, oldValue, component);
 
           // Trigger web component update if it uses Lit or similar
           if (typeof (element as any).requestUpdate === 'function') {

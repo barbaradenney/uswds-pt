@@ -15,8 +15,12 @@ import type { GrapesTrait } from './types.js';
 export interface TraitHandler {
   /**
    * Called when a trait value changes in GrapesJS
+   * @param element - The DOM element
+   * @param value - The new value
+   * @param oldValue - The previous value (optional)
+   * @param component - The GrapesJS component (optional, for advanced handlers that need to add/remove child components)
    */
-  onChange: (element: HTMLElement, value: any, oldValue?: any) => void;
+  onChange: (element: HTMLElement, value: any, oldValue?: any, component?: any) => void;
 
   /**
    * Optional: Read the current value from the web component
@@ -2170,7 +2174,7 @@ componentRegistry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const targetCount = Math.max(1, Math.min(10, parseInt(value) || 3));
 
           // Find existing checkboxes or radios
@@ -2190,18 +2194,44 @@ componentRegistry.register({
           const currentCount = existingItems.length;
 
           if (targetCount > currentCount) {
-            // Add more items
+            // Add more items using GrapesJS component API if available
             for (let i = currentCount + 1; i <= targetCount; i++) {
-              const newItem = document.createElement(tagName);
-              newItem.setAttribute('label', `Option ${i}`);
-              newItem.setAttribute('name', groupName);
-              newItem.setAttribute('value', `option${i}`);
-              element.appendChild(newItem);
+              if (component && component.components) {
+                // Use GrapesJS API to add components - they'll be properly tracked
+                component.components().add({
+                  tagName: tagName,
+                  attributes: {
+                    label: `Option ${i}`,
+                    name: groupName,
+                    value: `option${i}`,
+                  },
+                });
+              } else {
+                // Fallback to DOM manipulation if component not available
+                const newItem = document.createElement(tagName);
+                newItem.setAttribute('label', `Option ${i}`);
+                newItem.setAttribute('name', groupName);
+                newItem.setAttribute('value', `option${i}`);
+                element.appendChild(newItem);
+              }
             }
           } else if (targetCount < currentCount) {
             // Remove items from the end
-            for (let i = currentCount - 1; i >= targetCount; i--) {
-              existingItems[i]?.remove();
+            if (component && component.components) {
+              // Use GrapesJS API to remove components
+              const children = component.components();
+              const childModels = children.models.filter((m: any) => {
+                const tag = m.get('tagName')?.toLowerCase();
+                return tag === 'usa-checkbox' || tag === 'usa-radio';
+              });
+              for (let i = childModels.length - 1; i >= targetCount; i--) {
+                childModels[i]?.remove();
+              }
+            } else {
+              // Fallback to DOM manipulation
+              for (let i = currentCount - 1; i >= targetCount; i--) {
+                existingItems[i]?.remove();
+              }
             }
           }
         },
