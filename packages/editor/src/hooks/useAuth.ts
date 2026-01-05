@@ -83,11 +83,13 @@ export function useAuth(): UseAuthReturn {
         error: null,
       });
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: err instanceof Error ? err.message : 'Login failed',
+        error: errorMessage,
       }));
+      throw new Error(errorMessage);
     }
   }, []);
 
@@ -120,11 +122,13 @@ export function useAuth(): UseAuthReturn {
           error: null,
         });
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Registration failed';
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          error: err instanceof Error ? err.message : 'Registration failed',
+          error: errorMessage,
         }));
+        throw new Error(errorMessage);
       }
     },
     []
