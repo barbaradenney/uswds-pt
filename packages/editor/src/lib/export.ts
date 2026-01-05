@@ -195,7 +195,7 @@ function isSelfClosingTag(tag: string): boolean {
  * CDN URLs for USWDS resources (keep in sync with adapter constants)
  */
 const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.10';
+const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
