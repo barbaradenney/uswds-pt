@@ -7,7 +7,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: pnpm install && pnpm --filter @uswds-pt/shared build && pnpm --filter @uswds-pt/api build && pnpm --filter @uswds-pt/api db:push
+    buildCommand: pnpm install --prod=false && pnpm --filter @uswds-pt/shared build && pnpm --filter @uswds-pt/api build && pnpm --filter @uswds-pt/api db:push
     startCommand: pnpm --filter @uswds-pt/api start
     envVars:
       - key: NODE_ENV
