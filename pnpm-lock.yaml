@@ -97,6 +97,9 @@ importers:
       '@grapesjs/studio-sdk-plugins':
         specifier: ^1.0.31
         version: 1.0.31
+      '@silexlabs/grapesjs-symbols':
+        specifier: ^1.4.1
+        version: 1.4.1(backbone@1.4.1)(grapesjs@0.21.13)(jquery@3.7.1)(lit-html@3.3.2)
       '@uswds-pt/adapter':
         specifier: workspace:*
         version: link:../adapter
@@ -976,6 +979,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@silexlabs/grapesjs-symbols@1.4.1':
+    resolution: {integrity: sha512-9dz77F3UpDChaXB1gN2x3LML8WSmrXL/9NMZJe0xaHNi4IS+5lv0FVHo9IHjjizLCl08Pe9QJoUKaCOD2yR37A==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      backbone: '*'
+      grapesjs: '>=0.19.0 <0.23.0'
+      jquery: '*'
+      lit-html: '*'
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -1024,6 +1036,9 @@ packages:
 
   '@types/sizzle@2.3.10':
     resolution: {integrity: sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
   '@types/underscore@1.13.0':
     resolution: {integrity: sha512-L6LBgy1f0EFQZ+7uSA57+n2g/s4Qs5r06Vwrwn0/nuK1de+adz00NWaztRQ30aEqw5qOaWbPI8u2cGQ52lj6VA==}
@@ -1528,6 +1543,9 @@ packages:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
 
+  jquery@3.7.1:
+    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -1549,6 +1567,9 @@ packages:
 
   light-my-request@5.14.0:
     resolution: {integrity: sha512-aORPWntbpH5esaYpGOOmri0OHDOe3wC5M2MQxZ9dvMLZm6DnaAn0kJlcbU9hwsQgLzmZyReKwFwwPkR+nHu5kA==}
+
+  lit-html@3.3.2:
+    resolution: {integrity: sha512-Qy9hU88zcmaxBXcc10ZpdK7cOLXvXpRoBxERdtqV9QOrfpMZZ6pSYP91LhpPtap3sFMUiL7Tw2RImbe0Al2/kw==}
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -2687,6 +2708,13 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.53.3':
     optional: true
 
+  '@silexlabs/grapesjs-symbols@1.4.1(backbone@1.4.1)(grapesjs@0.21.13)(jquery@3.7.1)(lit-html@3.3.2)':
+    dependencies:
+      backbone: 1.4.1
+      grapesjs: 0.21.13
+      jquery: 3.7.1
+      lit-html: 3.3.2
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.28.5
@@ -2747,6 +2775,8 @@ snapshots:
       csstype: 3.2.3
 
   '@types/sizzle@2.3.10': {}
+
+  '@types/trusted-types@2.0.7': {}
 
   '@types/underscore@1.13.0': {}
 
@@ -3291,6 +3321,8 @@ snapshots:
 
   joycon@3.1.1: {}
 
+  jquery@3.7.1: {}
+
   js-tokens@4.0.0: {}
 
   jsesc@3.1.0: {}
@@ -3308,6 +3340,10 @@ snapshots:
       cookie: 0.7.2
       process-warning: 3.0.0
       set-cookie-parser: 2.7.2
+
+  lit-html@3.3.2:
+    dependencies:
+      '@types/trusted-types': 2.0.7
 
   loose-envify@1.4.0:
     dependencies:
