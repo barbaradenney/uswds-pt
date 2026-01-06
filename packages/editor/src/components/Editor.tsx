@@ -570,7 +570,7 @@ export function Editor() {
 
   // Generate blocks from USWDS components
   // Use HTML string format - GrapesJS will recognize the tag and apply our component type
-  const blocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => {
+  const uswdsBlocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => {
     // Check if content is full HTML (prefixed with __FULL_HTML__)
     const isFullHtml = content.startsWith('__FULL_HTML__');
     const blockContent = isFullHtml
@@ -601,6 +601,21 @@ export function Editor() {
       category: getCategoryForComponent(tagName),
     };
   });
+
+  // Add table block (from GrapesJS Studio SDK tableComponent, styled with USWDS)
+  const tableBlock = {
+    id: 'table',
+    label: 'Table',
+    content: {
+      type: 'table',
+      classes: ['usa-table'],
+    },
+    media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v2h14V7zm0 4H5v2h14v-2zm0 4H5v2h14v-2z"/></svg>`,
+    category: 'Data Display',
+  };
+
+  // Combine USWDS blocks with table block
+  const blocks = [...uswdsBlocks, tableBlock];
 
   function getCategoryForComponent(tagName: string): string {
     const categoryMap: Record<string, string[]> = {
