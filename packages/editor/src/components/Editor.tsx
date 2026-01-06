@@ -21,7 +21,10 @@ import {
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
-import symbolsPlugin from '@silexlabs/grapesjs-symbols';
+// Note: grapesjs-symbols plugin is not compatible with GrapesJS Studio SDK's UI structure
+// The plugin tries to append to '.gjs-pn-views-container' which doesn't exist in Studio SDK
+// TODO: Implement custom symbols UI that works with Studio SDK
+// import symbolsPlugin from '@silexlabs/grapesjs-symbols';
 
 // Debug logging flag
 const DEBUG = false; // Set to true for verbose logging
@@ -765,14 +768,8 @@ export function Editor() {
               }),
               uswdsTablePlugin,
               uswdsComponentsPlugin,
-              // Symbols plugin for reusable components (headers, footers, etc.)
-              (editor: any) => symbolsPlugin(editor, {
-                appendTo: '.gjs-pn-views-container',
-                emptyText: 'No symbols yet. Right-click a component and select "Create Symbol" to get started.',
-                primaryColor: '#1b1b1b',
-                secondaryColor: '#f0f0f0',
-                highlightColor: '#0050d8',
-              }),
+              // Note: Symbols plugin removed - not compatible with Studio SDK UI
+              // TODO: Implement custom symbols functionality for Studio SDK
             ],
             project: {
               type: 'web',
