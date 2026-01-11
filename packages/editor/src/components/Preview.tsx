@@ -5,10 +5,11 @@ import { getPrototype, createPrototype } from '../lib/localStorage';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.10';
+const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -56,6 +57,12 @@ export function Preview() {
       wcScript.src = PREVIEW_CDN_URLS.uswdsWcJs;
       wcScript.setAttribute('data-uswds-preview', 'true');
       head.appendChild(wcScript);
+
+      // Add USWDS JavaScript (for mobile menu, accordion behaviors)
+      const uswdsScript = document.createElement('script');
+      uswdsScript.src = PREVIEW_CDN_URLS.uswdsJs;
+      uswdsScript.setAttribute('data-uswds-preview', 'true');
+      document.body.appendChild(uswdsScript);
 
       // Wait for CSS to load
       uswdsCssLink.onload = () => setStylesLoaded(true);

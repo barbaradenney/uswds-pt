@@ -237,6 +237,56 @@ const uswdsComponentsPlugin = (editor: any) => {
         selectable: true,
         hoverable: true,
         textable: true,
+        traits: [
+          {
+            type: 'select',
+            name: 'heading-level',
+            label: 'Heading Size',
+            default: 'h2',
+            options: [
+              { id: 'h1', label: 'Heading 1 (Largest)' },
+              { id: 'h2', label: 'Heading 2' },
+              { id: 'h3', label: 'Heading 3' },
+              { id: 'h4', label: 'Heading 4' },
+              { id: 'h5', label: 'Heading 5' },
+              { id: 'h6', label: 'Heading 6 (Smallest)' },
+            ],
+          },
+        ],
+      },
+      init(this: any) {
+        // Set initial heading level based on actual tagName
+        const tagName = this.get('tagName')?.toLowerCase() || 'h2';
+        this.set('heading-level', tagName);
+
+        // Listen for heading-level trait changes
+        this.on('change:heading-level', this.handleHeadingLevelChange);
+      },
+      handleHeadingLevelChange(this: any) {
+        const newLevel = this.get('heading-level');
+        if (newLevel && /^h[1-6]$/.test(newLevel)) {
+          // Update the tagName
+          this.set('tagName', newLevel);
+
+          // Force re-render by replacing the element
+          const el = this.getEl();
+          if (el && el.parentNode) {
+            const newEl = document.createElement(newLevel);
+            newEl.innerHTML = el.innerHTML;
+            // Copy classes
+            newEl.className = el.className;
+            // Copy attributes
+            for (let i = 0; i < el.attributes.length; i++) {
+              const attr = el.attributes[i];
+              if (attr.name !== 'class') {
+                newEl.setAttribute(attr.name, attr.value);
+              }
+            }
+            el.parentNode.replaceChild(newEl, el);
+            // Update the component's element reference
+            this.set('el', newEl);
+          }
+        }
       },
     },
   });
@@ -1308,7 +1358,14 @@ export function Editor() {
 
                 await waitForLoad(uswdsWcScript, 'USWDS-WC JS');
 
-                // 3. Wait for critical custom elements to be registered
+                // 3. Load USWDS JavaScript (for mobile menu toggle, accordion behaviors, etc.)
+                const uswdsScript = doc.createElement('script');
+                uswdsScript.src = CDN_URLS.uswdsJs;
+                doc.body.appendChild(uswdsScript);
+
+                await waitForLoad(uswdsScript, 'USWDS JS');
+
+                // 4. Wait for critical custom elements to be registered
                 const iframeWindow = canvas.getWindow();
                 if (iframeWindow) {
                   const criticalElements = ['usa-button', 'usa-header', 'usa-footer', 'usa-alert'];
@@ -1317,7 +1374,7 @@ export function Editor() {
 
                 debug('All USWDS resources loaded successfully');
 
-                // 4. Trigger a canvas refresh
+                // 5. Trigger a canvas refresh
                 setTimeout(() => {
                   editor.refresh();
                   debug('Canvas refreshed after resource load');

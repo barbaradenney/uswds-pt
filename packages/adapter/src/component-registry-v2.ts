@@ -1397,6 +1397,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).label ?? element.getAttribute('label') ?? 'Date';
+        },
       },
     },
 
@@ -1416,6 +1419,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).name ?? element.getAttribute('name') ?? 'date-picker';
         },
       },
     },
@@ -1442,6 +1448,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).hint ?? element.getAttribute('hint') ?? '';
+        },
       },
     },
 
@@ -1458,14 +1467,17 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const minDate = value || '';
           if (minDate) {
-            element.setAttribute('minDate', minDate);
+            element.setAttribute('min-date', minDate);
           } else {
-            element.removeAttribute('minDate');
+            element.removeAttribute('min-date');
           }
           (element as any).minDate = minDate;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).minDate ?? element.getAttribute('min-date') ?? '';
         },
       },
     },
@@ -1483,14 +1495,17 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const maxDate = value || '';
           if (maxDate) {
-            element.setAttribute('maxDate', maxDate);
+            element.setAttribute('max-date', maxDate);
           } else {
-            element.removeAttribute('maxDate');
+            element.removeAttribute('max-date');
           }
           (element as any).maxDate = maxDate;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).maxDate ?? element.getAttribute('max-date') ?? '';
         },
       },
     },
@@ -1516,6 +1531,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).required ?? element.hasAttribute('required');
+        },
       },
     },
 
@@ -1539,6 +1557,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).disabled ?? element.hasAttribute('disabled');
         },
       },
     },
@@ -1572,6 +1593,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).label ?? element.getAttribute('label') ?? 'Time';
+        },
       },
     },
 
@@ -1591,6 +1615,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).name ?? element.getAttribute('name') ?? 'time-picker';
         },
       },
     },
@@ -1617,6 +1644,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).hint ?? element.getAttribute('hint') ?? '';
+        },
       },
     },
 
@@ -1633,14 +1663,17 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const minTime = value || '';
           if (minTime) {
-            element.setAttribute('minTime', minTime);
+            element.setAttribute('min-time', minTime);
           } else {
-            element.removeAttribute('minTime');
+            element.removeAttribute('min-time');
           }
           (element as any).minTime = minTime;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).minTime ?? element.getAttribute('min-time') ?? '';
         },
       },
     },
@@ -1658,14 +1691,17 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const maxTime = value || '';
           if (maxTime) {
-            element.setAttribute('maxTime', maxTime);
+            element.setAttribute('max-time', maxTime);
           } else {
-            element.removeAttribute('maxTime');
+            element.removeAttribute('max-time');
           }
           (element as any).maxTime = maxTime;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).maxTime ?? element.getAttribute('max-time') ?? '';
         },
       },
     },
@@ -1692,6 +1728,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).step ?? element.getAttribute('step') ?? '30';
+        },
       },
     },
 
@@ -1716,6 +1755,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).required ?? element.hasAttribute('required');
+        },
       },
     },
 
@@ -1739,6 +1781,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).disabled ?? element.hasAttribute('disabled');
         },
       },
     },
@@ -1774,8 +1819,13 @@ function createComboBoxOptionTrait(
 
   // Visibility function - only show if optionNum <= option-count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['option-count'] || '3', 10);
-    return optionNum <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
+      return optionNum <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -1793,6 +1843,9 @@ function createComboBoxOptionTrait(
         if (optionNum <= count) {
           rebuildComboBoxOptions(element, count);
         }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -1825,6 +1878,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).label || element.getAttribute('label') || 'Select an option';
+        },
       },
     },
 
@@ -1844,6 +1900,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).name || element.getAttribute('name') || 'combo-box';
         },
       },
     },
@@ -1869,6 +1928,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).placeholder || element.getAttribute('placeholder') || '';
+        },
       },
     },
 
@@ -1893,6 +1955,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).hint || element.getAttribute('hint') || '';
         },
       },
     },
@@ -1920,6 +1985,9 @@ componentRegistry.register({
           const count = parseInt(value || '3', 10);
           element.setAttribute('option-count', String(count));
           rebuildComboBoxOptions(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('option-count') ?? '3';
         },
         onInit: (element: HTMLElement, value: any) => {
           setTimeout(() => {
@@ -1974,14 +2042,17 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const isDisabled = coerceBoolean(value);
           if (isDisabled) {
-            element.setAttribute('disableFiltering', '');
+            element.setAttribute('disable-filtering', '');
           } else {
-            element.removeAttribute('disableFiltering');
+            element.removeAttribute('disable-filtering');
           }
           (element as any).disableFiltering = isDisabled;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).disableFiltering || element.hasAttribute('disable-filtering');
         },
       },
     },
@@ -2007,6 +2078,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).required || element.hasAttribute('required');
+        },
       },
     },
 
@@ -2030,6 +2104,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).disabled || element.hasAttribute('disabled');
         },
       },
     },
@@ -2174,6 +2251,13 @@ componentRegistry.register({
         ],
       },
       handler: {
+        onInit: (element: HTMLElement) => {
+          // Read current count from DOM
+          const checkboxes = element.querySelectorAll('usa-checkbox');
+          const radios = element.querySelectorAll('usa-radio');
+          const count = Math.max(checkboxes.length, radios.length) || 3;
+          element.setAttribute('count', String(count));
+        },
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const targetCount = Math.max(1, Math.min(10, parseInt(value) || 3));
 
@@ -2360,14 +2444,20 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a button group item trait
-function createButtonGroupItemTrait(index: number, type: 'text' | 'variant') {
+function createButtonGroupItemTrait(index: number, type: 'text' | 'variant'): UnifiedTrait {
   const attrName = `btn${index}-${type}`;
   const isText = type === 'text';
+  const defaultValue = isText ? `Button ${index}` : (index === 1 ? 'default' : 'outline');
 
   // Visibility function - only show if index <= btn-count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['btn-count'] || '2', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -2375,7 +2465,7 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant') {
       name: attrName,
       label: `Button ${index} ${isText ? 'Text' : 'Variant'}`,
       type: isText ? 'text' : 'select',
-      default: isText ? `Button ${index}` : (index === 1 ? 'default' : 'outline'),
+      default: defaultValue,
       visible: visibleFn,
       ...(isText ? {} : {
         options: [
@@ -2395,7 +2485,7 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant') {
         rebuildButtonGroupButtons(element, count);
       },
       getValue: (element: HTMLElement) => {
-        return element.getAttribute(attrName) || '';
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -2578,14 +2668,20 @@ function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a breadcrumb item trait
-function createBreadcrumbItemTrait(index: number, type: 'label' | 'href') {
+function createBreadcrumbItemTrait(index: number, type: 'label' | 'href'): UnifiedTrait {
   const attrName = `item${index}-${type}`;
   const isLabel = type === 'label';
+  const defaultValue = isLabel ? (index === 1 ? 'Home' : index === 2 ? 'Section' : 'Current Page') : '#';
 
   // Visibility function - only show if index <= count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -2593,7 +2689,7 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href') {
       name: attrName,
       label: `Item ${index} ${isLabel ? 'Label' : 'URL'}`,
       type: 'text',
-      default: isLabel ? (index === 1 ? 'Home' : index === 2 ? 'Section' : 'Current Page') : '#',
+      default: defaultValue,
       placeholder: isLabel ? 'Link text' : 'https://...',
       visible: visibleFn,
     },
@@ -2604,7 +2700,7 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href') {
         rebuildBreadcrumbItems(element, count);
       },
       getValue: (element: HTMLElement) => {
-        return element.getAttribute(attrName) || '';
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -2774,25 +2870,31 @@ function rebuildSideNavItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a side nav item trait
-function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current') {
+function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current'): UnifiedTrait {
   const attrName = `item${index}-${type}`;
   const isLabel = type === 'label';
   const isCurrent = type === 'current';
 
   // Visibility function - only show if index <= count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['count'] || '4', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['count'] || '4', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   if (isCurrent) {
+    const defaultCurrent = index === 3; // Third item is current by default
     // Boolean trait for "current" (active page)
     return {
       definition: {
         name: attrName,
         label: `Item ${index} Current`,
         type: 'checkbox',
-        default: index === 3, // Third item is current by default
+        default: defaultCurrent,
         visible: visibleFn,
       },
       handler: {
@@ -2813,14 +2915,16 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
     };
   }
 
+  const defaultValue = isLabel
+    ? (index === 1 ? 'Home' : index === 2 ? 'About' : index === 3 ? 'Services' : 'Contact')
+    : '#';
+
   return {
     definition: {
       name: attrName,
       label: `Item ${index} ${isLabel ? 'Label' : 'URL'}`,
       type: 'text',
-      default: isLabel
-        ? (index === 1 ? 'Home' : index === 2 ? 'About' : index === 3 ? 'Services' : 'Contact')
-        : '#',
+      default: defaultValue,
       placeholder: isLabel ? 'Link text' : 'https://...',
       visible: visibleFn,
     },
@@ -2831,7 +2935,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
         rebuildSideNavItems(element, count);
       },
       getValue: (element: HTMLElement) => {
-        return element.getAttribute(attrName) || '';
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -3010,21 +3114,21 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const mediaType = value || 'none';
-          element.setAttribute('mediaType', mediaType);
+          element.setAttribute('media-type', mediaType);
           (element as any).mediaType = mediaType;
 
           // Auto-set placeholder media when switching to image/video if no src set
-          const currentSrc = element.getAttribute('mediaSrc') || '';
+          const currentSrc = element.getAttribute('media-src') || '';
           if (mediaType === 'image' && !currentSrc) {
             const placeholderImage = 'https://picsum.photos/800/450';
-            element.setAttribute('mediaSrc', placeholderImage);
+            element.setAttribute('media-src', placeholderImage);
             (element as any).mediaSrc = placeholderImage;
             element.setAttribute('media-alt', 'Placeholder image');
             (element as any).mediaAlt = 'Placeholder image';
           } else if (mediaType === 'video' && !currentSrc) {
             // Use a public domain sample video
             const placeholderVideo = 'https://www.w3schools.com/html/mov_bbb.mp4';
-            element.setAttribute('mediaSrc', placeholderVideo);
+            element.setAttribute('media-src', placeholderVideo);
             (element as any).mediaSrc = placeholderVideo;
             element.setAttribute('media-alt', 'Sample video');
             (element as any).mediaAlt = 'Sample video';
@@ -3036,7 +3140,7 @@ componentRegistry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          return element.getAttribute('mediaType') || 'none';
+          return element.getAttribute('media-type') || 'none';
         },
       },
     },
@@ -3052,14 +3156,14 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          element.setAttribute('mediaSrc', value || '');
+          element.setAttribute('media-src', value || '');
           (element as any).mediaSrc = value || '';
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return element.getAttribute('mediaSrc') || '';
+          return element.getAttribute('media-src') || '';
         },
       },
     },
@@ -3103,14 +3207,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const position = value || 'inset';
-          element.setAttribute('mediaPosition', position);
+          element.setAttribute('media-position', position);
           (element as any).mediaPosition = position;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).mediaPosition || element.getAttribute('mediaPosition') || 'inset';
+          return (element as any).mediaPosition || element.getAttribute('media-position') || 'inset';
         },
       },
     },
@@ -3127,9 +3231,9 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
-            element.setAttribute('flagLayout', '');
+            element.setAttribute('flag-layout', '');
           } else {
-            element.removeAttribute('flagLayout');
+            element.removeAttribute('flag-layout');
           }
           (element as any).flagLayout = isEnabled;
           if (typeof (element as any).requestUpdate === 'function') {
@@ -3137,7 +3241,7 @@ componentRegistry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).flagLayout || element.hasAttribute('flagLayout');
+          return (element as any).flagLayout || element.hasAttribute('flag-layout');
         },
       },
     },
@@ -3154,9 +3258,9 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
-            element.setAttribute('headerFirst', '');
+            element.setAttribute('header-first', '');
           } else {
-            element.removeAttribute('headerFirst');
+            element.removeAttribute('header-first');
           }
           (element as any).headerFirst = isEnabled;
           if (typeof (element as any).requestUpdate === 'function') {
@@ -3164,7 +3268,7 @@ componentRegistry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headerFirst || element.hasAttribute('headerFirst');
+          return (element as any).headerFirst || element.hasAttribute('header-first');
         },
       },
     },
@@ -3608,13 +3712,19 @@ function rebuildListItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a list item trait
-function createListItemTrait(index: number) {
+function createListItemTrait(index: number): UnifiedTrait {
   const attrName = `item${index}`;
+  const defaultValue = `List item ${index}`;
 
   // Visibility function - only show if index <= count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -3622,7 +3732,7 @@ function createListItemTrait(index: number) {
       name: attrName,
       label: `Item ${index}`,
       type: 'text',
-      default: `List item ${index}`,
+      default: defaultValue,
       visible: visibleFn,
     },
     handler: {
@@ -3632,7 +3742,7 @@ function createListItemTrait(index: number) {
         rebuildListItems(element, count);
       },
       getValue: (element: HTMLElement) => {
-        return element.getAttribute(attrName) || '';
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -3755,7 +3865,7 @@ function rebuildCollectionItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a collection item trait
-function createCollectionItemTrait(index: number, type: 'title' | 'description' | 'href' | 'date') {
+function createCollectionItemTrait(index: number, type: 'title' | 'description' | 'href' | 'date'): UnifiedTrait {
   const attrName = `item${index}-${type}`;
   const isTitle = type === 'title';
   const isDescription = type === 'description';
@@ -3774,10 +3884,17 @@ function createCollectionItemTrait(index: number, type: 'title' | 'description' 
     date: '',
   };
 
+  const defaultValue = defaults[type];
+
   // Visibility function - only show if index <= count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['count'] || '3', 10);
-    return index <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -3785,7 +3902,7 @@ function createCollectionItemTrait(index: number, type: 'title' | 'description' 
       name: attrName,
       label: `Item ${index} ${labels[type]}`,
       type: isDescription ? 'textarea' : 'text',
-      default: defaults[type],
+      default: defaultValue,
       placeholder: isTitle ? 'Item title' : isDescription ? 'Optional description' : type === 'href' ? 'https://...' : 'YYYY-MM-DD',
       visible: visibleFn,
     },
@@ -3796,7 +3913,7 @@ function createCollectionItemTrait(index: number, type: 'title' | 'description' 
         rebuildCollectionItems(element, count);
       },
       getValue: (element: HTMLElement) => {
-        return element.getAttribute(attrName) || '';
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -4096,14 +4213,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'An official website of the United States government';
-          element.setAttribute('headerText', text);
+          element.setAttribute('header-text', text);
           (element as any).headerText = text;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headerText || 'An official website of the United States government';
+          return (element as any).headerText || element.getAttribute('header-text') || 'An official website of the United States government';
         },
       },
     },
@@ -4119,14 +4236,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const text = value || "Here's how you know";
-          element.setAttribute('actionText', text);
+          element.setAttribute('action-text', text);
           (element as any).actionText = text;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).actionText || "Here's how you know";
+          return (element as any).actionText || element.getAttribute('action-text') || "Here's how you know";
         },
       },
     },
@@ -4789,6 +4906,13 @@ function createAccordionSectionTrait(
             rebuildAccordionItems(element, count);
           }
         },
+        getValue: (element: HTMLElement) => {
+          const attrValue = element.getAttribute(attrName);
+          if (attrValue !== null) {
+            return attrValue === 'true';
+          }
+          return sectionNum === 1; // Default: first section expanded
+        },
       },
     };
   }
@@ -4811,6 +4935,9 @@ function createAccordionSectionTrait(
         if (sectionNum <= count) {
           rebuildAccordionItems(element, count);
         }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -4850,6 +4977,9 @@ componentRegistry.register({
           element.setAttribute('section-count', String(count));
           rebuildAccordionItems(element, count);
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('section-count') ?? '3';
+        },
         onInit: (element: HTMLElement, value: any) => {
           setTimeout(() => {
             const count = parseInt(value || '3', 10);
@@ -4880,6 +5010,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).multiselectable || element.hasAttribute('multiselectable');
+        },
       },
     },
 
@@ -4903,6 +5036,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).bordered || element.hasAttribute('bordered');
         },
       },
     },
@@ -4961,12 +5097,13 @@ function createStepTrait(
   };
 
   if (traitType === 'status') {
+    const defaultStatus = stepNum === 1 ? 'current' : 'incomplete';
     return {
       definition: {
         name: attrName,
         label: `Step ${stepNum} Status`,
         type: 'select',
-        default: stepNum === 1 ? 'current' : 'incomplete',
+        default: defaultStatus,
         options: [
           { id: 'incomplete', label: 'Incomplete' },
           { id: 'current', label: 'Current' },
@@ -4982,16 +5119,20 @@ function createStepTrait(
             rebuildStepIndicatorSteps(element, count);
           }
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute(attrName) ?? defaultStatus;
+        },
       },
     };
   }
 
+  const defaultLabel = `Step ${stepNum}`;
   return {
     definition: {
       name: attrName,
       label: `Step ${stepNum} Label`,
       type: 'text',
-      default: `Step ${stepNum}`,
+      default: defaultLabel,
       visible: visibleFn,
     },
     handler: {
@@ -5001,6 +5142,9 @@ function createStepTrait(
         if (stepNum <= count) {
           rebuildStepIndicatorSteps(element, count);
         }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultLabel;
       },
     },
   };
@@ -5039,6 +5183,9 @@ componentRegistry.register({
           element.setAttribute('step-count', String(count));
           rebuildStepIndicatorSteps(element, count);
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('step-count') ?? '4';
+        },
         onInit: (element: HTMLElement, value: any) => {
           setTimeout(() => {
             const count = parseInt(value || '4', 10);
@@ -5069,6 +5216,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showLabels || element.hasAttribute('show-labels');
+        },
       },
     },
 
@@ -5097,6 +5247,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).counters || element.getAttribute('counters') || '';
+        },
       },
     },
 
@@ -5121,6 +5274,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).centered || element.hasAttribute('centered');
+        },
       },
     },
 
@@ -5144,6 +5300,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).small || element.hasAttribute('small');
         },
       },
     },
@@ -5193,8 +5352,13 @@ function createProcessListItemTrait(
 
   // Visibility function - only show if itemNum <= item-count
   const visibleFn = (component: any) => {
-    const count = parseInt(component.get('attributes')?.['item-count'] || '3', 10);
-    return itemNum <= count;
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['item-count'] || '3', 10);
+      return itemNum <= count;
+    } catch {
+      return true;
+    }
   };
 
   return {
@@ -5212,6 +5376,9 @@ function createProcessListItemTrait(
         if (itemNum <= count) {
           rebuildProcessListItems(element, count);
         }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -5251,6 +5418,9 @@ componentRegistry.register({
           element.setAttribute('item-count', String(count));
           rebuildProcessListItems(element, count);
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('item-count') ?? '3';
+        },
         onInit: (element: HTMLElement, value: any) => {
           setTimeout(() => {
             const count = parseInt(value || '3', 10);
@@ -5283,6 +5453,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headingLevel || element.getAttribute('heading-level') || 'h4';
         },
       },
     },
@@ -5329,6 +5502,9 @@ componentRegistry.register({
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.textContent || '';
         },
       },
     },
@@ -5513,20 +5689,23 @@ componentRegistry.register({
 // ============================================================================
 
 /**
- * WORKAROUND: usa-header blocks re-renders after USWDS JavaScript initializes.
+ * WORKAROUND: Some USWDS web components block re-renders after USWDS JavaScript initializes.
  *
- * The USWDS JavaScript (accordion behavior, etc.) sets up event listeners and
- * modifies the DOM. After this initialization, the Lit component's shouldUpdate
- * returns false to prevent the USWDS JavaScript state from being lost.
+ * The USWDS JavaScript (header mobile menu, accordion behaviors, etc.) sets up event
+ * listeners and modifies the DOM. After this initialization, the Lit component's
+ * shouldUpdate may return false to prevent the USWDS JavaScript state from being lost.
  *
  * This means we need to manipulate the DOM directly for visual changes.
  * This helper function encapsulates this pattern and ensures we try both
  * the Lit way (requestUpdate) and direct DOM manipulation as a fallback.
  *
- * @param element The usa-header element
+ * Currently used by:
+ * - usa-header: USWDS mobile menu JavaScript can block Lit updates
+ *
+ * @param element The web component element
  * @param callback Function to perform direct DOM manipulation
  */
-function updateHeaderWithFallback(
+function updateWithFallback(
   element: HTMLElement,
   callback: () => void
 ): void {
@@ -5692,17 +5871,22 @@ function createHeaderNavItemTrait(
           const count = parseInt(element.getAttribute('nav-count') || '4', 10);
           rebuildHeaderNavItems(element, count);
         },
+        getValue: (element: HTMLElement) => {
+          return element.hasAttribute(attrName);
+        },
       },
     };
   }
 
   const isLabel = type === 'label';
+  const defaultValue = isLabel ? `Link ${index}` : '#';
+
   return {
     definition: {
       name: attrName,
       label: `Nav ${index} ${isLabel ? 'Label' : 'URL'}`,
       type: 'text',
-      default: isLabel ? `Link ${index}` : '#',
+      default: defaultValue,
       placeholder: isLabel ? 'Link text' : 'URL',
       visible: visibleFn,
     },
@@ -5711,6 +5895,9 @@ function createHeaderNavItemTrait(
         element.setAttribute(attrName, value || '');
         const count = parseInt(element.getAttribute('nav-count') || '4', 10);
         rebuildHeaderNavItems(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -5740,6 +5927,10 @@ componentRegistry.register({
           const showSkipLink = value === true || value === 'true';
           element.setAttribute('show-skip-link', showSkipLink ? 'true' : 'false');
           updateHeaderSkipLink(element);
+        },
+        getValue: (element: HTMLElement) => {
+          const attr = element.getAttribute('show-skip-link');
+          return attr === 'true' || attr === null; // default true
         },
         onInit: (element: HTMLElement, value: any) => {
           const showSkipLink = value === true || value === 'true' || value === undefined;
@@ -5775,6 +5966,9 @@ componentRegistry.register({
           element.setAttribute('skip-link-text', text);
           updateHeaderSkipLink(element);
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('skip-link-text') || 'Skip to main content';
+        },
       },
     },
 
@@ -5802,6 +5996,9 @@ componentRegistry.register({
           element.setAttribute('skip-link-href', href);
           updateHeaderSkipLink(element);
         },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('skip-link-href') || '#main-content';
+        },
       },
     },
 
@@ -5816,11 +6013,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Site Name';
-          element.setAttribute('logoText', text);
+          element.setAttribute('logo-text', text);
           (element as any).logoText = text;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoText || element.getAttribute('logo-text') || 'Site Name';
         },
         // Also initialize nav items when logo-text initializes (backup entry point)
         onInit: (element: HTMLElement, value: any) => {
@@ -5844,11 +6044,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const href = value || '/';
-          element.setAttribute('logoHref', href);
+          element.setAttribute('logo-href', href);
           (element as any).logoHref = href;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoHref || element.getAttribute('logo-href') || '/';
         },
       },
     },
@@ -5865,15 +6068,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('logoImageSrc', value);
+            element.setAttribute('logo-image-src', value);
             (element as any).logoImageSrc = value;
           } else {
-            element.removeAttribute('logoImageSrc');
+            element.removeAttribute('logo-image-src');
             (element as any).logoImageSrc = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoImageSrc || element.getAttribute('logo-image-src') || '';
         },
       },
     },
@@ -5890,15 +6096,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('logoImageAlt', value);
+            element.setAttribute('logo-image-alt', value);
             (element as any).logoImageAlt = value;
           } else {
-            element.removeAttribute('logoImageAlt');
+            element.removeAttribute('logo-image-alt');
             (element as any).logoImageAlt = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoImageAlt || element.getAttribute('logo-image-alt') || '';
         },
       },
     },
@@ -5922,13 +6131,16 @@ componentRegistry.register({
           (element as any).extended = isExtended;
 
           // Use workaround helper for header DOM updates
-          updateHeaderWithFallback(element, () => {
+          updateWithFallback(element, () => {
             const header = element.querySelector('.usa-header');
             if (header) {
               header.classList.toggle('usa-header--extended', isExtended);
               header.classList.toggle('usa-header--basic', !isExtended);
             }
           });
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).extended || element.hasAttribute('extended');
         },
       },
     },
@@ -5945,19 +6157,22 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any) => {
           const showSearch = coerceBoolean(value);
           if (showSearch) {
-            element.setAttribute('showSearch', '');
+            element.setAttribute('show-search', '');
           } else {
-            element.removeAttribute('showSearch');
+            element.removeAttribute('show-search');
           }
           (element as any).showSearch = showSearch;
 
           // Use workaround helper for header DOM updates
-          updateHeaderWithFallback(element, () => {
+          updateWithFallback(element, () => {
             const secondaryDiv = element.querySelector('.usa-nav__secondary');
             if (secondaryDiv) {
               (secondaryDiv as HTMLElement).style.display = showSearch ? '' : 'none';
             }
           });
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).showSearch || element.hasAttribute('show-search');
         },
       },
     },
@@ -5974,11 +6189,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const placeholder = value || 'Search';
-          element.setAttribute('searchPlaceholder', placeholder);
+          element.setAttribute('search-placeholder', placeholder);
           (element as any).searchPlaceholder = placeholder;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).searchPlaceholder || element.getAttribute('search-placeholder') || 'Search';
         },
       },
     },
@@ -6004,6 +6222,9 @@ componentRegistry.register({
           const count = parseInt(value || '4', 10);
           element.setAttribute('nav-count', String(count));
           rebuildHeaderNavItems(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('nav-count') ?? '4';
         },
         onInit: (element: HTMLElement, _value: any) => {
           // Use retry logic to wait for Lit component to be ready
@@ -6096,6 +6317,7 @@ function initFooterSections(element: HTMLElement): void {
  */
 function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
   const attrName = `section${sectionNum}-title`;
+  const defaultValue = `Section ${sectionNum}`;
 
   // Visibility function - only show if sectionNum <= section-count
   const visibleFn = (component: any) => {
@@ -6116,7 +6338,7 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
       name: attrName,
       label: `Section ${sectionNum} Title`,
       type: 'text',
-      default: `Section ${sectionNum}`,
+      default: defaultValue,
       visible: visibleFn,
     },
     handler: {
@@ -6124,6 +6346,9 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
         element.setAttribute(attrName, value || '');
         const count = parseInt(element.getAttribute('section-count') || '3', 10);
         rebuildFooterSections(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -6138,6 +6363,8 @@ function createFooterSectionLinkTrait(
   type: 'label' | 'href'
 ): UnifiedTrait {
   const attrName = `section${sectionNum}-link${linkNum}-${type}`;
+  const isLabel = type === 'label';
+  const defaultValue = isLabel ? (linkNum === 1 ? 'Link 1' : '') : '#';
 
   // Visibility function - only show if sectionNum <= section-count and variant is 'big'
   const visibleFn = (component: any) => {
@@ -6152,13 +6379,12 @@ function createFooterSectionLinkTrait(
     }
   };
 
-  const isLabel = type === 'label';
   return {
     definition: {
       name: attrName,
       label: `S${sectionNum} Link ${linkNum} ${isLabel ? 'Text' : 'URL'}`,
       type: 'text',
-      default: isLabel ? (linkNum === 1 ? 'Link 1' : '') : '#',
+      default: defaultValue,
       placeholder: isLabel ? 'Link text' : 'URL',
       visible: visibleFn,
     },
@@ -6171,6 +6397,9 @@ function createFooterSectionLinkTrait(
         }
         const count = parseInt(element.getAttribute('section-count') || '3', 10);
         rebuildFooterSections(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
       },
     },
   };
@@ -6208,6 +6437,9 @@ componentRegistry.register({
             (element as any).requestUpdate();
           }
         },
+        getValue: (element: HTMLElement) => {
+          return (element as any).variant || element.getAttribute('variant') || 'medium';
+        },
       },
     },
 
@@ -6222,11 +6454,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const name = value || 'Agency Name';
-          element.setAttribute('agencyName', name);
+          element.setAttribute('agency-name', name);
           (element as any).agencyName = name;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).agencyName || element.getAttribute('agency-name') || 'Agency Name';
         },
       },
     },
@@ -6243,11 +6478,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const url = value || '#';
-          element.setAttribute('agencyUrl', url);
+          element.setAttribute('agency-url', url);
           (element as any).agencyUrl = url;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).agencyUrl || element.getAttribute('agency-url') || '#';
         },
       },
     },
@@ -6264,15 +6502,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('logoSrc', value);
+            element.setAttribute('logo-src', value);
             (element as any).logoSrc = value;
           } else {
-            element.removeAttribute('logoSrc');
+            element.removeAttribute('logo-src');
             (element as any).logoSrc = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoSrc || element.getAttribute('logo-src') || '';
         },
       },
     },
@@ -6289,15 +6530,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('logoAlt', value);
+            element.setAttribute('logo-alt', value);
             (element as any).logoAlt = value;
           } else {
-            element.removeAttribute('logoAlt');
+            element.removeAttribute('logo-alt');
             (element as any).logoAlt = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).logoAlt || element.getAttribute('logo-alt') || '';
         },
       },
     },
@@ -6314,15 +6558,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('contactPhone', value);
+            element.setAttribute('contact-phone', value);
             (element as any).contactPhone = value;
           } else {
-            element.removeAttribute('contactPhone');
+            element.removeAttribute('contact-phone');
             (element as any).contactPhone = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).contactPhone || element.getAttribute('contact-phone') || '';
         },
       },
     },
@@ -6339,15 +6586,18 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            element.setAttribute('contactEmail', value);
+            element.setAttribute('contact-email', value);
             (element as any).contactEmail = value;
           } else {
-            element.removeAttribute('contactEmail');
+            element.removeAttribute('contact-email');
             (element as any).contactEmail = '';
           }
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).contactEmail || element.getAttribute('contact-email') || '';
         },
       },
     },
@@ -6380,6 +6630,9 @@ componentRegistry.register({
           const count = parseInt(value || '3', 10);
           element.setAttribute('section-count', String(count));
           rebuildFooterSections(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('section-count') ?? '3';
         },
         onInit: (element: HTMLElement, _value: any) => {
           // Use retry logic to wait for Lit component to be ready

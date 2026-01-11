@@ -501,6 +501,8 @@ export const USWDS_WC_PACKAGES = [
 export const CDN_URLS = {
   // USWDS base CSS (required for styling)
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  // USWDS JavaScript (required for mobile menu toggle, accordion, etc.)
+  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   // USWDS-WC bundle - all web components with Lit included (using jsdelivr for better reliability)
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,

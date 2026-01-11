@@ -199,6 +199,7 @@ const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -307,6 +308,8 @@ export function generateFullDocument(
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
   <!-- USWDS Web Components JS -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
+  <!-- USWDS JavaScript (for mobile menu, accordion behaviors) -->
+  <script src="${PREVIEW_CDN_URLS.uswdsJs}"></script>
   ${generateInitScript()}
 </head>
 <body>
