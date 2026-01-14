@@ -29,8 +29,8 @@ export function useAuth(): UseAuthReturn {
     error: null,
   });
 
-  // Initialize from localStorage
-  useEffect(() => {
+  // Helper function to read auth state from localStorage
+  const readFromStorage = useCallback(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     const userJson = localStorage.getItem(USER_KEY);
 
@@ -44,16 +44,43 @@ export function useAuth(): UseAuthReturn {
           isLoading: false,
           error: null,
         });
+        return true;
       } catch {
         // Invalid stored data, clear it
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        setState((prev) => ({ ...prev, isLoading: false }));
       }
-    } else {
-      setState((prev) => ({ ...prev, isLoading: false }));
     }
+    setState((prev) => ({ ...prev, isLoading: false }));
+    return false;
   }, []);
+
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    readFromStorage();
+  }, [readFromStorage]);
+
+  // Listen for storage events (changes from other tabs/windows)
+  // and custom auth events (changes from same window)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TOKEN_KEY || e.key === USER_KEY) {
+        readFromStorage();
+      }
+    };
+
+    const handleAuthChange = () => {
+      readFromStorage();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-change', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
+  }, [readFromStorage]);
 
   const login = useCallback(async (email: string, password: string) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -66,19 +93,39 @@ export function useAuth(): UseAuthReturn {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        // Try to parse error message from JSON, fall back to status text
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Response wasn't JSON (e.g., HTML error page)
+          errorMessage = `Login failed: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const data: AuthResponse = await response.json();
+      let data: AuthResponse;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('Invalid response from server');
+      }
+
+      if (!data.token || !data.user) {
+        throw new Error('Invalid login response');
+      }
 
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
+      // Dispatch custom event to sync other useAuth instances
+      window.dispatchEvent(new Event('auth-change'));
+
       setState({
         user: data.user,
         token: data.token,
-        isAuthenticated: !!data.user,
+        isAuthenticated: true,
         isLoading: false,
         error: null,
       });
@@ -105,19 +152,39 @@ export function useAuth(): UseAuthReturn {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Registration failed');
+          // Try to parse error message from JSON, fall back to status text
+          let errorMessage = 'Registration failed';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            // Response wasn't JSON (e.g., HTML error page)
+            errorMessage = `Registration failed: ${response.status} ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
-        const data: AuthResponse = await response.json();
+        let data: AuthResponse;
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Invalid response from server');
+        }
+
+        if (!data.token || !data.user) {
+          throw new Error('Invalid registration response');
+        }
 
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
+        // Dispatch custom event to sync other useAuth instances
+        window.dispatchEvent(new Event('auth-change'));
+
         setState({
           user: data.user,
           token: data.token,
-          isAuthenticated: !!data.user,
+          isAuthenticated: true,
           isLoading: false,
           error: null,
         });
@@ -137,6 +204,9 @@ export function useAuth(): UseAuthReturn {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+
+    // Dispatch custom event to sync other useAuth instances
+    window.dispatchEvent(new Event('auth-change'));
 
     setState({
       user: null,
