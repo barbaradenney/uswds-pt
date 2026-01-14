@@ -792,3 +792,195 @@ body {
   gap: var(--spacing-md);
   justify-content: center;
 }
+
+/* ============================================
+   Autosave Indicator
+   ============================================ */
+
+.autosave-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.75rem;
+  color: var(--color-base-light);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.autosave-indicator.saving {
+  color: var(--color-primary);
+}
+
+.autosave-indicator.saved {
+  color: var(--color-success);
+}
+
+.autosave-indicator.error {
+  color: var(--color-error);
+}
+
+.autosave-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.autosave-indicator.saving .autosave-dot {
+  animation: autosave-pulse 1s ease-in-out infinite;
+}
+
+@keyframes autosave-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================
+   Version History Panel (Sidebar)
+   ============================================ */
+
+.version-history-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100%;
+  background: var(--color-white);
+  border-left: 1px solid var(--color-base-lighter);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.version-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-base-lighter);
+  background: var(--color-base-lightest);
+}
+
+.version-history-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.version-history-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}
+
+.version-history-loading,
+.version-history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-base-light);
+}
+
+.version-history-hint {
+  font-size: 0.875rem;
+  margin-top: var(--spacing-sm);
+}
+
+.version-history-error {
+  background: #fef2f2;
+  color: var(--color-error);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Version List */
+.version-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.version-item {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+
+.version-item:hover {
+  border-color: var(--color-primary);
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.version-number {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.version-date {
+  font-size: 0.75rem;
+  color: var(--color-base-light);
+}
+
+.version-restore-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.75rem;
+}
+
+/* Version Restore Confirmation */
+.version-confirm {
+  width: 100%;
+  text-align: center;
+}
+
+.version-confirm p {
+  margin: 0 0 var(--spacing-xs);
+}
+
+.version-confirm-hint {
+  font-size: 0.75rem;
+  color: var(--color-base-light);
+}
+
+.version-confirm-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: var(--spacing-md);
+}
+
+.version-restore-error {
+  color: var(--color-error);
+  font-size: 0.75rem;
+  margin-top: var(--spacing-sm);
+}

@@ -3,8 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { useOrganization } from '../hooks/useOrganization';
+import { useVersionHistory } from '../hooks/useVersionHistory';
+import { useAutosave } from '../hooks/useAutosave';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
+import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { openPreviewInNewTab } from '../lib/export';
 import {
   getPrototype,
@@ -458,6 +461,20 @@ export function Editor() {
   const [error, setError] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState('');
 
+  // Version history panel state
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  // Version history hook - only for authenticated prototypes
+  const {
+    versions,
+    isLoading: versionsLoading,
+    isRestoring,
+    error: versionError,
+    fetchVersions,
+    restoreVersion,
+  } = useVersionHistory(!isDemoMode && slug ? slug : null);
+
   // Cleanup effect for when component unmounts
   useEffect(() => {
     return () => {
@@ -633,6 +650,107 @@ export function Editor() {
       setIsSaving(false);
     }
   }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode]);
+
+  // Get current editor content for autosave comparison
+  const getEditorContent = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    return {
+      html: editor.getHtml(),
+      projectData: editor.getProjectData(),
+    };
+  }, []);
+
+  // Autosave handler - saves without navigation or error display
+  const handleAutosave = useCallback(async () => {
+    // Skip if no existing prototype or in demo mode
+    if (!prototype || isDemoMode) return;
+
+    setAutosaveStatus('saving');
+
+    try {
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      const currentHtml = editor.getHtml();
+      const grapesData = editor.getProjectData();
+
+      const response = await authFetch(`/api/prototypes/${prototype.slug}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          htmlContent: currentHtml,
+          grapesData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Autosave failed');
+      }
+
+      const data: Prototype = await response.json();
+      setPrototype(data);
+      setHtmlContent(currentHtml);
+      setAutosaveStatus('saved');
+
+      // Reset to idle after 3 seconds
+      setTimeout(() => setAutosaveStatus('idle'), 3000);
+    } catch (err) {
+      console.warn('[Autosave] Failed:', err);
+      setAutosaveStatus('error');
+
+      // Reset to idle after 5 seconds
+      setTimeout(() => setAutosaveStatus('idle'), 5000);
+    }
+  }, [prototype, isDemoMode, name]);
+
+  // Autosave hook - only for authenticated prototypes that already exist
+  const autosave = useAutosave({
+    interval: 30000, // 30 seconds
+    getContent: getEditorContent,
+    onSave: handleAutosave,
+    enabled: !isDemoMode && !!prototype && !!slug,
+    isSaving,
+  });
+
+  // Handle version restore with autosave pause
+  const handleVersionRestore = useCallback(async (versionNumber: number): Promise<boolean> => {
+    // Pause autosave during restore
+    autosave.pause();
+
+    try {
+      const success = await restoreVersion(versionNumber);
+
+      if (success && slug) {
+        // Reload the prototype to get updated content
+        const response = await authFetch(`/api/prototypes/${slug}`);
+        if (response.ok) {
+          const data: Prototype = await response.json();
+          setPrototype(data);
+          setHtmlContent(data.htmlContent || '');
+
+          // Reload editor content
+          const editor = editorRef.current;
+          if (editor && data.grapesData) {
+            editor.loadProjectData(data.grapesData as any);
+          }
+        }
+
+        // Refresh version list
+        await fetchVersions();
+
+        // Mark as saved to reset autosave comparison
+        autosave.markAsSaved();
+      }
+
+      return success;
+    } finally {
+      // Resume autosave
+      autosave.resume();
+    }
+  }, [restoreVersion, slug, fetchVersions, autosave]);
 
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
@@ -818,6 +936,28 @@ export function Editor() {
               Embed
             </button>
           )}
+          {/* Version History button - only for authenticated mode with existing prototype */}
+          {!isDemoMode && slug && (
+            <button
+              className={`btn btn-secondary ${showVersionHistory ? 'active' : ''}`}
+              onClick={() => setShowVersionHistory(!showVersionHistory)}
+              title="Version History"
+            >
+              History
+            </button>
+          )}
+          {/* Autosave indicator - only show in authenticated mode with existing prototype */}
+          {!isDemoMode && prototype && (
+            <div className={`autosave-indicator ${autosaveStatus}`}>
+              <span className="autosave-dot" />
+              <span>
+                {autosaveStatus === 'saving' && 'Saving...'}
+                {autosaveStatus === 'saved' && 'Saved'}
+                {autosaveStatus === 'error' && 'Save failed'}
+                {autosaveStatus === 'idle' && 'Autosave on'}
+              </span>
+            </div>
+          )}
           <button
             className="btn btn-primary"
             onClick={handleSave}
@@ -828,7 +968,7 @@ export function Editor() {
         </div>
       </header>
 
-      <div className="editor-main" style={{ flex: 1 }}>
+      <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
         <StudioEditor
           // Key forces complete remount when switching prototypes
           key={editorKey}
@@ -1420,6 +1560,19 @@ export function Editor() {
             loadUSWDSResources();
           }}
         />
+
+        {/* Version History Sidebar */}
+        {showVersionHistory && !isDemoMode && slug && (
+          <VersionHistoryPanel
+            versions={versions}
+            isLoading={versionsLoading}
+            isRestoring={isRestoring}
+            error={versionError}
+            onRestore={handleVersionRestore}
+            onRefresh={fetchVersions}
+            onClose={() => setShowVersionHistory(false)}
+          />
+        )}
       </div>
 
       {showExport && (

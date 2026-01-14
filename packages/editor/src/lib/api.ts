@@ -33,6 +33,10 @@ export const API_ENDPOINTS = {
   // Prototypes
   PROTOTYPES: '/api/prototypes',
   PROTOTYPE: (slug: string) => `/api/prototypes/${slug}`,
+
+  // Prototype Versions
+  PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${slug}/versions`,
+  PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${slug}/versions/${version}/restore`,
 } as const;
 
 /**
