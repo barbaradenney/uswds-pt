@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
+import { useOrganization } from '../hooks/useOrganization';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { openPreviewInNewTab } from '../lib/export';
@@ -312,7 +313,7 @@ const uswdsComponentsPlugin = (editor: any) => {
 
   // Initialize WebComponentTraitManager to handle trait ↔ web component sync
   debug('Initializing WebComponentTraitManager...');
-  const traitManager = new WebComponentTraitManager(editor);
+  const _traitManager = new WebComponentTraitManager(editor);
 
   // Note: Component configurations now auto-registered via componentRegistry
   // No need to call registerComponents - the WebComponentTraitManager will
@@ -440,6 +441,9 @@ export function Editor() {
 
   // Check if we're in demo mode (no API URL configured)
   const isDemoMode = !import.meta.env.VITE_API_URL;
+
+  // Get current team for team-scoped prototypes (only used in authenticated mode)
+  const { currentTeam } = useOrganization();
 
   // Handle back navigation - go to home/prototype list
   const handleBack = () => {
@@ -590,14 +594,26 @@ export function Editor() {
           : '/api/prototypes';
         const method = prototype ? 'PUT' : 'POST';
 
+        // For new prototypes, require a team
+        if (!prototype && !currentTeam) {
+          throw new Error('Please select a team before creating a prototype');
+        }
+
+        const body: Record<string, unknown> = {
+          name,
+          htmlContent: currentHtml,
+          grapesData,
+        };
+
+        // Include teamId when creating a new prototype
+        if (!prototype && currentTeam) {
+          body.teamId = currentTeam.id;
+        }
+
         const response = await authFetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name,
-            htmlContent: currentHtml,
-            grapesData,
-          }),
+          body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -1133,7 +1149,7 @@ export function Editor() {
             const Commands = editor.Commands;
             if (Commands) {
               // Store reference to original clear command
-              const originalClearCmd = Commands.get('core:canvas-clear');
+              const _originalClearCmd = Commands.get('core:canvas-clear');
 
               // Register our own clear command that ensures proper clearing
               Commands.add('core:canvas-clear', {

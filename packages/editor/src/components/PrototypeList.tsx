@@ -27,7 +27,10 @@ export function PrototypeList() {
   const loadPrototypes = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await authFetch('/api/prototypes');
+      const url = currentTeam
+        ? `/api/prototypes?teamId=${currentTeam.id}`
+        : '/api/prototypes';
+      const response = await authFetch(url);
 
       if (!response.ok) {
         throw new Error('Failed to load prototypes');
@@ -40,7 +43,7 @@ export function PrototypeList() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentTeam]);
 
   useEffect(() => {
     loadPrototypes();

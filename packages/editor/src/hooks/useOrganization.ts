@@ -1,10 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type {
-  Organization,
-  Team,
-  Role,
-  TeamMembershipWithTeam,
-} from '@uswds-pt/shared';
+import type { Organization, Team, Role } from '@uswds-pt/shared';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 
 interface OrganizationState {

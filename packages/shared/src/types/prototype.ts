@@ -126,6 +126,7 @@ export interface Prototype {
   description?: string;
   htmlContent: string;
   grapesData: GrapesProjectData;
+  teamId?: string;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -199,6 +200,7 @@ export interface CreatePrototypeRequest {
   description?: string;
   htmlContent?: string;
   grapesData?: GrapesProjectData;
+  teamId: string;
 }
 
 export interface UpdatePrototypeRequest {

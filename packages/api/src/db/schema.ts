@@ -154,6 +154,7 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   }),
   memberships: many(teamMemberships),
   invitations: many(invitations),
+  prototypes: many(prototypes),
 }));
 
 export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
@@ -203,6 +204,7 @@ export const prototypes = pgTable(
     description: text('description'),
     htmlContent: text('html_content').notNull().default(''),
     grapesData: jsonb('grapes_data').notNull().default({}),
+    teamId: uuid('team_id').references(() => teams.id, { onDelete: 'cascade' }),
     createdBy: uuid('created_by')
       .references(() => users.id)
       .notNull(),
@@ -213,10 +215,15 @@ export const prototypes = pgTable(
   (table) => ({
     slugIdx: index('prototypes_slug_idx').on(table.slug),
     createdByIdx: index('prototypes_created_by_idx').on(table.createdBy),
+    teamIdx: index('prototypes_team_idx').on(table.teamId),
   })
 );
 
 export const prototypesRelations = relations(prototypes, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [prototypes.teamId],
+    references: [teams.id],
+  }),
   creator: one(users, {
     fields: [prototypes.createdBy],
     references: [users.id],
