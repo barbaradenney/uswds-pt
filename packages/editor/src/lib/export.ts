@@ -193,13 +193,14 @@ function isSelfClosingTag(tag: string): boolean {
 
 /**
  * CDN URLs for USWDS resources (keep in sync with adapter constants)
+ * Note: USWDS JavaScript (uswds.min.js) is intentionally not included - web components
+ * handle their own behaviors internally and USWDS JS conflicts with Shadow DOM.
  */
 const USWDS_VERSION = '3.8.1';
 const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -248,7 +249,7 @@ function generateInitScript(): string {
       }
 
       header.extended = header.hasAttribute('extended');
-      header.showSearch = header.hasAttribute('showSearch');
+      header.showSearch = header.hasAttribute('show-search');
 
       const searchPlaceholder = header.getAttribute('search-placeholder');
       if (searchPlaceholder) {
@@ -310,8 +311,10 @@ export function generateFullDocument(
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
   <!-- USWDS Web Components JS -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
-  <!-- USWDS JavaScript (for mobile menu, accordion behaviors) -->
-  <script src="${PREVIEW_CDN_URLS.uswdsJs}"></script>
+  <!-- Note: USWDS JavaScript (uswds.min.js) is NOT included because:
+       - Web components handle their own behaviors internally (mobile menu, accordion, etc.)
+       - USWDS JS expects standard HTML structure, but web components use Shadow DOM
+       - Loading both would cause conflicts and break mobile menu functionality -->
   ${generateInitScript()}
 </head>
 <body>
