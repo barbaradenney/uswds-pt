@@ -57,7 +57,7 @@ async function migrate() {
 
     // Assign existing prototypes to their creator's first team
     console.log('Assigning existing prototypes to teams...');
-    const result = await db.execute(sql`
+    await db.execute(sql`
       UPDATE prototypes p
       SET team_id = (
         SELECT tm.team_id

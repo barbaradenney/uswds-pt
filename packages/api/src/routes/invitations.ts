@@ -434,7 +434,7 @@ export async function invitationRoutes(app: FastifyInstance) {
         requireTeamRole(ROLES.TEAM_ADMIN),
       ],
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { teamId } = request.params;
 
       const teamInvitations = await db

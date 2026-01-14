@@ -2,7 +2,7 @@
  * Authentication Routes
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {

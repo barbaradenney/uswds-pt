@@ -36,7 +36,7 @@ export function getAuthUser(request: FastifyRequest): { id: string; email: strin
  */
 export async function loadUserOrganization(
   request: FastifyRequest,
-  reply: FastifyReply
+  _reply: FastifyReply
 ): Promise<void> {
   const authUser = getAuthUser(request);
 

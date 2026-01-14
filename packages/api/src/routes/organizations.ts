@@ -3,11 +3,11 @@
  * Handles organization management endpoints
  */
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { organizations, users, teams, teamMemberships } from '../db/schema.js';
-import { getAuthUser, requireOrgAdmin, loadUserOrganization } from '../middleware/permissions.js';
+import { requireOrgAdmin, loadUserOrganization } from '../middleware/permissions.js';
 
 interface UpdateOrgBody {
   name?: string;
@@ -146,7 +146,6 @@ export async function organizationRoutes(app: FastifyInstance) {
       }
 
       // Get all team memberships for all users in a single query
-      const userIds = orgUsers.map(u => u.id);
       const allMemberships = await db
         .select({
           userId: teamMemberships.userId,

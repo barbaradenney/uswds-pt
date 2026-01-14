@@ -12,7 +12,7 @@ import { BCRYPT_SALT_ROUNDS, DEFAULT_JWT_SECRET } from '../constants.js';
 import { normalizeEmail } from '../lib/email.js';
 
 // JWT payload type
-interface JWTPayload {
+interface _JWTPayload {
   id: string;
   email: string;
 }

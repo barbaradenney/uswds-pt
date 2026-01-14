@@ -13,7 +13,6 @@ import {
   requireOrgAdmin,
   requireTeamMember,
   requireTeamRole,
-  loadUserOrganization,
 } from '../middleware/permissions.js';
 
 interface CreateTeamBody {
@@ -55,7 +54,7 @@ export async function teamRoutes(app: FastifyInstance) {
     {
       preHandler: [app.authenticate],
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const authUser = getAuthUser(request);
 
       const userTeams = await db
@@ -101,7 +100,11 @@ export async function teamRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const authUser = getAuthUser(request);
       const { name, slug, description } = request.body;
-      const organizationId = request.userOrganizationId!;
+      const organizationId = request.userOrganizationId;
+
+      if (!organizationId) {
+        return reply.status(400).send({ error: 'Organization not found' });
+      }
 
       const teamSlug = slug || generateSlug(name);
 
@@ -281,7 +284,7 @@ export async function teamRoutes(app: FastifyInstance) {
     {
       preHandler: [app.authenticate, requireTeamMember('teamId')],
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { teamId } = request.params;
 
       const members = await db

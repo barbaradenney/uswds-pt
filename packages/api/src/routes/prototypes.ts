@@ -4,7 +4,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, desc, and, or, isNull } from 'drizzle-orm';
+import { eq, desc, and, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { db } from '../db/index.js';
 import { prototypes, prototypeVersions, teamMemberships } from '../db/schema.js';
