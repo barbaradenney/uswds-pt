@@ -214,11 +214,13 @@ function generateInitScript(): string {
 <script type="module">
   // Wait for web components to be defined and DOM to be ready
   async function initializeComponents() {
-    // Wait for custom elements to be defined
+    // Wait for custom elements to be defined (with timeout fallback)
     await Promise.all([
       customElements.whenDefined('usa-header'),
       customElements.whenDefined('usa-footer'),
-    ]).catch(() => {});
+    ]).catch((err) => {
+      console.warn('USWDS web components may not be fully loaded:', err);
+    });
 
     // Initialize usa-header components
     document.querySelectorAll('usa-header').forEach(header => {

@@ -8,6 +8,8 @@ import fastifyJwt from '@fastify/jwt';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db, users, type User } from '../db/index.js';
+import { BCRYPT_SALT_ROUNDS, DEFAULT_JWT_SECRET } from '../constants.js';
+import { normalizeEmail } from '../lib/email.js';
 
 // JWT payload type
 interface JWTPayload {
@@ -18,7 +20,7 @@ interface JWTPayload {
 async function authPluginImpl(app: FastifyInstance) {
   // Register JWT plugin
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'development-secret-change-in-production',
+    secret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET,
   });
 
   // Authenticate decorator
@@ -41,8 +43,7 @@ export const authPlugin = fastifyPlugin(authPluginImpl);
  * Hash a password
  */
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return bcrypt.hash(password, saltRounds);
+  return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 }
 
 /**
@@ -68,7 +69,7 @@ export async function createUser(
   const [user] = await db
     .insert(users)
     .values({
-      email: email.toLowerCase(),
+      email: normalizeEmail(email),
       passwordHash,
       name,
     })
@@ -76,6 +77,7 @@ export async function createUser(
       id: users.id,
       email: users.email,
       name: users.name,
+      organizationId: users.organizationId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       isActive: users.isActive,
@@ -91,7 +93,7 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.email, email.toLowerCase()))
+    .where(eq(users.email, normalizeEmail(email)))
     .limit(1);
 
   return user || null;
@@ -108,6 +110,7 @@ export async function findUserById(
       id: users.id,
       email: users.email,
       name: users.name,
+      organizationId: users.organizationId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       isActive: users.isActive,

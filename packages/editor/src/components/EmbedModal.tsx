@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 interface EmbedModalProps {
   prototypeId: string;
@@ -11,25 +11,27 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
   const [maxWidth, setMaxWidth] = useState('');
   const [height, setHeight] = useState('400');
 
-  // Build the embed URL
-  const baseUrl = window.location.origin + window.location.pathname.replace(/\/edit\/.*$/, '').replace(/\/new$/, '');
-  const embedPath = `/embed/${prototypeId}`;
+  // Memoize the embed URL to avoid recalculating on every render
+  const embedUrl = useMemo(() => {
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/edit\/.*$/, '').replace(/\/new$/, '');
+    const embedPath = `/embed/${prototypeId}`;
 
-  const queryParams = new URLSearchParams();
-  if (padding !== '16') queryParams.set('padding', padding);
-  if (maxWidth) queryParams.set('maxWidth', maxWidth);
+    const queryParams = new URLSearchParams();
+    if (padding !== '16') queryParams.set('padding', padding);
+    if (maxWidth) queryParams.set('maxWidth', maxWidth);
 
-  const queryString = queryParams.toString();
-  const embedUrl = `${baseUrl}${embedPath}${queryString ? '?' + queryString : ''}`;
+    const queryString = queryParams.toString();
+    return `${baseUrl}${embedPath}${queryString ? '?' + queryString : ''}`;
+  }, [prototypeId, padding, maxWidth]);
 
-  // Generate iframe code
-  const iframeCode = `<iframe
+  // Memoize the iframe code
+  const iframeCode = useMemo(() => `<iframe
   src="${embedUrl}"
   width="100%"
   height="${height}"
   frameborder="0"
   title="USWDS Prototype"
-></iframe>`;
+></iframe>`, [embedUrl, height]);
 
   async function handleCopy(type: 'url' | 'iframe') {
     const text = type === 'url' ? embedUrl : iframeCode;
@@ -50,14 +52,21 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} role="presentation">
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="embed-modal-title"
+      >
         <div className="modal-header">
-          <h2>Embed Prototype</h2>
+          <h2 id="embed-modal-title">Embed Prototype</h2>
           <button
             className="btn"
             onClick={onClose}
             style={{ padding: '4px 8px' }}
+            aria-label="Close embed dialog"
           >
             ×
           </button>
@@ -71,10 +80,11 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
           {/* Options */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
+              <label htmlFor="embed-padding" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
                 Padding (px)
               </label>
               <select
+                id="embed-padding"
                 value={padding}
                 onChange={(e) => setPadding(e.target.value)}
                 style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--color-base-lighter)' }}
@@ -87,10 +97,11 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
+              <label htmlFor="embed-max-width" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
                 Max Width
               </label>
               <select
+                id="embed-max-width"
                 value={maxWidth}
                 onChange={(e) => setMaxWidth(e.target.value)}
                 style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--color-base-lighter)' }}
@@ -103,10 +114,11 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
+              <label htmlFor="embed-height" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem' }}>
                 Frame Height
               </label>
               <select
+                id="embed-height"
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
                 style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--color-base-lighter)' }}

@@ -17,6 +17,113 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
+// ============================================================================
+// Organizations & Teams
+// ============================================================================
+
+/**
+ * Organizations table
+ * Top-level grouping for agencies/companies
+ */
+export const organizations = pgTable(
+  'organizations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 100 }).unique().notNull(),
+    description: text('description'),
+    logoUrl: varchar('logo_url', { length: 500 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+  },
+  (table) => ({
+    slugIdx: index('organizations_slug_idx').on(table.slug),
+  })
+);
+
+/**
+ * Teams table
+ * Subdivisions within organizations
+ */
+export const teams = pgTable(
+  'teams',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .references(() => organizations.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+  },
+  (table) => ({
+    orgIdx: index('teams_organization_idx').on(table.organizationId),
+    uniqueSlugPerOrg: unique('teams_org_slug_unique').on(table.organizationId, table.slug),
+  })
+);
+
+/**
+ * Team memberships table
+ * Join table connecting users to teams with roles
+ */
+export const teamMemberships = pgTable(
+  'team_memberships',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id')
+      .references(() => teams.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    role: varchar('role', { length: 50 }).notNull().default('team_member'),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+    invitedBy: uuid('invited_by').references(() => users.id),
+  },
+  (table) => ({
+    teamIdx: index('memberships_team_idx').on(table.teamId),
+    userIdx: index('memberships_user_idx').on(table.userId),
+    uniqueMembership: unique('memberships_unique').on(table.teamId, table.userId),
+  })
+);
+
+/**
+ * Invitations table
+ * Pending invitations for users to join teams
+ */
+export const invitations = pgTable(
+  'invitations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 255 }).notNull(),
+    teamId: uuid('team_id')
+      .references(() => teams.id, { onDelete: 'cascade' })
+      .notNull(),
+    role: varchar('role', { length: 50 }).notNull().default('team_member'),
+    token: varchar('token', { length: 64 }).unique().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    invitedBy: uuid('invited_by')
+      .references(() => users.id)
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+  },
+  (table) => ({
+    tokenIdx: index('invitations_token_idx').on(table.token),
+    emailIdx: index('invitations_email_idx').on(table.email),
+    teamIdx: index('invitations_team_idx').on(table.teamId),
+  })
+);
+
+// ============================================================================
+// Users
+// ============================================================================
+
 /**
  * Users table
  */
@@ -25,13 +132,63 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).unique().notNull(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   name: varchar('name', { length: 255 }),
+  organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   isActive: boolean('is_active').default(true).notNull(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+// ============================================================================
+// Relations
+// ============================================================================
+
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  teams: many(teams),
+  users: many(users),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [teams.organizationId],
+    references: [organizations.id],
+  }),
+  memberships: many(teamMemberships),
+  invitations: many(invitations),
+}));
+
+export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamMemberships.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [teamMemberships.userId],
+    references: [users.id],
+  }),
+  inviter: one(users, {
+    fields: [teamMemberships.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  team: one(teams, {
+    fields: [invitations.teamId],
+    references: [teams.id],
+  }),
+  inviter: one(users, {
+    fields: [invitations.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
   prototypes: many(prototypes),
+  teamMemberships: many(teamMemberships),
 }));
 
 /**
@@ -124,6 +281,18 @@ export const auditLogs = pgTable(
 /**
  * Type exports
  */
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+
+export type TeamMembership = typeof teamMemberships.$inferSelect;
+export type NewTeamMembership = typeof teamMemberships.$inferInsert;
+
+export type Invitation = typeof invitations.$inferSelect;
+export type NewInvitation = typeof invitations.$inferInsert;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 

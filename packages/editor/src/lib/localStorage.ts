@@ -17,7 +17,7 @@ const STORAGE_KEY = 'uswds-pt-prototypes';
  * Generate a unique ID
  */
 function generateId(): string {
-  return `proto-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `proto-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**

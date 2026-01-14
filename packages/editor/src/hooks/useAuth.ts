@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { User, AuthResponse } from '@uswds-pt/shared';
+import type { UserWithOrgAndTeams, AuthResponse } from '@uswds-pt/shared';
 
 interface AuthState {
-  user: User | null;
+  user: UserWithOrgAndTeams | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,7 +36,7 @@ export function useAuth(): UseAuthReturn {
 
     if (token && userJson) {
       try {
-        const user = JSON.parse(userJson) as User;
+        const user = JSON.parse(userJson) as UserWithOrgAndTeams;
         setState({
           user,
           token,
@@ -76,9 +76,9 @@ export function useAuth(): UseAuthReturn {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
       setState({
-        user: data.user as User,
+        user: data.user,
         token: data.token,
-        isAuthenticated: true,
+        isAuthenticated: !!data.user,
         isLoading: false,
         error: null,
       });
@@ -115,9 +115,9 @@ export function useAuth(): UseAuthReturn {
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
         setState({
-          user: data.user as User,
+          user: data.user,
           token: data.token,
-          isAuthenticated: true,
+          isAuthenticated: !!data.user,
           isLoading: false,
           error: null,
         });

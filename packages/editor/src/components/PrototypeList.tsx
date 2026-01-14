@@ -1,22 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { useAuth } from '../hooks/useAuth';
+import { formatDate } from '../lib/date';
+import { useOrganization } from '../hooks/useOrganization';
+import { useInvitations } from '../hooks/useInvitations';
+import { TeamSwitcher } from './TeamSwitcher';
+import { InvitationBannerList } from './InvitationBanner';
+import { CreateTeamModal } from './CreateTeamModal';
 
 export function PrototypeList() {
   const [prototypes, setPrototypes] = useState<Prototype[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [acceptingToken, setAcceptingToken] = useState<string | null>(null);
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam } = useOrganization();
+  const { invitations, acceptInvitation, declineInvitation } = useInvitations();
 
-  useEffect(() => {
-    loadPrototypes();
-  }, []);
+  // Check if user is org_admin (can create teams)
+  const isOrgAdmin = teams.some((t) => t.role === 'org_admin');
 
-  async function loadPrototypes() {
+  const loadPrototypes = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await authFetch('/api/prototypes');
@@ -32,15 +41,11 @@ export function PrototypeList() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  function formatDate(date: Date | string): string {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  }
+  useEffect(() => {
+    loadPrototypes();
+  }, [currentTeam, loadPrototypes]);
 
   async function handleDelete(slug: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -64,11 +69,53 @@ export function PrototypeList() {
     }
   }
 
+  async function handleAcceptInvitation(token: string) {
+    setAcceptingToken(token);
+    const success = await acceptInvitation(token);
+    setAcceptingToken(null);
+    if (success) {
+      // Refresh teams to include the newly joined team
+      await refreshTeams();
+    }
+  }
+
+  function handleDeclineInvitation(token: string) {
+    declineInvitation(token);
+  }
+
+  async function handleCreateTeam(name: string, description?: string): Promise<boolean> {
+    const newTeam = await createTeam(name, description);
+    if (newTeam) {
+      // Switch to the newly created team
+      setCurrentTeam(newTeam.id);
+      return true;
+    }
+    return false;
+  }
+
   return (
     <div className="prototype-list-container">
+      {/* Pending Invitations */}
+      <InvitationBannerList
+        invitations={invitations}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+        loadingToken={acceptingToken}
+      />
+
       <div className="prototype-list-header">
         <div>
-          <h1>My Prototypes</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+            <h1 style={{ margin: 0 }}>Prototypes</h1>
+            <TeamSwitcher
+              teams={teams}
+              currentTeam={currentTeam}
+              onTeamChange={setCurrentTeam}
+              organizationName={organization?.name}
+              canCreateTeam={isOrgAdmin}
+              onCreateTeamClick={() => setShowCreateTeamModal(true)}
+            />
+          </div>
           {user && (
             <p style={{ color: 'var(--color-base-light)', marginTop: '4px' }}>
               Signed in as {user.email}
@@ -76,6 +123,14 @@ export function PrototypeList() {
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {currentTeam && (currentTeam.role === 'org_admin' || currentTeam.role === 'team_admin') && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate(`/teams/${currentTeam.id}/settings`)}
+            >
+              Team Settings
+            </button>
+          )}
           <button className="btn btn-primary" onClick={() => navigate('/new')}>
             + New Prototype
           </button>
@@ -164,6 +219,13 @@ export function PrototypeList() {
           ))}
         </div>
       )}
+
+      {/* Create Team Modal */}
+      <CreateTeamModal
+        isOpen={showCreateTeamModal}
+        onClose={() => setShowCreateTeamModal(false)}
+        onCreateTeam={handleCreateTeam}
+      />
     </div>
   );
 }

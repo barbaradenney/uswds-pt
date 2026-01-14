@@ -39,7 +39,14 @@
       "Bash(pnpm --filter @uswds-pt/editor dev:*)",
       "Bash(pnpm changeset publish:*)",
       "Bash(git reset:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(/usr/local/opt/postgresql@16/bin/psql:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(npx tsx:*)",
+      "Bash(git -C /Users/barbaramiles/Library/Mobile Documents/com~apple~CloudDocs/Documents/Github/uswds-pt log --oneline)",
+      "Bash(pnpm run build:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

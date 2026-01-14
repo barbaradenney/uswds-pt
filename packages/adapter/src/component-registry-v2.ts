@@ -2644,7 +2644,7 @@ componentRegistry.register({
 
 // Helper function to rebuild breadcrumb items from individual traits
 function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
-  const items: Array<{ label: string; href: string; current?: boolean }> = [];
+  const items: Array<{ label: string; href?: string; current?: boolean }> = [];
 
   for (let i = 1; i <= count; i++) {
     const label = element.getAttribute(`item${i}-label`) || `Item ${i}`;
@@ -2653,7 +2653,7 @@ function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
 
     items.push({
       label,
-      href: isLast ? undefined! : href, // Last item doesn't need href
+      href: isLast ? undefined : href, // Last item doesn't need href
       current: isLast,
     });
   }
@@ -6145,7 +6145,7 @@ componentRegistry.register({
       },
     },
 
-    // Show Search (uses workaround for USWDS init blocking)
+    // Show Search - triggers Lit component re-render
     'show-search': {
       definition: {
         name: 'show-search',
@@ -6156,23 +6156,28 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const showSearch = coerceBoolean(value);
+          // Set the attribute (for persistence)
           if (showSearch) {
             element.setAttribute('show-search', '');
           } else {
             element.removeAttribute('show-search');
           }
+          // Set the Lit property directly to trigger re-render
           (element as any).showSearch = showSearch;
-
-          // Use workaround helper for header DOM updates
-          updateWithFallback(element, () => {
-            const secondaryDiv = element.querySelector('.usa-nav__secondary');
-            if (secondaryDiv) {
-              (secondaryDiv as HTMLElement).style.display = showSearch ? '' : 'none';
-            }
-          });
+          // Request an update from the Lit component
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
         },
         getValue: (element: HTMLElement) => {
           return (element as any).showSearch || element.hasAttribute('show-search');
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          const showSearch = coerceBoolean(value);
+          (element as any).showSearch = showSearch;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
         },
       },
     },

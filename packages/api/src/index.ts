@@ -10,6 +10,9 @@ import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { prototypeRoutes } from './routes/prototypes.js';
 import { previewRoutes } from './routes/preview.js';
+import { organizationRoutes } from './routes/organizations.js';
+import { teamRoutes } from './routes/teams.js';
+import { invitationRoutes } from './routes/invitations.js';
 
 // Extend Fastify types
 declare module 'fastify' {
@@ -39,11 +42,16 @@ async function main() {
         },
   });
 
-  // Register CORS - allow frontend URL and GitHub Pages
+  // Register CORS - allow frontend URLs
+  // CORS_ORIGINS can be a comma-separated list of allowed origins
+  const additionalOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : [];
+
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    'https://barbaradenney.github.io',
     'http://localhost:5173', // Vite dev server
+    ...additionalOrigins,
   ].filter(Boolean);
 
   await app.register(cors, {
@@ -58,6 +66,23 @@ async function main() {
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
   await app.register(previewRoutes, { prefix: '/api/preview' });
+  await app.register(organizationRoutes, { prefix: '/api/organizations' });
+  await app.register(teamRoutes, { prefix: '/api/teams' });
+  await app.register(invitationRoutes, { prefix: '/api/invitations' });
+
+  // Global error handler to log all errors
+  app.setErrorHandler((error, request, reply) => {
+    app.log.error({
+      err: error,
+      url: request.url,
+      method: request.method,
+    }, 'Request error');
+
+    reply.status(error.statusCode || 500).send({
+      message: error.message || 'Internal Server Error',
+      statusCode: error.statusCode || 500,
+    });
+  });
 
   // Health check endpoint
   app.get('/api/health', async () => {

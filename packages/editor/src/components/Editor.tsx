@@ -456,6 +456,21 @@ export function Editor() {
   const [error, setError] = useState<string | null>(null);
   const [htmlContent, setHtmlContent] = useState('');
 
+  // Cleanup effect for when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up debug globals if they exist
+      if ((window as any).__clearCanvas) {
+        delete (window as any).__clearCanvas;
+      }
+      if ((window as any).__editor) {
+        delete (window as any).__editor;
+      }
+      // Clear editor ref
+      editorRef.current = null;
+    };
+  }, []);
+
   // Load existing prototype if editing, or reset state for new prototype
   useEffect(() => {
     if (slug) {
@@ -1163,23 +1178,25 @@ export function Editor() {
               debug('Custom core:canvas-clear command registered');
             }
 
-            // Expose helper function for debugging from console
-            (window as any).__clearCanvas = () => {
-              debug('Manual clear triggered from console');
-              const wrapper = editor.DomComponents?.getWrapper();
-              if (wrapper) {
-                const components = wrapper.components();
-                debug('Found', components.length, 'components');
-                components.forEach((c: any) => debug('  -', c.get('tagName') || c.get('type')));
-                components.reset();
-                debug('Components cleared');
-              }
-              setTimeout(forceCanvasUpdate, 100);
-            };
+            // Expose helper functions for debugging from console (only in debug mode)
+            if (DEBUG) {
+              (window as any).__clearCanvas = () => {
+                debug('Manual clear triggered from console');
+                const wrapper = editor.DomComponents?.getWrapper();
+                if (wrapper) {
+                  const components = wrapper.components();
+                  debug('Found', components.length, 'components');
+                  components.forEach((c: any) => debug('  -', c.get('tagName') || c.get('type')));
+                  components.reset();
+                  debug('Components cleared');
+                }
+                setTimeout(forceCanvasUpdate, 100);
+              };
 
-            // Also expose editor for debugging
-            (window as any).__editor = editor;
-            debug('Debug helpers exposed: window.__clearCanvas(), window.__editor');
+              // Also expose editor for debugging
+              (window as any).__editor = editor;
+              debug('Debug helpers exposed: window.__clearCanvas(), window.__editor');
+            }
 
             // Also listen for page changes which might need refresh
             editor.on('page:select', () => {
@@ -1358,14 +1375,12 @@ export function Editor() {
 
                 await waitForLoad(uswdsWcScript, 'USWDS-WC JS');
 
-                // 3. Load USWDS JavaScript (for mobile menu toggle, accordion behaviors, etc.)
-                const uswdsScript = doc.createElement('script');
-                uswdsScript.src = CDN_URLS.uswdsJs;
-                doc.body.appendChild(uswdsScript);
+                // Note: USWDS JavaScript (uswds.min.js) is NOT loaded here because:
+                // - All components are web components that handle their own behavior internally
+                // - Loading USWDS JS would conflict with web component event handlers
+                // - The usa-header web component has its own mobile menu toggle via Lit events
 
-                await waitForLoad(uswdsScript, 'USWDS JS');
-
-                // 4. Wait for critical custom elements to be registered
+                // 3. Wait for critical custom elements to be registered
                 const iframeWindow = canvas.getWindow();
                 if (iframeWindow) {
                   const criticalElements = ['usa-button', 'usa-header', 'usa-footer', 'usa-alert'];

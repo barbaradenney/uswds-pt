@@ -2,15 +2,11 @@
  * Prototype Routes
  */
 
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { eq, desc, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { db, prototypes, prototypeVersions } from '../db/index.js';
-
-// Type helper to get user from JWT-verified request
-function getUser(request: FastifyRequest): { id: string; email: string } {
-  return request.user as { id: string; email: string };
-}
+import { getAuthUser } from '../middleware/permissions.js';
 
 interface CreatePrototypeBody {
   name: string;
@@ -45,7 +41,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
       preHandler: [app.authenticate],
     },
     async (request) => {
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
 
       const items = await db
         .select()
@@ -68,7 +64,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
 
       const [prototype] = await db
         .select()
@@ -82,7 +78,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!prototype) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       return prototype;
@@ -112,7 +108,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const { name, description, htmlContent, grapesData } = request.body;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
       const slug = nanoid(10);
 
       const [prototype] = await db
@@ -154,7 +150,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { slug } = request.params;
       const { name, description, htmlContent, grapesData } = request.body;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
 
       // Get current prototype
       const [current] = await db
@@ -169,7 +165,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!current) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       // Get the last version number
@@ -219,7 +215,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
 
       const result = await db
         .delete(prototypes)
@@ -232,7 +228,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .returning({ id: prototypes.id });
 
       if (result.length === 0) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       return { success: true };
@@ -250,7 +246,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
 
       // Get prototype
       const [prototype] = await db
@@ -265,7 +261,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!prototype) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       // Get versions
@@ -294,11 +290,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug, version } = request.params;
-      const userId = getUser(request).id;
+      const userId = getAuthUser(request).id;
       const versionNumber = parseInt(version, 10);
 
       if (isNaN(versionNumber)) {
-        return reply.status(400).send({ error: 'Invalid version number' });
+        return reply.status(400).send({ message: 'Invalid version number' });
       }
 
       // Get prototype
@@ -314,7 +310,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!prototype) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       // Get the version to restore
@@ -330,7 +326,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!versionData) {
-        return reply.status(404).send({ error: 'Version not found' });
+        return reply.status(404).send({ message: 'Version not found' });
       }
 
       // Create a new version with current state before restoring

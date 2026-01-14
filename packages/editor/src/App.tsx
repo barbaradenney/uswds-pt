@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { Preview } from './components/Preview';
 import { Embed } from './components/Embed';
 import { Home } from './components/Home';
+import { TeamSettingsPage } from './components/TeamSettingsPage';
 import { useAuth } from './hooks/useAuth';
 
 // Check if we're in demo mode (no API URL configured)
@@ -58,6 +59,12 @@ function App() {
         path="/new"
         element={
           isAuthenticated ? <Editor /> : <Navigate to="/login" replace />
+        }
+      />
+      <Route
+        path="/teams/:teamId/settings"
+        element={
+          isAuthenticated ? <TeamSettingsPage /> : <Navigate to="/login" replace />
         }
       />
     </Routes>

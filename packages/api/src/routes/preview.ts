@@ -31,7 +31,7 @@ export async function previewRoutes(app: FastifyInstance) {
         .limit(1);
 
       if (!prototype) {
-        return reply.status(404).send({ error: 'Prototype not found' });
+        return reply.status(404).send({ message: 'Prototype not found' });
       }
 
       return prototype;

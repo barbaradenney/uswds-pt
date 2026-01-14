@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPrototypes, deletePrototype, createPrototype, type LocalPrototype } from '../lib/localStorage';
+import { formatDate } from '../lib/date';
 
 /**
  * Home page for demo mode (when no API is configured)
@@ -13,14 +14,6 @@ export function Home() {
   useEffect(() => {
     setPrototypes(getPrototypes());
   }, []);
-
-  function formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  }
 
   function handleDelete(id: string, e: React.MouseEvent) {
     e.stopPropagation();
