@@ -39,7 +39,8 @@ export function useOrganization(): UseOrganizationReturn {
   const refreshOrganization = useCallback(async () => {
     const result = await apiGet<Organization>(API_ENDPOINTS.ORGANIZATIONS);
     if (result.success && result.data) {
-      setState((prev) => ({ ...prev, organization: result.data! }));
+      const organization = result.data;
+      setState((prev) => ({ ...prev, organization }));
     }
   }, []);
 

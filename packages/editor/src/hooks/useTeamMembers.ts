@@ -56,7 +56,8 @@ export function useTeamMembers(teamId: string | null): UseTeamMembersReturn {
       API_ENDPOINTS.TEAM_MEMBERS(teamId)
     );
     if (result.success && result.data) {
-      setState((prev) => ({ ...prev, members: result.data!.members || [] }));
+      const members = result.data.members || [];
+      setState((prev) => ({ ...prev, members }));
     }
   }, [teamId]);
 
@@ -68,7 +69,8 @@ export function useTeamMembers(teamId: string | null): UseTeamMembersReturn {
       API_ENDPOINTS.TEAM_INVITATIONS(teamId)
     );
     if (result.success && result.data) {
-      setState((prev) => ({ ...prev, invitations: result.data!.invitations || [] }));
+      const invitations = result.data.invitations || [];
+      setState((prev) => ({ ...prev, invitations }));
     }
   }, [teamId]);
 
