@@ -64,6 +64,24 @@ export default [
       },
     },
   },
+  // Test files configuration
+  {
+    files: ['src/**/*.test.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        // Vitest globals
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        test: 'readonly',
+      },
+    },
+  },
   {
     ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.ts'],
   },

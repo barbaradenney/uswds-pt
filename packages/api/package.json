@@ -9,6 +9,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -19,7 +22,6 @@
     "@fastify/cors": "^9.0.0",
     "@fastify/jwt": "^8.0.0",
     "@types/bcrypt": "^5.0.0",
-    "@types/node": "^20.10.0",
     "@uswds-pt/shared": "workspace:*",
     "bcrypt": "^5.1.0",
     "dotenv": "^17.2.3",
@@ -33,6 +35,8 @@
     "typescript": "^5.3.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.0"
+    "@types/node": "^20.19.25",
+    "tsx": "^4.19.0",
+    "vitest": "^2.0.0"
   }
 }

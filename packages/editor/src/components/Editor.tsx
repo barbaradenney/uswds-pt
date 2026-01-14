@@ -24,8 +24,6 @@ import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 // Note: grapesjs-symbols plugin is not compatible with GrapesJS Studio SDK's UI structure
 // The plugin tries to append to '.gjs-pn-views-container' which doesn't exist in Studio SDK
-// TODO: Implement custom symbols UI that works with Studio SDK
-// import symbolsPlugin from '@silexlabs/grapesjs-symbols';
 
 // Debug logging flag
 const DEBUG = false; // Set to true for verbose logging
@@ -850,7 +848,6 @@ export function Editor() {
               uswdsTablePlugin,
               uswdsComponentsPlugin,
               // Note: Symbols plugin removed - not compatible with Studio SDK UI
-              // TODO: Implement custom symbols functionality for Studio SDK
             ],
             project: {
               type: 'web',
