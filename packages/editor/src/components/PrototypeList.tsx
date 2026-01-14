@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
-import { authFetch } from '../hooks/useAuth';
-import { useAuth } from '../hooks/useAuth';
+import { authFetch, useAuth } from '../hooks/useAuth';
 import { formatDate } from '../lib/date';
 import { useOrganization } from '../hooks/useOrganization';
 import { useInvitations } from '../hooks/useInvitations';

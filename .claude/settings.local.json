@@ -46,7 +46,8 @@
       "Bash(npx tsx:*)",
       "Bash(git -C /Users/barbaramiles/Library/Mobile Documents/com~apple~CloudDocs/Documents/Github/uswds-pt log --oneline)",
       "Bash(pnpm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []
