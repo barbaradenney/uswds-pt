@@ -4,13 +4,13 @@ import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
 
 // CDN URLs for USWDS resources
-// Note: USWDS JavaScript (uswds.min.js) is intentionally not included - web components
-// handle their own behaviors internally and USWDS JS conflicts with Shadow DOM.
+// Note: USWDS JavaScript must be loaded AFTER web components render their Light DOM content.
 const USWDS_VERSION = '3.8.1';
 const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
+  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -59,10 +59,6 @@ export function Preview() {
       wcScript.setAttribute('data-uswds-preview', 'true');
       head.appendChild(wcScript);
 
-      // Note: USWDS JavaScript (uswds.min.js) is NOT loaded here because
-      // web components handle their own behaviors (mobile menu, accordion, etc.)
-      // and USWDS JS conflicts with Shadow DOM
-
       // Wait for CSS to load
       uswdsCssLink.onload = () => setStylesLoaded(true);
       uswdsCssLink.onerror = () => setStylesLoaded(true); // Continue even if CSS fails
@@ -82,6 +78,35 @@ export function Preview() {
       loadPreview(slug);
     }
   }, [slug]);
+
+  // Load USWDS JS after content is loaded and web components have rendered
+  useEffect(() => {
+    if (!data || !stylesLoaded) return;
+
+    // Check if USWDS JS is already loaded
+    if (document.querySelector('script[data-uswds-js]')) return;
+
+    // Wait for web components to render their Light DOM, then load USWDS JS
+    const loadUswdsJs = async () => {
+      // Wait for custom elements to be defined
+      await Promise.all([
+        customElements.whenDefined('usa-header'),
+        customElements.whenDefined('usa-footer'),
+      ]).catch(() => {});
+
+      // Give components time to render their Light DOM
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Load USWDS JS
+      const script = document.createElement('script');
+      script.src = PREVIEW_CDN_URLS.uswdsJs;
+      script.setAttribute('data-uswds-js', 'true');
+      script.setAttribute('data-uswds-preview', 'true');
+      document.body.appendChild(script);
+    };
+
+    loadUswdsJs();
+  }, [data, stylesLoaded]);
 
   // Set document title when data is loaded
   useEffect(() => {
