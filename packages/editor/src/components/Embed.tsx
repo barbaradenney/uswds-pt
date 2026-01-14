@@ -4,12 +4,13 @@ import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
 
 // CDN URLs for USWDS resources
+// Note: USWDS JavaScript (uswds.min.js) is intentionally not included - web components
+// handle their own behaviors internally and USWDS JS conflicts with Shadow DOM.
 const USWDS_VERSION = '3.8.1';
 const USWDS_WC_BUNDLE_VERSION = '2.5.11';
 
 const EMBED_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -80,11 +81,9 @@ export function Embed() {
       wcScript.setAttribute('data-uswds-embed', 'true');
       head.appendChild(wcScript);
 
-      // Add USWDS JavaScript (for mobile menu, accordion behaviors)
-      const uswdsScript = document.createElement('script');
-      uswdsScript.src = EMBED_CDN_URLS.uswdsJs;
-      uswdsScript.setAttribute('data-uswds-embed', 'true');
-      document.body.appendChild(uswdsScript);
+      // Note: USWDS JavaScript (uswds.min.js) is NOT loaded here because
+      // web components handle their own behaviors (mobile menu, accordion, etc.)
+      // and USWDS JS conflicts with Shadow DOM
 
       // Wait for CSS to load
       uswdsCssLink.onload = () => setStylesLoaded(true);
