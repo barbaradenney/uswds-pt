@@ -49,6 +49,10 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
 
   let cleaned = html;
 
+  // Remove USWDS JS script tags - web components handle their own behavior
+  // and USWDS JS conflicts with them (causes "Cannot read properties of null" errors)
+  cleaned = removeUSWDSScripts(cleaned);
+
   if (removeGrapesAttributes) {
     cleaned = removeGrapesAttrs(cleaned);
   }
@@ -68,6 +72,17 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
   }
 
   return cleaned.trim();
+}
+
+/**
+ * Remove USWDS JS script tags that conflict with web components.
+ * The web components handle their own behavior (mobile menu, accordions, etc.)
+ * and loading USWDS JS causes "Cannot read properties of null" errors.
+ */
+function removeUSWDSScripts(html: string): string {
+  // Remove script tags that load uswds.min.js or uswds.js from any source
+  // Matches: <script src="...uswds.min.js..."></script> or <script src="...uswds.js..."></script>
+  return html.replace(/<script[^>]*src="[^"]*uswds(?:\.min)?\.js[^"]*"[^>]*><\/script>/gi, '');
 }
 
 /**
@@ -311,9 +326,9 @@ export function generateFullDocument(
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsCss}">
   <!-- USWDS Web Components CSS -->
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
-  <!-- USWDS Web Components JS -->
+  <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
-  <!-- USWDS JavaScript is loaded dynamically by the init script after web components render -->
+  <!-- Initialize web component properties after they render -->
   ${generateInitScript()}
 </head>
 <body>
