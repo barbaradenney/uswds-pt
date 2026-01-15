@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+// Demo credentials for easy testing
+const DEMO_EMAIL = 'demo@example.com';
+const DEMO_PASSWORD = 'password123';
+
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
 
@@ -31,6 +35,23 @@ export function Login() {
     <div className="login-container">
       <div className="login-card card">
         <h1>{isRegister ? 'Create Account' : 'Sign In'}</h1>
+
+        <div
+          style={{
+            backgroundColor: '#e7f3ff',
+            border: '1px solid #b3d7ff',
+            borderRadius: '4px',
+            padding: '12px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            color: '#1a4480',
+          }}
+        >
+          <strong>Demo Mode:</strong> Credentials are pre-filled.{' '}
+          {isRegister
+            ? 'Click "Create Account" to register.'
+            : 'Click "Sign In" to continue, or register first if needed.'}
+        </div>
 
         {error && <div className="login-error">{error}</div>}
 
