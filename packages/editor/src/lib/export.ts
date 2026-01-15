@@ -193,14 +193,12 @@ function isSelfClosingTag(tag: string): boolean {
 
 /**
  * CDN URLs for USWDS resources (keep in sync with adapter constants)
- * Note: USWDS JavaScript must be loaded AFTER web components render their Light DOM content.
  */
 const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.11';
+const USWDS_WC_BUNDLE_VERSION = '2.5.12';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsJs: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/js/uswds.min.js`,
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
@@ -210,14 +208,13 @@ const PREVIEW_CDN_URLS = {
  * This script:
  * 1. Waits for web components to be defined
  * 2. Sets their properties to trigger Light DOM rendering
- * 3. Waits for the Light DOM to be rendered
- * 4. Loads USWDS JavaScript to enable mobile menu, accordion behaviors
+ *
+ * Note: Mobile menu functionality is handled by the usa-header component itself,
+ * not by USWDS JS. USWDS JS causes conflicts with web components.
  */
 function generateInitScript(): string {
   return `
 <script type="module">
-  const USWDS_JS_URL = '${PREVIEW_CDN_URLS.uswdsJs}';
-
   // Wait for web components to be defined and DOM to be ready
   async function initializeComponents() {
     // Wait for custom elements to be defined (with timeout fallback)
@@ -277,18 +274,6 @@ function generateInitScript(): string {
         footer.requestUpdate();
       }
     });
-
-    // Wait for Lit components to complete their update cycle and render Light DOM
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Now load USWDS JavaScript to initialize mobile menu, accordions, etc.
-    // This must happen AFTER web components have rendered their Light DOM
-    const script = document.createElement('script');
-    script.src = USWDS_JS_URL;
-    script.onload = () => {
-      console.log('USWDS JS loaded and initialized');
-    };
-    document.body.appendChild(script);
   }
 
   // Run when DOM is ready
