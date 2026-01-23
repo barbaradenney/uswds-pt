@@ -10,7 +10,7 @@ interface TeamWithRole extends Team {
 interface TeamSwitcherProps {
   teams: TeamWithRole[];
   currentTeam: TeamWithRole | null;
-  onTeamChange: (teamId: string) => void;
+  onTeamChange: (teamId: string | null) => void;
   organizationName?: string;
   canCreateTeam?: boolean;
   onCreateTeamClick?: () => void;
@@ -55,7 +55,7 @@ export function TeamSwitcher({
         aria-haspopup="listbox"
       >
         <span className="team-switcher-current">
-          {currentTeam?.name || 'Select Team'}
+          {currentTeam?.name || 'All Prototypes'}
         </span>
         <svg
           className={`team-switcher-arrow ${isOpen ? 'open' : ''}`}
@@ -78,6 +78,20 @@ export function TeamSwitcher({
       {isOpen && (
         <div className="team-switcher-dropdown">
           <ul role="listbox">
+            {/* All Prototypes option */}
+            <li role="option" aria-selected={currentTeam === null}>
+              <button
+                className={`team-switcher-option ${currentTeam === null ? 'active' : ''}`}
+                onClick={() => {
+                  onTeamChange(null);
+                  setIsOpen(false);
+                }}
+              >
+                <span className="team-switcher-option-name">All Prototypes</span>
+              </button>
+            </li>
+            {/* Divider */}
+            <li className="team-switcher-divider" role="separator" />
             {teams.map((team) => (
               <li key={team.id} role="option" aria-selected={team.id === currentTeam?.id}>
                 <button

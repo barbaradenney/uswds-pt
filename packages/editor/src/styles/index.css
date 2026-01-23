@@ -489,6 +489,12 @@ body {
   flex-shrink: 0;
 }
 
+.team-switcher-divider {
+  height: 1px;
+  background: var(--color-base-lighter);
+  margin: var(--spacing-xs) 0;
+}
+
 /* Create Team Modal */
 .create-team-modal {
   width: 100%;
