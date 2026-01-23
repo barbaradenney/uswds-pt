@@ -18,7 +18,7 @@ export function PrototypeList() {
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam, setupOrganization } = useOrganization();
+  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam, setupOrganization, error: orgError } = useOrganization();
   const { invitations, acceptInvitation, declineInvitation } = useInvitations();
 
   // Check if user is org_admin (can create teams)
@@ -155,9 +155,9 @@ export function PrototypeList() {
         </div>
       </div>
 
-      {error && (
+      {(error || orgError) && (
         <div className="login-error" style={{ marginBottom: '16px' }}>
-          {error}
+          {error || orgError}
           <button
             onClick={() => setError(null)}
             style={{

@@ -158,11 +158,15 @@ export function useOrganization(): UseOrganizationReturn {
 
   // Set up organization and first team for users without one
   const setupOrganization = useCallback(async (teamName: string): Promise<boolean> => {
+    console.log('[setupOrganization] Creating team:', teamName);
+
     const result = await apiPost<{ organization: Organization; team: Team & { role: Role } }>(
       API_ENDPOINTS.ORGANIZATIONS_SETUP,
       { teamName },
       'Failed to set up organization'
     );
+
+    console.log('[setupOrganization] Result:', result);
 
     if (result.success && result.data) {
       // Refresh data to get the new org and team
@@ -176,6 +180,7 @@ export function useOrganization(): UseOrganizationReturn {
       return true;
     }
 
+    console.error('[setupOrganization] Error:', result.error);
     setState((prev) => ({ ...prev, error: result.error || null }));
     return false;
   }, [refreshOrganization, refreshTeams]);
