@@ -215,6 +215,9 @@ export function useAuth(): UseAuthReturn {
       isLoading: false,
       error: null,
     });
+
+    // Redirect to login page
+    window.location.href = '/login';
   }, []);
 
   const clearError = useCallback(() => {
