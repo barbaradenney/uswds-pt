@@ -216,8 +216,8 @@ export function useAuth(): UseAuthReturn {
       error: null,
     });
 
-    // Redirect to login page
-    window.location.href = '/login';
+    // Redirect to login page (use hash for HashRouter compatibility)
+    window.location.hash = '#/login';
   }, []);
 
   const clearError = useCallback(() => {
