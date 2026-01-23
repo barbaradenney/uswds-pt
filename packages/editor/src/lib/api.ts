@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
 
   // Organizations
   ORGANIZATIONS: '/api/organizations',
+  ORGANIZATIONS_SETUP: '/api/organizations/setup',
 
   // Teams
   TEAMS: '/api/teams',

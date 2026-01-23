@@ -7,7 +7,8 @@ import { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { organizations, users, teams, teamMemberships } from '../db/schema.js';
-import { requireOrgAdmin, loadUserOrganization } from '../middleware/permissions.js';
+import { ROLES } from '../db/roles.js';
+import { requireOrgAdmin, loadUserOrganization, getAuthUser } from '../middleware/permissions.js';
 
 interface UpdateOrgBody {
   name?: string;
@@ -16,6 +17,94 @@ interface UpdateOrgBody {
 }
 
 export async function organizationRoutes(app: FastifyInstance) {
+  /**
+   * POST /api/organizations/setup
+   * Set up organization and team for users who don't have one
+   */
+  app.post<{ Body: { teamName: string } }>(
+    '/setup',
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['teamName'],
+          properties: {
+            teamName: { type: 'string', minLength: 1, maxLength: 255 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const authUser = getAuthUser(request);
+      const { teamName } = request.body;
+
+      // Get user's current organization
+      const [user] = await db
+        .select({ organizationId: users.organizationId, email: users.email })
+        .from(users)
+        .where(eq(users.id, authUser.id))
+        .limit(1);
+
+      if (!user) {
+        return reply.status(404).send({ message: 'User not found' });
+      }
+
+      // Check if user already has an organization
+      if (user.organizationId) {
+        return reply.status(400).send({ message: 'User already has an organization' });
+      }
+
+      // Create organization
+      const orgSlug = `org-${authUser.id.substring(0, 8)}`;
+      const [org] = await db
+        .insert(organizations)
+        .values({
+          name: `${user.email.split('@')[0]}'s Organization`,
+          slug: orgSlug,
+          description: 'Personal organization',
+        })
+        .returning();
+
+      // Update user with organization
+      await db
+        .update(users)
+        .set({ organizationId: org.id })
+        .where(eq(users.id, authUser.id));
+
+      // Create the team
+      const teamSlug = teamName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 100);
+
+      const [team] = await db
+        .insert(teams)
+        .values({
+          organizationId: org.id,
+          name: teamName,
+          slug: teamSlug || 'general',
+        })
+        .returning();
+
+      // Add user as org_admin
+      await db.insert(teamMemberships).values({
+        teamId: team.id,
+        userId: authUser.id,
+        role: ROLES.ORG_ADMIN,
+      });
+
+      return {
+        organization: org,
+        team: {
+          ...team,
+          role: ROLES.ORG_ADMIN,
+        },
+      };
+    }
+  );
+
   /**
    * GET /api/organizations
    * Get the current user's organization

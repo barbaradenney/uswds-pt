@@ -14,6 +14,7 @@ interface UseOrganizationReturn extends OrganizationState {
   setCurrentTeam: (teamId: string | null) => void;
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
+  setupOrganization: (teamName: string) => Promise<boolean>;
   createTeam: (name: string, description?: string) => Promise<Team | null>;
   updateTeam: (teamId: string, updates: { name?: string; description?: string }) => Promise<Team | null>;
   deleteTeam: (teamId: string) => Promise<boolean>;
@@ -155,11 +156,36 @@ export function useOrganization(): UseOrganizationReturn {
     return false;
   }, [refreshTeams]);
 
+  // Set up organization and first team for users without one
+  const setupOrganization = useCallback(async (teamName: string): Promise<boolean> => {
+    const result = await apiPost<{ organization: Organization; team: Team & { role: Role } }>(
+      API_ENDPOINTS.ORGANIZATIONS_SETUP,
+      { teamName },
+      'Failed to set up organization'
+    );
+
+    if (result.success && result.data) {
+      // Refresh data to get the new org and team
+      await Promise.all([refreshOrganization(), refreshTeams()]);
+
+      // Auto-select the new team
+      if (result.data.team) {
+        localStorage.setItem(CURRENT_TEAM_KEY, result.data.team.id);
+      }
+
+      return true;
+    }
+
+    setState((prev) => ({ ...prev, error: result.error || null }));
+    return false;
+  }, [refreshOrganization, refreshTeams]);
+
   return {
     ...state,
     setCurrentTeam,
     refreshOrganization,
     refreshTeams,
+    setupOrganization,
     createTeam,
     updateTeam,
     deleteTeam,

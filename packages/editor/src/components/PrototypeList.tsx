@@ -18,11 +18,13 @@ export function PrototypeList() {
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam } = useOrganization();
+  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam, setupOrganization } = useOrganization();
   const { invitations, acceptInvitation, declineInvitation } = useInvitations();
 
   // Check if user is org_admin (can create teams)
-  const isOrgAdmin = teams.some((t) => t.role === 'org_admin');
+  // If user has no teams, allow them to create their first one
+  const isOrgAdmin = teams.length === 0 || teams.some((t) => t.role === 'org_admin');
+  const hasNoTeams = teams.length === 0;
 
   const loadPrototypes = useCallback(async () => {
     try {
@@ -85,8 +87,19 @@ export function PrototypeList() {
     declineInvitation(token);
   }
 
-  async function handleCreateTeam(name: string, description?: string): Promise<boolean> {
-    const newTeam = await createTeam(name, description);
+  async function handleCreateTeam(name: string, _description?: string): Promise<boolean> {
+    // If user has no organization/teams, use setup endpoint
+    if (hasNoTeams) {
+      const success = await setupOrganization(name);
+      if (success) {
+        // Reload page to refresh all data
+        window.location.reload();
+      }
+      return success;
+    }
+
+    // Otherwise use normal team creation
+    const newTeam = await createTeam(name);
     if (newTeam) {
       // Switch to the newly created team
       setCurrentTeam(newTeam.id);
@@ -155,6 +168,36 @@ export function PrototypeList() {
             }}
           >
             ×
+          </button>
+        </div>
+      )}
+
+      {/* No teams banner */}
+      {hasNoTeams && !isLoading && (
+        <div
+          style={{
+            backgroundColor: '#fef3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '4px',
+            padding: '16px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}
+        >
+          <div>
+            <strong style={{ color: '#856404' }}>No team found</strong>
+            <p style={{ color: '#856404', margin: '4px 0 0 0', fontSize: '14px' }}>
+              Create a team to start organizing your prototypes.
+            </p>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowCreateTeamModal(true)}
+          >
+            Create Team
           </button>
         </div>
       )}
