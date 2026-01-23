@@ -576,9 +576,13 @@ export function Editor() {
       const grapesData = editor ? editor.getProjectData() : {};
 
       // Debug: log what we're saving
-      debug('Saving - HTML:', currentHtml.substring(0, 500));
-      debug('Saving - Project data contains card-container:', JSON.stringify(grapesData).includes('card-container'));
-      debug('Saving - HTML contains uswds-card-container:', currentHtml.includes('uswds-card-container'));
+      debug('Saving - HTML length:', currentHtml.length);
+      debug('Saving - Project data pages:', (grapesData as any).pages?.length || 0);
+      if ((grapesData as any).pages) {
+        (grapesData as any).pages.forEach((page: any, i: number) => {
+          debug(`  - Page ${i}:`, page.name || 'unnamed', 'components:', page.frames?.[0]?.component?.components?.length || 0);
+        });
+      }
 
       if (isDemoMode) {
         // Save to localStorage in demo mode
@@ -1061,8 +1065,20 @@ export function Editor() {
               }
             } else if (!isDemoMode && prototype?.grapesData) {
               try {
-                editor.loadProjectData(prototype.grapesData as any);
-                debug('Loaded project data from API');
+                const projectData = prototype.grapesData as any;
+                debug('Loading project data from API');
+                debug('Project data pages:', projectData.pages?.length || 0);
+
+                editor.loadProjectData(projectData);
+
+                // Log loaded pages for debugging
+                setTimeout(() => {
+                  const pages = editor.Pages?.getAll?.() || [];
+                  debug('Pages after load:', pages.length);
+                  pages.forEach((page: any) => {
+                    debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
+                  });
+                }, 100);
               } catch (e) {
                 console.warn('Failed to load project data:', e);
               }
@@ -1438,10 +1454,9 @@ export function Editor() {
             editor.on('canvas:frame:load', setupPageLinkHandler);
             editor.on('page:select', setupPageLinkHandler);
 
-            // Load project data if available
-            if (prototype?.grapesData && Object.keys(prototype.grapesData).length > 0) {
-              editor.loadProjectData(prototype.grapesData as any);
-            }
+            // Note: Project data is already loaded above (line ~1062-1065)
+            // Do NOT call loadProjectData again here as it causes duplicate loading
+            // and can interfere with page state
 
             // Helper to wait for a resource to load
             const waitForLoad = (element: HTMLElement, type: string): Promise<void> => {
