@@ -11,7 +11,7 @@ interface OrganizationState {
 }
 
 interface UseOrganizationReturn extends OrganizationState {
-  setCurrentTeam: (teamId: string) => void;
+  setCurrentTeam: (teamId: string | null) => void;
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
   createTeam: (name: string, description?: string) => Promise<Team | null>;
@@ -49,9 +49,10 @@ export function useOrganization(): UseOrganizationReturn {
     if (result.success && result.data) {
       const teams = result.data.teams || [];
 
-      // Restore current team from localStorage or use first team
+      // Restore current team from localStorage (null = All Prototypes view)
       const savedTeamId = localStorage.getItem(CURRENT_TEAM_KEY);
-      const currentTeam = teams.find((t) => t.id === savedTeamId) || teams[0] || null;
+      // Only set currentTeam if there's a valid saved team ID that matches an existing team
+      const currentTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
 
       setState((prev) => ({
         ...prev,
@@ -85,9 +86,13 @@ export function useOrganization(): UseOrganizationReturn {
     };
   }, [refreshOrganization, refreshTeams]);
 
-  // Set current team
-  const setCurrentTeam = useCallback((teamId: string) => {
+  // Set current team (pass null to show all prototypes)
+  const setCurrentTeam = useCallback((teamId: string | null) => {
     setState((prev) => {
+      if (teamId === null) {
+        localStorage.removeItem(CURRENT_TEAM_KEY);
+        return { ...prev, currentTeam: null };
+      }
       const team = prev.teams.find((t) => t.id === teamId);
       if (team) {
         localStorage.setItem(CURRENT_TEAM_KEY, teamId);
