@@ -203,6 +203,192 @@ const uswdsComponentsPlugin = (editor: any) => {
     },
   });
 
+  // Modal container - a droppable modal dialog that can contain any content
+  Components.addType('modal-container', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-modal-container'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'modal-container',
+        name: 'Modal Container',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+        classes: ['usa-modal-wrapper', 'uswds-modal-container'],
+      },
+    },
+  });
+
+  // Modal body - the droppable content area inside modal container
+  Components.addType('modal-body', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-modal-body'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'modal-body',
+        name: 'Modal Body',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+        classes: ['usa-modal__body', 'uswds-modal-body'],
+      },
+    },
+  });
+
+  // Accordion container - a droppable accordion that can contain any content
+  Components.addType('accordion-container', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-accordion-container'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'accordion-container',
+        name: 'Accordion Container',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+        classes: ['usa-accordion', 'uswds-accordion-container'],
+      },
+    },
+  });
+
+  // Accordion body - the droppable content area inside accordion sections
+  Components.addType('accordion-body', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-accordion-body'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'accordion-body',
+        name: 'Accordion Section Content',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+        classes: ['usa-accordion__content', 'usa-prose', 'uswds-accordion-body'],
+      },
+    },
+  });
+
+  // Alert container - a droppable alert that can contain any content
+  Components.addType('alert-container', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-alert-container'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'alert-container',
+        name: 'Alert Container',
+        draggable: true,
+        droppable: true,
+        removable: true,
+        copyable: true,
+        resizable: true,
+        classes: ['usa-alert', 'usa-alert--info', 'uswds-alert-container'],
+        traits: [
+          {
+            type: 'select',
+            name: 'alert-variant',
+            label: 'Alert Type',
+            default: 'info',
+            options: [
+              { id: 'info', label: 'Info' },
+              { id: 'success', label: 'Success' },
+              { id: 'warning', label: 'Warning' },
+              { id: 'error', label: 'Error' },
+              { id: 'emergency', label: 'Emergency' },
+            ],
+          },
+        ],
+      },
+      init(this: any) {
+        // Listen for alert-variant trait changes
+        this.on('change:alert-variant', this.handleAlertVariantChange);
+      },
+      handleAlertVariantChange(this: any) {
+        const variant = this.get('alert-variant') || 'info';
+        const variantClasses: Record<string, string> = {
+          'info': 'usa-alert--info',
+          'success': 'usa-alert--success',
+          'warning': 'usa-alert--warning',
+          'error': 'usa-alert--error',
+          'emergency': 'usa-alert--emergency',
+        };
+
+        // Remove all variant classes
+        Object.values(variantClasses).forEach(cls => this.removeClass(cls));
+
+        // Add the new variant class
+        if (variantClasses[variant]) {
+          this.addClass(variantClasses[variant]);
+        }
+
+        // Update styling
+        const el = this.getEl();
+        if (el) {
+          const colorMap: Record<string, { border: string; bg: string }> = {
+            'info': { border: '#00bde3', bg: '#e7f6f8' },
+            'success': { border: '#00a91c', bg: '#ecf3ec' },
+            'warning': { border: '#ffbe2e', bg: '#faf3d1' },
+            'error': { border: '#d54309', bg: '#f4e3db' },
+            'emergency': { border: '#9c3d10', bg: '#9c3d10' },
+          };
+          const colors = colorMap[variant] || colorMap['info'];
+          el.style.borderLeftColor = colors.border;
+          el.style.backgroundColor = colors.bg;
+          if (variant === 'emergency') {
+            el.style.color = 'white';
+          } else {
+            el.style.color = '';
+          }
+        }
+      },
+    },
+  });
+
+  // Alert body - the droppable content area inside alert container
+  Components.addType('alert-body', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-alert-body'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'alert-body',
+        name: 'Alert Body',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+        classes: ['usa-alert__body', 'uswds-alert-body'],
+      },
+    },
+  });
+
+  // Alert content - the inner droppable area for alert content
+  Components.addType('alert-content', {
+    extend: 'default',
+    isComponent: (el: HTMLElement) => el.classList?.contains('uswds-alert-content'),
+    model: {
+      defaults: {
+        tagName: 'div',
+        type: 'alert-content',
+        name: 'Alert Content',
+        draggable: false,
+        droppable: true,
+        removable: false,
+        copyable: false,
+        classes: ['usa-alert__text', 'uswds-alert-content'],
+      },
+    },
+  });
+
   // Make paragraph elements editable - extend built-in 'text' type for proper RTE support
   Components.addType('text-block', {
     extend: 'text',
@@ -823,10 +1009,10 @@ export function Editor() {
       'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
       'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
       'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link'],
-      'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
-      'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
+      'Data Display': ['usa-card', 'card-container', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
+      'Feedback': ['usa-alert', 'alert-container', 'usa-banner', 'usa-site-alert', 'usa-modal', 'modal-container', 'usa-tooltip'],
       'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
-      'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
+      'Layout': ['usa-accordion', 'accordion-container', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
       'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
       'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
     };
@@ -1084,6 +1270,54 @@ export function Editor() {
                 .uswds-card-container ul,
                 .uswds-card-container ol {
                   margin: 0;
+                }
+
+                /* Modal container styles */
+                .uswds-modal-container h1,
+                .uswds-modal-container h2,
+                .uswds-modal-container h3,
+                .uswds-modal-container h4,
+                .uswds-modal-container h5,
+                .uswds-modal-container h6,
+                .uswds-modal-container p,
+                .uswds-modal-container ul,
+                .uswds-modal-container ol {
+                  margin: 0;
+                }
+                .uswds-modal-body {
+                  min-height: 100px;
+                }
+
+                /* Accordion container styles */
+                .uswds-accordion-container h1,
+                .uswds-accordion-container h2,
+                .uswds-accordion-container h3,
+                .uswds-accordion-container h4,
+                .uswds-accordion-container h5,
+                .uswds-accordion-container h6,
+                .uswds-accordion-container p,
+                .uswds-accordion-container ul,
+                .uswds-accordion-container ol {
+                  margin: 0;
+                }
+                .uswds-accordion-body {
+                  min-height: 80px;
+                }
+
+                /* Alert container styles */
+                .uswds-alert-container h1,
+                .uswds-alert-container h2,
+                .uswds-alert-container h3,
+                .uswds-alert-container h4,
+                .uswds-alert-container h5,
+                .uswds-alert-container h6,
+                .uswds-alert-container p,
+                .uswds-alert-container ul,
+                .uswds-alert-container ol {
+                  margin: 0;
+                }
+                .uswds-alert-content {
+                  min-height: 40px;
                 }
               `;
               canvasFrame.contentDocument.head.appendChild(style);

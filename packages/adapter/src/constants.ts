@@ -94,6 +94,9 @@ export const COMPONENT_ICONS: Record<string, string> = {
   // Data Display
   'usa-card': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 7h10v3H7z"/></svg>`,
   'card-container': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
+  'modal-container': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5z"/><path d="M7 9h10v2H7zm0 4h6v2H7z" opacity="0.5"/><circle cx="18" cy="6" r="2" fill="currentColor"/></svg>`,
+  'accordion-container': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v3H3zm0 5h18v3H3zm0 5h18v3H3z"/><path d="M5 9h8v1H5zm0 5h8v1H5z" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
+  'alert-container': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M8 10h8v6H8z" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
   'usa-table': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v2h14V7zm0 4H5v2h14v-2zm0 4H5v2h14v-2z"/></svg>`,
   'usa-tag': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`,
   'usa-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><path d="M8 5h14v2H8z"/><circle cx="4" cy="12" r="2"/><path d="M8 11h14v2H8z"/><circle cx="4" cy="18" r="2"/><path d="M8 17h14v2H8z"/></svg>`,
@@ -198,6 +201,53 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <div class="usa-card__container">
     <div class="usa-card__body">
       <p style="color: #71767a; text-align: center;">Drop content here</p>
+    </div>
+  </div>
+</div>`,
+  'modal-container': `__FULL_HTML__<div class="usa-modal-wrapper uswds-modal-container" style="position: relative; border: 2px solid #1a4480; border-radius: 8px; padding: 0; background: white; max-width: 640px;">
+  <div class="usa-modal__heading" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #dfe1e2; background: #f0f0f0;">
+    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Modal Title</h2>
+    <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #71767a;" aria-label="Close modal">&times;</button>
+  </div>
+  <div class="usa-modal__body uswds-modal-body" style="padding: 20px; min-height: 100px;">
+    <p style="color: #71767a; text-align: center;">Drop content here</p>
+  </div>
+  <div class="usa-modal__footer" style="display: flex; gap: 8px; justify-content: flex-end; padding: 16px 20px; border-top: 1px solid #dfe1e2; background: #f0f0f0;">
+    <usa-button text="Cancel" variant="outline"></usa-button>
+    <usa-button text="Confirm"></usa-button>
+  </div>
+</div>`,
+  'accordion-container': `__FULL_HTML__<div class="usa-accordion uswds-accordion-container">
+  <h4 class="usa-accordion__heading">
+    <button type="button" class="usa-accordion__button" aria-expanded="true" aria-controls="accordion-section-1" style="background: #f0f0f0; border: 1px solid #dfe1e2; padding: 16px; width: 100%; text-align: left; font-weight: 700; cursor: pointer;">
+      Section 1
+    </button>
+  </h4>
+  <div id="accordion-section-1" class="usa-accordion__content usa-prose uswds-accordion-body" style="padding: 16px; border: 1px solid #dfe1e2; border-top: none; min-height: 80px;">
+    <p style="color: #71767a; text-align: center;">Drop content here</p>
+  </div>
+  <h4 class="usa-accordion__heading">
+    <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="accordion-section-2" style="background: #f0f0f0; border: 1px solid #dfe1e2; border-top: none; padding: 16px; width: 100%; text-align: left; font-weight: 700; cursor: pointer;">
+      Section 2
+    </button>
+  </h4>
+  <div id="accordion-section-2" class="usa-accordion__content usa-prose uswds-accordion-body" style="padding: 16px; border: 1px solid #dfe1e2; border-top: none; min-height: 80px; display: none;">
+    <p style="color: #71767a; text-align: center;">Drop content here</p>
+  </div>
+  <h4 class="usa-accordion__heading">
+    <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="accordion-section-3" style="background: #f0f0f0; border: 1px solid #dfe1e2; border-top: none; padding: 16px; width: 100%; text-align: left; font-weight: 700; cursor: pointer;">
+      Section 3
+    </button>
+  </h4>
+  <div id="accordion-section-3" class="usa-accordion__content usa-prose uswds-accordion-body" style="padding: 16px; border: 1px solid #dfe1e2; border-top: none; min-height: 80px; display: none;">
+    <p style="color: #71767a; text-align: center;">Drop content here</p>
+  </div>
+</div>`,
+  'alert-container': `__FULL_HTML__<div class="usa-alert usa-alert--info uswds-alert-container" style="border-left: 4px solid #00bde3; background: #e7f6f8; padding: 16px 20px;">
+  <div class="usa-alert__body uswds-alert-body">
+    <h4 class="usa-alert__heading" style="margin: 0 0 8px; font-weight: 700;">Alert Title</h4>
+    <div class="usa-alert__text uswds-alert-content" style="min-height: 40px;">
+      <p style="color: #71767a; text-align: center; margin: 0;">Drop content here</p>
     </div>
   </div>
 </div>`,
