@@ -51,6 +51,9 @@ export function Login() {
           {isRegister
             ? 'Click "Create Account" to register.'
             : 'Click "Sign In" to continue, or register first if needed.'}
+          <div style={{ marginTop: '8px', fontSize: '13px' }}>
+            <strong>Note:</strong> If this is your first visit, the database may take 5-10 minutes to initialize.
+          </div>
         </div>
 
         {error && <div className="login-error">{error}</div>}
