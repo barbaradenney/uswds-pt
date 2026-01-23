@@ -88,7 +88,7 @@ export function PrototypeList() {
   }
 
   async function handleCreateTeam(name: string, _description?: string): Promise<boolean> {
-    // If user has no organization/teams, use setup endpoint
+    // If user has no teams, use setup endpoint (handles both no-org and org-without-teams cases)
     if (hasNoTeams) {
       const success = await setupOrganization(name);
       if (success) {

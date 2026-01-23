@@ -50,27 +50,40 @@ export async function organizationRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'User not found' });
       }
 
-      // Check if user already has an organization
-      if (user.organizationId) {
-        return reply.status(400).send({ message: 'User already has an organization' });
+      let orgId = user.organizationId;
+
+      // If user doesn't have an organization, create one
+      if (!orgId) {
+        const orgSlug = `org-${authUser.id.substring(0, 8)}`;
+        const [org] = await db
+          .insert(organizations)
+          .values({
+            name: `${user.email.split('@')[0]}'s Organization`,
+            slug: orgSlug,
+            description: 'Personal organization',
+          })
+          .returning();
+
+        orgId = org.id;
+
+        // Update user with organization
+        await db
+          .update(users)
+          .set({ organizationId: org.id })
+          .where(eq(users.id, authUser.id));
       }
 
-      // Create organization
-      const orgSlug = `org-${authUser.id.substring(0, 8)}`;
-      const [org] = await db
-        .insert(organizations)
-        .values({
-          name: `${user.email.split('@')[0]}'s Organization`,
-          slug: orgSlug,
-          description: 'Personal organization',
-        })
-        .returning();
+      // Check if user already has teams in this org
+      const existingTeams = await db
+        .select({ id: teams.id })
+        .from(teams)
+        .innerJoin(teamMemberships, eq(teams.id, teamMemberships.teamId))
+        .where(eq(teamMemberships.userId, authUser.id))
+        .limit(1);
 
-      // Update user with organization
-      await db
-        .update(users)
-        .set({ organizationId: org.id })
-        .where(eq(users.id, authUser.id));
+      if (existingTeams.length > 0) {
+        return reply.status(400).send({ message: 'User already has a team' });
+      }
 
       // Create the team
       const teamSlug = teamName
@@ -82,7 +95,7 @@ export async function organizationRoutes(app: FastifyInstance) {
       const [team] = await db
         .insert(teams)
         .values({
-          organizationId: org.id,
+          organizationId: orgId,
           name: teamName,
           slug: teamSlug || 'general',
         })
@@ -94,6 +107,13 @@ export async function organizationRoutes(app: FastifyInstance) {
         userId: authUser.id,
         role: ROLES.ORG_ADMIN,
       });
+
+      // Get the organization for the response
+      const [org] = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, orgId))
+        .limit(1);
 
       return {
         organization: org,
