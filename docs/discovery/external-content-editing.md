@@ -12,9 +12,207 @@ This document explores options for integrating external content editing workflow
 - Need to maintain audit trails and version history for content decisions
 - Want to reduce friction between content and design processes
 
+### Key Constraint: Tool Diversity
+
+**Product owners use Excel, contractors use Google Sheets.** This rules out any solution that requires a single spreadsheet platform. We need tool-agnostic approaches that work regardless of which spreadsheet tool team members prefer.
+
 ---
 
-## Option 1: Google Sheets Integration
+## Option 1: Tool-Agnostic Import/Export (Recommended MVP)
+
+### Overview
+Build around standard file formats (CSV, JSON) that work with ANY spreadsheet tool—Excel, Google Sheets, LibreOffice, Numbers, etc.
+
+### How It Works
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Excel User     │     │  USWDS-PT       │     │  Sheets User    │
+│  (Product Owner)│     │  (Import/Export)│     │  (Contractor)   │
+└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
+         │                       │                       │
+         │  Download CSV         │        Download CSV   │
+         │◀──────────────────────┤──────────────────────▶│
+         │                       │                       │
+         │  Edit in Excel        │      Edit in Sheets   │
+         │                       │                       │
+         │  Upload CSV           │        Upload CSV     │
+         │──────────────────────▶├◀──────────────────────│
+         │                       │                       │
+         │            Merge & Preview Changes            │
+         │                       │                       │
+```
+
+### Export/Import Format
+
+**CSV Format** (works everywhere):
+```csv
+content_id,type,text,context,status,notes,last_modified
+hero-title,heading,"Welcome to Our Service","Hero section header",approved,"Per brand guidelines",2025-01-23
+cta-button,button,"Get Started","Primary call-to-action",in-review,"Consider 'Begin Now'?",2025-01-22
+```
+
+**JSON Format** (for advanced use):
+```json
+{
+  "version": "1.0",
+  "prototype": "Homepage Redesign",
+  "exported": "2025-01-23T00:00:00Z",
+  "content": [
+    {
+      "id": "hero-title",
+      "type": "heading",
+      "text": "Welcome to Our Service",
+      "context": "Hero section header",
+      "status": "approved"
+    }
+  ]
+}
+```
+
+### Workflow
+
+1. **Designer** exports content from prototype → downloads CSV
+2. **Content team** opens CSV in their preferred tool (Excel or Sheets)
+3. **Content team** edits, adds comments in their tool, changes status
+4. **Content team** exports CSV and sends back (email, Slack, shared drive)
+5. **Designer** imports CSV → sees diff of what changed → applies updates
+
+### Pros
+- ✅ Works with Excel, Sheets, or any spreadsheet
+- ✅ No API integration needed for MVP
+- ✅ Familiar workflow for content teams
+- ✅ Files can live on SharePoint, Google Drive, or anywhere
+- ✅ Simple to implement
+
+### Cons
+- ❌ Manual export/import process
+- ❌ No real-time collaboration
+- ❌ Risk of version conflicts if multiple people edit
+
+### Implementation Effort
+- **MVP**: 1-2 weeks
+
+---
+
+## Option 2: Airtable Integration
+
+### Overview
+Airtable is a browser-based database/spreadsheet hybrid that works for everyone—no software installation required. It's designed for exactly this kind of workflow tracking.
+
+### Why Airtable?
+- **Tool-neutral**: Web-based, works in any browser
+- **Structured workflows**: Built-in status fields, automations
+- **Collaboration**: Comments, @mentions, activity history
+- **API-first**: Easy integration with USWDS-PT
+- **Free tier**: Generous for small teams (1,000 records/base)
+
+### Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Airtable Base  │     │  USWDS-PT API    │     │   Prototype     │
+│  (Content Team) │◀───▶│  (Sync Service)  │◀───▶│   (Editor)      │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │
+        │ Kanban view, Calendar view
+        │ Comments, @mentions
+        │ Status automations
+        ▼
+┌─────────────────┐
+│ Content Workflow│
+│ Draft → Review  │
+│ → Approved      │
+└─────────────────┘
+```
+
+### Airtable Base Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Content ID | Text (Primary) | Maps to data-content-id |
+| Prototype | Link | Reference to prototype record |
+| Text | Long text | The actual content |
+| Type | Single select | heading, paragraph, button, etc. |
+| Status | Single select | Draft, In Review, Approved, Published |
+| Assignee | Collaborator | Who's responsible |
+| Notes | Long text | Comments, context |
+| Last Synced | Date | When last synced to prototype |
+
+### Views for Different Workflows
+
+1. **Grid View**: Spreadsheet-like for bulk editing
+2. **Kanban View**: Drag cards through Draft → Review → Approved
+3. **Calendar View**: See content deadlines
+4. **Form View**: Let stakeholders submit content requests
+
+### Pricing
+- **Free**: 1,000 records, 1 GB attachments
+- **Team**: $20/user/month - 50,000 records
+- **Business**: $45/user/month - 125,000 records
+
+### Pros
+- ✅ Browser-based (no Excel vs Sheets problem)
+- ✅ Built-in workflow features
+- ✅ Great API for integration
+- ✅ Multiple views (grid, kanban, calendar)
+- ✅ Automations included
+
+### Cons
+- ❌ Another tool to learn
+- ❌ Costs money at scale
+- ❌ Requires internet connection
+
+### Implementation Effort
+- **Basic integration**: 2-3 weeks
+- **Full workflow with automations**: 4-5 weeks
+
+---
+
+## Option 3: Notion Integration
+
+### Overview
+Notion is a flexible workspace that combines documents and databases—good for teams that want content editing alongside documentation.
+
+### Why Notion?
+- **Document-first**: Rich text editing, not just cells
+- **Databases**: Track content with status, assignees
+- **Comments**: Inline commenting on any content
+- **AI features**: Built-in AI for content suggestions
+- **API available**: Can sync with USWDS-PT
+
+### Best For
+- Teams that also need documentation/wikis
+- Content that requires rich formatting
+- Smaller content volumes
+
+### Pricing
+- **Free**: Limited blocks
+- **Plus**: $10/user/month
+- **Business**: $15/user/month
+- **Notion AI**: +$10/user/month
+
+### Pros
+- ✅ Great for content writing (rich text)
+- ✅ Inline comments and discussions
+- ✅ Can store related documentation
+
+### Cons
+- ❌ Less structured than Airtable for workflows
+- ❌ API is more limited
+- ❌ Can get messy without discipline
+
+### Implementation Effort
+- **Basic integration**: 2-3 weeks
+
+---
+
+## Option 4: Google Sheets Integration (Original Option)
+
+> ⚠️ **Note**: This option has limitations due to the Excel/Sheets split in the team. Consider Options 1-3 instead.
+
+### Overview
+Use Google Sheets as a content management layer where content teams can edit, comment, and track revisions.
 
 ### Overview
 Use Google Sheets as a content management layer where content teams can edit, comment, and track revisions.
@@ -421,47 +619,80 @@ CREATE TABLE content_sources (
 
 ---
 
-## Recommendation
+## Options Comparison
 
-### For MVP (Quickest Value)
-Start with **Option 3 (Built-in Content Panel)** with export capability:
-1. Add content extraction to JSON/CSV
-2. Simple import functionality
-3. Content team reviews in their preferred tool (even just a text editor)
+| Option | Tool Neutral? | Effort | Real-time? | Cost | Best For |
+|--------|---------------|--------|------------|------|----------|
+| **1. CSV Import/Export** | ✅ Yes | 1-2 weeks | ❌ No | Free | MVP, any team |
+| **2. Airtable** | ✅ Yes (web) | 2-3 weeks | ✅ Yes | $20/user | Workflow tracking |
+| **3. Notion** | ✅ Yes (web) | 2-3 weeks | ✅ Yes | $10/user | Content + docs |
+| **4. Google Sheets** | ❌ No | 2-3 weeks | ✅ Yes | Free | Sheets-only teams |
+| **5. Headless CMS** | ✅ Yes (web) | 4-6 weeks | ✅ Yes | Varies | Enterprise |
+| **6. Built-in Panel** | ✅ Yes | 3-4 weeks | N/A | Free | Full control |
+
+---
+
+## Recommendation (Updated)
+
+> **Key Constraint**: Product owners use Excel, contractors use Google Sheets. Any solution must be tool-agnostic.
+
+### For MVP (Quickest Value) - Recommended
+Start with **Option 1 (Tool-Agnostic CSV Import/Export)**:
+1. Add content binding (`data-content-id`) to components
+2. Export content to CSV (works in Excel, Sheets, or any tool)
+3. Import CSV with change preview and conflict detection
+4. Content team reviews in their preferred spreadsheet tool
+
+**Why**: Fastest to implement, works for everyone, no new tools to learn.
 
 ### For Full Solution
-Implement the **Hybrid Approach (Option 4)**:
-1. **Phase 1**: Content binding system (1-2 weeks)
-2. **Phase 2**: Google Sheets integration (2-3 weeks)
-3. **Phase 3**: Content panel UI (2 weeks)
-4. **Future**: CMS adapters as needed
+If real-time collaboration becomes important, consider:
+
+**Path A: Airtable** (if team is open to a new tool)
+- Browser-based, solves Excel/Sheets split
+- Built-in workflow features (kanban, status tracking)
+- Good API for integration
+
+**Path B: Enhanced CSV + Built-in Panel**
+- Keep CSV import/export as foundation
+- Add content panel in editor for quick edits
+- Add status tracking within USWDS-PT
+
+### Implementation Phases
+
+| Phase | Deliverable | Effort | Solves |
+|-------|-------------|--------|--------|
+| 1 | Content binding system | 1 week | Foundation for all options |
+| 2 | CSV export/import | 1 week | Basic workflow |
+| 3 | Change preview & merge | 1 week | Conflict handling |
+| 4 | Airtable integration OR Content panel | 2-3 weeks | Real-time/better UX |
 
 ### Why This Approach?
-- Starts simple, adds complexity as needed
-- Google Sheets is likely already used by content teams
-- Doesn't lock into a specific CMS
-- Preserves flexibility for different team workflows
+- ✅ Solves Excel vs Sheets problem immediately
+- ✅ Starts simple, adds complexity only if needed
+- ✅ No vendor lock-in
+- ✅ Preserves flexibility for different team workflows
+- ✅ CSV format is universal and future-proof
 
 ---
 
 ## Questions to Answer Before Implementation
 
-1. **Current workflow**: How does the content team currently review content?
-2. **Approval process**: Is there a formal approval workflow needed?
-3. **Localization**: Do you need multi-language support?
+1. **Current workflow**: How does the content team currently share content changes?
+2. **Tool preferences**: Would the team be open to Airtable/Notion, or prefer to stick with Excel/Sheets?
+3. **Approval process**: Is there a formal approval workflow (draft → review → approved)?
 4. **Volume**: How many content items per prototype typically?
-5. **Real-time needs**: Is live sync important or is manual sync OK?
-6. **Access control**: Should content team see the prototype or just content?
+5. **Real-time needs**: Is live sync important or is batch import/export OK?
+6. **File sharing**: Where do teams currently share files (SharePoint, Google Drive, email)?
 
 ---
 
 ## References
 
-- [Google Sheets API Documentation](https://developers.google.com/workspace/sheets/api/guides/concepts)
-- [Sheet Best - Sheets to API](https://sheetbest.com/)
-- [SheetDB - Sheets REST API](https://sheetdb.io/)
+- [Airtable vs Notion Comparison](https://zapier.com/blog/airtable-vs-notion/) - Zapier
+- [Airtable API Documentation](https://airtable.com/developers/web/api/introduction)
+- [Notion API Documentation](https://developers.notion.com/)
 - [Sanity Headless CMS](https://www.sanity.io/headless-cms)
 - [Contentful](https://www.contentful.com/headless-cms/)
 - [Rangle: Design System + CMS Integration](https://rangle.io/blog/integrating-your-design-system-into-your-headless-cms)
-- [Figma ContentFlow Plugin](https://www.figma.com/community/plugin/1476000573027190248/contentflow)
-- [Frontitude UX Writing Tools](https://www.frontitude.com/blog/best-figma-plugins-for-writers-in-2025)
+- [Papa Parse - CSV Parser for JavaScript](https://www.papaparse.com/)
