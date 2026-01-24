@@ -1393,14 +1393,44 @@ export function Editor() {
             }
 
             // Page event handlers - GrapesJS handles page state internally
-            // We just add debug logging and ensure canvas updates properly
+            // We add debug logging and force canvas re-rendering after page switch
             editor.on('page:select', (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
               debug('Page selected:', pageId, '-', pageName);
 
-              // Force canvas update after page switch to ensure proper rendering
-              setTimeout(forceCanvasUpdate, 100);
+              // Wait for GrapesJS to complete the page switch, then force render
+              setTimeout(() => {
+                try {
+                  // Get the wrapper component for the current canvas
+                  const wrapper = editor.DomComponents?.getWrapper();
+                  if (wrapper) {
+                    const components = wrapper.components();
+                    debug('Page has', components?.length || 0, 'components');
+
+                    // Force view re-render by triggering a change event on the wrapper
+                    // This causes GrapesJS to re-render the component tree
+                    wrapper.trigger('change:components');
+
+                    // Also trigger on each top-level component to ensure they render
+                    components?.forEach((comp: any) => {
+                      if (comp.view) {
+                        comp.trigger('change');
+                      }
+                    });
+                  }
+
+                  // Also ensure USWDS resources are loaded in the frame
+                  loadUSWDSResources();
+
+                  // Force canvas refresh for positioning
+                  forceCanvasUpdate();
+
+                  debug('Page render completed');
+                } catch (err) {
+                  console.warn('[USWDS-PT] Error during page render:', err);
+                }
+              }, 150);
             });
 
             editor.on('page:add', (page: any) => {
