@@ -28,8 +28,17 @@ import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 // Note: grapesjs-symbols plugin is not compatible with GrapesJS Studio SDK's UI structure
 // The plugin tries to append to '.gjs-pn-views-container' which doesn't exist in Studio SDK
 
-// Debug logging flag
-const DEBUG = false; // Set to true for verbose logging
+// Debug logging flag - can be enabled via URL param ?debug=true or localStorage
+const DEBUG = (() => {
+  if (typeof window !== 'undefined') {
+    // Check URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') return true;
+    // Check localStorage
+    if (localStorage.getItem('uswds_pt_debug') === 'true') return true;
+  }
+  return false;
+})();
 
 function debug(...args: any[]): void {
   if (DEBUG) {
@@ -572,14 +581,30 @@ export function Editor() {
 
     try {
       const editor = editorRef.current;
-      const currentHtml = editor ? editor.getHtml() : htmlContent;
-      const grapesData = editor ? editor.getProjectData() : {};
+
+      let currentHtml = htmlContent;
+      let grapesData: any = {};
+
+      try {
+        currentHtml = editor ? editor.getHtml() : htmlContent;
+      } catch (htmlErr) {
+        console.error('[USWDS-PT] Error getting HTML from editor:', htmlErr);
+        throw new Error('Failed to get HTML content from editor');
+      }
+
+      try {
+        grapesData = editor ? editor.getProjectData() : {};
+      } catch (dataErr) {
+        console.error('[USWDS-PT] Error getting project data from editor:', dataErr);
+        throw new Error('Failed to get project data from editor');
+      }
 
       // Debug: log what we're saving
       debug('Saving - HTML length:', currentHtml.length);
-      debug('Saving - Project data pages:', (grapesData as any).pages?.length || 0);
-      if ((grapesData as any).pages) {
-        (grapesData as any).pages.forEach((page: any, i: number) => {
+      const pages = (grapesData as any)?.pages;
+      debug('Saving - Project data pages:', Array.isArray(pages) ? pages.length : 0);
+      if (Array.isArray(pages)) {
+        pages.forEach((page: any, i: number) => {
           debug(`  - Page ${i}:`, page.name || 'unnamed', 'components:', page.frames?.[0]?.component?.components?.length || 0);
         });
       }
@@ -1367,10 +1392,30 @@ export function Editor() {
               debug('Debug helpers exposed: window.__clearCanvas(), window.__editor');
             }
 
-            // Also listen for page changes which might need refresh
-            editor.on('page:select', () => {
-              debug('Page selected');
+            // Page event handlers - GrapesJS handles page state internally
+            // We just add debug logging and ensure canvas updates properly
+            editor.on('page:select', (page: any) => {
+              const pageId = page?.getId?.() || page?.id;
+              const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
+              debug('Page selected:', pageId, '-', pageName);
+
+              // Force canvas update after page switch to ensure proper rendering
               setTimeout(forceCanvasUpdate, 100);
+            });
+
+            editor.on('page:add', (page: any) => {
+              const pageId = page?.getId?.() || page?.id;
+              const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
+              debug('Page added:', pageId, '-', pageName);
+
+              // Log total pages for debugging
+              const allPages = editor.Pages?.getAll?.() || [];
+              debug('Total pages:', allPages.length);
+            });
+
+            editor.on('page:remove', (page: any) => {
+              const pageId = page?.getId?.() || page?.id;
+              debug('Page removed:', pageId);
             });
 
             // WebComponentTraitManager handles all trait synchronization automatically
