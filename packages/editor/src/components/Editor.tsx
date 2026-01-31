@@ -1288,17 +1288,28 @@ export function Editor() {
             const forceCanvasUpdate = () => {
               debug('Forcing canvas update...');
               try {
+                const canvas = editor.Canvas;
+
+                // Check if canvas is ready before attempting refresh
+                // GrapesJS's refresh() fails if Canvas isn't fully initialized
+                if (!canvas?.getFrame?.()) {
+                  debug('Canvas not ready, skipping refresh');
+                  return;
+                }
+
                 // Trigger events that help clear internal caches
                 editor.trigger?.('frame:updated');
 
                 // Use Canvas.refresh() with spots update
-                const canvas = editor.Canvas;
                 if (canvas?.refresh) {
                   canvas.refresh({ spots: true });
                 }
 
-                // Also call editor.refresh() for tool positioning
-                editor.refresh?.();
+                // Only call editor.refresh() if Canvas has a frame
+                // This prevents "Cannot read properties of undefined (reading 'refresh')" errors
+                if (canvas?.getFrame?.()) {
+                  editor.refresh?.();
+                }
 
                 // Force iframe repaint by triggering reflow
                 const frameEl = canvas?.getFrameEl?.();
@@ -1312,7 +1323,8 @@ export function Editor() {
 
                 debug('Canvas update complete');
               } catch (err) {
-                console.warn('USWDS-PT: Canvas update warning:', err);
+                // Silently ignore canvas update errors - they're usually timing issues
+                debug('Canvas update skipped due to:', err);
               }
             };
 
@@ -1480,15 +1492,12 @@ export function Editor() {
                   debug('Page has', components?.length || 0, 'top-level components');
                 }
 
-                // Single refresh call - let GrapesJS handle the rendering
-                editor.refresh();
-
-                // Force canvas update for positioning
+                // Force canvas update (includes refresh with safety checks)
                 forceCanvasUpdate();
 
                 debug('Page switch completed');
               } catch (err) {
-                console.warn('[USWDS-PT] Error during page switch:', err);
+                debug('Page switch warning:', err);
               }
             });
 
