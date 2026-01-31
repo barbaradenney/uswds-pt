@@ -453,7 +453,7 @@ export function Editor() {
   const isDemoMode = !import.meta.env.VITE_API_URL;
 
   // Get current team for team-scoped prototypes (only used in authenticated mode)
-  const { currentTeam } = useOrganization();
+  const { currentTeam, isLoading: isLoadingTeam, teams } = useOrganization();
 
   // Handle back navigation - go to home/prototype list
   const handleBack = () => {
@@ -640,7 +640,13 @@ export function Editor() {
 
         // For new prototypes, require a team
         if (!prototype && !currentTeam) {
-          throw new Error('No team available. Please go to Settings to create a team first.');
+          if (isLoadingTeam) {
+            throw new Error('Still loading teams. Please wait a moment and try again.');
+          } else if (teams.length === 0) {
+            throw new Error('No team available. Please go to Settings to create a team first.');
+          } else {
+            throw new Error('Please select a team before creating a prototype.');
+          }
         }
 
         const body: Record<string, unknown> = {
@@ -990,9 +996,9 @@ export function Editor() {
           <button
             className="btn btn-primary"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || (!prototype && isLoadingTeam)}
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saving...' : (!prototype && isLoadingTeam) ? 'Loading...' : 'Save'}
           </button>
         </div>
       </header>
