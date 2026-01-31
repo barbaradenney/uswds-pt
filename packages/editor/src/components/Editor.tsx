@@ -691,10 +691,15 @@ export function Editor() {
     const editor = editorRef.current;
     if (!editor) return null;
 
-    return {
-      html: editor.getHtml(),
-      projectData: editor.getProjectData(),
-    };
+    try {
+      return {
+        html: editor.getHtml(),
+        projectData: editor.getProjectData(),
+      };
+    } catch (err) {
+      console.warn('[USWDS-PT] Error getting editor content:', err);
+      return null;
+    }
   }, []);
 
   // Autosave handler - saves without navigation or error display
@@ -708,8 +713,18 @@ export function Editor() {
       const editor = editorRef.current;
       if (!editor) return;
 
-      const currentHtml = editor.getHtml();
-      const grapesData = editor.getProjectData();
+      let currentHtml: string;
+      let grapesData: any;
+
+      try {
+        currentHtml = editor.getHtml();
+        grapesData = editor.getProjectData();
+      } catch (err) {
+        console.warn('[Autosave] Error getting editor content:', err);
+        setAutosaveStatus('error');
+        setTimeout(() => setAutosaveStatus('idle'), 5000);
+        return;
+      }
 
       const response = await authFetch(`/api/prototypes/${prototype.slug}`, {
         method: 'PUT',
