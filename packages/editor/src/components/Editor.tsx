@@ -1406,9 +1406,16 @@ export function Editor() {
               debug('Page selected:', pageId, '-', pageName);
 
               // Wait for GrapesJS to complete the page switch
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise(resolve => setTimeout(resolve, 150));
 
               try {
+                // Get the canvas and frame
+                const canvas = editor.Canvas;
+                const frame = canvas?.getFrame?.();
+                const frameEl = canvas?.getFrameEl?.();
+
+                debug('Frame exists:', !!frame, 'FrameEl exists:', !!frameEl);
+
                 // Ensure USWDS resources are loaded in the frame first
                 await loadUSWDSResources();
 
@@ -1418,31 +1425,57 @@ export function Editor() {
                   const components = wrapper.components();
                   debug('Page has', components?.length || 0, 'components');
 
-                  // Force the wrapper view to re-render completely
+                  // Method 1: Force wrapper view to re-render
                   if (wrapper.view) {
                     wrapper.view.render();
                     debug('Wrapper view rendered');
                   }
 
-                  // Also re-render each top-level component
-                  components?.forEach((comp: any) => {
+                  // Method 2: Re-render each component recursively
+                  const renderComponent = (comp: any) => {
                     if (comp.view?.render) {
                       comp.view.render();
                     }
-                  });
+                    comp.components?.().forEach?.(renderComponent);
+                  };
+                  components?.forEach?.(renderComponent);
 
-                  // Trigger change events to update any listeners
+                  // Trigger change events
                   wrapper.trigger('change:components');
                 }
+
+                // Method 3: Force the frame to re-render via GrapesJS Canvas API
+                if ((frame as any)?.render) {
+                  (frame as any).render();
+                  debug('Frame rendered');
+                }
+
+                // Method 4: Trigger canvas-related events
+                editor.trigger('canvasScroll');
+                editor.trigger('frame:updated');
 
                 // Force canvas refresh for positioning
                 forceCanvasUpdate();
 
-                // Additional refresh after a short delay to ensure everything settles
+                // Method 5: Force browser repaint by toggling visibility
+                if (frameEl) {
+                  const doc = frameEl.contentDocument;
+                  if (doc?.body) {
+                    const originalDisplay = doc.body.style.display;
+                    doc.body.style.display = 'none';
+                    void doc.body.offsetHeight; // Force reflow
+                    doc.body.style.display = originalDisplay || '';
+                    debug('Forced repaint via display toggle');
+                  }
+                }
+
+                // Final refresh after delay
                 setTimeout(() => {
                   editor.refresh();
+                  // Also try refreshing the canvas specifically
+                  canvas?.refresh?.({ spots: true });
                   debug('Final refresh completed');
-                }, 50);
+                }, 100);
 
                 debug('Page render completed');
               } catch (err) {
