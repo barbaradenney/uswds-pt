@@ -26,6 +26,39 @@ interface UpdatePrototypeBody {
   grapesData?: Record<string, unknown>;
 }
 
+/**
+ * Normalize GrapesJS project data to ensure consistent structure
+ * This fixes issues where new prototypes don't have properly initialized pages
+ */
+function normalizeGrapesData(data: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!data || typeof data !== 'object') {
+    return {
+      pages: [],
+      styles: [],
+      assets: [],
+    };
+  }
+
+  const normalized: Record<string, unknown> = { ...data };
+
+  // Ensure pages is always an array
+  if (!normalized.pages || !Array.isArray(normalized.pages)) {
+    normalized.pages = [];
+  }
+
+  // Ensure styles is always an array
+  if (!normalized.styles || !Array.isArray(normalized.styles)) {
+    normalized.styles = [];
+  }
+
+  // Ensure assets is always an array
+  if (!normalized.assets || !Array.isArray(normalized.assets)) {
+    normalized.assets = [];
+  }
+
+  return normalized;
+}
+
 interface PrototypeParams {
   slug: string;
 }
@@ -251,7 +284,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
           name,
           description,
           htmlContent: htmlContent || '',
-          grapesData: grapesData || {},
+          grapesData: normalizeGrapesData(grapesData),
           teamId,
           createdBy: userId,
         })
@@ -321,14 +354,14 @@ export async function prototypeRoutes(app: FastifyInstance) {
         createdBy: userId,
       });
 
-      // Update prototype
+      // Update prototype (normalize grapesData if provided)
       const [updated] = await db
         .update(prototypes)
         .set({
           name: name ?? current.name,
           description: description ?? current.description,
           htmlContent: htmlContent ?? current.htmlContent,
-          grapesData: grapesData ?? current.grapesData,
+          grapesData: grapesData ? normalizeGrapesData(grapesData) : current.grapesData,
           updatedAt: new Date(),
         })
         .where(eq(prototypes.id, current.id))

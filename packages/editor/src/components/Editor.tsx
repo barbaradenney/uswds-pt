@@ -599,6 +599,52 @@ export function Editor() {
         throw new Error('Failed to get project data from editor');
       }
 
+      // NORMALIZE: Ensure grapesData has proper structure
+      // This fixes issues where new prototypes don't have properly initialized pages
+      if (editor) {
+        const normalizedData = grapesData as any;
+
+        // Ensure pages array exists
+        if (!normalizedData.pages || !Array.isArray(normalizedData.pages)) {
+          debug('Normalizing: pages was undefined or not an array, reconstructing...');
+          const allPages = editor.Pages?.getAll?.() || [];
+
+          if (allPages.length > 0) {
+            normalizedData.pages = allPages.map((page: any) => {
+              const pageId = page.getId?.() || page.id || `page-${Date.now()}`;
+              const pageName = page.get?.('name') || page.getName?.() || 'Page';
+              const mainFrame = page.getMainFrame?.() || page.get?.('frames')?.[0];
+              const mainComponent = mainFrame?.getComponent?.() || page.getMainComponent?.();
+
+              return {
+                id: pageId,
+                name: pageName,
+                frames: [{
+                  component: mainComponent?.toJSON?.() || { type: 'wrapper', components: [] }
+                }]
+              };
+            });
+          } else {
+            // Fallback: reconstruct from wrapper
+            const wrapper = editor.DomComponents?.getWrapper();
+            normalizedData.pages = [{
+              id: 'page-1',
+              name: 'Page 1',
+              frames: [{
+                component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] }
+              }]
+            }];
+          }
+          debug('Normalized pages:', normalizedData.pages.length);
+        }
+
+        // Ensure other arrays exist
+        if (!normalizedData.styles) normalizedData.styles = [];
+        if (!normalizedData.assets) normalizedData.assets = [];
+
+        grapesData = normalizedData;
+      }
+
       // Debug: log what we're saving
       debug('Saving - HTML length:', currentHtml.length);
       const pages = (grapesData as any)?.pages;
@@ -1414,87 +1460,35 @@ export function Editor() {
             }
 
             // Page event handlers - GrapesJS handles page state internally
-            // We add debug logging and force canvas re-rendering after page switch
+            // We ensure USWDS resources are loaded and refresh the editor
             editor.on('page:select', async (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
               debug('Page selected:', pageId, '-', pageName);
 
               // Wait for GrapesJS to complete the page switch
-              await new Promise(resolve => setTimeout(resolve, 150));
+              await new Promise(resolve => setTimeout(resolve, 100));
 
               try {
-                // Get the canvas and frame
-                const canvas = editor.Canvas;
-                const frame = canvas?.getFrame?.();
-                const frameEl = canvas?.getFrameEl?.();
-
-                debug('Frame exists:', !!frame, 'FrameEl exists:', !!frameEl);
-
-                // Ensure USWDS resources are loaded in the frame first
+                // Ensure USWDS resources are loaded in the frame
                 await loadUSWDSResources();
 
-                // Get the wrapper component for the current canvas
+                // Log page state for debugging
                 const wrapper = editor.DomComponents?.getWrapper();
                 if (wrapper) {
                   const components = wrapper.components();
-                  debug('Page has', components?.length || 0, 'components');
-
-                  // Method 1: Force wrapper view to re-render
-                  if (wrapper.view) {
-                    wrapper.view.render();
-                    debug('Wrapper view rendered');
-                  }
-
-                  // Method 2: Re-render each component recursively
-                  const renderComponent = (comp: any) => {
-                    if (comp.view?.render) {
-                      comp.view.render();
-                    }
-                    comp.components?.().forEach?.(renderComponent);
-                  };
-                  components?.forEach?.(renderComponent);
-
-                  // Trigger change events
-                  wrapper.trigger('change:components');
+                  debug('Page has', components?.length || 0, 'top-level components');
                 }
 
-                // Method 3: Force the frame to re-render via GrapesJS Canvas API
-                if ((frame as any)?.render) {
-                  (frame as any).render();
-                  debug('Frame rendered');
-                }
+                // Single refresh call - let GrapesJS handle the rendering
+                editor.refresh();
 
-                // Method 4: Trigger canvas-related events
-                editor.trigger('canvasScroll');
-                editor.trigger('frame:updated');
-
-                // Force canvas refresh for positioning
+                // Force canvas update for positioning
                 forceCanvasUpdate();
 
-                // Method 5: Force browser repaint by toggling visibility
-                if (frameEl) {
-                  const doc = frameEl.contentDocument;
-                  if (doc?.body) {
-                    const originalDisplay = doc.body.style.display;
-                    doc.body.style.display = 'none';
-                    void doc.body.offsetHeight; // Force reflow
-                    doc.body.style.display = originalDisplay || '';
-                    debug('Forced repaint via display toggle');
-                  }
-                }
-
-                // Final refresh after delay
-                setTimeout(() => {
-                  editor.refresh();
-                  // Also try refreshing the canvas specifically
-                  canvas?.refresh?.({ spots: true });
-                  debug('Final refresh completed');
-                }, 100);
-
-                debug('Page render completed');
+                debug('Page switch completed');
               } catch (err) {
-                console.warn('[USWDS-PT] Error during page render:', err);
+                console.warn('[USWDS-PT] Error during page switch:', err);
               }
             });
 
