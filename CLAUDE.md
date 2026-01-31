@@ -82,11 +82,52 @@ JWT-based auth. Routes in `packages/api/src/routes/auth.ts`. Tokens stored in lo
 
 ## Environment Variables
 
-Copy `.env.example` to `.env`. Key variables:
-- `DATABASE_URL` or `DB_USER/DB_PASSWORD/DB_NAME` - PostgreSQL connection
+The API package has its own `.env` file at `packages/api/.env`. Key variables:
+- `DATABASE_URL` - PostgreSQL connection string (required)
 - `JWT_SECRET` - Auth token signing
-- `FRONTEND_URL` / `API_URL` - CORS configuration
-- `GRAPESJS_LICENSE_KEY` - Optional enterprise SDK license
+- `FRONTEND_URL` - CORS allowed origin (default: http://localhost:3000)
+- `PORT` - API server port (default: 3001)
+
+The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config.
+
+## Database Setup
+
+This project uses **Supabase** (PostgreSQL) as the external database for development and production.
+
+### Supabase Configuration
+
+The database connection is configured in `packages/api/.env`:
+```
+DATABASE_URL=postgresql://[user]:[password]@[host]:5432/postgres
+```
+
+### Testing Database Connection
+
+```bash
+# Test if the database is reachable
+pnpm --filter @uswds-pt/api tsx src/db/test-connection.ts
+```
+
+### Troubleshooting Database Issues
+
+**"Tenant or user not found" error:**
+- Supabase free tier pauses projects after 7 days of inactivity
+- Go to [Supabase Dashboard](https://supabase.com/dashboard) and restore the project
+- After restoring, wait a few minutes for the database to come back online
+- If credentials changed, update `DATABASE_URL` in `packages/api/.env` with new connection string from Settings → Database
+
+**"Prototypes not found" or "Can't save" errors:**
+- Usually indicates the database is unreachable or paused
+- Run the connection test above to verify connectivity
+- Check that the API server is running (`pnpm dev`)
+
+### Running Migrations
+
+After restoring a paused database or setting up fresh:
+```bash
+pnpm db:push       # Push current schema to database
+pnpm db:migrate    # Run pending migrations
+```
 
 ## Testing
 
@@ -94,8 +135,10 @@ Uses Vitest. Tests colocated with source files or in `__tests__/` directories. T
 
 ## Deployment
 
-- **Render**: Uses `render.yaml` blueprint for API + PostgreSQL
-- **Docker**: Compose file in `docker/` with separate API and editor services
+- **Database**: Supabase (PostgreSQL) - external hosted database
+- **API**: Render web service using `render.yaml` blueprint
+- **Frontend**: GitHub Pages (static site)
+- **Docker**: Compose file in `docker/` for local full-stack development
 
 ## USWDS Web Components
 
@@ -104,3 +147,13 @@ The tool uses these CDN versions (defined in adapter constants and export.ts):
 - USWDS Web Components Bundle: 2.5.12
 
 Components render Light DOM content, so standard DOM manipulation works. Complex components (usa-header, usa-footer) need property initialization after the custom element is defined.
+
+## Quick Troubleshooting
+
+| Issue | Likely Cause | Solution |
+|-------|--------------|----------|
+| "Tenant or user not found" | Supabase project paused | Restore project in Supabase dashboard |
+| "Can't save prototype" | Database unreachable | Check DB connection, restore if paused |
+| API not responding | Server not running | Run `pnpm dev` |
+| CORS errors | Wrong FRONTEND_URL | Update `packages/api/.env` |
+| "Failed to fetch" in editor | API URL mismatch | Check `packages/editor/.env` |
