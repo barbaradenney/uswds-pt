@@ -642,7 +642,7 @@ export function Editor() {
         if (!prototype && !currentTeam) {
           if (isLoadingTeam) {
             throw new Error('Still loading teams. Please wait a moment and try again.');
-          } else if (teams.length === 0) {
+          } else if (!teams || teams.length === 0) {
             throw new Error('No team available. Please go to Settings to create a team first.');
           } else {
             throw new Error('Please select a team before creating a prototype.');
@@ -684,7 +684,7 @@ export function Editor() {
     } finally {
       setIsSaving(false);
     }
-  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode]);
+  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode, currentTeam, teams, isLoadingTeam]);
 
   // Get current editor content for autosave comparison
   const getEditorContent = useCallback(() => {
