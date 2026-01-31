@@ -640,7 +640,7 @@ export function Editor() {
 
         // For new prototypes, require a team
         if (!prototype && !currentTeam) {
-          throw new Error('Please select a team before creating a prototype');
+          throw new Error('No team available. Please go to Settings to create a team first.');
         }
 
         const body: Record<string, unknown> = {

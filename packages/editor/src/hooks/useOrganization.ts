@@ -50,10 +50,15 @@ export function useOrganization(): UseOrganizationReturn {
     if (result.success && result.data) {
       const teams = result.data.teams || [];
 
-      // Restore current team from localStorage (null = All Prototypes view)
+      // Restore current team from localStorage, or auto-select first team if none saved
       const savedTeamId = localStorage.getItem(CURRENT_TEAM_KEY);
-      // Only set currentTeam if there's a valid saved team ID that matches an existing team
-      const currentTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
+      let currentTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
+
+      // If no team is selected but user has teams, auto-select the first one
+      if (!currentTeam && teams.length > 0) {
+        currentTeam = teams[0];
+        localStorage.setItem(CURRENT_TEAM_KEY, currentTeam.id);
+      }
 
       setState((prev) => ({
         ...prev,
