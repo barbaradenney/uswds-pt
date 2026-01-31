@@ -205,6 +205,12 @@ export function PrototypeList() {
       {isLoading ? (
         <div className="loading-screen" style={{ height: '300px' }}>
           <div className="loading-spinner" />
+          <p style={{ marginTop: '16px', color: 'var(--color-base-light)', textAlign: 'center' }}>
+            Loading prototypes...
+          </p>
+          <p style={{ marginTop: '8px', color: 'var(--color-base-lighter)', fontSize: '14px', textAlign: 'center' }}>
+            If the database was paused, it may take 5-7 minutes to restart.
+          </p>
         </div>
       ) : prototypes.length === 0 ? (
         <div
