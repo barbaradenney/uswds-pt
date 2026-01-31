@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Role } from '@uswds-pt/shared';
+import type { Role, Organization } from '@uswds-pt/shared';
 import { useTeamMembers } from '../hooks/useTeamMembers';
+import { useOrganization } from '../hooks/useOrganization';
 import { InviteModal } from './InviteModal';
 import { getRoleBadge } from '../lib/roles';
 import { formatDate } from '../lib/date';
@@ -21,6 +22,9 @@ export function TeamSettings({
 }: TeamSettingsProps) {
   const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isEditingOrgName, setIsEditingOrgName] = useState(false);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [isSavingOrg, setIsSavingOrg] = useState(false);
   const {
     members,
     invitations,
@@ -33,7 +37,25 @@ export function TeamSettings({
     clearError,
   } = useTeamMembers(teamId);
 
+  const { organization, updateOrganization } = useOrganization();
+
   const canManageMembers = userRole === 'org_admin' || userRole === 'team_admin';
+  const isOrgAdmin = userRole === 'org_admin';
+
+  async function handleSaveOrgName() {
+    if (!newOrgName.trim()) return;
+    setIsSavingOrg(true);
+    const result = await updateOrganization({ name: newOrgName.trim() });
+    setIsSavingOrg(false);
+    if (result) {
+      setIsEditingOrgName(false);
+    }
+  }
+
+  function handleStartEditOrgName() {
+    setNewOrgName(organization?.name || '');
+    setIsEditingOrgName(true);
+  }
 
   function getAvailableRoles(): Role[] {
     // Users can only assign roles at or below their own level
@@ -110,6 +132,58 @@ export function TeamSettings({
           >
             ×
           </button>
+        </div>
+      )}
+
+      {/* Organization Settings Section - org_admin only */}
+      {isOrgAdmin && organization && (
+        <div className="team-settings-section">
+          <h2>Organization Settings</h2>
+          <div className="org-settings-row">
+            <label>Organization Name</label>
+            {isEditingOrgName ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={newOrgName}
+                  onChange={(e) => setNewOrgName(e.target.value)}
+                  className="form-input"
+                  style={{ width: '250px' }}
+                  disabled={isSavingOrg}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveOrgName();
+                    if (e.key === 'Escape') setIsEditingOrgName(false);
+                  }}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveOrgName}
+                  disabled={isSavingOrg || !newOrgName.trim()}
+                >
+                  {isSavingOrg ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setIsEditingOrgName(false)}
+                  disabled={isSavingOrg}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span>{organization.name}</span>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleStartEditOrgName}
+                  style={{ padding: '4px 8px', fontSize: '12px' }}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

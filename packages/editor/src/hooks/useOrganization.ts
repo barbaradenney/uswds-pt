@@ -15,6 +15,7 @@ interface UseOrganizationReturn extends OrganizationState {
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
   setupOrganization: (teamName: string) => Promise<boolean>;
+  updateOrganization: (updates: { name?: string; description?: string }) => Promise<Organization | null>;
   createTeam: (name: string, description?: string) => Promise<Team | null>;
   updateTeam: (teamId: string, updates: { name?: string; description?: string }) => Promise<Team | null>;
   deleteTeam: (teamId: string) => Promise<boolean>;
@@ -108,6 +109,30 @@ export function useOrganization(): UseOrganizationReturn {
     });
   }, []);
 
+  // Update organization
+  const updateOrganization = useCallback(async (
+    updates: { name?: string; description?: string }
+  ): Promise<Organization | null> => {
+    if (!state.organization) {
+      setState((prev) => ({ ...prev, error: 'No organization found' }));
+      return null;
+    }
+
+    const result = await apiPut<Organization>(
+      API_ENDPOINTS.ORGANIZATION(state.organization.id),
+      updates,
+      'Failed to update organization'
+    );
+
+    if (result.success && result.data) {
+      setState((prev) => ({ ...prev, organization: result.data! }));
+      return result.data;
+    }
+
+    setState((prev) => ({ ...prev, error: result.error || null }));
+    return null;
+  }, [state.organization]);
+
   // Create a new team
   const createTeam = useCallback(async (name: string, description?: string): Promise<Team | null> => {
     const result = await apiPost<Team>(
@@ -196,6 +221,7 @@ export function useOrganization(): UseOrganizationReturn {
     refreshOrganization,
     refreshTeams,
     setupOrganization,
+    updateOrganization,
     createTeam,
     updateTeam,
     deleteTeam,
