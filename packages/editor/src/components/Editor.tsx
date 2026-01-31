@@ -63,7 +63,7 @@ const uswdsComponentsPlugin = (editor: any) => {
 
   for (const registration of registeredComponents) {
     // Get trait definitions for GrapesJS
-    const traitDefinitions = componentRegistry.getTraitDefinitions(registration.tagName);
+    const traitDefinitions = componentRegistry.getTraitDefinitions(registration.tagName) || [];
 
     // Build default values from trait defaults
     const traitDefaults: Record<string, any> = {};
@@ -1145,9 +1145,9 @@ export function Editor() {
                 setTimeout(() => {
                   const wrapper = editor.DomComponents?.getWrapper();
                   if (wrapper) {
-                    const allComponents = wrapper.components();
+                    const allComponents = wrapper.components() || [];
                     debug('Components after load:', allComponents.length);
-                    allComponents.forEach((c: any) => {
+                    allComponents.forEach?.((c: any) => {
                       debug('  -', c.get('type'), c.getClasses?.());
                     });
                   }
@@ -1167,7 +1167,7 @@ export function Editor() {
                 setTimeout(() => {
                   const pages = editor.Pages?.getAll?.() || [];
                   debug('Pages after load:', pages.length);
-                  pages.forEach((page: any) => {
+                  pages.forEach?.((page: any) => {
                     debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
                   });
                 }, 100);
@@ -1289,7 +1289,7 @@ export function Editor() {
               debug('Forcing canvas update...');
               try {
                 // Trigger events that help clear internal caches
-                editor.trigger('frame:updated');
+                editor.trigger?.('frame:updated');
 
                 // Use Canvas.refresh() with spots update
                 const canvas = editor.Canvas;
@@ -1298,7 +1298,7 @@ export function Editor() {
                 }
 
                 // Also call editor.refresh() for tool positioning
-                editor.refresh();
+                editor.refresh?.();
 
                 // Force iframe repaint by triggering reflow
                 const frameEl = canvas?.getFrameEl?.();
@@ -1445,10 +1445,10 @@ export function Editor() {
                 debug('Manual clear triggered from console');
                 const wrapper = editor.DomComponents?.getWrapper();
                 if (wrapper) {
-                  const components = wrapper.components();
-                  debug('Found', components.length, 'components');
-                  components.forEach((c: any) => debug('  -', c.get('tagName') || c.get('type')));
-                  components.reset();
+                  const components = wrapper.components() || [];
+                  debug('Found', components.length || 0, 'components');
+                  components.forEach?.((c: any) => debug('  -', c.get('tagName') || c.get('type')));
+                  components.reset?.();
                   debug('Components cleared');
                 }
                 setTimeout(forceCanvasUpdate, 100);
