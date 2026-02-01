@@ -431,14 +431,29 @@ export function createInternalSyncTrait(
 
     handler: {
       onChange: (element, value) => {
-        // Set attribute on web component (source of truth)
-        element.setAttribute(traitName, value || '');
+        const textValue = value || '';
 
-        // Sync to internal element
-        syncWithRetry(element, value || '');
+        // Set attribute on web component (source of truth)
+        element.setAttribute(traitName, textValue);
+
+        // Also set as property - Lit-based web components often use properties
+        (element as any)[traitName] = textValue;
+
+        // Trigger web component update if it uses Lit or similar
+        if (typeof (element as any).requestUpdate === 'function') {
+          (element as any).requestUpdate();
+        }
+
+        // Sync to internal element (backup for Light DOM components)
+        syncWithRetry(element, textValue);
       },
 
       getValue: (element) => {
+        // Try property first (more reliable for Lit components), then attribute
+        const propValue = (element as any)[traitName];
+        if (propValue !== undefined && propValue !== null) {
+          return propValue;
+        }
         return element.getAttribute(traitName) || (config.default ?? '');
       },
     },
@@ -619,11 +634,19 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
-            // Set href to page anchor format
-            element.setAttribute('href', `#page-${value}`);
+            const href = `#page-${value}`;
+            // Set href as both attribute and property
+            element.setAttribute('href', href);
+            (element as any).href = href;
             element.setAttribute('page-link', value);
+
+            // Trigger web component update
+            if (typeof (element as any).requestUpdate === 'function') {
+              (element as any).requestUpdate();
+            }
           } else {
             element.removeAttribute('href');
+            (element as any).href = undefined;
             element.removeAttribute('page-link');
           }
         },
@@ -646,9 +669,17 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
+            // Set href as both attribute and property
             element.setAttribute('href', value);
+            (element as any).href = value;
+
+            // Trigger web component update
+            if (typeof (element as any).requestUpdate === 'function') {
+              (element as any).requestUpdate();
+            }
           } else {
             element.removeAttribute('href');
+            (element as any).href = undefined;
           }
         },
         getValue: (element: HTMLElement) => {
