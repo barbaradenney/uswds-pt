@@ -583,20 +583,52 @@ export function Editor() {
       const editor = editorRef.current;
 
       let currentHtml = htmlContent;
-      let grapesData: any = {};
+      let grapesData: any = { pages: [], styles: [], assets: [] };
 
-      try {
-        currentHtml = editor ? editor.getHtml() : htmlContent;
-      } catch (htmlErr) {
-        console.error('[USWDS-PT] Error getting HTML from editor:', htmlErr);
-        throw new Error('Failed to get HTML content from editor');
+      // Get HTML content with defensive error handling
+      if (editor) {
+        try {
+          currentHtml = editor.getHtml() || htmlContent;
+        } catch (htmlErr) {
+          console.warn('[USWDS-PT] Error getting HTML from editor, using fallback:', htmlErr);
+          // Continue with existing htmlContent
+        }
       }
 
-      try {
-        grapesData = editor ? editor.getProjectData() : {};
-      } catch (dataErr) {
-        console.error('[USWDS-PT] Error getting project data from editor:', dataErr);
-        throw new Error('Failed to get project data from editor');
+      // Get project data with defensive error handling
+      // GrapesJS's getProjectData() can throw "Cannot read properties of undefined (reading 'forEach')"
+      // when internal page/component state isn't fully initialized
+      if (editor) {
+        try {
+          const rawData = editor.getProjectData();
+          if (rawData && typeof rawData === 'object') {
+            grapesData = rawData;
+          }
+        } catch (dataErr) {
+          console.warn('[USWDS-PT] Error getting project data, reconstructing from components:', dataErr);
+          // Reconstruct project data from editor state
+          try {
+            const wrapper = editor.DomComponents?.getWrapper();
+            const styles = editor.CssComposer?.getAll?.() || [];
+            const assets = editor.AssetManager?.getAll?.() || [];
+
+            grapesData = {
+              pages: [{
+                id: 'page-1',
+                name: 'Page 1',
+                frames: [{
+                  component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] }
+                }]
+              }],
+              styles: Array.isArray(styles) ? styles.map((s: any) => s.toJSON?.() || s) : [],
+              assets: Array.isArray(assets) ? assets.map((a: any) => a.toJSON?.() || a) : [],
+            };
+          } catch (reconstructErr) {
+            console.error('[USWDS-PT] Failed to reconstruct project data:', reconstructErr);
+            // Use minimal valid structure
+            grapesData = { pages: [], styles: [], assets: [] };
+          }
+        }
       }
 
       // NORMALIZE: Ensure grapesData has proper structure
@@ -759,17 +791,44 @@ export function Editor() {
       const editor = editorRef.current;
       if (!editor) return;
 
-      let currentHtml: string;
-      let grapesData: any;
+      let currentHtml: string = htmlContent;
+      let grapesData: any = { pages: [], styles: [], assets: [] };
 
+      // Get HTML with defensive error handling
       try {
-        currentHtml = editor.getHtml();
-        grapesData = editor.getProjectData();
-      } catch (err) {
-        console.warn('[Autosave] Error getting editor content:', err);
-        setAutosaveStatus('error');
-        setTimeout(() => setAutosaveStatus('idle'), 5000);
-        return;
+        currentHtml = editor.getHtml() || htmlContent;
+      } catch (htmlErr) {
+        console.warn('[Autosave] Error getting HTML:', htmlErr);
+        // Continue with existing htmlContent
+      }
+
+      // Get project data with defensive error handling
+      try {
+        const rawData = editor.getProjectData();
+        if (rawData && typeof rawData === 'object') {
+          grapesData = rawData;
+        }
+      } catch (dataErr) {
+        console.warn('[Autosave] Error getting project data, reconstructing:', dataErr);
+        try {
+          const wrapper = editor.DomComponents?.getWrapper();
+          grapesData = {
+            pages: [{
+              id: 'page-1',
+              name: 'Page 1',
+              frames: [{
+                component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] }
+              }]
+            }],
+            styles: [],
+            assets: [],
+          };
+        } catch (reconstructErr) {
+          console.warn('[Autosave] Failed to reconstruct, skipping:', reconstructErr);
+          setAutosaveStatus('error');
+          setTimeout(() => setAutosaveStatus('idle'), 5000);
+          return;
+        }
       }
 
       const response = await authFetch(`/api/prototypes/${prototype.slug}`, {
