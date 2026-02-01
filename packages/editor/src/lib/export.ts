@@ -112,6 +112,12 @@ function removeEmptyAttrs(html: string): string {
   // Remove empty id attributes
   result = result.replace(/\s+id=""/g, '');
 
+  // Remove empty href attributes
+  result = result.replace(/\s+href=""/g, '');
+
+  // Remove empty page-link attributes
+  result = result.replace(/\s+page-link=""/g, '');
+
   return result;
 }
 
@@ -287,6 +293,45 @@ function generateInitScript(): string {
 
       if (typeof footer.requestUpdate === 'function') {
         footer.requestUpdate();
+      }
+    });
+
+    // Initialize usa-button components with href
+    document.querySelectorAll('usa-button[href]').forEach(button => {
+      const href = button.getAttribute('href');
+      if (href) {
+        button.href = href;
+        // Ensure inner element is an anchor with correct href
+        const innerButton = button.querySelector('button');
+        const innerAnchor = button.querySelector('a');
+        if (innerButton && !innerAnchor) {
+          // Convert button to anchor
+          const anchor = document.createElement('a');
+          anchor.href = href;
+          anchor.className = innerButton.className;
+          anchor.textContent = innerButton.textContent;
+          innerButton.replaceWith(anchor);
+        } else if (innerAnchor) {
+          innerAnchor.href = href;
+        }
+        if (typeof button.requestUpdate === 'function') {
+          button.requestUpdate();
+        }
+      }
+    });
+
+    // Initialize usa-link components with href
+    document.querySelectorAll('usa-link[href]').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href !== '#') {
+        link.href = href;
+        const innerAnchor = link.querySelector('a');
+        if (innerAnchor) {
+          innerAnchor.href = href;
+        }
+        if (typeof link.requestUpdate === 'function') {
+          link.requestUpdate();
+        }
       }
     });
   }

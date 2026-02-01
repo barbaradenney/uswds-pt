@@ -458,8 +458,18 @@ export function Editor() {
   // Track if new prototype creation is in progress to prevent duplicate API calls
   const isCreatingPrototypeRef = useRef(false);
 
+  // Track registered editor event listeners for cleanup (prevents memory leaks)
+  const editorListenersRef = useRef<Array<{ event: string; handler: (...args: any[]) => void }>>([]);
+
   // Unique key for each editor session - changes when slug changes or on new prototype
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
+
+  // Helper to register editor event listeners with automatic tracking for cleanup
+  // This prevents memory leaks when the editor is destroyed or component unmounts
+  const registerEditorListener = useCallback((editor: EditorInstance, event: string, handler: (...args: any[]) => void) => {
+    editor.on(event, handler);
+    editorListenersRef.current.push({ event, handler });
+  }, []);
 
   // Check if we're in demo mode (no API URL configured)
   const isDemoMode = !import.meta.env.VITE_API_URL;
@@ -506,6 +516,21 @@ export function Editor() {
       if ((window as any).__editor) {
         delete (window as any).__editor;
       }
+
+      // CRITICAL: Clean up all registered editor event listeners to prevent memory leaks
+      const editor = editorRef.current;
+      if (editor) {
+        editorListenersRef.current.forEach(({ event, handler }) => {
+          try {
+            editor.off(event, handler);
+          } catch (e) {
+            // Ignore errors during cleanup
+          }
+        });
+        debug('Cleaned up', editorListenersRef.current.length, 'editor event listeners');
+      }
+      editorListenersRef.current = [];
+
       // Clear editor ref
       editorRef.current = null;
       // Clear autosave timeout
@@ -1437,22 +1462,25 @@ export function Editor() {
               }
             }
 
+            // Clear registered listeners from previous editor session (if any)
+            editorListenersRef.current = [];
+
             // Set up change event listeners for autosave
             // These fire when the user makes changes to the canvas
             // Use ref to always get the latest callback (avoids stale closure issue)
-            editor.on('component:add', () => {
+            registerEditorListener(editor, 'component:add', () => {
               debug('[Change detected] component:add');
               triggerDebouncedAutosaveRef.current();
             });
-            editor.on('component:remove', () => {
+            registerEditorListener(editor, 'component:remove', () => {
               debug('[Change detected] component:remove');
               triggerDebouncedAutosaveRef.current();
             });
-            editor.on('component:update', () => {
+            registerEditorListener(editor, 'component:update', () => {
               debug('[Change detected] component:update');
               triggerDebouncedAutosaveRef.current();
             });
-            editor.on('style:change', () => {
+            registerEditorListener(editor, 'style:change', () => {
               debug('[Change detected] style:change');
               triggerDebouncedAutosaveRef.current();
             });
@@ -1579,7 +1607,7 @@ export function Editor() {
             };
 
             // Listen for component selection to add spacing trait dynamically
-            editor.on('component:selected', (component: any) => {
+            registerEditorListener(editor, 'component:selected', (component: any) => {
               const traits = component.get('traits');
 
               // Check if spacing trait already exists
@@ -1605,7 +1633,7 @@ export function Editor() {
             });
 
             // Listen for trait changes
-            editor.on('component:update', (component: any) => {
+            registerEditorListener(editor, 'component:update', (component: any) => {
               const topSpacing = component.getTrait('top-spacing');
               if (topSpacing) {
                 const value = topSpacing.getValue();
@@ -1678,7 +1706,7 @@ export function Editor() {
             };
 
             // Force canvas refresh after component removal
-            editor.on('component:remove', (component: any) => {
+            registerEditorListener(editor, 'component:remove', (component: any) => {
               const tagName = component?.get?.('tagName') || component?.get?.('type');
               debug('Component removed:', tagName);
               // Trigger canvas update after a short delay
@@ -1686,18 +1714,18 @@ export function Editor() {
             });
 
             // Force canvas refresh after component move/reorder (from layers panel or drag)
-            editor.on('component:drag:end', () => {
+            registerEditorListener(editor, 'component:drag:end', () => {
               debug('Component drag ended');
               setTimeout(forceCanvasUpdate, 100);
             });
 
-            editor.on('sorter:drag:end', () => {
+            registerEditorListener(editor, 'sorter:drag:end', () => {
               debug('Sorter drag ended');
               setTimeout(forceCanvasUpdate, 100);
             });
 
             // Listen for any component update that might affect ordering
-            editor.on('component:update', () => {
+            registerEditorListener(editor, 'component:update', () => {
               debug('Component updated');
               setTimeout(forceCanvasUpdate, 100);
             });
@@ -1719,7 +1747,7 @@ export function Editor() {
             }
 
             // Listen for command execution (for core:canvas-clear and similar)
-            editor.on('run:core:canvas-clear', () => {
+            registerEditorListener(editor, 'run:core:canvas-clear', () => {
               debug('core:canvas-clear command executed');
               setTimeout(forceCanvasUpdate, 100);
               // Close modal after clear command
@@ -1732,7 +1760,7 @@ export function Editor() {
             });
 
             // Log ALL commands being run for debugging
-            editor.on('run', (commandId: string) => {
+            registerEditorListener(editor, 'run', (commandId: string) => {
               debug('Command run:', commandId);
             });
 
@@ -1746,7 +1774,7 @@ export function Editor() {
             };
 
             // Listen for any component deletion command
-            editor.on('run:core:component-delete', () => {
+            registerEditorListener(editor, 'run:core:component-delete', () => {
               debug('core:component-delete command executed');
               setTimeout(forceCanvasUpdate, 100);
             });
@@ -1819,7 +1847,7 @@ export function Editor() {
 
             // Page event handlers - GrapesJS handles page state internally
             // We ensure USWDS resources are loaded and refresh the editor
-            editor.on('page:select', async (page: any) => {
+            registerEditorListener(editor, 'page:select', async (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
               debug('Page selected:', pageId, '-', pageName);
@@ -1860,7 +1888,7 @@ export function Editor() {
             // Track pages that need template (newly created, not loaded from data)
             const pagesNeedingTemplate = new Set<string>();
 
-            editor.on('page:add', (page: any) => {
+            registerEditorListener(editor, 'page:add', (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
               debug('Page added:', pageId, '-', pageName);
@@ -1878,7 +1906,7 @@ export function Editor() {
             });
 
             // Add template when page is selected (ensures frame is ready)
-            editor.on('page:select', (page: any) => {
+            registerEditorListener(editor, 'page:select', (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               debug('Page selected:', pageId, 'needs template:', pagesNeedingTemplate.has(pageId));
 
@@ -1975,7 +2003,7 @@ export function Editor() {
               }
             });
 
-            editor.on('page:remove', (page: any) => {
+            registerEditorListener(editor, 'page:remove', (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               debug('Page removed:', pageId);
             });
@@ -2012,12 +2040,12 @@ export function Editor() {
             };
 
             // Listen for component selection to update page-link options
-            editor.on('component:selected', (component: any) => {
+            registerEditorListener(editor, 'component:selected', (component: any) => {
               updatePageLinkOptions(component);
             });
 
             // Also update when pages change
-            editor.on('page', () => {
+            registerEditorListener(editor, 'page', () => {
               const selected = editor.getSelected?.();
               if (selected) {
                 updatePageLinkOptions(selected);
@@ -2223,14 +2251,14 @@ export function Editor() {
             };
 
             // Set up handler when canvas is ready and on page changes
-            editor.on('canvas:frame:load', setupPageLinkHandler);
-            editor.on('canvas:frame:load', setupBannerClickHandler);
-            editor.on('canvas:frame:load', setupAccordionClickHandler);
-            editor.on('canvas:frame:load', setupModalClickHandler);
-            editor.on('page:select', setupPageLinkHandler);
-            editor.on('page:select', setupBannerClickHandler);
-            editor.on('page:select', setupAccordionClickHandler);
-            editor.on('page:select', setupModalClickHandler);
+            registerEditorListener(editor, 'canvas:frame:load', setupPageLinkHandler);
+            registerEditorListener(editor, 'canvas:frame:load', setupBannerClickHandler);
+            registerEditorListener(editor, 'canvas:frame:load', setupAccordionClickHandler);
+            registerEditorListener(editor, 'canvas:frame:load', setupModalClickHandler);
+            registerEditorListener(editor, 'page:select', setupPageLinkHandler);
+            registerEditorListener(editor, 'page:select', setupBannerClickHandler);
+            registerEditorListener(editor, 'page:select', setupAccordionClickHandler);
+            registerEditorListener(editor, 'page:select', setupModalClickHandler);
 
             // Note: Project data is already loaded above (line ~1062-1065)
             // Do NOT call loadProjectData again here as it causes duplicate loading
@@ -2355,7 +2383,7 @@ export function Editor() {
             };
 
             // Load resources on initial canvas load and when pages change
-            editor.on('canvas:frame:load', loadUSWDSResources);
+            registerEditorListener(editor, 'canvas:frame:load', loadUSWDSResources);
 
             // Also load on initial ready
             loadUSWDSResources();

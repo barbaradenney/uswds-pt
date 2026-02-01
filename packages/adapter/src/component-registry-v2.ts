@@ -552,6 +552,46 @@ export const componentRegistry = new ComponentRegistry();
 // ============================================================================
 
 /**
+ * Helper to convert button's inner element to anchor or back to button.
+ * USWDS usa-button should render as <a> when href is set, but the web component
+ * doesn't always re-render, so we manually swap the inner element.
+ */
+function updateButtonInnerElement(element: HTMLElement, href: string | null): void {
+  const tagName = element.tagName.toLowerCase();
+  if (tagName !== 'usa-button') return;
+
+  const innerButton = element.querySelector('button');
+  const innerAnchor = element.querySelector('a');
+
+  if (href) {
+    // Need an anchor element
+    if (innerAnchor) {
+      // Already an anchor, just update href
+      innerAnchor.setAttribute('href', href);
+    } else if (innerButton) {
+      // Convert button to anchor
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', href);
+      anchor.className = innerButton.className;
+      anchor.textContent = innerButton.textContent;
+      innerButton.replaceWith(anchor);
+    }
+  } else {
+    // Need a button element (no href)
+    if (innerButton) {
+      // Already a button, nothing to do
+    } else if (innerAnchor) {
+      // Convert anchor back to button
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = innerAnchor.className;
+      button.textContent = innerAnchor.textContent;
+      innerAnchor.replaceWith(button);
+    }
+  }
+}
+
+/**
  * Create page link traits for button/link components.
  * Allows users to easily link to other pages in the prototype.
  *
@@ -596,13 +636,20 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const linkType = value || 'none';
           element.setAttribute('link-type', linkType);
 
           // Clear href when switching to 'none'
           if (linkType === 'none') {
             element.removeAttribute('href');
+            element.removeAttribute('page-link');
+            // Also update GrapesJS component model
+            if (component?.addAttributes) {
+              component.addAttributes({ href: '', 'page-link': '' });
+            }
+            // Revert usa-button inner anchor back to button
+            updateButtonInnerElement(element, null);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -632,13 +679,27 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           if (value) {
             const href = `#page-${value}`;
-            // Set href as both attribute and property
+            // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);
             (element as any).href = href;
             element.setAttribute('page-link', value);
+
+            // CRITICAL: Also update GrapesJS component model so getHtml() includes href
+            if (component?.addAttributes) {
+              component.addAttributes({ href: href, 'page-link': value });
+            }
+
+            // Update inner element based on component type
+            // usa-button: swap button to anchor
+            // usa-link: update anchor href
+            updateButtonInnerElement(element, href);
+            const innerAnchor = element.querySelector('a');
+            if (innerAnchor) {
+              innerAnchor.setAttribute('href', href);
+            }
 
             // Trigger web component update
             if (typeof (element as any).requestUpdate === 'function') {
@@ -648,6 +709,16 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
             element.removeAttribute('href');
             (element as any).href = undefined;
             element.removeAttribute('page-link');
+            // Also update GrapesJS component model
+            if (component?.addAttributes) {
+              component.addAttributes({ href: '', 'page-link': '' });
+            }
+            // Revert button inner element and clear anchor href
+            updateButtonInnerElement(element, null);
+            const innerAnchor = element.querySelector('a');
+            if (innerAnchor) {
+              innerAnchor.setAttribute('href', '#');
+            }
           }
         },
         getValue: (element: HTMLElement) => {
@@ -667,11 +738,32 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           if (value) {
-            // Set href as both attribute and property
-            element.setAttribute('href', value);
-            (element as any).href = value;
+            // Normalize URL: add https:// if it looks like a domain but has no protocol
+            let href = value;
+            if (href && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
+              // Looks like a domain without protocol (e.g., "www.google.com" or "google.com")
+              href = 'https://' + href;
+            }
+
+            // Set href as both attribute and property on DOM element
+            element.setAttribute('href', href);
+            (element as any).href = href;
+
+            // Also update GrapesJS component model
+            if (component?.addAttributes) {
+              component.addAttributes({ href: href });
+            }
+
+            // Update inner element based on component type
+            // usa-button: swap button to anchor
+            // usa-link: update anchor href
+            updateButtonInnerElement(element, href);
+            const innerAnchor = element.querySelector('a');
+            if (innerAnchor) {
+              innerAnchor.setAttribute('href', href);
+            }
 
             // Trigger web component update
             if (typeof (element as any).requestUpdate === 'function') {
@@ -680,6 +772,16 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
           } else {
             element.removeAttribute('href');
             (element as any).href = undefined;
+            // Also update GrapesJS component model
+            if (component?.addAttributes) {
+              component.addAttributes({ href: '' });
+            }
+            // Revert button inner element and clear anchor href
+            updateButtonInnerElement(element, null);
+            const innerAnchor = element.querySelector('a');
+            if (innerAnchor) {
+              innerAnchor.setAttribute('href', '#');
+            }
           }
         },
         getValue: (element: HTMLElement) => {
