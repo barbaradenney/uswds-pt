@@ -451,10 +451,12 @@ export function Editor() {
   const editorReadyRef = useRef(false);
 
   // Autosave refs - declared early for cleanup access and to avoid stale closures
-  const hasAutoSavedRef = useRef(false);
   const pendingChangesRef = useRef(false);
   const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerDebouncedAutosaveRef = useRef<() => void>(() => {});
+
+  // Track if new prototype creation is in progress to prevent duplicate API calls
+  const isCreatingPrototypeRef = useRef(false);
 
   // Unique key for each editor session - changes when slug changes or on new prototype
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
@@ -514,7 +516,59 @@ export function Editor() {
     };
   }, []);
 
-  // Load existing prototype if editing, or reset state for new prototype
+  // Create a new prototype immediately and redirect to it
+  // This prevents the delayed page refresh and enables autosave from the start
+  const createAndRedirectToNewPrototype = useCallback(async () => {
+    // Guard against multiple creation attempts
+    if (isDemoMode || !currentTeam || isCreatingPrototypeRef.current) return;
+
+    isCreatingPrototypeRef.current = true;
+    debug('[New prototype] Creating immediately...');
+    setIsLoading(true);
+
+    try {
+      // Get blank template content for the new prototype
+      const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+
+      const response = await authFetch('/api/prototypes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Untitled Prototype',
+          htmlContent: blankTemplate,
+          grapesData: {
+            pages: [{
+              id: 'page-1',
+              name: 'Prototype',
+              frames: [{
+                component: { type: 'wrapper', components: [] }
+              }]
+            }],
+            styles: [],
+            assets: [],
+          },
+          teamId: currentTeam.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create prototype');
+      }
+
+      const data: Prototype = await response.json();
+      debug('[New prototype] Created with slug:', data.slug);
+
+      // Navigate to the new prototype immediately (before editor loads)
+      navigate(`/edit/${data.slug}`, { replace: true });
+    } catch (err) {
+      console.error('[New prototype] Creation failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create prototype');
+      setIsLoading(false);
+      isCreatingPrototypeRef.current = false; // Allow retry on error
+    }
+  }, [isDemoMode, currentTeam, navigate]);
+
+  // Load existing prototype if editing, or create new prototype immediately
   useEffect(() => {
     if (slug) {
       setEditorKey(slug);
@@ -523,18 +577,25 @@ export function Editor() {
       } else {
         loadPrototype(slug);
       }
-    } else {
-      // Reset all state for a new prototype with a unique key
+    } else if (!isDemoMode && currentTeam) {
+      // In authenticated mode with a team, create prototype immediately and redirect
+      // This prevents the delayed page refresh and enables autosave from the start
+      createAndRedirectToNewPrototype();
+    } else if (isDemoMode) {
+      // Demo mode: reset state for a new prototype with a unique key
       setEditorKey(`new-${Date.now()}`);
       setLocalPrototype(null);
       setPrototype(null);
       setName('Untitled Prototype');
       setHtmlContent('');
-      setError(null); // Clear any previous errors
-      editorReadyRef.current = false; // Reset editor ready state
+      setError(null);
+      editorReadyRef.current = false;
       setIsLoading(false);
+    } else {
+      // Authenticated mode but no team yet (loading) - show loading state
+      setIsLoading(true);
     }
-  }, [slug, isDemoMode]);
+  }, [slug, isDemoMode, currentTeam, createAndRedirectToNewPrototype]);
 
   // Load from localStorage (demo mode)
   function loadLocalPrototype(prototypeId: string) {
@@ -636,6 +697,17 @@ export function Editor() {
         // Double-check page switching state before calling getProjectData
         if (isPageSwitchingRef.current) {
           throw new Error('Page switch started during save');
+        }
+
+        // Verify Pages manager is ready before calling getProjectData
+        const pages = editor.Pages;
+        if (!pages || typeof pages.getAll !== 'function') {
+          throw new Error('Pages manager not initialized');
+        }
+
+        const allPages = pages.getAll?.();
+        if (!allPages || !Array.isArray(allPages) || allPages.length === 0) {
+          throw new Error('No pages available');
         }
 
         const rawData = editor.getProjectData();
@@ -864,6 +936,32 @@ export function Editor() {
     const editor = editorRef.current;
     if (!editor) return null;
 
+    // Don't try to get content if editor isn't fully ready
+    if (!editorReadyRef.current) {
+      debug('[getEditorContent] Editor not ready yet');
+      return null;
+    }
+
+    // Don't try to get content during page switches
+    if (isPageSwitchingRef.current) {
+      debug('[getEditorContent] Page switch in progress');
+      return null;
+    }
+
+    // Check if Pages manager is initialized - this is often the source of forEach errors
+    const pages = editor.Pages;
+    if (!pages || typeof pages.getAll !== 'function') {
+      debug('[getEditorContent] Pages manager not ready');
+      return null;
+    }
+
+    // Verify pages exist before trying to get project data
+    const allPages = pages.getAll?.();
+    if (!allPages || !Array.isArray(allPages) || allPages.length === 0) {
+      debug('[getEditorContent] No pages available');
+      return null;
+    }
+
     try {
       return {
         html: editor.getHtml(),
@@ -886,11 +984,25 @@ export function Editor() {
       return;
     }
 
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // Check if Pages manager is initialized - prevents forEach errors
+    const pages = editor.Pages;
+    if (!pages || typeof pages.getAll !== 'function') {
+      debug('[Autosave] Skipped: Pages manager not ready');
+      return;
+    }
+
+    const allPages = pages.getAll?.();
+    if (!allPages || !Array.isArray(allPages) || allPages.length === 0) {
+      debug('[Autosave] Skipped: No pages available');
+      return;
+    }
+
     setAutosaveStatus('saving');
 
     try {
-      const editor = editorRef.current;
-      if (!editor) return;
 
       let currentHtml: string = htmlContent;
       let grapesData: any = { pages: [], styles: [], assets: [] };
@@ -974,44 +1086,8 @@ export function Editor() {
     isSaving,
   });
 
-  // Auto-save new prototypes after editor is ready
-  // This creates the prototype in the database so autosave can continue
-  useEffect(() => {
-    // Only for new prototypes in authenticated mode with a team selected
-    if (slug || isDemoMode || !currentTeam || prototype || hasAutoSavedRef.current) {
-      debug('[Auto-save new] Skipping:', { slug: !!slug, isDemoMode, currentTeam: !!currentTeam, prototype: !!prototype, hasAutoSaved: hasAutoSavedRef.current });
-      return;
-    }
-
-    // Wait for editor to be ready, then auto-save after a delay
-    const timeoutId = setTimeout(() => {
-      // Check editorReadyRef instead of just editorRef
-      if (editorReadyRef.current && !hasAutoSavedRef.current && !isSaving && !isPageSwitchingRef.current) {
-        hasAutoSavedRef.current = true;
-        debug('[Auto-save new] Triggering auto-save for new prototype...');
-        handleSave().catch(err => {
-          console.warn('[Auto-save new] Failed:', err);
-          hasAutoSavedRef.current = false; // Allow retry
-        });
-      } else {
-        debug('[Auto-save new] Conditions not met:', {
-          editorReady: editorReadyRef.current,
-          hasAutoSaved: hasAutoSavedRef.current,
-          isSaving,
-          isPageSwitching: isPageSwitchingRef.current
-        });
-      }
-    }, 5000); // Increased to 5 second delay to let editor fully initialize
-
-    return () => clearTimeout(timeoutId);
-  }, [slug, isDemoMode, currentTeam, prototype, isSaving, handleSave]);
-
-  // Reset auto-save flag when creating a fresh new prototype
-  useEffect(() => {
-    if (!slug) {
-      hasAutoSavedRef.current = false;
-    }
-  }, [slug]);
+  // Note: New prototypes are now created immediately in the useEffect above (createAndRedirectToNewPrototype)
+  // This eliminates the need for delayed auto-save and prevents the page refresh issue
 
   // Debounced autosave triggered by GrapesJS change events
   // Uses triggerDebouncedAutosaveRef to avoid stale closure in onReady event listeners
@@ -1667,9 +1743,6 @@ export function Editor() {
             // Override the clear command to ensure it works properly
             const Commands = editor.Commands;
             if (Commands) {
-              // Store reference to original clear command
-              const _originalClearCmd = Commands.get('core:canvas-clear');
-
               // Register our own clear command that ensures proper clearing
               Commands.add('core:canvas-clear', {
                 run(editor: any) {
