@@ -595,7 +595,24 @@ export function Editor() {
 
   // Load existing prototype if editing, or create new prototype immediately
   useEffect(() => {
+    // Helper to clear GrapesJS localStorage to prevent state bleeding between prototypes
+    const clearGrapesJSStorage = () => {
+      try {
+        const storageKeys = Object.keys(localStorage).filter(key =>
+          key.startsWith('gjs-') || key.startsWith('gjsProject')
+        );
+        if (storageKeys.length > 0) {
+          storageKeys.forEach(key => localStorage.removeItem(key));
+          debug('Cleared GrapesJS storage keys:', storageKeys);
+        }
+      } catch (e) {
+        console.warn('Failed to clear GrapesJS storage:', e);
+      }
+    };
+
     if (slug) {
+      // Clear GrapesJS storage before switching to a different prototype
+      clearGrapesJSStorage();
       setEditorKey(slug);
       if (isDemoMode) {
         loadLocalPrototype(slug);
@@ -608,7 +625,9 @@ export function Editor() {
       createAndRedirectToNewPrototype();
     } else if (isDemoMode) {
       // Demo mode: reset state for a new prototype with a unique key
-      setEditorKey(`new-${Date.now()}`);
+      // Clear GrapesJS storage to prevent loading stale state during initialization
+      clearGrapesJSStorage();
+
       setLocalPrototype(null);
       setPrototype(null);
       setName('Untitled Prototype');
@@ -616,6 +635,8 @@ export function Editor() {
       setError(null);
       editorReadyRef.current = false;
       setIsLoading(false);
+      // Set editor key LAST to trigger remount with clean state
+      setEditorKey(`new-${Date.now()}`);
     } else {
       // Authenticated mode but no team yet (loading) - show loading state
       setIsLoading(true);
