@@ -1912,14 +1912,37 @@ export function Editor() {
                       const componentCount = existingComponents?.length || 0;
                       debug('Existing components:', componentCount);
 
-                      // Only add template if the page is empty
-                      if (componentCount === 0) {
-                        debug('New page is empty, adding default template');
+                      // Check if this is GrapesJS default content (heading + text)
+                      // or if the page is empty - in either case, apply our template
+                      let shouldAddTemplate = componentCount === 0;
+
+                      if (!shouldAddTemplate && componentCount <= 3) {
+                        // Check if the existing content is just GrapesJS default
+                        // (typically a heading and/or paragraph)
+                        const componentTypes = existingComponents.map((c: any) =>
+                          c.get?.('tagName')?.toLowerCase() || c.get?.('type') || ''
+                        );
+                        debug('Component types:', componentTypes);
+
+                        // If it's just simple text elements (h1-h6, p, div), replace with our template
+                        const isDefaultContent = componentTypes.every((type: string) =>
+                          ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'text', 'default', 'heading-block', 'text-block'].includes(type)
+                        );
+
+                        if (isDefaultContent) {
+                          debug('Detected GrapesJS default content, will replace with template');
+                          shouldAddTemplate = true;
+                        }
+                      }
+
+                      if (shouldAddTemplate) {
+                        debug('Adding USWDS template to new page');
 
                         // Get the blank template content (without __FULL_HTML__ prefix)
                         const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
 
                         if (blankTemplate) {
+                          // Replace all existing content with our template
                           mainComponent.components(blankTemplate);
                           debug('Added default template to new page');
 
@@ -1929,7 +1952,7 @@ export function Editor() {
                           }, 100);
                         }
                       } else {
-                        debug('Page already has components, skipping template');
+                        debug('Page has custom content, skipping template');
                       }
                     } else {
                       debug('Could not find main component for page');
