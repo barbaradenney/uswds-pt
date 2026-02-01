@@ -2057,9 +2057,71 @@ export function Editor() {
               }
             };
 
+            // Handle usa-banner action button clicks in the canvas
+            // This allows the "Here's how you know" toggle to work in edit mode
+            const handledBannerDocs = new WeakSet<Document>();
+            const setupBannerClickHandler = () => {
+              const canvas = editor.Canvas;
+              const doc = canvas?.getDocument?.();
+              if (doc && !handledBannerDocs.has(doc)) {
+                handledBannerDocs.add(doc);
+                doc.addEventListener('click', (e: MouseEvent) => {
+                  const target = e.target as HTMLElement;
+
+                  // Check if click is within a usa-banner's action button area
+                  // The usa-banner web component renders a button with class usa-banner__button
+                  // or a link with class usa-banner__button that toggles the expanded state
+                  const banner = target.closest('usa-banner') as HTMLElement;
+                  if (!banner) return;
+
+                  // Check if click is on the action button or its container
+                  // The action area typically includes the header link/button with "Here's how you know"
+                  const isActionButton = target.closest('.usa-banner__button') ||
+                    target.closest('.usa-banner__header-action') ||
+                    target.closest('[aria-controls]');
+
+                  if (isActionButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Toggle the expanded state
+                    const isCurrentlyExpanded = banner.hasAttribute('expanded');
+                    if (isCurrentlyExpanded) {
+                      banner.removeAttribute('expanded');
+                      (banner as any).expanded = false;
+                    } else {
+                      banner.setAttribute('expanded', '');
+                      (banner as any).expanded = true;
+                    }
+
+                    // Trigger Lit component update if available
+                    if (typeof (banner as any).requestUpdate === 'function') {
+                      (banner as any).requestUpdate();
+                    }
+
+                    // Update the GrapesJS component model to keep traits in sync
+                    const gjsComponent = editor.DomComponents?.getWrapper()?.find('usa-banner')?.[0];
+                    if (gjsComponent) {
+                      const attrs = gjsComponent.get('attributes') || {};
+                      if (isCurrentlyExpanded) {
+                        delete attrs.expanded;
+                      } else {
+                        attrs.expanded = true;
+                      }
+                      gjsComponent.set('attributes', { ...attrs });
+                    }
+
+                    debug('Toggled usa-banner expanded state:', !isCurrentlyExpanded);
+                  }
+                }, true); // Use capture phase to intercept before GrapesJS
+              }
+            };
+
             // Set up handler when canvas is ready and on page changes
             editor.on('canvas:frame:load', setupPageLinkHandler);
+            editor.on('canvas:frame:load', setupBannerClickHandler);
             editor.on('page:select', setupPageLinkHandler);
+            editor.on('page:select', setupBannerClickHandler);
 
             // Note: Project data is already loaded above (line ~1062-1065)
             // Do NOT call loadProjectData again here as it causes duplicate loading
