@@ -1499,16 +1499,27 @@ export function Editor() {
                 debug('Loading project data from API');
                 debug('Project data pages:', projectData.pages?.length || 0);
 
-                editor.loadProjectData(projectData);
+                // Check if grapesData has actual content (not just empty wrapper)
+                // If the first page's frame has no components, skip loading grapesData
+                // and let the htmlContent from project config be used instead
+                const firstPageComponents = projectData.pages?.[0]?.frames?.[0]?.component?.components;
+                const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
 
-                // Log loaded pages for debugging
-                setTimeout(() => {
-                  const pages = editor.Pages?.getAll?.() || [];
-                  debug('Pages after load:', pages.length);
-                  pages.forEach?.((page: any) => {
-                    debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
-                  });
-                }, 100);
+                if (!hasActualContent) {
+                  debug('grapesData is empty, using htmlContent instead');
+                  // Don't load empty grapesData - the htmlContent will be parsed from project config
+                } else {
+                  editor.loadProjectData(projectData);
+
+                  // Log loaded pages for debugging
+                  setTimeout(() => {
+                    const pages = editor.Pages?.getAll?.() || [];
+                    debug('Pages after load:', pages.length);
+                    pages.forEach?.((page: any) => {
+                      debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
+                    });
+                  }, 100);
+                }
               } catch (e) {
                 console.warn('Failed to load project data:', e);
               }
