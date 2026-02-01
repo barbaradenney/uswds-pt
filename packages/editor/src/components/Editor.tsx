@@ -8,7 +8,7 @@ import { useAutosave } from '../hooks/useAutosave';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
-import { openPreviewInNewTab } from '../lib/export';
+import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import {
   getPrototype,
   createPrototype,
@@ -1200,10 +1200,44 @@ export function Editor() {
 
   const handlePreview = useCallback(() => {
     const editor = editorRef.current;
-    if (editor) {
+    if (!editor) return;
+
+    const pages = editor.Pages?.getAll?.() || [];
+    const currentPage = editor.Pages?.getSelected?.();
+
+    // If only one page, use the simple preview
+    if (pages.length <= 1) {
       const html = editor.getHtml();
       openPreviewInNewTab(html, name || 'Prototype Preview');
+      return;
     }
+
+    // Multi-page preview: collect all pages
+    const pageDataList: PageData[] = [];
+
+    // Save current page selection
+    const originalPage = currentPage;
+
+    for (const page of pages) {
+      // Select each page to get its HTML
+      editor.Pages?.select?.(page);
+      const pageId = page.getId?.() || page.id;
+      const pageName = page.get?.('name') || page.getName?.() || `Page ${pageId}`;
+      const html = editor.getHtml();
+
+      pageDataList.push({
+        id: pageId,
+        name: pageName,
+        html: html,
+      });
+    }
+
+    // Restore original page selection
+    if (originalPage) {
+      editor.Pages?.select?.(originalPage);
+    }
+
+    openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
   }, [name]);
 
   // Generate blocks from USWDS components

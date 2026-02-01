@@ -428,6 +428,144 @@ export function openPreviewInNewTab(html: string, title: string = 'Prototype Pre
 }
 
 /**
+ * Page data for multi-page preview
+ */
+export interface PageData {
+  id: string;
+  name: string;
+  html: string;
+}
+
+/**
+ * Generate page navigation script for multi-page preview
+ */
+function generatePageNavigationScript(): string {
+  return `
+  // Page navigation for multi-page preview
+  function initPageNavigation() {
+    const pages = document.querySelectorAll('[data-page-id]');
+    if (pages.length === 0) return;
+
+    // Show the first page by default, or the one in the URL hash
+    function showPage(pageId) {
+      pages.forEach(page => {
+        if (page.getAttribute('data-page-id') === pageId) {
+          page.style.display = '';
+        } else {
+          page.style.display = 'none';
+        }
+      });
+    }
+
+    // Get initial page from URL hash or show first page
+    const hashPageId = window.location.hash.replace('#page-', '');
+    const firstPageId = pages[0].getAttribute('data-page-id');
+    const initialPageId = hashPageId && document.querySelector('[data-page-id="' + hashPageId + '"]')
+      ? hashPageId
+      : firstPageId;
+    showPage(initialPageId);
+
+    // Handle clicks on page links
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('[href^="#page-"]');
+      if (link) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        const pageId = href.replace('#page-', '');
+        showPage(pageId);
+        // Update URL hash without scrolling
+        history.pushState(null, '', href);
+      }
+    });
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', () => {
+      const pageId = window.location.hash.replace('#page-', '') || firstPageId;
+      showPage(pageId);
+    });
+  }
+
+  initPageNavigation();`;
+}
+
+/**
+ * Generate a full HTML document with multiple pages for preview
+ */
+export function generateMultiPageDocument(
+  pages: PageData[],
+  options: {
+    title?: string;
+    lang?: string;
+  } = {}
+): string {
+  const {
+    title = 'Prototype',
+    lang = 'en',
+  } = options;
+
+  // Wrap each page in a container with data-page-id attribute
+  const pagesHtml = pages.map(page => {
+    const cleanedHtml = cleanExport(page.html);
+    return `  <!-- Page: ${escapeHtml(page.name)} -->
+  <div data-page-id="${escapeHtml(page.id)}" data-page-name="${escapeHtml(page.name)}">
+${indentContent(cleanedHtml, 4)}
+  </div>`;
+  }).join('\n\n');
+
+  // Generate init script with page navigation added
+  const initScript = generateInitScript();
+  const pageNavScript = `<script type="module">${generatePageNavigationScript()}</script>`;
+
+  return `<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+
+  <!-- USWDS Base CSS -->
+  <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsCss}">
+  <!-- USWDS Web Components CSS -->
+  <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
+  <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
+  <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
+  <!-- Initialize web component properties after they render -->
+  ${initScript}
+  <!-- Page navigation for multi-page preview -->
+  ${pageNavScript}
+</head>
+<body>
+${pagesHtml}
+</body>
+</html>`;
+}
+
+/**
+ * Open a multi-page preview in a new browser tab
+ */
+export function openMultiPagePreviewInNewTab(
+  pages: PageData[],
+  title: string = 'Prototype Preview'
+): void {
+  // Generate full document with all pages
+  const fullDocument = generateMultiPageDocument(pages, { title });
+
+  // Create a blob URL and open in new tab
+  const blob = new Blob([fullDocument], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  // Open in new tab
+  const newTab = window.open(url, '_blank');
+
+  // Clean up the blob URL after a delay (give time for the page to load)
+  if (newTab) {
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+}
+
+/**
  * Escape HTML special characters
  */
 function escapeHtml(str: string): string {
