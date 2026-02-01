@@ -845,6 +845,11 @@ export function Editor() {
 
         setPrototype(data);
         setHtmlContent(currentHtml);
+
+        // Refresh version history after save (versions are created on PUT)
+        if (isUpdate) {
+          fetchVersions();
+        }
       }
     } catch (err) {
       console.error('[USWDS-PT] Save error:', err);
@@ -852,7 +857,7 @@ export function Editor() {
     } finally {
       setIsSaving(false);
     }
-  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode, currentTeam, teams, isLoadingTeam, slug]);
+  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode, currentTeam, teams, isLoadingTeam, slug, fetchVersions]);
 
   // Get current editor content for autosave comparison
   const getEditorContent = useCallback(() => {
@@ -946,6 +951,9 @@ export function Editor() {
       setHtmlContent(currentHtml);
       setAutosaveStatus('saved');
 
+      // Refresh version history (autosave creates versions via PUT)
+      fetchVersions();
+
       // Reset to idle after 3 seconds
       setTimeout(() => setAutosaveStatus('idle'), 3000);
     } catch (err) {
@@ -955,7 +963,7 @@ export function Editor() {
       // Reset to idle after 5 seconds
       setTimeout(() => setAutosaveStatus('idle'), 5000);
     }
-  }, [prototype, isDemoMode, name, htmlContent]);
+  }, [prototype, isDemoMode, name, htmlContent, fetchVersions]);
 
   // Autosave hook - only for authenticated prototypes that already exist
   const autosave = useAutosave({
