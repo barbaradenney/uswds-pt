@@ -515,6 +515,7 @@ export function Editor() {
       setPrototype(null);
       setName('Untitled Prototype');
       setHtmlContent('');
+      setError(null); // Clear any previous errors
       setIsLoading(false);
     }
   }, [slug, isDemoMode]);
@@ -869,6 +870,34 @@ export function Editor() {
     enabled: !isDemoMode && !!prototype && !!slug,
     isSaving,
   });
+
+  // Auto-save new prototypes after editor is ready
+  // This creates the prototype in the database so autosave can continue
+  const hasAutoSavedRef = useRef(false);
+  useEffect(() => {
+    // Only for new prototypes in authenticated mode with a team selected
+    if (slug || isDemoMode || !currentTeam || prototype || hasAutoSavedRef.current) {
+      return;
+    }
+
+    // Wait for editor to be ready, then auto-save after a delay
+    const timeoutId = setTimeout(() => {
+      if (editorRef.current && !hasAutoSavedRef.current && !isSaving) {
+        hasAutoSavedRef.current = true;
+        debug('Auto-saving new prototype...');
+        handleSave();
+      }
+    }, 3000); // 3 second delay to let editor initialize
+
+    return () => clearTimeout(timeoutId);
+  }, [slug, isDemoMode, currentTeam, prototype, isSaving, handleSave]);
+
+  // Reset auto-save flag when creating a fresh new prototype
+  useEffect(() => {
+    if (!slug) {
+      hasAutoSavedRef.current = false;
+    }
+  }, [slug]);
 
   // Handle version restore with autosave pause
   const handleVersionRestore = useCallback(async (versionNumber: number): Promise<boolean> => {
