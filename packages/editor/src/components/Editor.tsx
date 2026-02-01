@@ -596,17 +596,20 @@ export function Editor() {
     // Don't save during page transitions - GrapesJS state is unstable
     if (isPageSwitchingRef.current) {
       debug('Save blocked: page switch in progress');
+      setError('Please wait for page switch to complete');
       return;
     }
 
     // Don't save if editor isn't ready
     if (!editorReadyRef.current) {
       debug('Save blocked: editor not ready');
+      setError('Editor is still loading. Please wait a moment.');
       return;
     }
 
     setIsSaving(true);
     setError(null);
+    debug('handleSave started, prototype:', !!prototype, 'slug:', slug);
 
     try {
       const editor = editorRef.current;
@@ -786,13 +789,19 @@ export function Editor() {
         setHtmlContent(currentHtml);
       } else {
         // Save to API in authenticated mode
-        const url = prototype
-          ? `/api/prototypes/${prototype.slug}`
+        // Use slug from URL params if prototype isn't loaded yet (handles refresh case)
+        const prototypeSlug = prototype?.slug || slug;
+        const isUpdate = !!prototypeSlug;
+
+        debug('Save mode:', isUpdate ? 'UPDATE' : 'CREATE', 'slug:', prototypeSlug);
+
+        const url = isUpdate
+          ? `/api/prototypes/${prototypeSlug}`
           : '/api/prototypes';
-        const method = prototype ? 'PUT' : 'POST';
+        const method = isUpdate ? 'PUT' : 'POST';
 
         // For new prototypes, require a team
-        if (!prototype && !currentTeam) {
+        if (!isUpdate && !currentTeam) {
           if (isLoadingTeam) {
             throw new Error('Still loading teams. Please wait a moment and try again.');
           } else if (!teams || teams.length === 0) {
@@ -809,9 +818,11 @@ export function Editor() {
         };
 
         // Include teamId when creating a new prototype
-        if (!prototype && currentTeam) {
+        if (!isUpdate && currentTeam) {
           body.teamId = currentTeam.id;
         }
+
+        debug('Making API call:', method, url);
 
         const response = await authFetch(url, {
           method,
@@ -820,12 +831,15 @@ export function Editor() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to save prototype');
+          const errorText = await response.text().catch(() => 'Unknown error');
+          debug('API error:', response.status, errorText);
+          throw new Error(`Failed to save prototype: ${response.status}`);
         }
 
         const data: Prototype = await response.json();
+        debug('Save successful, new slug:', data.slug);
 
-        if (!prototype) {
+        if (!isUpdate) {
           navigate(`/edit/${data.slug}`, { replace: true });
         }
 
@@ -833,11 +847,12 @@ export function Editor() {
         setHtmlContent(currentHtml);
       }
     } catch (err) {
+      console.error('[USWDS-PT] Save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setIsSaving(false);
     }
-  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode, currentTeam, teams, isLoadingTeam]);
+  }, [prototype, localPrototype, name, htmlContent, navigate, isDemoMode, currentTeam, teams, isLoadingTeam, slug]);
 
   // Get current editor content for autosave comparison
   const getEditorContent = useCallback(() => {
