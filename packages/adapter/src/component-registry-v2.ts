@@ -640,15 +640,29 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
           const linkType = value || 'none';
           element.setAttribute('link-type', linkType);
 
-          // Clear href when switching to 'none'
+          // Clear conflicting attributes when switching modes
           if (linkType === 'none') {
+            // Clear both href and page-link
             element.removeAttribute('href');
             element.removeAttribute('page-link');
-            // Also update GrapesJS component model
             if (component?.addAttributes) {
-              component.addAttributes({ href: '', 'page-link': '' });
+              component.addAttributes({ href: '', 'page-link': '', 'link-type': linkType });
             }
             // Revert usa-button inner anchor back to button
+            updateButtonInnerElement(element, null);
+          } else if (linkType === 'external') {
+            // Clear page-link when switching to external
+            element.removeAttribute('page-link');
+            if (component?.addAttributes) {
+              component.addAttributes({ 'page-link': '', 'link-type': linkType });
+            }
+          } else if (linkType === 'page') {
+            // Clear href when switching to page (page-link will set its own href)
+            element.removeAttribute('href');
+            if (component?.addAttributes) {
+              component.addAttributes({ href: '', 'link-type': linkType });
+            }
+            // Revert usa-button inner anchor back to button until page is selected
             updateButtonInnerElement(element, null);
           }
         },
@@ -658,7 +672,7 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
           if (linkType) return linkType;
 
           const href = element.getAttribute('href');
-          if (!href) return 'none';
+          if (!href || href === '#') return 'none';
           if (href.startsWith('#page-')) return 'page';
           return 'external';
         },

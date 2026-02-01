@@ -296,10 +296,30 @@ function generateInitScript(): string {
       }
     });
 
-    // Initialize usa-button components with href
-    document.querySelectorAll('usa-button[href]').forEach(button => {
-      const href = button.getAttribute('href');
-      if (href) {
+    // Helper to resolve href from page-link or normalize external URLs
+    function resolveHref(element) {
+      let href = element.getAttribute('href');
+      const pageLink = element.getAttribute('page-link');
+      const linkType = element.getAttribute('link-type');
+
+      // If page-link is set, derive href from it
+      if (pageLink && linkType === 'page') {
+        href = '#page-' + pageLink;
+        element.setAttribute('href', href);
+      }
+      // Normalize external URLs without protocol
+      else if (href && linkType === 'external' && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
+        href = 'https://' + href;
+        element.setAttribute('href', href);
+      }
+
+      return href;
+    }
+
+    // Initialize usa-button components with href or page-link
+    document.querySelectorAll('usa-button[href], usa-button[page-link]').forEach(button => {
+      const href = resolveHref(button);
+      if (href && href !== '#') {
         button.href = href;
         // Ensure inner element is an anchor with correct href
         const innerButton = button.querySelector('button');
@@ -320,9 +340,9 @@ function generateInitScript(): string {
       }
     });
 
-    // Initialize usa-link components with href
-    document.querySelectorAll('usa-link[href]').forEach(link => {
-      const href = link.getAttribute('href');
+    // Initialize usa-link components with href or page-link
+    document.querySelectorAll('usa-link[href], usa-link[page-link]').forEach(link => {
+      const href = resolveHref(link);
       if (href && href !== '#') {
         link.href = href;
         const innerAnchor = link.querySelector('a');

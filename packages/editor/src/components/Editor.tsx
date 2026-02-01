@@ -2382,8 +2382,91 @@ export function Editor() {
               }
             };
 
+            // Fix href sync issues for components with page-link attributes
+            // This handles cases where page-link was saved but href wasn't properly derived
+            const syncPageLinkHrefs = () => {
+              try {
+                const doc = editor.Canvas?.getDocument?.();
+                if (!doc) return;
+
+                // Helper to find GrapesJS component for a DOM element
+                const findComponent = (el: Element) => {
+                  // GrapesJS components have a data-gjs-* attribute or we can use getWrapper
+                  const wrapper = editor.DomComponents?.getWrapper?.();
+                  if (!wrapper) return null;
+
+                  // Search for component by element
+                  const findInChildren = (comp: any): any => {
+                    if (comp.getEl?.() === el) return comp;
+                    const children = comp.components?.() || [];
+                    for (const child of children.models || children) {
+                      const found = findInChildren(child);
+                      if (found) return found;
+                    }
+                    return null;
+                  };
+
+                  return findInChildren(wrapper);
+                };
+
+                // Find all buttons and links with page-link attribute
+                const elementsWithPageLink = doc.querySelectorAll('usa-button[page-link], usa-link[page-link]');
+                elementsWithPageLink.forEach((el: Element) => {
+                  const pageLink = el.getAttribute('page-link');
+                  const linkType = el.getAttribute('link-type');
+                  const currentHref = el.getAttribute('href');
+
+                  // If page-link is set and link-type is page, ensure href is properly derived
+                  if (pageLink && (linkType === 'page' || !linkType)) {
+                    const expectedHref = `#page-${pageLink}`;
+                    if (currentHref !== expectedHref) {
+                      el.setAttribute('href', expectedHref);
+                      (el as any).href = expectedHref;
+                      // Update inner anchor if present
+                      const innerAnchor = el.querySelector('a');
+                      if (innerAnchor) {
+                        innerAnchor.setAttribute('href', expectedHref);
+                      }
+                      // Also update GrapesJS component model
+                      const component = findComponent(el);
+                      if (component?.addAttributes) {
+                        component.addAttributes({ href: expectedHref, 'link-type': 'page' });
+                      }
+                      debug('Fixed page-link href:', pageLink, '->', expectedHref);
+                    }
+                  }
+                });
+
+                // Fix external URLs without protocol
+                const elementsWithExternalLink = doc.querySelectorAll('usa-button[link-type="external"], usa-link[link-type="external"]');
+                elementsWithExternalLink.forEach((el: Element) => {
+                  const href = el.getAttribute('href');
+                  if (href && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
+                    const normalizedHref = 'https://' + href;
+                    el.setAttribute('href', normalizedHref);
+                    (el as any).href = normalizedHref;
+                    // Update inner anchor if present
+                    const innerAnchor = el.querySelector('a');
+                    if (innerAnchor) {
+                      innerAnchor.setAttribute('href', normalizedHref);
+                    }
+                    // Also update GrapesJS component model
+                    const component = findComponent(el);
+                    if (component?.addAttributes) {
+                      component.addAttributes({ href: normalizedHref });
+                    }
+                    debug('Normalized external href:', href, '->', normalizedHref);
+                  }
+                });
+              } catch (err) {
+                console.warn('USWDS-PT: Error syncing page-link hrefs:', err);
+              }
+            };
+
             // Load resources on initial canvas load and when pages change
             registerEditorListener(editor, 'canvas:frame:load', loadUSWDSResources);
+            registerEditorListener(editor, 'canvas:frame:load', syncPageLinkHrefs);
+            registerEditorListener(editor, 'page:select', syncPageLinkHrefs);
 
             // Also load on initial ready
             loadUSWDSResources();
