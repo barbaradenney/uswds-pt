@@ -446,6 +446,10 @@ export function Editor() {
   const navigate = useNavigate();
   const editorRef = useRef<EditorInstance | null>(null);
 
+  // Track page transitions to prevent saves during unstable state
+  const isPageSwitchingRef = useRef(false);
+  const editorReadyRef = useRef(false);
+
   // Unique key for each editor session - changes when slug changes or on new prototype
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
 
@@ -516,6 +520,7 @@ export function Editor() {
       setName('Untitled Prototype');
       setHtmlContent('');
       setError(null); // Clear any previous errors
+      editorReadyRef.current = false; // Reset editor ready state
       setIsLoading(false);
     }
   }, [slug, isDemoMode]);
@@ -577,58 +582,116 @@ export function Editor() {
   }
 
   const handleSave = useCallback(async () => {
+    // Don't save during page transitions - GrapesJS state is unstable
+    if (isPageSwitchingRef.current) {
+      debug('Save blocked: page switch in progress');
+      return;
+    }
+
+    // Don't save if editor isn't ready
+    if (!editorReadyRef.current) {
+      debug('Save blocked: editor not ready');
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
     try {
       const editor = editorRef.current;
 
+      if (!editor) {
+        throw new Error('Editor not initialized');
+      }
+
       let currentHtml = htmlContent;
       let grapesData: any = { pages: [], styles: [], assets: [] };
 
       // Get HTML content with defensive error handling
-      if (editor) {
-        try {
-          currentHtml = editor.getHtml() || htmlContent;
-        } catch (htmlErr) {
-          console.warn('[USWDS-PT] Error getting HTML from editor, using fallback:', htmlErr);
-          // Continue with existing htmlContent
-        }
+      try {
+        currentHtml = editor.getHtml() || htmlContent;
+      } catch (htmlErr) {
+        console.warn('[USWDS-PT] Error getting HTML from editor, using fallback:', htmlErr);
+        // Continue with existing htmlContent
       }
 
       // Get project data with defensive error handling
       // GrapesJS's getProjectData() can throw "Cannot read properties of undefined (reading 'forEach')"
       // when internal page/component state isn't fully initialized
-      if (editor) {
-        try {
-          const rawData = editor.getProjectData();
-          if (rawData && typeof rawData === 'object') {
-            grapesData = rawData;
-          }
-        } catch (dataErr) {
-          console.warn('[USWDS-PT] Error getting project data, reconstructing from components:', dataErr);
-          // Reconstruct project data from editor state
-          try {
-            const wrapper = editor.DomComponents?.getWrapper();
-            const styles = editor.CssComposer?.getAll?.() || [];
-            const assets = editor.AssetManager?.getAll?.() || [];
+      try {
+        // Double-check page switching state before calling getProjectData
+        if (isPageSwitchingRef.current) {
+          throw new Error('Page switch started during save');
+        }
 
-            grapesData = {
-              pages: [{
-                id: 'page-1',
-                name: 'Page 1',
-                frames: [{
-                  component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] }
-                }]
-              }],
-              styles: Array.isArray(styles) ? styles.map((s: any) => s.toJSON?.() || s) : [],
-              assets: Array.isArray(assets) ? assets.map((a: any) => a.toJSON?.() || a) : [],
-            };
-          } catch (reconstructErr) {
-            console.error('[USWDS-PT] Failed to reconstruct project data:', reconstructErr);
-            // Use minimal valid structure
-            grapesData = { pages: [], styles: [], assets: [] };
+        const rawData = editor.getProjectData();
+        if (rawData && typeof rawData === 'object') {
+          grapesData = rawData;
+        }
+      } catch (dataErr: any) {
+        // Check if this is the forEach error
+        const errMsg = dataErr?.message || String(dataErr);
+        if (errMsg.includes('forEach') || errMsg.includes('Page switch')) {
+          console.warn('[USWDS-PT] getProjectData() failed, reconstructing from editor state:', errMsg);
+        } else {
+          console.warn('[USWDS-PT] Error getting project data:', dataErr);
+        }
+
+        // Reconstruct project data from editor state
+        try {
+          const wrapper = editor.DomComponents?.getWrapper();
+          const pagesManager = editor.Pages;
+          const allPages = pagesManager?.getAll?.() || [];
+          const styles = editor.CssComposer?.getAll?.() || [];
+          const assets = editor.AssetManager?.getAll?.() || [];
+
+          // Try to get all pages
+          if (allPages.length > 0) {
+            grapesData.pages = allPages.map((page: any) => {
+              try {
+                const pageId = page.getId?.() || page.id || `page-${Date.now()}`;
+                const pageName = page.get?.('name') || page.getName?.() || 'Page';
+                const mainFrame = page.getMainFrame?.();
+                const mainComponent = mainFrame?.getComponent?.();
+
+                return {
+                  id: pageId,
+                  name: pageName,
+                  frames: [{
+                    component: mainComponent?.toJSON?.() || { type: 'wrapper', components: [] }
+                  }]
+                };
+              } catch (pageErr) {
+                console.warn('[USWDS-PT] Error serializing page:', pageErr);
+                return {
+                  id: `page-${Date.now()}`,
+                  name: 'Page',
+                  frames: [{ component: { type: 'wrapper', components: [] } }]
+                };
+              }
+            });
+          } else {
+            // Fallback to wrapper
+            grapesData.pages = [{
+              id: 'page-1',
+              name: 'Page 1',
+              frames: [{
+                component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] }
+              }]
+            }];
           }
+
+          grapesData.styles = Array.isArray(styles) ? styles.map((s: any) => {
+            try { return s.toJSON?.() || s; } catch { return s; }
+          }) : [];
+          grapesData.assets = Array.isArray(assets) ? assets.map((a: any) => {
+            try { return a.toJSON?.() || a; } catch { return a; }
+          }) : [];
+
+        } catch (reconstructErr) {
+          console.error('[USWDS-PT] Failed to reconstruct project data:', reconstructErr);
+          // Use minimal valid structure
+          grapesData = { pages: [], styles: [], assets: [] };
         }
       }
 
@@ -785,6 +848,12 @@ export function Editor() {
   const handleAutosave = useCallback(async () => {
     // Skip if no existing prototype or in demo mode
     if (!prototype || isDemoMode) return;
+
+    // Skip if page switch in progress or editor not ready
+    if (isPageSwitchingRef.current || !editorReadyRef.current) {
+      debug('[Autosave] Skipped: page switching or editor not ready');
+      return;
+    }
 
     setAutosaveStatus('saving');
 
@@ -1190,6 +1259,7 @@ export function Editor() {
           }}
           onReady={(editor) => {
             editorRef.current = editor;
+            editorReadyRef.current = true;
             debug('Editor ready');
 
             // Clear any GrapesJS internal storage to prevent state bleeding
@@ -1566,8 +1636,11 @@ export function Editor() {
               const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
               debug('Page selected:', pageId, '-', pageName);
 
-              // Wait for GrapesJS to complete the page switch
-              await new Promise(resolve => setTimeout(resolve, 100));
+              // Block saves during page transition
+              isPageSwitchingRef.current = true;
+
+              // Wait for GrapesJS to complete the page switch (increased from 100ms to 500ms)
+              await new Promise(resolve => setTimeout(resolve, 500));
 
               try {
                 // Ensure USWDS resources are loaded in the frame
@@ -1586,6 +1659,13 @@ export function Editor() {
                 debug('Page switch completed');
               } catch (err) {
                 debug('Page switch warning:', err);
+              } finally {
+                // Allow saves again after page switch completes
+                // Add a small additional delay to ensure GrapesJS internal state is stable
+                setTimeout(() => {
+                  isPageSwitchingRef.current = false;
+                  debug('Page switch lock released');
+                }, 200);
               }
             });
 
