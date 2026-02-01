@@ -450,6 +450,11 @@ export function Editor() {
   const isPageSwitchingRef = useRef(false);
   const editorReadyRef = useRef(false);
 
+  // Autosave refs - declared early for cleanup access
+  const hasAutoSavedRef = useRef(false);
+  const pendingChangesRef = useRef(false);
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Unique key for each editor session - changes when slug changes or on new prototype
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
 
@@ -500,6 +505,11 @@ export function Editor() {
       }
       // Clear editor ref
       editorRef.current = null;
+      // Clear autosave timeout
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -929,7 +939,7 @@ export function Editor() {
       // Reset to idle after 5 seconds
       setTimeout(() => setAutosaveStatus('idle'), 5000);
     }
-  }, [prototype, isDemoMode, name]);
+  }, [prototype, isDemoMode, name, htmlContent]);
 
   // Autosave hook - only for authenticated prototypes that already exist
   const autosave = useAutosave({
@@ -942,21 +952,32 @@ export function Editor() {
 
   // Auto-save new prototypes after editor is ready
   // This creates the prototype in the database so autosave can continue
-  const hasAutoSavedRef = useRef(false);
   useEffect(() => {
     // Only for new prototypes in authenticated mode with a team selected
     if (slug || isDemoMode || !currentTeam || prototype || hasAutoSavedRef.current) {
+      debug('[Auto-save new] Skipping:', { slug: !!slug, isDemoMode, currentTeam: !!currentTeam, prototype: !!prototype, hasAutoSaved: hasAutoSavedRef.current });
       return;
     }
 
     // Wait for editor to be ready, then auto-save after a delay
     const timeoutId = setTimeout(() => {
-      if (editorRef.current && !hasAutoSavedRef.current && !isSaving) {
+      // Check editorReadyRef instead of just editorRef
+      if (editorReadyRef.current && !hasAutoSavedRef.current && !isSaving && !isPageSwitchingRef.current) {
         hasAutoSavedRef.current = true;
-        debug('Auto-saving new prototype...');
-        handleSave();
+        debug('[Auto-save new] Triggering auto-save for new prototype...');
+        handleSave().catch(err => {
+          console.warn('[Auto-save new] Failed:', err);
+          hasAutoSavedRef.current = false; // Allow retry
+        });
+      } else {
+        debug('[Auto-save new] Conditions not met:', {
+          editorReady: editorReadyRef.current,
+          hasAutoSaved: hasAutoSavedRef.current,
+          isSaving,
+          isPageSwitching: isPageSwitchingRef.current
+        });
       }
-    }, 3000); // 3 second delay to let editor initialize
+    }, 5000); // Increased to 5 second delay to let editor fully initialize
 
     return () => clearTimeout(timeoutId);
   }, [slug, isDemoMode, currentTeam, prototype, isSaving, handleSave]);
@@ -967,6 +988,31 @@ export function Editor() {
       hasAutoSavedRef.current = false;
     }
   }, [slug]);
+
+  // Debounced autosave triggered by GrapesJS change events
+  const triggerDebouncedAutosave = useCallback(() => {
+    // Only for existing prototypes
+    if (!prototype || isDemoMode || !slug) return;
+
+    // Don't trigger during page switches
+    if (isPageSwitchingRef.current) return;
+
+    pendingChangesRef.current = true;
+
+    // Clear existing timeout
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+
+    // Debounce: wait 5 seconds after last change before saving
+    autosaveTimeoutRef.current = setTimeout(() => {
+      if (pendingChangesRef.current && !isSaving && !isPageSwitchingRef.current && editorReadyRef.current) {
+        debug('[Event autosave] Triggering save after changes detected');
+        pendingChangesRef.current = false;
+        handleAutosave();
+      }
+    }, 5000);
+  }, [prototype, isDemoMode, slug, isSaving, handleAutosave]);
 
   // Handle version restore with autosave pause
   const handleVersionRestore = useCallback(async (versionNumber: number): Promise<boolean> => {
@@ -1276,6 +1322,25 @@ export function Editor() {
                 console.warn('Failed to clear GrapesJS storage:', e);
               }
             }
+
+            // Set up change event listeners for autosave
+            // These fire when the user makes changes to the canvas
+            editor.on('component:add', () => {
+              debug('[Change detected] component:add');
+              triggerDebouncedAutosave();
+            });
+            editor.on('component:remove', () => {
+              debug('[Change detected] component:remove');
+              triggerDebouncedAutosave();
+            });
+            editor.on('component:update', () => {
+              debug('[Change detected] component:update');
+              triggerDebouncedAutosave();
+            });
+            editor.on('style:change', () => {
+              debug('[Change detected] style:change');
+              triggerDebouncedAutosave();
+            });
 
             // For new prototypes (no slug), load the blank template with header/footer
             if (!slug) {
