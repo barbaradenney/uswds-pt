@@ -824,11 +824,11 @@ componentRegistry.register({
   droppable: false,
 
   traits: {
-    // Text content - syncs to internal <button> element
+    // Text content - syncs to internal <button> or <a> element (when href is set)
     text: createInternalSyncTrait('text', {
       label: 'Button Text',
       default: 'Click me',
-      internalSelector: 'button',
+      internalSelector: 'button, a',
       syncProperty: 'textContent',
     }),
 
