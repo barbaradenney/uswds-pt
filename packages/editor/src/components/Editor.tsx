@@ -1781,6 +1781,42 @@ export function Editor() {
               // Log total pages for debugging
               const allPages = editor.Pages?.getAll?.() || [];
               debug('Total pages:', allPages.length);
+
+              // For new pages (not loaded from saved data), add the default template
+              // This gives each new page a consistent header/footer structure
+              // Only do this if the page is empty (has no components)
+              setTimeout(() => {
+                try {
+                  const mainFrame = page.getMainFrame?.();
+                  const mainComponent = mainFrame?.getComponent?.();
+
+                  if (mainComponent) {
+                    const existingComponents = mainComponent.components?.() || [];
+
+                    // Only add template if the page is empty
+                    if (existingComponents.length === 0) {
+                      debug('New page is empty, adding default template');
+
+                      // Get the blank template content (without __FULL_HTML__ prefix)
+                      const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+
+                      if (blankTemplate) {
+                        mainComponent.components(blankTemplate);
+                        debug('Added default template to new page');
+
+                        // Refresh the canvas to ensure components render
+                        setTimeout(() => {
+                          editor.refresh();
+                        }, 100);
+                      }
+                    } else {
+                      debug('Page already has components, skipping template');
+                    }
+                  }
+                } catch (err) {
+                  console.warn('[USWDS-PT] Error adding template to new page:', err);
+                }
+              }, 50);
             });
 
             editor.on('page:remove', (page: any) => {
