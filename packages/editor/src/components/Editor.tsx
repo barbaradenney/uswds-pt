@@ -1773,6 +1773,9 @@ export function Editor() {
               }
             });
 
+            // Track pages that need template (newly created, not loaded from data)
+            const pagesNeedingTemplate = new Set<string>();
+
             editor.on('page:add', (page: any) => {
               const pageId = page?.getId?.() || page?.id;
               const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
@@ -1782,41 +1785,87 @@ export function Editor() {
               const allPages = editor.Pages?.getAll?.() || [];
               debug('Total pages:', allPages.length);
 
-              // For new pages (not loaded from saved data), add the default template
-              // This gives each new page a consistent header/footer structure
-              // Only do this if the page is empty (has no components)
-              setTimeout(() => {
-                try {
-                  const mainFrame = page.getMainFrame?.();
-                  const mainComponent = mainFrame?.getComponent?.();
+              // Mark this page as needing a template
+              // We'll add the template when the page is selected (fully loaded)
+              if (pageId) {
+                pagesNeedingTemplate.add(pageId);
+                debug('Marked page for template:', pageId);
+              }
+            });
 
-                  if (mainComponent) {
-                    const existingComponents = mainComponent.components?.() || [];
+            // Add template when page is selected (ensures frame is ready)
+            editor.on('page:select', (page: any) => {
+              const pageId = page?.getId?.() || page?.id;
+              debug('Page selected:', pageId, 'needs template:', pagesNeedingTemplate.has(pageId));
 
-                    // Only add template if the page is empty
-                    if (existingComponents.length === 0) {
-                      debug('New page is empty, adding default template');
+              if (pageId && pagesNeedingTemplate.has(pageId)) {
+                // Remove from set first to prevent re-adding
+                pagesNeedingTemplate.delete(pageId);
 
-                      // Get the blank template content (without __FULL_HTML__ prefix)
-                      const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+                // Wait for the frame to be fully ready
+                setTimeout(() => {
+                  try {
+                    // Try multiple ways to get the page's main component
+                    let mainComponent = null;
 
-                      if (blankTemplate) {
-                        mainComponent.components(blankTemplate);
-                        debug('Added default template to new page');
+                    // Method 1: getMainComponent (GrapesJS standard)
+                    mainComponent = page.getMainComponent?.();
+                    debug('Method 1 (getMainComponent):', !!mainComponent);
 
-                        // Refresh the canvas to ensure components render
-                        setTimeout(() => {
-                          editor.refresh();
-                        }, 100);
+                    // Method 2: getMainFrame -> getComponent
+                    if (!mainComponent) {
+                      const mainFrame = page.getMainFrame?.();
+                      mainComponent = mainFrame?.getComponent?.();
+                      debug('Method 2 (getMainFrame):', !!mainComponent);
+                    }
+
+                    // Method 3: frames collection
+                    if (!mainComponent) {
+                      const frames = page.get?.('frames');
+                      if (frames && frames.length > 0) {
+                        mainComponent = frames.at?.(0)?.get?.('component');
+                      }
+                      debug('Method 3 (frames):', !!mainComponent);
+                    }
+
+                    // Method 4: Use the editor's current wrapper
+                    if (!mainComponent) {
+                      mainComponent = editor.DomComponents?.getWrapper?.();
+                      debug('Method 4 (editor wrapper):', !!mainComponent);
+                    }
+
+                    if (mainComponent) {
+                      const existingComponents = mainComponent.components?.();
+                      const componentCount = existingComponents?.length || 0;
+                      debug('Existing components:', componentCount);
+
+                      // Only add template if the page is empty
+                      if (componentCount === 0) {
+                        debug('New page is empty, adding default template');
+
+                        // Get the blank template content (without __FULL_HTML__ prefix)
+                        const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+
+                        if (blankTemplate) {
+                          mainComponent.components(blankTemplate);
+                          debug('Added default template to new page');
+
+                          // Refresh the canvas to ensure components render
+                          setTimeout(() => {
+                            editor.refresh();
+                          }, 100);
+                        }
+                      } else {
+                        debug('Page already has components, skipping template');
                       }
                     } else {
-                      debug('Page already has components, skipping template');
+                      debug('Could not find main component for page');
                     }
+                  } catch (err) {
+                    console.warn('[USWDS-PT] Error adding template to new page:', err);
                   }
-                } catch (err) {
-                  console.warn('[USWDS-PT] Error adding template to new page:', err);
-                }
-              }, 50);
+                }, 200);
+              }
             });
 
             editor.on('page:remove', (page: any) => {
