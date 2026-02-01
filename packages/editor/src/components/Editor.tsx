@@ -450,10 +450,11 @@ export function Editor() {
   const isPageSwitchingRef = useRef(false);
   const editorReadyRef = useRef(false);
 
-  // Autosave refs - declared early for cleanup access
+  // Autosave refs - declared early for cleanup access and to avoid stale closures
   const hasAutoSavedRef = useRef(false);
   const pendingChangesRef = useRef(false);
   const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerDebouncedAutosaveRef = useRef<() => void>(() => {});
 
   // Unique key for each editor session - changes when slug changes or on new prototype
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
@@ -990,12 +991,21 @@ export function Editor() {
   }, [slug]);
 
   // Debounced autosave triggered by GrapesJS change events
+  // Uses triggerDebouncedAutosaveRef to avoid stale closure in onReady event listeners
   const triggerDebouncedAutosave = useCallback(() => {
+    debug('[Event autosave] Change detected, prototype:', !!prototype, 'slug:', slug);
+
     // Only for existing prototypes
-    if (!prototype || isDemoMode || !slug) return;
+    if (!prototype || isDemoMode || !slug) {
+      debug('[Event autosave] Skipping - no prototype yet');
+      return;
+    }
 
     // Don't trigger during page switches
-    if (isPageSwitchingRef.current) return;
+    if (isPageSwitchingRef.current) {
+      debug('[Event autosave] Skipping - page switch in progress');
+      return;
+    }
 
     pendingChangesRef.current = true;
 
@@ -1013,6 +1023,11 @@ export function Editor() {
       }
     }, 5000);
   }, [prototype, isDemoMode, slug, isSaving, handleAutosave]);
+
+  // Keep the ref updated with the latest callback
+  useEffect(() => {
+    triggerDebouncedAutosaveRef.current = triggerDebouncedAutosave;
+  }, [triggerDebouncedAutosave]);
 
   // Handle version restore with autosave pause
   const handleVersionRestore = useCallback(async (versionNumber: number): Promise<boolean> => {
@@ -1325,21 +1340,22 @@ export function Editor() {
 
             // Set up change event listeners for autosave
             // These fire when the user makes changes to the canvas
+            // Use ref to always get the latest callback (avoids stale closure issue)
             editor.on('component:add', () => {
               debug('[Change detected] component:add');
-              triggerDebouncedAutosave();
+              triggerDebouncedAutosaveRef.current();
             });
             editor.on('component:remove', () => {
               debug('[Change detected] component:remove');
-              triggerDebouncedAutosave();
+              triggerDebouncedAutosaveRef.current();
             });
             editor.on('component:update', () => {
               debug('[Change detected] component:update');
-              triggerDebouncedAutosave();
+              triggerDebouncedAutosaveRef.current();
             });
             editor.on('style:change', () => {
               debug('[Change detected] style:change');
-              triggerDebouncedAutosave();
+              triggerDebouncedAutosaveRef.current();
             });
 
             // For new prototypes (no slug), load the blank template with header/footer
