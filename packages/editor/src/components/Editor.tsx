@@ -2117,11 +2117,120 @@ export function Editor() {
               }
             };
 
+            // Handle usa-accordion header clicks in the canvas
+            // This allows accordion sections to expand/collapse when clicking headers
+            const handledAccordionDocs = new WeakSet<Document>();
+            const setupAccordionClickHandler = () => {
+              const canvas = editor.Canvas;
+              const doc = canvas?.getDocument?.();
+              if (doc && !handledAccordionDocs.has(doc)) {
+                handledAccordionDocs.add(doc);
+                doc.addEventListener('click', (e: MouseEvent) => {
+                  const target = e.target as HTMLElement;
+
+                  // Check if click is within a usa-accordion's header button
+                  const accordion = target.closest('usa-accordion') as HTMLElement;
+                  if (!accordion) return;
+
+                  // Check if click is on an accordion header button
+                  const headerButton = target.closest('.usa-accordion__button') ||
+                    target.closest('[aria-controls^="accordion"]') ||
+                    target.closest('button[aria-expanded]');
+
+                  if (headerButton && headerButton.closest('usa-accordion') === accordion) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Find which section this button controls
+                    const ariaControls = headerButton.getAttribute('aria-controls');
+                    const isExpanded = headerButton.getAttribute('aria-expanded') === 'true';
+
+                    // Toggle the section
+                    headerButton.setAttribute('aria-expanded', String(!isExpanded));
+
+                    // Find and toggle the content panel
+                    if (ariaControls) {
+                      const content = accordion.querySelector(`#${ariaControls}`) as HTMLElement;
+                      if (content) {
+                        content.hidden = isExpanded;
+                      }
+                    }
+
+                    // Trigger Lit component update if available
+                    if (typeof (accordion as any).requestUpdate === 'function') {
+                      (accordion as any).requestUpdate();
+                    }
+
+                    debug('Toggled usa-accordion section:', ariaControls, 'expanded:', !isExpanded);
+                  }
+                }, true);
+              }
+            };
+
+            // Handle usa-modal trigger clicks in the canvas
+            // This allows the modal trigger button to open the modal
+            const handledModalDocs = new WeakSet<Document>();
+            const setupModalClickHandler = () => {
+              const canvas = editor.Canvas;
+              const doc = canvas?.getDocument?.();
+              if (doc && !handledModalDocs.has(doc)) {
+                handledModalDocs.add(doc);
+                doc.addEventListener('click', (e: MouseEvent) => {
+                  const target = e.target as HTMLElement;
+
+                  // Check if click is within a usa-modal's trigger
+                  const modal = target.closest('usa-modal') as HTMLElement;
+                  if (!modal) return;
+
+                  // Check if click is on the modal trigger
+                  const isTrigger = target.closest('.usa-modal__trigger') ||
+                    target.closest('[data-open-modal]') ||
+                    target.closest('.usa-button[aria-controls]');
+
+                  // Check if click is on a close button
+                  const isCloseButton = target.closest('[data-close-modal]') ||
+                    target.closest('.usa-modal__close');
+
+                  if (isTrigger) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Open the modal by setting the open attribute
+                    modal.setAttribute('open', '');
+                    (modal as any).open = true;
+
+                    if (typeof (modal as any).requestUpdate === 'function') {
+                      (modal as any).requestUpdate();
+                    }
+
+                    debug('Opened usa-modal');
+                  } else if (isCloseButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Close the modal
+                    modal.removeAttribute('open');
+                    (modal as any).open = false;
+
+                    if (typeof (modal as any).requestUpdate === 'function') {
+                      (modal as any).requestUpdate();
+                    }
+
+                    debug('Closed usa-modal');
+                  }
+                }, true);
+              }
+            };
+
             // Set up handler when canvas is ready and on page changes
             editor.on('canvas:frame:load', setupPageLinkHandler);
             editor.on('canvas:frame:load', setupBannerClickHandler);
+            editor.on('canvas:frame:load', setupAccordionClickHandler);
+            editor.on('canvas:frame:load', setupModalClickHandler);
             editor.on('page:select', setupPageLinkHandler);
             editor.on('page:select', setupBannerClickHandler);
+            editor.on('page:select', setupAccordionClickHandler);
+            editor.on('page:select', setupModalClickHandler);
 
             // Note: Project data is already loaded above (line ~1062-1065)
             // Do NOT call loadProjectData again here as it causes duplicate loading
