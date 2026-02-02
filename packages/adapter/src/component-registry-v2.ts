@@ -852,32 +852,39 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const textValue = value || 'Click me';
 
-          // Store as attribute for persistence - GrapesJS will save this
+          // Store as attribute for trait panel persistence
           element.setAttribute('text', textValue);
 
           // Update the GrapesJS component model
+          // IMPORTANT: usa-button web component uses SLOT CONTENT, not a text attribute.
+          // We must set the component's children to be the text, so exported HTML is:
+          // <usa-button>page 2</usa-button>  (slot content the WC will use)
+          // NOT: <usa-button text="page 2"></usa-button>  (WC ignores this)
           if (component) {
             try {
-              // Update the attributes model
+              // Update the attributes model (for trait panel persistence)
               const attrs = component.get('attributes') || {};
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }
 
-              // CRITICAL: Clear slot content (children) so export doesn't have
-              // conflicting content. The web component will use the text attribute.
-              // This ensures exported HTML is: <usa-button text="New Text"></usa-button>
-              // Instead of: <usa-button text="New Text">Click me</usa-button>
+              // Set the component's children to be a text node with the value
+              // This becomes the slot content in the exported HTML
               const children = component.components();
-              if (children && children.length > 0) {
-                children.reset();
+              if (children) {
+                children.reset(); // Clear existing children
+                // Add a text node component as the child
+                children.add({
+                  type: 'textnode',
+                  content: textValue,
+                });
               }
             } catch (e) {
-              // Ignore errors during model sync
+              console.warn('USWDS-PT: Could not update button component model:', e);
             }
           }
 
-          // Find the inner button or anchor element and update its text
+          // Find the inner button or anchor element and update its text (for editor display)
           const updateInnerElement = () => {
             const inner = element.querySelector('button, a');
             if (inner) {
