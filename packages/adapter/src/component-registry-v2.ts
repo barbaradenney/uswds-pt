@@ -855,25 +855,18 @@ componentRegistry.register({
           // Store as attribute for trait panel persistence
           element.setAttribute('text', textValue);
 
-          // Update the GrapesJS component model
-          // IMPORTANT: usa-button web component uses SLOT CONTENT, not a text attribute.
-          // We must set the component's children to be the text, so exported HTML is:
-          // <usa-button>page 2</usa-button>  (slot content the WC will use)
-          // NOT: <usa-button text="page 2"></usa-button>  (WC ignores this)
+          // Update the GrapesJS component attributes model (for persistence)
+          // NOTE: We DON'T modify component.components() here because it breaks
+          // the web component rendering in the canvas. The export transform in
+          // export.ts handles converting the text attribute to slot content.
           if (component) {
             try {
-              // Update the attributes model (for trait panel persistence)
               const attrs = component.get('attributes') || {};
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }
-
-              // Set the component's children directly in the model
-              // This becomes the slot content in the exported HTML
-              // Using set('components', ...) to directly update the model
-              component.set('components', [{ type: 'textnode', content: textValue }]);
             } catch (e) {
-              console.warn('USWDS-PT: Could not update button component model:', e);
+              // Ignore errors during attribute sync
             }
           }
 
