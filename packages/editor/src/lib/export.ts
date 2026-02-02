@@ -316,8 +316,26 @@ function generateInitScript(): string {
       return href;
     }
 
-    // Initialize usa-button components with href or page-link
-    document.querySelectorAll('usa-button[href], usa-button[page-link]').forEach(button => {
+    // Initialize usa-button components
+    document.querySelectorAll('usa-button').forEach(button => {
+      // Apply text attribute to inner button/anchor element
+      const textAttr = button.getAttribute('text');
+      if (textAttr) {
+        const inner = button.querySelector('button, a');
+        if (inner) {
+          inner.textContent = textAttr;
+        } else {
+          // Inner element may not exist yet, retry after a short delay
+          setTimeout(() => {
+            const innerRetry = button.querySelector('button, a');
+            if (innerRetry) {
+              innerRetry.textContent = textAttr;
+            }
+          }, 100);
+        }
+      }
+
+      // Handle href/page-link
       const href = resolveHref(button);
       if (href && href !== '#') {
         button.href = href;
@@ -329,10 +347,13 @@ function generateInitScript(): string {
           const anchor = document.createElement('a');
           anchor.href = href;
           anchor.className = innerButton.className;
-          anchor.textContent = innerButton.textContent;
+          anchor.textContent = textAttr || innerButton.textContent;
           innerButton.replaceWith(anchor);
         } else if (innerAnchor) {
           innerAnchor.href = href;
+          if (textAttr) {
+            innerAnchor.textContent = textAttr;
+          }
         }
         if (typeof button.requestUpdate === 'function') {
           button.requestUpdate();
