@@ -482,12 +482,52 @@ ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </html>`;
 }
 
+// Debug logging
+const DEBUG =
+  typeof window !== 'undefined' &&
+  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
+    localStorage.getItem('uswds_pt_debug') === 'true');
+
+function debug(...args: unknown[]): void {
+  if (DEBUG) {
+    console.log('[Export]', ...args);
+  }
+}
+
 /**
  * Open a preview of the HTML content in a new browser tab
  */
 export function openPreviewInNewTab(html: string, title: string = 'Prototype Preview'): void {
+  debug('openPreviewInNewTab called');
+  debug('Input HTML length:', html?.length);
+
+  // Check for structural issues
+  const mainElements = html?.match(/<main[^>]*>/g) || [];
+  debug('Found', mainElements.length, '<main> elements:');
+  mainElements.forEach((el, i) => debug(`  ${i}:`, el));
+
+  if (mainElements.length > 1) {
+    debug('WARNING: Multiple <main> elements detected - this may cause display issues');
+  }
+
+  // Check for content inside main elements
+  const mainWithContent = html?.match(/<main[^>]*>[\s\S]*?<\/main>/g) || [];
+  mainWithContent.forEach((main, i) => {
+    const hasContent = main.replace(/<main[^>]*>|<\/main>/g, '').trim().length > 50;
+    const idMatch = main.match(/id="([^"]*)"/);
+    debug(`  main[${i}] id="${idMatch?.[1] || 'none'}" hasContent: ${hasContent}`);
+  });
+
   // Clean the HTML first
   const cleanedHtml = cleanExport(html);
+
+  debug('Cleaned HTML length:', cleanedHtml?.length);
+
+  // Store for debugging
+  if (DEBUG) {
+    (window as any).__lastCleanedPreviewHtml = cleanedHtml;
+    debug('Cleaned HTML stored in window.__lastCleanedPreviewHtml');
+  }
 
   // Generate full document
   const fullDocument = generateFullDocument(cleanedHtml, { title });

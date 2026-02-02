@@ -194,7 +194,24 @@ export function Editor() {
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
     if (editor) {
-      setHtmlContent(editor.getHtml());
+      const html = editor.getHtml();
+      debug('Export HTML length:', html?.length);
+      debug('Export HTML first 1000 chars:', html?.substring(0, 1000));
+
+      // Check for multiple main elements
+      const mainMatches = html?.match(/<main[^>]*>/g) || [];
+      debug('Number of <main> elements found:', mainMatches.length);
+      mainMatches.forEach((match: string, i: number) => {
+        debug(`  main ${i}:`, match);
+      });
+
+      // Store for comparison with preview
+      if (DEBUG) {
+        (window as any).__lastExportHtml = html;
+        debug('HTML stored in window.__lastExportHtml for inspection');
+      }
+
+      setHtmlContent(html);
     }
     setShowExport(true);
   }, []);
@@ -209,6 +226,40 @@ export function Editor() {
 
     if (pages.length <= 1) {
       const html = editor.getHtml();
+      debug('Preview HTML length:', html?.length);
+      debug('Preview HTML first 1000 chars:', html?.substring(0, 1000));
+
+      // Check for multiple main elements
+      const mainMatches = html?.match(/<main[^>]*>/g) || [];
+      debug('Number of <main> elements found:', mainMatches.length);
+      mainMatches.forEach((match: string, i: number) => {
+        debug(`  main ${i}:`, match);
+      });
+
+      // Log the wrapper component tree
+      const wrapper = editor.DomComponents?.getWrapper();
+      if (wrapper) {
+        const components = wrapper.components();
+        debug('Wrapper has', components?.length || 0, 'top-level components');
+        const logComponent = (c: any, depth: number) => {
+          const indent = '  '.repeat(depth);
+          const tagName = c.get?.('tagName') || c.get?.('type') || 'unknown';
+          const id = c.get?.('attributes')?.id || c.getId?.() || '';
+          const childCount = c.components?.()?.length || 0;
+          debug(`${indent}${tagName}${id ? '#' + id : ''} (${childCount} children)`);
+          if (depth < 3) {
+            c.components?.()?.forEach?.((child: any) => logComponent(child, depth + 1));
+          }
+        };
+        components?.forEach?.((c: any) => logComponent(c, 1));
+      }
+
+      // Store a copy in window for debugging
+      if (DEBUG) {
+        (window as any).__lastPreviewHtml = html;
+        debug('HTML stored in window.__lastPreviewHtml for inspection');
+      }
+
       openPreviewInNewTab(html, name || 'Prototype Preview');
       return;
     }
