@@ -21,6 +21,7 @@ import {
 import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
+import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
 
 // Debug logging
 const DEBUG =
@@ -237,13 +238,15 @@ export function useEditorPersistence({
 
           debug('Save mode:', isUpdate ? 'UPDATE' : 'CREATE', 'slug:', prototypeSlug);
 
-          // For new prototypes, require a team
+          // For new prototypes, require a team to be selected
+          // This throws for all error cases so we can safely use currentTeam below
           if (!isUpdate && !currentTeam) {
             if (isLoadingTeam) {
               throw new Error('Still loading teams. Please wait a moment and try again.');
             } else if (!teams || teams.length === 0) {
               throw new Error('No team available. Please go to Settings to create a team first.');
             } else {
+              // Teams exist but none is selected (user needs to pick one)
               throw new Error('Please select a team before creating a prototype.');
             }
           }
@@ -259,7 +262,13 @@ export function useEditorPersistence({
             grapesData,
           };
 
-          if (!isUpdate && currentTeam) {
+          // For new prototypes, always include teamId
+          // At this point, currentTeam is guaranteed to exist due to the check above
+          if (!isUpdate) {
+            if (!currentTeam) {
+              // This should never happen due to the check above, but defensive coding
+              throw new Error('Cannot create prototype: no team selected');
+            }
             body.teamId = currentTeam.id;
           }
 

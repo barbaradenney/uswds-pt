@@ -70,29 +70,51 @@ const documentListeners: TrackedListener[] = [];
  * Add a tracked event listener to a document
  */
 function addTrackedDocumentListener(
-  doc: Document,
+  doc: Document | null | undefined,
   type: string,
   handler: EventListener,
   options?: boolean | AddEventListenerOptions
 ): void {
-  doc.addEventListener(type, handler, options);
-  documentListeners.push({ doc, type, handler, options });
+  // Validate document before adding listener
+  if (!doc || typeof doc.addEventListener !== 'function') {
+    debug('Cannot add listener: invalid document');
+    return;
+  }
+
+  try {
+    doc.addEventListener(type, handler, options);
+    documentListeners.push({ doc, type, handler, options });
+  } catch (err) {
+    debug('Failed to add document listener:', err);
+  }
 }
 
 /**
  * Remove all tracked document event listeners
  */
 export function removeAllDocumentListeners(): void {
+  let removed = 0;
+  let skipped = 0;
+
   documentListeners.forEach(({ doc, type, handler, options }) => {
+    // Check if document is still valid before trying to remove listener
+    if (!doc || typeof doc.removeEventListener !== 'function') {
+      skipped++;
+      return;
+    }
+
     try {
       doc.removeEventListener(type, handler, options);
+      removed++;
     } catch {
-      // Document may no longer be available
+      // Document may no longer be available (iframe destroyed, etc.)
+      skipped++;
     }
   });
-  const count = documentListeners.length;
+
+  const total = documentListeners.length;
   documentListeners.length = 0;
-  debug('Removed', count, 'document event listeners');
+  debug('Document listeners cleanup: removed', removed, 'skipped', skipped, 'of', total);
 }
 
 // ============================================================================

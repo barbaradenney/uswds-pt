@@ -9,7 +9,9 @@
  * - Error display
  */
 
+import { memo, useCallback, type ChangeEvent } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
+import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 
 export interface EditorHeaderProps {
   /** Prototype name */
@@ -44,9 +46,11 @@ export interface EditorHeaderProps {
   isSaveDisabled: boolean;
   /** Error message to display */
   error: string | null;
+  /** Whether to show connection status (default: true when not in demo mode) */
+  showConnectionStatus?: boolean;
 }
 
-export function EditorHeader({
+export const EditorHeader = memo(function EditorHeader({
   name,
   onNameChange,
   onBack,
@@ -63,7 +67,15 @@ export function EditorHeader({
   isSaving,
   isSaveDisabled,
   error,
+  showConnectionStatus = false,
 }: EditorHeaderProps) {
+  const connectionStatus = useConnectionStatus();
+
+  const handleNameChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => onNameChange(e.target.value),
+    [onNameChange]
+  );
+
   return (
     <header className="editor-header">
       <div className="editor-header-left">
@@ -78,7 +90,7 @@ export function EditorHeader({
           type="text"
           className="editor-title"
           value={name}
-          onChange={(e) => onNameChange(e.target.value)}
+          onChange={handleNameChange}
           placeholder="Prototype name"
           style={{
             border: 'none',
@@ -92,6 +104,44 @@ export function EditorHeader({
       </div>
 
       <div className="editor-header-right">
+        {/* Connection status indicator */}
+        {showConnectionStatus && !connectionStatus.isOnline && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--color-warning-lighter, #faf3d1)',
+              color: 'var(--color-warning-darker, #936f38)',
+              fontSize: '0.875rem',
+              marginRight: '8px',
+            }}
+            title="You are offline. Changes will be saved when you reconnect."
+          >
+            <span style={{ fontSize: '0.75rem' }}>⚠</span>
+            Offline
+          </span>
+        )}
+        {showConnectionStatus && connectionStatus.justReconnected && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+              color: 'var(--color-success-darker, #4d8055)',
+              fontSize: '0.875rem',
+              marginRight: '8px',
+            }}
+          >
+            <span style={{ fontSize: '0.75rem' }}>✓</span>
+            Back online
+          </span>
+        )}
         {error && (
           <span style={{ color: 'var(--color-error)', marginRight: '12px' }}>
             {error}
@@ -139,4 +189,4 @@ export function EditorHeader({
       </div>
     </header>
   );
-}
+});

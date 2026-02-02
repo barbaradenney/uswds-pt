@@ -437,4 +437,271 @@ describe('Editor Integration', () => {
       expect(result.current.canModifyContent).toBe(true);
     });
   });
+
+  // ============================================================================
+  // Error Recovery Tests
+  // ============================================================================
+
+  describe('error recovery', () => {
+    it('should clear error on successful save after failure', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state with an error
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+        result.current.contentChanged();
+        result.current.saveStart('manual');
+        result.current.saveFailed('Network error');
+      });
+
+      expect(result.current.state.error).toBe('Network error');
+      expect(result.current.state.status).toBe('ready');
+
+      // Retry save - error should be cleared on success
+      act(() => {
+        result.current.saveStart('manual');
+      });
+
+      // Error persists during save attempt
+      expect(result.current.state.status).toBe('saving');
+
+      // Successful save clears the error
+      act(() => {
+        result.current.saveSuccess(proto);
+      });
+
+      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.status).toBe('ready');
+    });
+
+    it('should recover from failed prototype load', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+
+      // Start loading
+      act(() => {
+        result.current.loadPrototype('test');
+      });
+
+      expect(result.current.state.status).toBe('loading_prototype');
+
+      // Fail the load
+      act(() => {
+        result.current.prototypeLoadFailed('Not found');
+      });
+
+      expect(result.current.state.status).toBe('error');
+      expect(result.current.state.error).toBe('Not found');
+
+      // Reset to try again
+      act(() => {
+        result.current.reset();
+      });
+
+      expect(result.current.state.status).toBe('uninitialized');
+      expect(result.current.state.error).toBeNull();
+    });
+
+    it('should handle version restore failure', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+      });
+
+      // Start version restore
+      act(() => {
+        result.current.restoreVersionStart(3);
+      });
+
+      expect(result.current.state.status).toBe('restoring_version');
+
+      // Fail the restore
+      act(() => {
+        result.current.restoreVersionFailed('Version not found');
+      });
+
+      // Should return to ready state with error
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.error).toBe('Version not found');
+      expect(result.current.canSave).toBe(true);
+    });
+
+    it('should preserve dirty state on save failure', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state with unsaved changes
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+        result.current.contentChanged();
+      });
+
+      expect(result.current.state.dirty).toBe(true);
+
+      // Try to save
+      act(() => {
+        result.current.saveStart('autosave');
+        result.current.saveFailed('Server error');
+      });
+
+      // Dirty state should be preserved so autosave can retry
+      expect(result.current.state.dirty).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // Multi-page Prototype Tests
+  // ============================================================================
+
+  describe('multi-page prototypes', () => {
+    it('should handle rapid page switching', async () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+      });
+
+      // Rapid page switching - second switch should be blocked
+      act(() => {
+        result.current.pageSwitchStart();
+      });
+
+      expect(result.current.canSwitchPage).toBe(false);
+
+      // Complete first switch
+      act(() => {
+        result.current.pageSwitchComplete();
+      });
+
+      expect(result.current.canSwitchPage).toBe(true);
+
+      // Now can switch again
+      act(() => {
+        result.current.pageSwitchStart();
+      });
+
+      expect(result.current.state.status).toBe('page_switching');
+    });
+
+    it('should block autosave during page switch', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state with dirty content
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+        result.current.contentChanged();
+      });
+
+      expect(result.current.canAutosave).toBe(true);
+
+      // Start page switch
+      act(() => {
+        result.current.pageSwitchStart();
+      });
+
+      // Autosave should be blocked
+      expect(result.current.canAutosave).toBe(false);
+
+      // Complete switch
+      act(() => {
+        result.current.pageSwitchComplete();
+      });
+
+      // Autosave should work again
+      expect(result.current.canAutosave).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // Edge Cases
+  // ============================================================================
+
+  describe('edge cases', () => {
+    it('should handle double save attempts', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to saving state
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+        result.current.contentChanged();
+        result.current.saveStart('manual');
+      });
+
+      expect(result.current.state.status).toBe('saving');
+      expect(result.current.canSave).toBe(false);
+
+      // Attempting another save should be blocked by canSave guard
+      expect(result.current.canSave).toBe(false);
+    });
+
+    it('should handle state transitions in correct order', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Cannot go to saving without being ready first
+      act(() => {
+        result.current.saveStart('manual');
+      });
+
+      // Should still be uninitialized (invalid transition ignored)
+      expect(result.current.state.status).toBe('uninitialized');
+
+      // Proper sequence
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+        result.current.saveStart('manual');
+      });
+
+      expect(result.current.state.status).toBe('saving');
+    });
+
+    it('should track save type metadata', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to ready state
+      act(() => {
+        result.current.loadPrototype('test');
+        result.current.prototypeLoaded(proto);
+        result.current.editorReady();
+      });
+
+      // Manual save
+      act(() => {
+        result.current.saveStart('manual');
+      });
+
+      expect(result.current.state.meta.saveType).toBe('manual');
+
+      // Complete and start autosave
+      act(() => {
+        result.current.saveSuccess(proto);
+        result.current.contentChanged();
+        result.current.saveStart('autosave');
+      });
+
+      expect(result.current.state.meta.saveType).toBe('autosave');
+    });
+  });
 });

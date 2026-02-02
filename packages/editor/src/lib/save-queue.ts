@@ -22,6 +22,73 @@ function debug(...args: unknown[]): void {
 const OFFLINE_QUEUE_KEY = 'uswds_pt_offline_queue';
 
 /**
+ * Validate a queued save object has required fields
+ * Returns null if valid, error message if invalid
+ */
+function validateQueuedSave(save: unknown): string | null {
+  if (!save || typeof save !== 'object') {
+    return 'Save must be an object';
+  }
+
+  const s = save as Record<string, unknown>;
+
+  // Required string fields
+  if (typeof s.id !== 'string' || !s.id) {
+    return 'Save must have a valid id';
+  }
+  if (typeof s.name !== 'string') {
+    return 'Save must have a name';
+  }
+  if (typeof s.htmlContent !== 'string') {
+    return 'Save must have htmlContent string';
+  }
+
+  // grapesData can be any valid JSON, but must exist
+  if (s.grapesData === undefined) {
+    return 'Save must have grapesData';
+  }
+
+  // timestamp must be a number
+  if (typeof s.timestamp !== 'number' || s.timestamp <= 0) {
+    return 'Save must have a valid timestamp';
+  }
+
+  // retryCount must be a non-negative number
+  if (typeof s.retryCount !== 'number' || s.retryCount < 0) {
+    return 'Save must have a valid retryCount';
+  }
+
+  // slug can be null or string
+  if (s.slug !== null && typeof s.slug !== 'string') {
+    return 'Save slug must be null or string';
+  }
+
+  return null; // Valid
+}
+
+/**
+ * Validate an array of queued saves, returning only valid ones
+ */
+function validateQueuedSaveArray(data: unknown): QueuedSave[] {
+  if (!Array.isArray(data)) {
+    debug('Offline queue is not an array, resetting');
+    return [];
+  }
+
+  const validSaves: QueuedSave[] = [];
+  for (const item of data) {
+    const error = validateQueuedSave(item);
+    if (error) {
+      debug('Skipping invalid queued save:', error, item);
+    } else {
+      validSaves.push(item as QueuedSave);
+    }
+  }
+
+  return validSaves;
+}
+
+/**
  * Queued save operation
  */
 export interface QueuedSave {
@@ -126,6 +193,26 @@ class SaveQueueManager {
    * Queue a save operation
    */
   async queueSave(save: Omit<QueuedSave, 'id' | 'timestamp' | 'retryCount'>): Promise<{ slug: string } | null> {
+    // Validate required fields before creating queued save
+    if (typeof save.name !== 'string') {
+      debug('Invalid save: name must be a string');
+      this.lastError = 'Cannot save: missing prototype name';
+      this.notifyListeners();
+      return null;
+    }
+    if (typeof save.htmlContent !== 'string') {
+      debug('Invalid save: htmlContent must be a string');
+      this.lastError = 'Cannot save: missing HTML content';
+      this.notifyListeners();
+      return null;
+    }
+    if (save.grapesData === undefined || save.grapesData === null) {
+      debug('Invalid save: grapesData is required');
+      this.lastError = 'Cannot save: missing editor data';
+      this.notifyListeners();
+      return null;
+    }
+
     const queuedSave: QueuedSave = {
       ...save,
       id: `save-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -227,12 +314,26 @@ class SaveQueueManager {
     try {
       const stored = localStorage.getItem(OFFLINE_QUEUE_KEY);
       if (stored) {
-        this.queue = JSON.parse(stored);
-        debug('Loaded offline queue:', this.queue.length, 'saves');
+        const parsed = JSON.parse(stored);
+        // Validate all items in the queue
+        this.queue = validateQueuedSaveArray(parsed);
+        debug('Loaded offline queue:', this.queue.length, 'valid saves');
+
+        // If we filtered out invalid items, save the cleaned queue
+        if (Array.isArray(parsed) && this.queue.length !== parsed.length) {
+          debug('Removed', parsed.length - this.queue.length, 'invalid saves from queue');
+          this.saveOfflineQueue();
+        }
       }
     } catch (error) {
       debug('Failed to load offline queue:', error);
       this.queue = [];
+      // Remove corrupted data
+      try {
+        localStorage.removeItem(OFFLINE_QUEUE_KEY);
+      } catch {
+        // Ignore localStorage errors
+      }
     }
   }
 

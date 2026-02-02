@@ -498,35 +498,15 @@ function debug(...args: unknown[]): void {
  * Open a preview of the HTML content in a new browser tab
  */
 export function openPreviewInNewTab(html: string, title: string = 'Prototype Preview'): void {
-  debug('openPreviewInNewTab called');
-  debug('Input HTML length:', html?.length);
-
-  // Check for structural issues
-  const mainElements = html?.match(/<main[^>]*>/g) || [];
-  debug('Found', mainElements.length, '<main> elements:');
-  mainElements.forEach((el, i) => debug(`  ${i}:`, el));
-
-  if (mainElements.length > 1) {
-    debug('WARNING: Multiple <main> elements detected - this may cause display issues');
-  }
-
-  // Check for content inside main elements
-  const mainWithContent = html?.match(/<main[^>]*>[\s\S]*?<\/main>/g) || [];
-  mainWithContent.forEach((main, i) => {
-    const hasContent = main.replace(/<main[^>]*>|<\/main>/g, '').trim().length > 50;
-    const idMatch = main.match(/id="([^"]*)"/);
-    debug(`  main[${i}] id="${idMatch?.[1] || 'none'}" hasContent: ${hasContent}`);
-  });
+  debug('Preview: input length =', html?.length);
 
   // Clean the HTML first
   const cleanedHtml = cleanExport(html);
+  debug('Preview: cleaned length =', cleanedHtml?.length);
 
-  debug('Cleaned HTML length:', cleanedHtml?.length);
-
-  // Store for debugging
+  // Store for debugging (accessible via window.__lastCleanedPreviewHtml)
   if (DEBUG) {
     (window as any).__lastCleanedPreviewHtml = cleanedHtml;
-    debug('Cleaned HTML stored in window.__lastCleanedPreviewHtml');
   }
 
   // Generate full document

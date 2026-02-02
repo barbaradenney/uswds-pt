@@ -131,13 +131,27 @@ export function useGrapesJSSetup({
   // Main onReady callback
   const onReady = useCallback(
     (editor: EditorInstance) => {
+      // Clean up any previous editor instance before setting up new one
+      // This handles edge cases where onReady might be called multiple times
+      const previousEditor = editorRef.current;
+      if (previousEditor && previousEditor !== editor) {
+        debug('Cleaning up previous editor instance');
+        listenersRef.current.forEach(({ event, handler }) => {
+          try {
+            previousEditor.off(event, handler);
+          } catch {
+            // Ignore errors during cleanup
+          }
+        });
+      }
+
       editorRef.current = editor;
       debug('Editor ready');
 
       // Clear any GrapesJS internal storage to prevent state bleeding
       clearGrapesJSStorage();
 
-      // Clear registered listeners from previous session
+      // Clear registered listeners array (old ones were cleaned up above)
       listenersRef.current = [];
 
       // Set up change event listeners for autosave
@@ -351,24 +365,45 @@ function removeDefaultBlocks(editor: EditorInstance, blocks: Array<{ id: string 
 /**
  * Wait for canvas frame to be ready, with timeout fallback
  * Uses event-based synchronization instead of hardcoded delays
+ * @param signal - Optional AbortSignal for cancellation
  */
 function waitForFrameReady(
   editor: EditorInstance,
-  timeoutMs: number = 300
+  timeoutMs: number = 300,
+  signal?: AbortSignal
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // Check if already aborted
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'));
+      return;
+    }
+
     let resolved = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      editor.off('canvas:frame:load', onFrameLoad);
+    };
 
     // Handler for when frame is loaded
     const onFrameLoad = () => {
       if (resolved) return;
       resolved = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      editor.off('canvas:frame:load', onFrameLoad);
+      cleanup();
       debug('Frame ready (event)');
       resolve();
     };
+
+    // Handler for abort
+    const onAbort = () => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
 
     // Listen for frame load event
     editor.on('canvas:frame:load', onFrameLoad);
@@ -377,7 +412,8 @@ function waitForFrameReady(
     timeoutId = setTimeout(() => {
       if (resolved) return;
       resolved = true;
-      editor.off('canvas:frame:load', onFrameLoad);
+      signal?.removeEventListener('abort', onAbort);
+      cleanup();
       debug('Frame ready (timeout fallback)');
       resolve();
     }, timeoutMs);
@@ -387,8 +423,8 @@ function waitForFrameReady(
     if (frame?.loaded || editor.Canvas?.getDocument?.()) {
       if (!resolved) {
         resolved = true;
-        if (timeoutId) clearTimeout(timeoutId);
-        editor.off('canvas:frame:load', onFrameLoad);
+        signal?.removeEventListener('abort', onAbort);
+        cleanup();
         debug('Frame already ready');
         resolve();
       }
@@ -427,7 +463,8 @@ function setupPageEventHandlers(
 
     try {
       // Wait for frame to be ready using event-based approach
-      await waitForFrameReady(editor, 300);
+      // Pass signal to allow cancellation if user switches pages again
+      await waitForFrameReady(editor, 300, signal);
 
       if (signal.aborted) {
         debug('Page switch aborted (new switch started)');
@@ -435,7 +472,8 @@ function setupPageEventHandlers(
       }
 
       // Ensure USWDS resources are loaded
-      await loadUSWDSResources(editor);
+      // Pass signal to allow cancellation during resource loading
+      await loadUSWDSResources(editor, signal);
 
       if (signal.aborted) return;
 
@@ -449,6 +487,11 @@ function setupPageEventHandlers(
       forceCanvasUpdate(editor);
       debug('Page switch completed');
     } catch (err) {
+      // Don't log abort errors - they're expected during rapid page switching
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        debug('Page switch aborted');
+        return;
+      }
       if (!signal.aborted) {
         debug('Page switch warning:', err);
       }

@@ -23,20 +23,42 @@ type EditorInstance = any;
 
 /**
  * Helper to wait for a resource to load
+ * @param signal - Optional AbortSignal for cancellation
  */
-function waitForLoad(element: HTMLElement, type: string): Promise<void> {
+function waitForLoad(element: HTMLElement, type: string, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Check if already aborted
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'));
+      return;
+    }
+
     const timeout = setTimeout(() => {
       reject(new Error(`${type} load timeout after 10s`));
     }, 10000);
 
-    element.onload = () => {
+    const cleanup = () => {
       clearTimeout(timeout);
+      element.onload = null;
+      element.onerror = null;
+    };
+
+    // Listen for abort
+    const abortHandler = () => {
+      cleanup();
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', abortHandler, { once: true });
+
+    element.onload = () => {
+      signal?.removeEventListener('abort', abortHandler);
+      cleanup();
       debug(`${type} loaded`);
       resolve();
     };
     element.onerror = (e) => {
-      clearTimeout(timeout);
+      signal?.removeEventListener('abort', abortHandler);
+      cleanup();
       console.error(`USWDS-PT: ${type} failed to load`, e);
       reject(e);
     };
@@ -45,16 +67,24 @@ function waitForLoad(element: HTMLElement, type: string): Promise<void> {
 
 /**
  * Helper to wait for custom elements to be defined
+ * @param signal - Optional AbortSignal for cancellation
  */
 async function waitForCustomElements(
   iframeWindow: Window,
   elements: string[],
-  maxWaitMs = 5000
+  maxWaitMs = 5000,
+  signal?: AbortSignal
 ): Promise<boolean> {
   const startTime = Date.now();
   const customElements = iframeWindow.customElements;
 
   while (Date.now() - startTime < maxWaitMs) {
+    // Check for abort
+    if (signal?.aborted) {
+      debug('waitForCustomElements aborted');
+      return false;
+    }
+
     const allDefined = elements.every(el => customElements.get(el) !== undefined);
     if (allDefined) {
       debug('All custom elements registered:', elements);
@@ -72,9 +102,16 @@ async function waitForCustomElements(
  * Load USWDS resources into the GrapesJS canvas iframe
  *
  * @param editor - GrapesJS editor instance
+ * @param signal - Optional AbortSignal for cancellation
  * @returns Promise that resolves when resources are loaded
  */
-export async function loadUSWDSResources(editor: EditorInstance): Promise<void> {
+export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortSignal): Promise<void> {
+  // Check for early abort
+  if (signal?.aborted) {
+    debug('loadUSWDSResources aborted before start');
+    return;
+  }
+
   const canvas = editor.Canvas;
   if (!canvas) return;
 
@@ -111,9 +148,15 @@ export async function loadUSWDSResources(editor: EditorInstance): Promise<void> 
     doc.head.appendChild(uswdsWcCss);
 
     await Promise.all([
-      waitForLoad(uswdsCss, 'USWDS CSS'),
-      waitForLoad(uswdsWcCss, 'USWDS-WC CSS'),
+      waitForLoad(uswdsCss, 'USWDS CSS', signal),
+      waitForLoad(uswdsWcCss, 'USWDS-WC CSS', signal),
     ]);
+
+    // Check for abort after CSS load
+    if (signal?.aborted) {
+      debug('loadUSWDSResources aborted after CSS load');
+      return;
+    }
 
     // 2. Load USWDS-WC bundle JS
     const uswdsWcScript = doc.createElement('script');
@@ -121,7 +164,13 @@ export async function loadUSWDSResources(editor: EditorInstance): Promise<void> 
     uswdsWcScript.src = CDN_URLS.uswdsWcJs;
     doc.head.appendChild(uswdsWcScript);
 
-    await waitForLoad(uswdsWcScript, 'USWDS-WC JS');
+    await waitForLoad(uswdsWcScript, 'USWDS-WC JS', signal);
+
+    // Check for abort after JS load
+    if (signal?.aborted) {
+      debug('loadUSWDSResources aborted after JS load');
+      return;
+    }
 
     // Note: USWDS JavaScript (uswds.min.js) is NOT loaded here because:
     // - All components are web components that handle their own behavior internally
@@ -132,18 +181,31 @@ export async function loadUSWDSResources(editor: EditorInstance): Promise<void> 
     const iframeWindow = canvas.getWindow();
     if (iframeWindow) {
       const criticalElements = ['usa-button', 'usa-header', 'usa-footer', 'usa-alert'];
-      await waitForCustomElements(iframeWindow, criticalElements);
+      await waitForCustomElements(iframeWindow, criticalElements, 5000, signal);
+    }
+
+    // Final abort check before refresh
+    if (signal?.aborted) {
+      debug('loadUSWDSResources aborted before refresh');
+      return;
     }
 
     debug('All USWDS resources loaded successfully');
 
     // 4. Trigger a canvas refresh
     setTimeout(() => {
-      editor.refresh();
-      debug('Canvas refreshed after resource load');
+      if (!signal?.aborted) {
+        editor.refresh();
+        debug('Canvas refreshed after resource load');
+      }
     }, 100);
 
   } catch (err) {
+    // Don't log abort errors as they're expected during page switching
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      debug('loadUSWDSResources aborted');
+      return;
+    }
     console.error('USWDS-PT: Error loading resources:', err);
   }
 }
