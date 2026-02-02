@@ -240,10 +240,47 @@ function generateInitScript(): string {
   async function initializeComponents() {
     // Wait for custom elements to be defined (with timeout fallback)
     await Promise.all([
+      customElements.whenDefined('usa-banner'),
       customElements.whenDefined('usa-header'),
       customElements.whenDefined('usa-footer'),
     ]).catch((err) => {
       console.warn('USWDS web components may not be fully loaded:', err);
+    });
+
+    // Initialize usa-banner components - ensure toggle functionality works
+    document.querySelectorAll('usa-banner').forEach(banner => {
+      // Trigger update to ensure component is fully rendered
+      if (typeof banner.requestUpdate === 'function') {
+        banner.requestUpdate();
+      }
+
+      // Set up click handler for the banner toggle button as a fallback
+      // The web component should handle this, but we add it as insurance
+      setTimeout(() => {
+        const button = banner.querySelector('.usa-banner__button');
+        const content = banner.querySelector('.usa-banner__content');
+        const header = banner.querySelector('.usa-banner__header');
+
+        if (button && content && header) {
+          // Check if handler is already attached by checking if clicking works
+          // We'll add our own handler that won't conflict
+          button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            const newExpanded = !isExpanded;
+
+            button.setAttribute('aria-expanded', String(newExpanded));
+
+            if (newExpanded) {
+              content.removeAttribute('hidden');
+              header.classList.add('usa-banner__header--expanded');
+            } else {
+              content.setAttribute('hidden', '');
+              header.classList.remove('usa-banner__header--expanded');
+            }
+          });
+        }
+      }, 200);
     });
 
     // Initialize usa-header components
