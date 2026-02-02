@@ -855,16 +855,25 @@ componentRegistry.register({
           // Store as attribute for persistence - GrapesJS will save this
           element.setAttribute('text', textValue);
 
-          // Also update the GrapesJS component's attributes model
-          // This ensures the attribute persists when switching pages
+          // Update the GrapesJS component model
           if (component) {
             try {
+              // Update the attributes model
               const attrs = component.get('attributes') || {};
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }
+
+              // CRITICAL: Clear slot content (children) so export doesn't have
+              // conflicting content. The web component will use the text attribute.
+              // This ensures exported HTML is: <usa-button text="New Text"></usa-button>
+              // Instead of: <usa-button text="New Text">Click me</usa-button>
+              const children = component.components();
+              if (children && children.length > 0) {
+                children.reset();
+              }
             } catch (e) {
-              // Ignore errors during attribute sync
+              // Ignore errors during model sync
             }
           }
 
