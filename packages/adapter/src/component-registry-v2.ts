@@ -838,7 +838,9 @@ componentRegistry.register({
 
   traits: {
     // Text content - usa-button uses slot content, not a text attribute
-    // We need a custom handler that modifies the inner element directly
+    // We need a custom handler that:
+    // 1. Updates the DOM inner element
+    // 2. Updates the GrapesJS component model for persistence across page switches
     text: {
       definition: {
         name: 'text',
@@ -847,11 +849,28 @@ componentRegistry.register({
         default: 'Click me',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const textValue = value || 'Click me';
 
-          // Store as attribute for GrapesJS persistence
+          // Store as attribute for persistence
           element.setAttribute('text', textValue);
+
+          // CRITICAL: Update GrapesJS component model content
+          // This ensures the text persists when switching pages
+          if (component) {
+            try {
+              // Clear existing child components and set new text content
+              const children = component.components();
+              if (children) {
+                children.reset(); // Clear all children
+              }
+              // GrapesJS will use the 'content' attribute for text-only components
+              component.set('content', textValue);
+            } catch (e) {
+              // Fallback if component API fails
+              console.warn('USWDS-PT: Could not update GrapesJS component content:', e);
+            }
+          }
 
           // Find the inner button or anchor element and update its text
           const updateInnerElement = () => {
