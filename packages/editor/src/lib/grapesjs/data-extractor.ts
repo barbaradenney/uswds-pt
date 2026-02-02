@@ -1,0 +1,336 @@
+/**
+ * GrapesJS Data Extractor
+ *
+ * Robust extraction of HTML content and project data from GrapesJS editor.
+ * Replaces the multiple fallback strategies scattered throughout Editor.tsx
+ * with a single, well-documented extraction function.
+ */
+
+// Debug logging
+const DEBUG =
+  typeof window !== 'undefined' &&
+  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
+    localStorage.getItem('uswds_pt_debug') === 'true');
+
+function debug(...args: unknown[]): void {
+  if (DEBUG) {
+    console.log('[USWDS-PT DataExtractor]', ...args);
+  }
+}
+
+// GrapesJS editor type
+type EditorInstance = any;
+
+/**
+ * Result of data extraction
+ */
+export interface ExtractionResult {
+  /** Extracted HTML content */
+  html: string;
+  /** Extracted GrapesJS project data */
+  projectData: GrapesProjectData;
+  /** Warnings encountered during extraction (for debugging) */
+  warnings: string[];
+  /** Whether extraction was successful */
+  success: boolean;
+}
+
+/**
+ * GrapesJS project data structure
+ */
+export interface GrapesProjectData {
+  pages: Array<{
+    id: string;
+    name: string;
+    frames: Array<{
+      component: {
+        type: string;
+        components?: unknown[];
+        [key: string]: unknown;
+      };
+    }>;
+  }>;
+  styles: unknown[];
+  assets: unknown[];
+}
+
+/**
+ * Validate that editor is ready for data extraction
+ */
+export function isEditorReadyForExtraction(editor: EditorInstance): boolean {
+  if (!editor) return false;
+
+  const pages = editor.Pages;
+  if (!pages || typeof pages.getAll !== 'function') {
+    return false;
+  }
+
+  const allPages = pages.getAll?.();
+  return Array.isArray(allPages) && allPages.length > 0;
+}
+
+/**
+ * Extract HTML content from editor
+ */
+function extractHtml(editor: EditorInstance, fallback: string): { html: string; warning?: string } {
+  try {
+    const html = editor.getHtml();
+    if (html && typeof html === 'string') {
+      return { html };
+    }
+    return { html: fallback, warning: 'getHtml() returned empty, using fallback' };
+  } catch (err) {
+    return {
+      html: fallback,
+      warning: `getHtml() threw error: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+/**
+ * Extract project data using primary method (getProjectData)
+ */
+function extractProjectDataPrimary(editor: EditorInstance): { data: GrapesProjectData | null; warning?: string } {
+  try {
+    const rawData = editor.getProjectData();
+    if (rawData && typeof rawData === 'object' && Array.isArray(rawData.pages)) {
+      return { data: rawData as GrapesProjectData };
+    }
+    return { data: null, warning: 'getProjectData() returned invalid structure' };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    // Check if this is the common forEach error
+    if (errMsg.includes('forEach') || errMsg.includes('undefined')) {
+      return { data: null, warning: `getProjectData() failed (timing issue): ${errMsg}` };
+    }
+    return { data: null, warning: `getProjectData() threw error: ${errMsg}` };
+  }
+}
+
+/**
+ * Extract project data by reconstructing from editor state (fallback)
+ */
+function extractProjectDataFromState(editor: EditorInstance): { data: GrapesProjectData; warning?: string } {
+  const warnings: string[] = [];
+  const projectData: GrapesProjectData = {
+    pages: [],
+    styles: [],
+    assets: [],
+  };
+
+  try {
+    // Try to get pages
+    const pagesManager = editor.Pages;
+    const allPages = pagesManager?.getAll?.() || [];
+
+    if (allPages.length > 0) {
+      projectData.pages = allPages.map((page: any) => {
+        try {
+          const pageId = page.getId?.() || page.id || `page-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const pageName = page.get?.('name') || page.getName?.() || 'Page';
+          const mainFrame = page.getMainFrame?.();
+          const mainComponent = mainFrame?.getComponent?.();
+
+          return {
+            id: pageId,
+            name: pageName,
+            frames: [{
+              component: mainComponent?.toJSON?.() || { type: 'wrapper', components: [] },
+            }],
+          };
+        } catch (pageErr) {
+          warnings.push(`Error serializing page: ${pageErr instanceof Error ? pageErr.message : String(pageErr)}`);
+          return {
+            id: `page-${Date.now()}`,
+            name: 'Page',
+            frames: [{ component: { type: 'wrapper', components: [] } }],
+          };
+        }
+      });
+    } else {
+      // Fallback to wrapper
+      const wrapper = editor.DomComponents?.getWrapper();
+      projectData.pages = [{
+        id: 'page-1',
+        name: 'Page 1',
+        frames: [{
+          component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] },
+        }],
+      }];
+      warnings.push('No pages found, reconstructed from wrapper');
+    }
+
+    // Extract styles
+    try {
+      const styles = editor.CssComposer?.getAll?.() || [];
+      projectData.styles = Array.isArray(styles)
+        ? styles.map((s: any) => {
+            try { return s.toJSON?.() || s; } catch { return s; }
+          })
+        : [];
+    } catch (styleErr) {
+      warnings.push(`Error extracting styles: ${styleErr instanceof Error ? styleErr.message : String(styleErr)}`);
+    }
+
+    // Extract assets
+    try {
+      const assets = editor.AssetManager?.getAll?.() || [];
+      projectData.assets = Array.isArray(assets)
+        ? assets.map((a: any) => {
+            try { return a.toJSON?.() || a; } catch { return a; }
+          })
+        : [];
+    } catch (assetErr) {
+      warnings.push(`Error extracting assets: ${assetErr instanceof Error ? assetErr.message : String(assetErr)}`);
+    }
+
+    return {
+      data: projectData,
+      warning: warnings.length > 0 ? `Reconstructed from state: ${warnings.join('; ')}` : undefined,
+    };
+  } catch (err) {
+    return {
+      data: {
+        pages: [{ id: 'page-1', name: 'Page 1', frames: [{ component: { type: 'wrapper', components: [] } }] }],
+        styles: [],
+        assets: [],
+      },
+      warning: `Failed to reconstruct from state: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+/**
+ * Normalize project data structure
+ *
+ * Ensures the project data has all required fields with valid values.
+ */
+function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): GrapesProjectData {
+  const normalized = { ...data };
+
+  // Ensure pages array exists and is valid
+  if (!normalized.pages || !Array.isArray(normalized.pages) || normalized.pages.length === 0) {
+    debug('Normalizing: pages was invalid, reconstructing...');
+    const allPages = editor.Pages?.getAll?.() || [];
+
+    if (allPages.length > 0) {
+      normalized.pages = allPages.map((page: any) => {
+        const pageId = page.getId?.() || page.id || `page-${Date.now()}`;
+        const pageName = page.get?.('name') || page.getName?.() || 'Page';
+        const mainFrame = page.getMainFrame?.() || page.get?.('frames')?.[0];
+        const mainComponent = mainFrame?.getComponent?.() || page.getMainComponent?.();
+
+        return {
+          id: pageId,
+          name: pageName,
+          frames: [{
+            component: mainComponent?.toJSON?.() || { type: 'wrapper', components: [] },
+          }],
+        };
+      });
+    } else {
+      const wrapper = editor.DomComponents?.getWrapper();
+      normalized.pages = [{
+        id: 'page-1',
+        name: 'Page 1',
+        frames: [{
+          component: wrapper?.toJSON?.() || { type: 'wrapper', components: [] },
+        }],
+      }];
+    }
+  }
+
+  // Ensure other arrays exist
+  if (!normalized.styles) normalized.styles = [];
+  if (!normalized.assets) normalized.assets = [];
+
+  return normalized;
+}
+
+/**
+ * Extract editor data with robust error handling
+ *
+ * This is the main entry point for data extraction. It tries the primary
+ * extraction method first, then falls back to state reconstruction if needed.
+ *
+ * @param editor - GrapesJS editor instance
+ * @param fallbackHtml - HTML to use if extraction fails
+ * @returns ExtractionResult with html, projectData, and any warnings
+ */
+export function extractEditorData(
+  editor: EditorInstance,
+  fallbackHtml = ''
+): ExtractionResult {
+  const warnings: string[] = [];
+
+  // Check if editor is ready
+  if (!editor) {
+    return {
+      html: fallbackHtml,
+      projectData: {
+        pages: [{ id: 'page-1', name: 'Page 1', frames: [{ component: { type: 'wrapper', components: [] } }] }],
+        styles: [],
+        assets: [],
+      },
+      warnings: ['Editor not initialized'],
+      success: false,
+    };
+  }
+
+  // Extract HTML
+  const htmlResult = extractHtml(editor, fallbackHtml);
+  if (htmlResult.warning) {
+    warnings.push(htmlResult.warning);
+  }
+
+  // Extract project data
+  let projectData: GrapesProjectData;
+
+  // Try primary extraction first
+  const primaryResult = extractProjectDataPrimary(editor);
+  if (primaryResult.data) {
+    projectData = primaryResult.data;
+    if (primaryResult.warning) {
+      warnings.push(primaryResult.warning);
+    }
+  } else {
+    // Fall back to state reconstruction
+    if (primaryResult.warning) {
+      warnings.push(primaryResult.warning);
+    }
+    const fallbackResult = extractProjectDataFromState(editor);
+    projectData = fallbackResult.data;
+    if (fallbackResult.warning) {
+      warnings.push(fallbackResult.warning);
+    }
+  }
+
+  // Normalize the project data
+  projectData = normalizeProjectData(projectData, editor);
+
+  // Log extraction details in debug mode
+  debug('Extraction complete:');
+  debug('  - HTML length:', htmlResult.html.length);
+  debug('  - Pages:', projectData.pages.length);
+  projectData.pages.forEach((page, i) => {
+    debug(`    - Page ${i}:`, page.name, 'components:', page.frames?.[0]?.component?.components?.length || 0);
+  });
+  if (warnings.length > 0) {
+    debug('  - Warnings:', warnings);
+  }
+
+  return {
+    html: htmlResult.html,
+    projectData,
+    warnings,
+    success: warnings.length === 0 || warnings.every(w => w.includes('Reconstructed')),
+  };
+}
+
+/**
+ * Check if project data has actual content (not just empty wrapper)
+ */
+export function hasActualContent(projectData: GrapesProjectData): boolean {
+  const firstPageComponents = projectData.pages?.[0]?.frames?.[0]?.component?.components;
+  return Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
+}

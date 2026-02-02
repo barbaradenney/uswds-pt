@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom';
+import { setupMSW } from './mocks/server';
+
+// Set up MSW for API mocking
+setupMSW();
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
