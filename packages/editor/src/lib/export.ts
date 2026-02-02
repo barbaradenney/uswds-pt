@@ -355,22 +355,22 @@ function generateInitScript(): string {
 
     // Initialize usa-button components
     document.querySelectorAll('usa-button').forEach(button => {
-      // Apply text attribute to inner button/anchor element
+      // The usa-button web component uses slot content (not text attribute)
+      // The slot content should already be moved to the inner button by the WC
+      // We only apply text attribute as a FALLBACK if inner button is empty
       const textAttr = button.getAttribute('text');
-      if (textAttr) {
+      const applyTextFallback = () => {
         const inner = button.querySelector('button, a');
         if (inner) {
-          inner.textContent = textAttr;
-        } else {
-          // Inner element may not exist yet, retry after a short delay
-          setTimeout(() => {
-            const innerRetry = button.querySelector('button, a');
-            if (innerRetry) {
-              innerRetry.textContent = textAttr;
-            }
-          }, 100);
+          // Only apply text attribute if inner is empty (slot content didn't work)
+          const currentText = inner.textContent?.trim();
+          if (!currentText && textAttr) {
+            inner.textContent = textAttr;
+          }
         }
-      }
+      };
+      // Wait a bit for web component to process slot content first
+      setTimeout(applyTextFallback, 150);
 
       // Handle href/page-link
       const href = resolveHref(button);
