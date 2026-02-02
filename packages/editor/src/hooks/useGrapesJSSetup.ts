@@ -15,7 +15,7 @@ import {
   registerClearCommand,
   setupAllInteractiveHandlers,
   exposeDebugHelpers,
-  cleanupDebugHelpers,
+  cleanupCanvasHelpers,
 } from '../lib/grapesjs/canvas-helpers';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 
@@ -110,7 +110,8 @@ export function useGrapesJSSetup({
       debug('Cleaned up', listenersRef.current.length, 'editor event listeners');
     }
     listenersRef.current = [];
-    cleanupDebugHelpers();
+    // Clean up all canvas helpers (timeouts, document listeners, debug helpers)
+    cleanupCanvasHelpers();
     editorRef.current = null;
   }, [editorRef]);
 
@@ -348,6 +349,54 @@ function removeDefaultBlocks(editor: EditorInstance, blocks: Array<{ id: string 
 }
 
 /**
+ * Wait for canvas frame to be ready, with timeout fallback
+ * Uses event-based synchronization instead of hardcoded delays
+ */
+function waitForFrameReady(
+  editor: EditorInstance,
+  timeoutMs: number = 300
+): Promise<void> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    // Handler for when frame is loaded
+    const onFrameLoad = () => {
+      if (resolved) return;
+      resolved = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      editor.off('canvas:frame:load', onFrameLoad);
+      debug('Frame ready (event)');
+      resolve();
+    };
+
+    // Listen for frame load event
+    editor.on('canvas:frame:load', onFrameLoad);
+
+    // Fallback timeout in case event doesn't fire
+    timeoutId = setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      editor.off('canvas:frame:load', onFrameLoad);
+      debug('Frame ready (timeout fallback)');
+      resolve();
+    }, timeoutMs);
+
+    // Check if frame is already ready
+    const frame = editor.Canvas?.getFrame?.();
+    if (frame?.loaded || editor.Canvas?.getDocument?.()) {
+      if (!resolved) {
+        resolved = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        editor.off('canvas:frame:load', onFrameLoad);
+        debug('Frame already ready');
+        resolve();
+      }
+    }
+  });
+}
+
+/**
  * Set up page event handlers
  */
 function setupPageEventHandlers(
@@ -358,20 +407,37 @@ function setupPageEventHandlers(
   // Track pages that need template
   const pagesNeedingTemplate = new Set<string>();
 
+  // Track pending operations to prevent race conditions
+  let pendingPageSwitch: AbortController | null = null;
+
   registerListener(editor, 'page:select', async (page: any) => {
     const pageId = page?.getId?.() || page?.id;
     const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
     debug('Page selected:', pageId, '-', pageName);
 
+    // Cancel any pending page switch operation
+    if (pendingPageSwitch) {
+      pendingPageSwitch.abort();
+    }
+    pendingPageSwitch = new AbortController();
+    const signal = pendingPageSwitch.signal;
+
     // Block saves during page transition
     stateMachine.pageSwitchStart();
 
-    // Wait for GrapesJS to complete the page switch
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     try {
+      // Wait for frame to be ready using event-based approach
+      await waitForFrameReady(editor, 300);
+
+      if (signal.aborted) {
+        debug('Page switch aborted (new switch started)');
+        return;
+      }
+
       // Ensure USWDS resources are loaded
       await loadUSWDSResources(editor);
+
+      if (signal.aborted) return;
 
       // Log page state
       const wrapper = editor.DomComponents?.getWrapper();
@@ -383,13 +449,19 @@ function setupPageEventHandlers(
       forceCanvasUpdate(editor);
       debug('Page switch completed');
     } catch (err) {
-      debug('Page switch warning:', err);
+      if (!signal.aborted) {
+        debug('Page switch warning:', err);
+      }
     } finally {
-      // Allow saves again after small delay
-      setTimeout(() => {
-        stateMachine.pageSwitchComplete();
-        debug('Page switch lock released');
-      }, 200);
+      if (!signal.aborted) {
+        // Use requestAnimationFrame for smoother timing with the render cycle
+        requestAnimationFrame(() => {
+          if (!signal.aborted) {
+            stateMachine.pageSwitchComplete();
+            debug('Page switch lock released');
+          }
+        });
+      }
     }
   });
 
@@ -405,65 +477,67 @@ function setupPageEventHandlers(
   });
 
   // Add template when new page is selected
-  registerListener(editor, 'page:select', (page: any) => {
+  registerListener(editor, 'page:select', async (page: any) => {
     const pageId = page?.getId?.() || page?.id;
 
     if (pageId && pagesNeedingTemplate.has(pageId)) {
       pagesNeedingTemplate.delete(pageId);
 
-      setTimeout(() => {
-        try {
-          let mainComponent = page.getMainComponent?.();
+      // Wait for frame to be ready before adding template
+      await waitForFrameReady(editor, 200);
 
-          if (!mainComponent) {
-            const mainFrame = page.getMainFrame?.();
-            mainComponent = mainFrame?.getComponent?.();
-          }
+      try {
+        let mainComponent = page.getMainComponent?.();
 
-          if (!mainComponent) {
-            const frames = page.get?.('frames');
-            if (frames && frames.length > 0) {
-              mainComponent = frames.at?.(0)?.get?.('component');
-            }
-          }
-
-          if (!mainComponent) {
-            mainComponent = editor.DomComponents?.getWrapper?.();
-          }
-
-          if (mainComponent) {
-            const existingComponents = mainComponent.components?.();
-            const componentCount = existingComponents?.length || 0;
-
-            let shouldAddTemplate = componentCount === 0;
-
-            if (!shouldAddTemplate && componentCount <= 3) {
-              const componentTypes = existingComponents.map((c: any) =>
-                c.get?.('tagName')?.toLowerCase() || c.get?.('type') || ''
-              );
-
-              const isDefaultContent = componentTypes.every((type: string) =>
-                ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'text', 'default', 'heading-block', 'text-block'].includes(type)
-              );
-
-              if (isDefaultContent) {
-                shouldAddTemplate = true;
-              }
-            }
-
-            if (shouldAddTemplate) {
-              const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
-              if (blankTemplate) {
-                mainComponent.components(blankTemplate);
-                debug('Added default template to new page');
-                setTimeout(() => editor.refresh(), 100);
-              }
-            }
-          }
-        } catch (err) {
-          console.warn('[USWDS-PT] Error adding template to new page:', err);
+        if (!mainComponent) {
+          const mainFrame = page.getMainFrame?.();
+          mainComponent = mainFrame?.getComponent?.();
         }
-      }, 200);
+
+        if (!mainComponent) {
+          const frames = page.get?.('frames');
+          if (frames && frames.length > 0) {
+            mainComponent = frames.at?.(0)?.get?.('component');
+          }
+        }
+
+        if (!mainComponent) {
+          mainComponent = editor.DomComponents?.getWrapper?.();
+        }
+
+        if (mainComponent) {
+          const existingComponents = mainComponent.components?.();
+          const componentCount = existingComponents?.length || 0;
+
+          let shouldAddTemplate = componentCount === 0;
+
+          if (!shouldAddTemplate && componentCount <= 3) {
+            const componentTypes = existingComponents.map((c: any) =>
+              c.get?.('tagName')?.toLowerCase() || c.get?.('type') || ''
+            );
+
+            const isDefaultContent = componentTypes.every((type: string) =>
+              ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'text', 'default', 'heading-block', 'text-block'].includes(type)
+            );
+
+            if (isDefaultContent) {
+              shouldAddTemplate = true;
+            }
+          }
+
+          if (shouldAddTemplate) {
+            const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+            if (blankTemplate) {
+              mainComponent.components(blankTemplate);
+              debug('Added default template to new page');
+              // Use requestAnimationFrame for smoother refresh
+              requestAnimationFrame(() => editor.refresh?.());
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[USWDS-PT] Error adding template to new page:', err);
+      }
     }
   });
 

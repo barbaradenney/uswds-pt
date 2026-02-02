@@ -26,14 +26,14 @@ const mockSetupCanvasEventHandlers = vi.fn();
 const mockRegisterClearCommand = vi.fn();
 const mockSetupAllInteractiveHandlers = vi.fn();
 const mockExposeDebugHelpers = vi.fn();
-const mockCleanupDebugHelpers = vi.fn();
+const mockCleanupCanvasHelpers = vi.fn();
 vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   forceCanvasUpdate: (...args: unknown[]) => mockForceCanvasUpdate(...args),
   setupCanvasEventHandlers: (...args: unknown[]) => mockSetupCanvasEventHandlers(...args),
   registerClearCommand: (...args: unknown[]) => mockRegisterClearCommand(...args),
   setupAllInteractiveHandlers: (...args: unknown[]) => mockSetupAllInteractiveHandlers(...args),
   exposeDebugHelpers: (...args: unknown[]) => mockExposeDebugHelpers(...args),
-  cleanupDebugHelpers: (...args: unknown[]) => mockCleanupDebugHelpers(...args),
+  cleanupCanvasHelpers: (...args: unknown[]) => mockCleanupCanvasHelpers(...args),
 }));
 
 // Mock adapter
@@ -586,7 +586,7 @@ describe('useGrapesJSSetup', () => {
 
       unmount();
 
-      expect(mockCleanupDebugHelpers).toHaveBeenCalled();
+      expect(mockCleanupCanvasHelpers).toHaveBeenCalled();
     });
 
     it('should set editorRef to null on cleanup', () => {
