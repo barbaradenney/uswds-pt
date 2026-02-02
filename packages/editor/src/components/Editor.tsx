@@ -91,9 +91,9 @@ export function Editor() {
     },
   });
 
-  // Autosave hook
+  // Autosave hook - enabled when we have a prototype (new or existing)
   const autosave = useEditorAutosave({
-    enabled: !isDemoMode && !!stateMachine.state.prototype && !!slug,
+    enabled: !isDemoMode && !!stateMachine.state.prototype,
     stateMachine,
     onSave: () => persistence.save('autosave'),
     debounceMs: 5000,
@@ -165,10 +165,15 @@ export function Editor() {
     blocks,
   });
 
-  // Handle back navigation
-  const handleBack = useCallback(() => {
+  // Handle back navigation - save before leaving if there are unsaved changes
+  const handleBack = useCallback(async () => {
+    // If there are unsaved changes, try to save first
+    if (stateMachine.state.dirty && stateMachine.canSave) {
+      debug('Saving before navigation...');
+      await persistence.save('autosave');
+    }
     navigate('/');
-  }, [navigate]);
+  }, [navigate, stateMachine.state.dirty, stateMachine.canSave, persistence]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -247,6 +252,21 @@ export function Editor() {
     },
     [restoreVersion, slug, persistence, stateMachine.state.prototype, fetchVersions, autosave]
   );
+
+  // Warn users before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (stateMachine.state.dirty) {
+        e.preventDefault();
+        // Modern browsers require returnValue to be set
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [stateMachine.state.dirty]);
 
   // Load prototype on mount or slug change
   useEffect(() => {

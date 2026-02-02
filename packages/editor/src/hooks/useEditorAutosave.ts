@@ -138,22 +138,25 @@ export function useEditorAutosave({
 
   // Trigger a change (called when content changes)
   const triggerChange = useCallback(() => {
+    // Always mark content as dirty, even if autosave is disabled
+    // This ensures the dirty flag is set for save-on-exit detection
+    if (stateMachine.canModifyContent) {
+      stateMachine.contentChanged();
+    }
+
     if (!enabled || isPaused) {
-      debug('Change ignored: enabled=', enabled, 'paused=', isPaused);
+      debug('Autosave skipped: enabled=', enabled, 'paused=', isPaused);
       return;
     }
 
     // Can't autosave without a prototype
     if (!stateMachine.state.prototype) {
-      debug('Change ignored: no prototype');
+      debug('Autosave skipped: no prototype yet (changes still tracked)');
       return;
     }
 
     hasPendingChangesRef.current = true;
     setStatus('pending');
-
-    // Mark content as dirty in state machine
-    stateMachine.contentChanged();
 
     // Track first change time for max wait
     if (firstChangeTimeRef.current === null) {
