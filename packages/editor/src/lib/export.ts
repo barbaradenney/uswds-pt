@@ -238,16 +238,13 @@ function isSelfClosingTag(tag: string): boolean {
 }
 
 /**
- * CDN URLs for USWDS resources (keep in sync with adapter constants)
+ * CDN URLs for USWDS resources
+ * Imported from adapter package to ensure consistency
  */
-const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.12';
+import { CDN_URLS } from '@uswds-pt/adapter';
 
-const PREVIEW_CDN_URLS = {
-  uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
-  uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
-};
+// Use the shared CDN URLs from adapter
+const PREVIEW_CDN_URLS = CDN_URLS;
 
 /**
  * Generate initialization script for web components that need JS setup.

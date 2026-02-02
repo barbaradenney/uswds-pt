@@ -1,0 +1,840 @@
+/**
+ * Tests for useGrapesJSSetup hook
+ *
+ * Tests editor initialization, event registration, and cleanup.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useGrapesJSSetup } from './useGrapesJSSetup';
+import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
+import { mockPrototype } from '../test/fixtures/prototypes';
+
+// Mock resource loader functions
+const mockLoadUSWDSResources = vi.fn();
+const mockAddCardContainerCSS = vi.fn();
+const mockClearGrapesJSStorage = vi.fn();
+vi.mock('../lib/grapesjs/resource-loader', () => ({
+  loadUSWDSResources: (...args: unknown[]) => mockLoadUSWDSResources(...args),
+  addCardContainerCSS: (...args: unknown[]) => mockAddCardContainerCSS(...args),
+  clearGrapesJSStorage: (...args: unknown[]) => mockClearGrapesJSStorage(...args),
+}));
+
+// Mock canvas helpers
+const mockForceCanvasUpdate = vi.fn();
+const mockSetupCanvasEventHandlers = vi.fn();
+const mockRegisterClearCommand = vi.fn();
+const mockSetupAllInteractiveHandlers = vi.fn();
+const mockExposeDebugHelpers = vi.fn();
+const mockCleanupDebugHelpers = vi.fn();
+vi.mock('../lib/grapesjs/canvas-helpers', () => ({
+  forceCanvasUpdate: (...args: unknown[]) => mockForceCanvasUpdate(...args),
+  setupCanvasEventHandlers: (...args: unknown[]) => mockSetupCanvasEventHandlers(...args),
+  registerClearCommand: (...args: unknown[]) => mockRegisterClearCommand(...args),
+  setupAllInteractiveHandlers: (...args: unknown[]) => mockSetupAllInteractiveHandlers(...args),
+  exposeDebugHelpers: (...args: unknown[]) => mockExposeDebugHelpers(...args),
+  cleanupDebugHelpers: (...args: unknown[]) => mockCleanupDebugHelpers(...args),
+}));
+
+// Mock adapter
+vi.mock('@uswds-pt/adapter', () => ({
+  DEFAULT_CONTENT: {
+    'blank-template': '<div class="blank-template">__FULL_HTML__</div>',
+  },
+  COMPONENT_ICONS: {},
+}));
+
+/**
+ * Create a mock state machine for testing
+ */
+function createMockStateMachine(overrides: Partial<UseEditorStateMachineReturn> = {}): UseEditorStateMachineReturn {
+  return {
+    state: {
+      status: 'ready',
+      prototype: null,
+      dirty: false,
+      error: null,
+      meta: {},
+      previousStatus: null,
+      lastSavedAt: null,
+    },
+    dispatch: vi.fn(),
+    canSave: true,
+    canSwitchPage: true,
+    canAutosave: false,
+    canModifyContent: true,
+    isLoading: false,
+    isBusy: false,
+    loadPrototype: vi.fn(),
+    prototypeLoaded: vi.fn(),
+    prototypeLoadFailed: vi.fn(),
+    createPrototype: vi.fn(),
+    prototypeCreated: vi.fn(),
+    prototypeCreateFailed: vi.fn(),
+    editorInitializing: vi.fn(),
+    editorReady: vi.fn(),
+    contentChanged: vi.fn(),
+    markClean: vi.fn(),
+    saveStart: vi.fn(),
+    saveSuccess: vi.fn(),
+    saveFailed: vi.fn(),
+    pageSwitchStart: vi.fn(),
+    pageSwitchComplete: vi.fn(),
+    restoreVersionStart: vi.fn(),
+    restoreVersionComplete: vi.fn(),
+    restoreVersionFailed: vi.fn(),
+    clearError: vi.fn(),
+    reset: vi.fn(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock GrapesJS editor with event tracking
+ */
+function createMockEditor() {
+  const eventHandlers: Map<string, ((...args: unknown[]) => void)[]> = new Map();
+
+  return {
+    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      const handlers = eventHandlers.get(event) || [];
+      handlers.push(handler);
+      eventHandlers.set(event, handlers);
+    }),
+    off: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      const handlers = eventHandlers.get(event) || [];
+      const index = handlers.indexOf(handler);
+      if (index > -1) {
+        handlers.splice(index, 1);
+      }
+      eventHandlers.set(event, handlers);
+    }),
+    trigger: (event: string, ...args: unknown[]) => {
+      const handlers = eventHandlers.get(event) || [];
+      handlers.forEach((h) => h(...args));
+    },
+    getHtml: vi.fn(() => '<div>Test content</div>'),
+    getProjectData: vi.fn(() => ({ pages: [], styles: [], assets: [] })),
+    loadProjectData: vi.fn(),
+    Pages: {
+      getAll: vi.fn(() => []),
+      getSelected: vi.fn(),
+    },
+    DomComponents: {
+      getWrapper: vi.fn(() => ({
+        components: vi.fn(() => []),
+      })),
+    },
+    Canvas: {
+      refresh: vi.fn(),
+      getDocument: vi.fn(() => ({
+        querySelectorAll: vi.fn(() => []),
+      })),
+    },
+    Blocks: {
+      getAll: vi.fn((): Array<{ get: (prop: string) => string }> => []),
+      remove: vi.fn(),
+    },
+    getSelected: vi.fn(),
+    refresh: vi.fn(),
+    _eventHandlers: eventHandlers,
+  };
+}
+
+describe('useGrapesJSSetup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ============================================================================
+  // onReady Tests
+  // ============================================================================
+
+  describe('onReady', () => {
+    it('should store editor instance in ref', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(editorRef.current).toBe(mockEditor);
+    });
+
+    it('should mark editor as ready in state machine', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(stateMachine.editorReady).toHaveBeenCalled();
+    });
+
+    it('should clear GrapesJS storage on ready', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockClearGrapesJSStorage).toHaveBeenCalled();
+    });
+
+    it('should register change event listeners', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onContentChange = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange,
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // Check that event listeners were registered
+      expect(mockEditor.on).toHaveBeenCalledWith('component:add', expect.any(Function));
+      expect(mockEditor.on).toHaveBeenCalledWith('component:remove', expect.any(Function));
+      expect(mockEditor.on).toHaveBeenCalledWith('component:update', expect.any(Function));
+      expect(mockEditor.on).toHaveBeenCalledWith('style:change', expect.any(Function));
+    });
+
+    it('should trigger onContentChange when content changes', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onContentChange = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange,
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // Trigger a component change event
+      act(() => {
+        mockEditor.trigger('component:add');
+      });
+
+      expect(onContentChange).toHaveBeenCalled();
+    });
+
+    it('should add custom CSS to canvas', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockAddCardContainerCSS).toHaveBeenCalledWith(mockEditor);
+    });
+
+    it('should register clear command', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockRegisterClearCommand).toHaveBeenCalledWith(mockEditor);
+    });
+
+    it('should load USWDS resources', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockLoadUSWDSResources).toHaveBeenCalledWith(mockEditor);
+    });
+
+    it('should expose debug helpers', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockExposeDebugHelpers).toHaveBeenCalledWith(mockEditor);
+    });
+  });
+
+  // ============================================================================
+  // Project Data Loading Tests
+  // ============================================================================
+
+  describe('project data loading', () => {
+    it('should load blank template for new prototypes (no slug)', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: undefined, // No slug means new prototype
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // Should set blank template via wrapper.components()
+      expect(mockEditor.DomComponents.getWrapper).toHaveBeenCalled();
+    });
+
+    it('should load project data from localStorage in demo mode', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const localPrototype = {
+        gjsData: JSON.stringify({
+          pages: [{ id: 'page-1', name: 'Test' }],
+          styles: [],
+          assets: [],
+        }),
+        htmlContent: '<div>Local content</div>',
+      };
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: true,
+          slug: 'local-123',
+          pendingPrototype: null,
+          localPrototype,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.loadProjectData).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pages: expect.any(Array),
+        })
+      );
+    });
+
+    it('should load project data from API prototype', () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          pendingPrototype: proto,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.loadProjectData).toHaveBeenCalled();
+    });
+
+    it('should use state prototype when pendingPrototype is null', () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: proto,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.loadProjectData).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Cleanup Tests
+  // ============================================================================
+
+  describe('cleanup', () => {
+    it('should remove all event listeners on cleanup', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result, unmount } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // Unmount should trigger cleanup
+      unmount();
+
+      // Verify off was called for cleanup
+      expect(mockEditor.off).toHaveBeenCalled();
+    });
+
+    it('should call cleanupDebugHelpers on cleanup', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result, unmount } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      unmount();
+
+      expect(mockCleanupDebugHelpers).toHaveBeenCalled();
+    });
+
+    it('should set editorRef to null on cleanup', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result, unmount } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(editorRef.current).toBe(mockEditor);
+
+      unmount();
+
+      expect(editorRef.current).toBeNull();
+    });
+
+    it('should handle cleanup when editor not initialized', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+
+      const { unmount } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      // Should not throw when cleaning up without editor
+      expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  // ============================================================================
+  // refreshCanvas Tests
+  // ============================================================================
+
+  describe('refreshCanvas', () => {
+    it('should call forceCanvasUpdate with editor', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      act(() => {
+        result.current.refreshCanvas();
+      });
+
+      expect(mockForceCanvasUpdate).toHaveBeenCalledWith(mockEditor);
+    });
+
+    it('should not throw when editor is not initialized', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      // Should not throw when editor is null
+      expect(() => {
+        act(() => {
+          result.current.refreshCanvas();
+        });
+      }).not.toThrow();
+    });
+  });
+
+  // ============================================================================
+  // Block Removal Tests
+  // ============================================================================
+
+  describe('block removal', () => {
+    it('should remove default blocks not in our list', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      // Set up default blocks that should be removed
+      mockEditor.Blocks.getAll.mockReturnValue([
+        { get: vi.fn().mockReturnValue('default-block') },
+        { get: vi.fn().mockReturnValue('our-block') },
+      ]);
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [{ id: 'our-block', label: 'Our Block', content: '', media: '', category: '' }],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // default-block should be removed since it's not in our blocks list
+      expect(mockEditor.Blocks.remove).toHaveBeenCalledWith('default-block');
+    });
+
+    it('should keep blocks that are in our list', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      mockEditor.Blocks.getAll.mockReturnValue([
+        { get: vi.fn().mockReturnValue('our-block') },
+      ]);
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [{ id: 'our-block', label: 'Our Block', content: '', media: '', category: '' }],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // our-block should NOT be removed
+      expect(mockEditor.Blocks.remove).not.toHaveBeenCalledWith('our-block');
+    });
+  });
+
+  // ============================================================================
+  // Setup Canvas Event Handlers Tests
+  // ============================================================================
+
+  describe('canvas event handlers', () => {
+    it('should setup canvas event handlers', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockSetupCanvasEventHandlers).toHaveBeenCalledWith(
+        mockEditor,
+        expect.any(Function)
+      );
+    });
+
+    it('should setup interactive handlers', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockSetupAllInteractiveHandlers).toHaveBeenCalledWith(
+        mockEditor,
+        expect.any(Function)
+      );
+    });
+  });
+});

@@ -13,6 +13,9 @@ import { previewRoutes } from './routes/preview.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { teamRoutes } from './routes/teams.js';
 import { invitationRoutes } from './routes/invitations.js';
+import { errorHandler, checkDatabaseHealth } from './lib/error-handler.js';
+import { db } from './db/index.js';
+import { sql } from 'drizzle-orm';
 
 // Extend Fastify types
 declare module 'fastify' {
@@ -62,6 +65,12 @@ async function main() {
   // Register auth plugin
   await app.register(authPlugin);
 
+  // Register error handler plugin
+  await app.register(errorHandler, {
+    includeStackTrace: !isProduction,
+    logAllErrors: !isProduction,
+  });
+
   // Register routes
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
@@ -70,23 +79,21 @@ async function main() {
   await app.register(teamRoutes, { prefix: '/api/teams' });
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
 
-  // Global error handler to log all errors
-  app.setErrorHandler((error, request, reply) => {
-    app.log.error({
-      err: error,
-      url: request.url,
-      method: request.method,
-    }, 'Request error');
-
-    reply.status(error.statusCode || 500).send({
-      message: error.message || 'Internal Server Error',
-      statusCode: error.statusCode || 500,
-    });
-  });
-
-  // Health check endpoint
+  // Health check endpoint with database status
   app.get('/api/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    const dbHealth = await checkDatabaseHealth(db, sql);
+
+    return {
+      status: dbHealth.healthy ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: {
+          status: dbHealth.healthy ? 'healthy' : 'unhealthy',
+          latencyMs: dbHealth.latencyMs,
+          ...(dbHealth.error && { error: dbHealth.error }),
+        },
+      },
+    };
   });
 
   // Start server
