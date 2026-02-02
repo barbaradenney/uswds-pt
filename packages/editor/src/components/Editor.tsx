@@ -487,6 +487,10 @@ export function Editor() {
   const [name, setName] = useState('Untitled Prototype');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Ref to hold loaded prototype data immediately available for onReady callback
+  // This fixes the race condition where setEditorKey triggers remount before state updates
+  const pendingPrototypeRef = useRef<Prototype | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -613,11 +617,14 @@ export function Editor() {
     if (slug) {
       // Clear GrapesJS storage before switching to a different prototype
       clearGrapesJSStorage();
-      setEditorKey(slug);
       if (isDemoMode) {
+        // Demo mode: load data first, then trigger editor remount
+        setEditorKey(slug);
         loadLocalPrototype(slug);
       } else {
-        loadPrototype(slug);
+        // Authenticated mode: load data BEFORE triggering editor remount
+        // This fixes the race condition where onReady fires before data loads
+        loadPrototypeAndRemount(slug);
       }
     } else if (!isDemoMode && currentTeam) {
       // In authenticated mode with a team, create prototype immediately and redirect
@@ -694,6 +701,43 @@ export function Editor() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load prototype');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Load prototype and then trigger editor remount (fixes race condition)
+  // This ensures data is available in pendingPrototypeRef before onReady fires
+  async function loadPrototypeAndRemount(prototypeSlug: string) {
+    try {
+      setIsLoading(true);
+      const response = await authFetch(`/api/prototypes/${prototypeSlug}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          navigate('/');
+          return;
+        }
+        throw new Error('Failed to load prototype');
+      }
+
+      const data: Prototype = await response.json();
+
+      // Store in ref BEFORE triggering remount - this ensures data is available in onReady
+      pendingPrototypeRef.current = data;
+
+      // Update state
+      setPrototype(data);
+      setName(data.name);
+      setHtmlContent(data.htmlContent);
+
+      // NOW trigger editor remount - data is already available in ref
+      setEditorKey(prototypeSlug);
+
+      debug('loadPrototypeAndRemount: Data loaded, triggering editor remount');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load prototype');
+      pendingPrototypeRef.current = null;
     } finally {
       setIsLoading(false);
     }
@@ -1488,7 +1532,8 @@ export function Editor() {
                 pages: [{
                   name: 'Prototype',
                   // Use correct content source based on mode, or empty for new prototype
-                  component: (isDemoMode ? localPrototype?.htmlContent : prototype?.htmlContent) || '',
+                  // Check pendingPrototypeRef first (set synchronously before remount) then state
+                  component: (isDemoMode ? localPrototype?.htmlContent : (pendingPrototypeRef.current?.htmlContent || prototype?.htmlContent)) || '',
                 }],
               },
             },
@@ -1576,35 +1621,43 @@ export function Editor() {
               } catch (e) {
                 console.warn('Failed to load project data:', e);
               }
-            } else if (!isDemoMode && prototype?.grapesData) {
-              try {
-                const projectData = prototype.grapesData as any;
-                debug('Loading project data from API');
-                debug('Project data pages:', projectData.pages?.length || 0);
+            } else if (!isDemoMode) {
+              // Check both state and ref - ref is set synchronously before editor remount
+              // This fixes the race condition where state isn't updated yet when onReady fires
+              const prototypeData = pendingPrototypeRef.current || prototype;
+              if (prototypeData?.grapesData) {
+                try {
+                  const projectData = prototypeData.grapesData as any;
+                  debug('Loading project data from API (via ref or state)');
+                  debug('Project data pages:', projectData.pages?.length || 0);
 
-                // Check if grapesData has actual content (not just empty wrapper)
-                // If the first page's frame has no components, skip loading grapesData
-                // and let the htmlContent from project config be used instead
-                const firstPageComponents = projectData.pages?.[0]?.frames?.[0]?.component?.components;
-                const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
+                  // Check if grapesData has actual content (not just empty wrapper)
+                  // If the first page's frame has no components, skip loading grapesData
+                  // and let the htmlContent from project config be used instead
+                  const firstPageComponents = projectData.pages?.[0]?.frames?.[0]?.component?.components;
+                  const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
 
-                if (!hasActualContent) {
-                  debug('grapesData is empty, using htmlContent instead');
-                  // Don't load empty grapesData - the htmlContent will be parsed from project config
-                } else {
-                  editor.loadProjectData(projectData);
+                  if (!hasActualContent) {
+                    debug('grapesData is empty, using htmlContent instead');
+                    // Don't load empty grapesData - the htmlContent will be parsed from project config
+                  } else {
+                    editor.loadProjectData(projectData);
 
-                  // Log loaded pages for debugging
-                  setTimeout(() => {
-                    const pages = editor.Pages?.getAll?.() || [];
-                    debug('Pages after load:', pages.length);
-                    pages.forEach?.((page: any) => {
-                      debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
-                    });
-                  }, 100);
+                    // Log loaded pages for debugging
+                    setTimeout(() => {
+                      const pages = editor.Pages?.getAll?.() || [];
+                      debug('Pages after load:', pages.length);
+                      pages.forEach?.((page: any) => {
+                        debug('  - Page:', page.get?.('name') || page.getName?.() || 'unnamed');
+                      });
+                    }, 100);
+                  }
+
+                  // Clear the ref after successful load
+                  pendingPrototypeRef.current = null;
+                } catch (e) {
+                  console.warn('Failed to load project data:', e);
                 }
-              } catch (e) {
-                console.warn('Failed to load project data:', e);
               }
             }
 
