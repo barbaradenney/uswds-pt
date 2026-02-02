@@ -440,8 +440,21 @@ export function createInternalSyncTrait(
         (element as any)[traitName] = textValue;
 
         // Trigger web component update if it uses Lit or similar
+        // Then wait for updateComplete before syncing to avoid race condition
         if (typeof (element as any).requestUpdate === 'function') {
           (element as any).requestUpdate();
+
+          // Wait for Lit's updateComplete promise before syncing
+          const updateComplete = (element as any).updateComplete;
+          if (updateComplete instanceof Promise) {
+            updateComplete.then(() => {
+              syncWithRetry(element, textValue);
+            }).catch(() => {
+              // Fallback: sync anyway if updateComplete fails
+              syncWithRetry(element, textValue);
+            });
+            return; // Don't sync immediately, wait for updateComplete
+          }
         }
 
         // Sync to internal element (backup for Light DOM components)
@@ -830,6 +843,8 @@ componentRegistry.register({
       default: 'Click me',
       internalSelector: 'button, a',
       syncProperty: 'textContent',
+      // Increased retry for Lit components that render asynchronously
+      retry: { maxAttempts: 20, delayMs: 100 },
     }),
 
     // Variant - simple attribute (removes 'default')
