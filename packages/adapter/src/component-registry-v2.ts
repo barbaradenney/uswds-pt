@@ -852,23 +852,19 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
           const textValue = value || 'Click me';
 
-          // Store as attribute for persistence
+          // Store as attribute for persistence - GrapesJS will save this
           element.setAttribute('text', textValue);
 
-          // CRITICAL: Update GrapesJS component model content
-          // This ensures the text persists when switching pages
+          // Also update the GrapesJS component's attributes model
+          // This ensures the attribute persists when switching pages
           if (component) {
             try {
-              // Clear existing child components and set new text content
-              const children = component.components();
-              if (children) {
-                children.reset(); // Clear all children
+              const attrs = component.get('attributes') || {};
+              if (attrs.text !== textValue) {
+                component.set('attributes', { ...attrs, text: textValue });
               }
-              // GrapesJS will use the 'content' attribute for text-only components
-              component.set('content', textValue);
             } catch (e) {
-              // Fallback if component API fails
-              console.warn('USWDS-PT: Could not update GrapesJS component content:', e);
+              // Ignore errors during attribute sync
             }
           }
 
