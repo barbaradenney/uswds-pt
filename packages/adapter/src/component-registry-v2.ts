@@ -868,17 +868,10 @@ componentRegistry.register({
                 component.set('attributes', { ...attrs, text: textValue });
               }
 
-              // Set the component's children to be a text node with the value
+              // Set the component's inner content to be the text value
               // This becomes the slot content in the exported HTML
-              const children = component.components();
-              if (children) {
-                children.reset(); // Clear existing children
-                // Add a text node component as the child
-                children.add({
-                  type: 'textnode',
-                  content: textValue,
-                });
-              }
+              // Using components(string) which GrapesJS treats as text content
+              component.components(textValue);
             } catch (e) {
               console.warn('USWDS-PT: Could not update button component model:', e);
             }
