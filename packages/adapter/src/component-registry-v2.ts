@@ -837,15 +837,58 @@ componentRegistry.register({
   droppable: false,
 
   traits: {
-    // Text content - syncs to internal <button> or <a> element (when href is set)
-    text: createInternalSyncTrait('text', {
-      label: 'Button Text',
-      default: 'Click me',
-      internalSelector: 'button, a',
-      syncProperty: 'textContent',
-      // Increased retry for Lit components that render asynchronously
-      retry: { maxAttempts: 20, delayMs: 100 },
-    }),
+    // Text content - usa-button uses slot content, not a text attribute
+    // We need a custom handler that modifies the inner element directly
+    text: {
+      definition: {
+        name: 'text',
+        label: 'Button Text',
+        type: 'text',
+        default: 'Click me',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const textValue = value || 'Click me';
+
+          // Store as attribute for GrapesJS persistence
+          element.setAttribute('text', textValue);
+
+          // Find the inner button or anchor element and update its text
+          const updateInnerElement = () => {
+            const inner = element.querySelector('button, a');
+            if (inner) {
+              inner.textContent = textValue;
+              return true;
+            }
+            return false;
+          };
+
+          // Try immediately
+          if (updateInnerElement()) return;
+
+          // Retry with increasing delays for async Lit rendering
+          let attempts = 0;
+          const maxAttempts = 30;
+          const intervalId = setInterval(() => {
+            attempts++;
+            if (updateInnerElement() || attempts >= maxAttempts) {
+              clearInterval(intervalId);
+            }
+          }, 100);
+        },
+        getValue: (element: HTMLElement) => {
+          // First check the attribute (our stored value)
+          const attrValue = element.getAttribute('text');
+          if (attrValue) return attrValue;
+
+          // Fallback: get from inner element
+          const inner = element.querySelector('button, a');
+          if (inner) return inner.textContent || 'Click me';
+
+          return 'Click me';
+        },
+      },
+    },
 
     // Variant - simple attribute (removes 'default')
     variant: createAttributeTrait('variant', {
