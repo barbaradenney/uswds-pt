@@ -70,8 +70,10 @@ export function useEditorAutosave({
   // Refs for tracking state without causing re-renders
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxWaitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstChangeTimeRef = useRef<number | null>(null);
   const hasPendingChangesRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Clean up timeouts
   const clearTimeouts = useCallback(() => {
@@ -83,7 +85,29 @@ export function useEditorAutosave({
       clearTimeout(maxWaitTimeoutRef.current);
       maxWaitTimeoutRef.current = null;
     }
+    if (statusResetTimeoutRef.current) {
+      clearTimeout(statusResetTimeoutRef.current);
+      statusResetTimeoutRef.current = null;
+    }
   }, []);
+
+  // Safe status update that respects mount state
+  const safeSetStatus = useCallback((newStatus: UseEditorAutosaveReturn['status']) => {
+    if (isMountedRef.current) {
+      setStatus(newStatus);
+    }
+  }, []);
+
+  // Schedule status reset with cleanup
+  const scheduleStatusReset = useCallback((delayMs: number) => {
+    if (statusResetTimeoutRef.current) {
+      clearTimeout(statusResetTimeoutRef.current);
+    }
+    statusResetTimeoutRef.current = setTimeout(() => {
+      safeSetStatus('idle');
+      statusResetTimeoutRef.current = null;
+    }, delayMs);
+  }, [safeSetStatus]);
 
   // Perform the actual save
   const performSave = useCallback(async () => {
@@ -104,7 +128,7 @@ export function useEditorAutosave({
     }
 
     debug('Autosave starting...');
-    setStatus('saving');
+    safeSetStatus('saving');
 
     try {
       const success = await onSave();
@@ -113,28 +137,28 @@ export function useEditorAutosave({
         hasPendingChangesRef.current = false;
         firstChangeTimeRef.current = null;
         setLastSavedAt(new Date());
-        setStatus('saved');
+        safeSetStatus('saved');
         debug('Autosave successful');
 
         // Reset to idle after showing "saved" status
-        setTimeout(() => setStatus('idle'), 3000);
+        scheduleStatusReset(3000);
       } else {
-        setStatus('error');
+        safeSetStatus('error');
         debug('Autosave returned false');
 
         // Reset to idle after showing error
-        setTimeout(() => setStatus('idle'), 5000);
+        scheduleStatusReset(5000);
       }
     } catch (err) {
       console.warn('[Autosave] Error:', err);
-      setStatus('error');
+      safeSetStatus('error');
 
       // Reset to idle after showing error
-      setTimeout(() => setStatus('idle'), 5000);
+      scheduleStatusReset(5000);
     }
 
     clearTimeouts();
-  }, [stateMachine.canAutosave, isPaused, onSave, clearTimeouts]);
+  }, [stateMachine.canAutosave, isPaused, onSave, clearTimeouts, safeSetStatus, scheduleStatusReset]);
 
   // Trigger a change (called when content changes)
   const triggerChange = useCallback(() => {
@@ -156,7 +180,7 @@ export function useEditorAutosave({
     }
 
     hasPendingChangesRef.current = true;
-    setStatus('pending');
+    safeSetStatus('pending');
 
     // Track first change time for max wait
     if (firstChangeTimeRef.current === null) {
@@ -182,7 +206,7 @@ export function useEditorAutosave({
     }, debounceMs);
 
     debug('Change triggered, debounce reset');
-  }, [enabled, isPaused, stateMachine, performSave, debounceMs, maxWaitMs]);
+  }, [enabled, isPaused, stateMachine, performSave, debounceMs, maxWaitMs, safeSetStatus]);
 
   // Pause autosave
   const pause = useCallback(() => {
@@ -207,16 +231,18 @@ export function useEditorAutosave({
     hasPendingChangesRef.current = false;
     firstChangeTimeRef.current = null;
     setLastSavedAt(new Date());
-    setStatus('saved');
+    safeSetStatus('saved');
     clearTimeouts();
 
     // Reset to idle after showing "saved" status
-    setTimeout(() => setStatus('idle'), 3000);
-  }, [clearTimeouts]);
+    scheduleStatusReset(3000);
+  }, [clearTimeouts, safeSetStatus, scheduleStatusReset]);
 
   // Cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       clearTimeouts();
     };
   }, [clearTimeouts]);
@@ -225,9 +251,9 @@ export function useEditorAutosave({
   useEffect(() => {
     if (!enabled) {
       clearTimeouts();
-      setStatus('idle');
+      safeSetStatus('idle');
     }
-  }, [enabled, clearTimeouts]);
+  }, [enabled, clearTimeouts, safeSetStatus]);
 
   return {
     status,

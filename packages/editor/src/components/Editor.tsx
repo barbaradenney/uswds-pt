@@ -17,6 +17,7 @@ import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
+import { EditorErrorBoundary } from './EditorErrorBoundary';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
@@ -179,6 +180,15 @@ export function Editor() {
   const handleSave = useCallback(async () => {
     await persistence.save('manual');
   }, [persistence]);
+
+  // Handle editor error retry - forces remount of the editor
+  const handleEditorRetry = useCallback(() => {
+    debug('Retrying editor after error...');
+    // Change the key to force a complete remount
+    setEditorKey(`retry-${Date.now()}`);
+    // Reset state machine to allow fresh initialization
+    stateMachine.reset();
+  }, [stateMachine]);
 
   // Handle export
   const handleExport = useCallback(() => {
@@ -417,36 +427,38 @@ export function Editor() {
 
       {/* Main Editor */}
       <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
-        <StudioEditor
-          key={editorKey}
-          options={{
-            licenseKey: LICENSE_KEY,
-            plugins: [
-              (editor: any) => tableComponent(editor, {
-                block: {
-                  label: 'Table',
-                  category: 'Data Display',
-                  media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v12h14V7zm-8 4h6v2h-6v-2zm0 4h6v2h-6v-2zm-6-4h4v6H5v-6z"/></svg>`,
+        <EditorErrorBoundary onRetry={handleEditorRetry} onGoHome={handleBack}>
+          <StudioEditor
+            key={editorKey}
+            options={{
+              licenseKey: LICENSE_KEY,
+              plugins: [
+                (editor: any) => tableComponent(editor, {
+                  block: {
+                    label: 'Table',
+                    category: 'Data Display',
+                    media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v12h14V7zm-8 4h6v2h-6v-2zm0 4h6v2h-6v-2zm-6-4h4v6H5v-6z"/></svg>`,
+                  },
+                }),
+                uswdsTablePlugin,
+                uswdsComponentsPlugin,
+              ],
+              project: {
+                type: 'web',
+                default: {
+                  pages: [{
+                    name: 'Prototype',
+                    component: (isDemoMode ? localPrototype?.htmlContent : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)) || '',
+                  }],
                 },
-              }),
-              uswdsTablePlugin,
-              uswdsComponentsPlugin,
-            ],
-            project: {
-              type: 'web',
-              default: {
-                pages: [{
-                  name: 'Prototype',
-                  component: (isDemoMode ? localPrototype?.htmlContent : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)) || '',
-                }],
               },
-            },
-            blocks: {
-              default: blocks,
-            },
-          }}
-          onReady={grapesSetup.onReady}
-        />
+              blocks: {
+                default: blocks,
+              },
+            }}
+            onReady={grapesSetup.onReady}
+          />
+        </EditorErrorBoundary>
 
         {/* Version History Sidebar */}
         {showVersionHistory && !isDemoMode && slug && (
