@@ -18,6 +18,7 @@ import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorErrorBoundary } from './EditorErrorBoundary';
+import { EditorHeader } from './editor/EditorHeader';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
@@ -405,76 +406,24 @@ export function Editor() {
 
   return (
     <div className="editor-container">
-      {/* Header */}
-      <header className="editor-header">
-        <div className="editor-header-left">
-          <button className="btn btn-secondary" onClick={handleBack} style={{ padding: '6px 12px' }}>
-            ← Back
-          </button>
-          <input
-            type="text"
-            className="editor-title"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Prototype name"
-            style={{
-              border: 'none',
-              background: 'transparent',
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              padding: '4px 8px',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        <div className="editor-header-right">
-          {stateMachine.state.error && (
-            <span style={{ color: 'var(--color-error)', marginRight: '12px' }}>
-              {stateMachine.state.error}
-            </span>
-          )}
-          <button className="btn btn-secondary" onClick={handlePreview}>
-            Preview
-          </button>
-          <button className="btn btn-secondary" onClick={handleExport}>
-            Export
-          </button>
-          {(slug || localPrototype) && (
-            <button className="btn btn-secondary" onClick={() => setShowEmbed(true)}>
-              Embed
-            </button>
-          )}
-          {!isDemoMode && slug && (
-            <button
-              className={`btn btn-secondary ${showVersionHistory ? 'active' : ''}`}
-              onClick={() => setShowVersionHistory(!showVersionHistory)}
-              title="Version History"
-            >
-              History
-            </button>
-          )}
-          {!isDemoMode && stateMachine.state.prototype && (
-            <div className={`autosave-indicator ${autosave.status}`}>
-              <span className="autosave-dot" />
-              <span>
-                {autosave.status === 'saving' && 'Saving...'}
-                {autosave.status === 'saved' && 'Saved'}
-                {autosave.status === 'error' && 'Save failed'}
-                {autosave.status === 'idle' && 'Autosave on'}
-                {autosave.status === 'pending' && 'Unsaved changes'}
-              </span>
-            </div>
-          )}
-          <button
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={persistence.isSaving || (!stateMachine.state.prototype && isLoadingTeam)}
-          >
-            {persistence.isSaving ? 'Saving...' : (!stateMachine.state.prototype && isLoadingTeam) ? 'Loading...' : 'Save'}
-          </button>
-        </div>
-      </header>
+      <EditorHeader
+        name={name}
+        onNameChange={setName}
+        onBack={handleBack}
+        onPreview={handlePreview}
+        onExport={handleExport}
+        onEmbed={() => setShowEmbed(true)}
+        onSave={handleSave}
+        onToggleHistory={() => setShowVersionHistory(!showVersionHistory)}
+        showVersionHistory={showVersionHistory}
+        showEmbedButton={!!(slug || localPrototype)}
+        showHistoryButton={!isDemoMode && !!slug}
+        showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
+        autosaveStatus={autosave.status}
+        isSaving={persistence.isSaving}
+        isSaveDisabled={persistence.isSaving || (!stateMachine.state.prototype && isLoadingTeam)}
+        error={stateMachine.state.error}
+      />
 
       {/* Main Editor */}
       <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
