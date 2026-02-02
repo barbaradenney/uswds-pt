@@ -3,9 +3,10 @@
  *
  * Handles all save/load/create operations for prototypes.
  * Works with the state machine to ensure operations only occur in valid states.
+ * Includes retry logic for network reliability.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
@@ -19,6 +20,7 @@ import {
 } from '../lib/localStorage';
 import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
+import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 
 // Debug logging
 const DEBUG =
@@ -71,6 +73,10 @@ export interface UseEditorPersistenceReturn {
   isSaving: boolean;
   /** Whether any operation is in progress */
   isOperating: boolean;
+  /** Whether we're currently online */
+  isOnline: boolean;
+  /** Number of retry attempts for last failed save */
+  lastSaveRetries: number;
 }
 
 export function useEditorPersistence({
@@ -92,12 +98,32 @@ export function useEditorPersistence({
   // Track if a create operation is in progress (prevents duplicate calls)
   const isCreatingRef = useRef(false);
 
+  // Track if a save is in progress (prevents concurrent saves)
+  const isSavingRef = useRef(false);
+
+  // Track online status
+  const [online, setOnline] = useState(isOnline());
+  const [lastSaveRetries, setLastSaveRetries] = useState(0);
+
+  // Subscribe to online status changes
+  useEffect(() => {
+    return subscribeToOnlineStatus((status) => {
+      setOnline(status.isOnline);
+    });
+  }, []);
+
   /**
    * Save current content
    */
   const save = useCallback(
     async (type: 'manual' | 'autosave'): Promise<boolean> => {
       const { state, canSave, saveStart, saveSuccess, saveFailed } = stateMachine;
+
+      // Prevent concurrent saves
+      if (isSavingRef.current) {
+        debug(`Save blocked: another save is in progress`);
+        return false;
+      }
 
       // Check guards
       if (!canSave) {
@@ -123,6 +149,18 @@ export function useEditorPersistence({
         }
         return false;
       }
+
+      // Check if online for API mode
+      if (!isDemoMode && !isOnline()) {
+        debug('Save blocked: offline');
+        if (type === 'manual') {
+          saveFailed('You are offline. Changes will be saved when you reconnect.');
+        }
+        return false;
+      }
+
+      // Acquire save lock
+      isSavingRef.current = true;
 
       // Start save
       saveStart(type);
@@ -227,19 +265,50 @@ export function useEditorPersistence({
 
           debug('Making API call:', method, url);
 
-          const response = await authFetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
+          // Use retry logic for API call
+          const result = await withRetry<Prototype>(
+            async () => {
+              const response = await authFetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              });
 
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            debug('API error:', response.status, errorText);
-            throw new Error(`Failed to save prototype: ${response.status}`);
+              if (!response.ok) {
+                const errorText = await response.text().catch(() => 'Unknown error');
+                const errorType = classifyError(null, response);
+
+                // Don't retry client errors (4xx except 429)
+                if (errorType === 'permanent' || errorType === 'auth') {
+                  const error = new Error(`Failed to save: ${response.status} - ${errorText}`);
+                  (error as any).noRetry = true;
+                  throw error;
+                }
+
+                throw new Error(`Failed to save prototype: ${response.status}`);
+              }
+
+              return response.json();
+            },
+            {
+              maxRetries: type === 'manual' ? 3 : 2, // More retries for manual saves
+              initialDelayMs: 1000,
+              maxDelayMs: 10000,
+              operationName: `save ${prototypeSlug || 'new'}`,
+              onRetry: (attempt, error, delay) => {
+                debug(`Save retry ${attempt}, waiting ${delay}ms`);
+                setLastSaveRetries(attempt);
+              },
+            }
+          );
+
+          if (!result.success) {
+            setLastSaveRetries(result.attempts);
+            throw result.error;
           }
 
-          const data: Prototype = await response.json();
+          setLastSaveRetries(0);
+          const data = result.data!;
           debug('Save successful, slug:', data.slug);
 
           if (!isUpdate) {
@@ -258,6 +327,9 @@ export function useEditorPersistence({
         console.error('[EditorPersistence] Save error:', err);
         saveFailed(message);
         return false;
+      } finally {
+        // Release save lock
+        isSavingRef.current = false;
       }
     },
     [
@@ -426,7 +498,9 @@ export function useEditorPersistence({
     save,
     load,
     createNew,
-    isSaving: stateMachine.state.status === 'saving',
+    isSaving: stateMachine.state.status === 'saving' || isSavingRef.current,
     isOperating: stateMachine.isBusy,
+    isOnline: online,
+    lastSaveRetries,
   };
 }

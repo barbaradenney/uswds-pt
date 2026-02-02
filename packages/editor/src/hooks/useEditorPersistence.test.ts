@@ -53,6 +53,21 @@ vi.mock('@uswds-pt/adapter', () => ({
   },
 }));
 
+// Mock retry utilities
+vi.mock('../lib/retry', () => ({
+  withRetry: vi.fn(async (fn: () => Promise<unknown>) => {
+    try {
+      const data = await fn();
+      return { success: true, data, attempts: 1 };
+    } catch (error) {
+      return { success: false, error, attempts: 1 };
+    }
+  }),
+  classifyError: vi.fn(() => 'retriable'),
+  isOnline: vi.fn(() => true),
+  subscribeToOnlineStatus: vi.fn(() => () => {}),
+}));
+
 /**
  * Create a mock state machine for testing
  */
