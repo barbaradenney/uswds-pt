@@ -49,6 +49,10 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
 
   let cleaned = html;
 
+  // Fix usa-button slot content - the text attribute should become the slot content
+  // since the web component uses slot content, not the text attribute
+  cleaned = fixButtonSlotContent(cleaned);
+
   // Remove USWDS JS script tags - web components handle their own behavior
   // and USWDS JS conflicts with them (causes "Cannot read properties of null" errors)
   cleaned = removeUSWDSScripts(cleaned);
@@ -72,6 +76,27 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
   }
 
   return cleaned.trim();
+}
+
+/**
+ * Fix usa-button slot content based on the text attribute.
+ * The usa-button web component uses slot content, not a text attribute.
+ * GrapesJS stores the text in the attribute, so we need to move it to slot content.
+ *
+ * Transforms: <usa-button text="page 2" ...>Click me</usa-button>
+ * Into:       <usa-button text="page 2" ...>page 2</usa-button>
+ */
+function fixButtonSlotContent(html: string): string {
+  // Match usa-button tags with a text attribute and capture the text value and old content
+  // Pattern: <usa-button ... text="value" ...>old content</usa-button>
+  return html.replace(
+    /<usa-button([^>]*)\stext="([^"]*)"([^>]*)>([^<]*)<\/usa-button>/gi,
+    (match, before, textValue, after, oldContent) => {
+      // Use the text attribute value as the new slot content
+      // Keep the text attribute for reference (web component ignores it anyway)
+      return `<usa-button${before} text="${textValue}"${after}>${textValue}</usa-button>`;
+    }
+  );
 }
 
 /**
