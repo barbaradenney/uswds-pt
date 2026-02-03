@@ -29,6 +29,7 @@ export function Preview() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stylesLoaded, setStylesLoaded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Inject stylesheets into document head
   useEffect(() => {
@@ -214,7 +215,6 @@ export function Preview() {
 
   // Clean the HTML content
   const cleanedHtml = cleanExport(data.htmlContent);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   // Initialize USWDS components after content is rendered
   useEffect(() => {
