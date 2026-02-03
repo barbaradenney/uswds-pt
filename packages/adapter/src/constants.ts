@@ -409,25 +409,31 @@ export const DEFAULT_CONTENT: Record<string, string> = {
 </fieldset>`,
 
   'conditional-checkbox': `__FULL_HTML__<div class="usa-form-group">
-  <usa-checkbox label="I have a preferred contact method" name="has-preference" value="yes" data-reveals="contact-preference-field"></usa-checkbox>
-  <div id="contact-preference-field" class="usa-form-group" hidden aria-hidden="true" style="margin-left: 2rem; margin-top: 0.5rem;">
-    <usa-select label="Preferred contact method" name="contact-preference" option-count="3" option1-label="Email" option1-value="email" option2-label="Phone" option2-value="phone" option3-label="Mail" option3-value="mail"></usa-select>
+  <usa-checkbox label="I live on a United States military base outside of the U.S." name="military-base" value="yes" data-reveals="country-text-field" data-hides="country-select-field"></usa-checkbox>
+  <div id="country-text-field" class="usa-form-group" hidden aria-hidden="true">
+    <usa-text-input label="Country" name="country-text" value="United States" disabled></usa-text-input>
+  </div>
+  <div id="country-select-field" class="usa-form-group">
+    <usa-select label="Country" name="country" required option-count="3" option1-label="United States" option1-value="us" option2-label="Canada" option2-value="ca" option3-label="Mexico" option3-value="mx"></usa-select>
   </div>
 </div>
 <script>
-// Conditional field reveal - shows/hides fields based on radio/checkbox selection
-// Only initializes once even if script is included multiple times
+// Conditional field reveal/hide - shows/hides fields based on radio/checkbox selection
+// Supports data-reveals (show when checked) and data-hides (hide when checked)
 if (!window._conditionalFieldsInit) {
   window._conditionalFieldsInit = true;
 
   function initConditionalFields() {
-    document.querySelectorAll('[data-reveals]').forEach(function(trigger) {
+    document.querySelectorAll('[data-reveals], [data-hides]').forEach(function(trigger) {
       if (trigger._conditionalInit) return;
       trigger._conditionalInit = true;
 
-      var targetId = trigger.getAttribute('data-reveals');
-      var target = document.getElementById(targetId);
-      if (!target) return;
+      var revealsId = trigger.getAttribute('data-reveals');
+      var hidesId = trigger.getAttribute('data-hides');
+      var revealsTarget = revealsId ? document.getElementById(revealsId) : null;
+      var hidesTarget = hidesId ? document.getElementById(hidesId) : null;
+
+      if (!revealsTarget && !hidesTarget) return;
 
       var name = trigger.getAttribute('name');
       var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
@@ -435,14 +441,28 @@ if (!window._conditionalFieldsInit) {
 
       function updateVisibility() {
         var input = trigger.querySelector('input');
-        var shouldShow = input && input.checked;
+        var isChecked = input && input.checked;
 
-        if (shouldShow) {
-          target.removeAttribute('hidden');
-          target.setAttribute('aria-hidden', 'false');
-        } else {
-          target.setAttribute('hidden', '');
-          target.setAttribute('aria-hidden', 'true');
+        // Show target when checked (data-reveals)
+        if (revealsTarget) {
+          if (isChecked) {
+            revealsTarget.removeAttribute('hidden');
+            revealsTarget.setAttribute('aria-hidden', 'false');
+          } else {
+            revealsTarget.setAttribute('hidden', '');
+            revealsTarget.setAttribute('aria-hidden', 'true');
+          }
+        }
+
+        // Hide target when checked (data-hides)
+        if (hidesTarget) {
+          if (isChecked) {
+            hidesTarget.setAttribute('hidden', '');
+            hidesTarget.setAttribute('aria-hidden', 'true');
+          } else {
+            hidesTarget.removeAttribute('hidden');
+            hidesTarget.setAttribute('aria-hidden', 'false');
+          }
         }
       }
 
@@ -484,13 +504,16 @@ if (!window._conditionalFieldsInit) {
   window._conditionalFieldsInit = true;
 
   function initConditionalFields() {
-    document.querySelectorAll('[data-reveals]').forEach(function(trigger) {
+    document.querySelectorAll('[data-reveals], [data-hides]').forEach(function(trigger) {
       if (trigger._conditionalInit) return;
       trigger._conditionalInit = true;
 
-      var targetId = trigger.getAttribute('data-reveals');
-      var target = document.getElementById(targetId);
-      if (!target) return;
+      var revealsId = trigger.getAttribute('data-reveals');
+      var hidesId = trigger.getAttribute('data-hides');
+      var revealsTarget = revealsId ? document.getElementById(revealsId) : null;
+      var hidesTarget = hidesId ? document.getElementById(hidesId) : null;
+
+      if (!revealsTarget && !hidesTarget) return;
 
       var name = trigger.getAttribute('name');
       var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
@@ -498,14 +521,26 @@ if (!window._conditionalFieldsInit) {
 
       function updateVisibility() {
         var input = trigger.querySelector('input');
-        var shouldShow = input && input.checked;
+        var isChecked = input && input.checked;
 
-        if (shouldShow) {
-          target.removeAttribute('hidden');
-          target.setAttribute('aria-hidden', 'false');
-        } else {
-          target.setAttribute('hidden', '');
-          target.setAttribute('aria-hidden', 'true');
+        if (revealsTarget) {
+          if (isChecked) {
+            revealsTarget.removeAttribute('hidden');
+            revealsTarget.setAttribute('aria-hidden', 'false');
+          } else {
+            revealsTarget.setAttribute('hidden', '');
+            revealsTarget.setAttribute('aria-hidden', 'true');
+          }
+        }
+
+        if (hidesTarget) {
+          if (isChecked) {
+            hidesTarget.setAttribute('hidden', '');
+            hidesTarget.setAttribute('aria-hidden', 'true');
+          } else {
+            hidesTarget.removeAttribute('hidden');
+            hidesTarget.setAttribute('aria-hidden', 'false');
+          }
         }
       }
 
