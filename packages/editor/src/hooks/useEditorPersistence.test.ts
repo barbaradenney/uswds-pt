@@ -514,12 +514,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let loadedProto: unknown;
       await act(async () => {
-        success = await result.current.load(proto.slug);
+        loadedProto = await result.current.load(proto.slug);
       });
 
-      expect(success!).toBe(true);
+      expect(loadedProto).toEqual(proto);
       expect(stateMachine.loadPrototype).toHaveBeenCalledWith(proto.slug);
       expect(stateMachine.prototypeLoaded).toHaveBeenCalledWith(proto);
       expect(onNameChange).toHaveBeenCalledWith(proto.name);
@@ -549,12 +549,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let loadedProto: unknown;
       await act(async () => {
-        success = await result.current.load('not-found');
+        loadedProto = await result.current.load('not-found');
       });
 
-      expect(success!).toBe(false);
+      expect(loadedProto).toBeNull();
       expect(stateMachine.prototypeLoadFailed).toHaveBeenCalledWith('Prototype not found');
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
@@ -592,12 +592,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let loadedProto: unknown;
       await act(async () => {
-        success = await result.current.load(localProto.id);
+        loadedProto = await result.current.load(localProto.id);
       });
 
-      expect(success!).toBe(true);
+      expect(loadedProto).toBeTruthy();
       expect(mockGetPrototype).toHaveBeenCalledWith(localProto.id);
       expect(setLocalPrototype).toHaveBeenCalledWith(localProto);
       expect(onNameChange).toHaveBeenCalledWith(localProto.name);
@@ -624,12 +624,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let loadedProto: unknown;
       await act(async () => {
-        success = await result.current.load('missing');
+        loadedProto = await result.current.load('missing');
       });
 
-      expect(success!).toBe(false);
+      expect(loadedProto).toBeNull();
       expect(stateMachine.prototypeLoadFailed).toHaveBeenCalledWith('Prototype not found');
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });

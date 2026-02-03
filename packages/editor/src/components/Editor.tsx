@@ -345,11 +345,10 @@ export function Editor() {
 
         if (success && slug) {
           // Reload the prototype via persistence
-          await persistence.load(slug);
+          const proto = await persistence.load(slug);
 
-          // Reload editor content
+          // Reload editor content using the returned prototype directly
           const editor = editorRef.current;
-          const proto = stateMachine.state.prototype;
           if (editor && proto?.grapesData) {
             editor.loadProjectData(proto.grapesData as any);
           }
@@ -363,7 +362,7 @@ export function Editor() {
         autosave.resume();
       }
     },
-    [restoreVersion, slug, persistence, stateMachine.state.prototype, fetchVersions, autosave]
+    [restoreVersion, slug, persistence, fetchVersions, autosave]
   );
 
   // Warn users before leaving with unsaved changes
@@ -410,9 +409,11 @@ export function Editor() {
 
   // Helper to load prototype and then trigger editor remount
   async function loadPrototypeAndRemount(prototypeSlug: string) {
-    const loaded = await persistence.load(prototypeSlug);
-    if (loaded) {
-      pendingPrototypeRef.current = stateMachine.state.prototype;
+    const loadedPrototype = await persistence.load(prototypeSlug);
+    if (loadedPrototype) {
+      // Use the returned prototype directly instead of relying on state
+      // (React state update is async and won't be available yet)
+      pendingPrototypeRef.current = loadedPrototype;
       setEditorKey(prototypeSlug);
       debug('Prototype loaded, triggering editor remount');
     }

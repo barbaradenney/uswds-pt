@@ -66,8 +66,8 @@ export interface UseEditorPersistenceOptions {
 export interface UseEditorPersistenceReturn {
   /** Save current content (manual or autosave) */
   save: (type: 'manual' | 'autosave') => Promise<boolean>;
-  /** Load a prototype by slug */
-  load: (slug: string) => Promise<boolean>;
+  /** Load a prototype by slug - returns the loaded prototype or null */
+  load: (slug: string) => Promise<Prototype | null>;
   /** Create a new prototype */
   createNew: () => Promise<string | null>;
   /** Whether a save operation is in progress */
@@ -360,10 +360,10 @@ export function useEditorPersistence({
   );
 
   /**
-   * Load a prototype by slug
+   * Load a prototype by slug - returns the loaded prototype or null
    */
   const load = useCallback(
-    async (prototypeSlug: string): Promise<boolean> => {
+    async (prototypeSlug: string): Promise<Prototype | null> => {
       const { loadPrototype, prototypeLoaded, prototypeLoadFailed } = stateMachine;
 
       loadPrototype(prototypeSlug);
@@ -376,7 +376,7 @@ export function useEditorPersistence({
           if (!data) {
             prototypeLoadFailed('Prototype not found');
             navigate('/');
-            return false;
+            return null;
           }
 
           setLocalPrototype(data);
@@ -384,7 +384,7 @@ export function useEditorPersistence({
           setHtmlContent(data.htmlContent);
 
           // Create mock prototype for state machine
-          prototypeLoaded({
+          const prototype: Prototype = {
             id: data.id,
             slug: data.id,
             name: data.name,
@@ -395,10 +395,11 @@ export function useEditorPersistence({
             createdAt: new Date(data.createdAt),
             updatedAt: new Date(data.updatedAt),
             isPublic: false,
-          } as Prototype);
+          } as Prototype;
 
+          prototypeLoaded(prototype);
           debug('Demo mode load successful');
-          return true;
+          return prototype;
         } else {
           // Load from API
           const response = await authFetch(`/api/prototypes/${prototypeSlug}`);
@@ -407,7 +408,7 @@ export function useEditorPersistence({
             if (response.status === 404) {
               prototypeLoadFailed('Prototype not found');
               navigate('/');
-              return false;
+              return null;
             }
             throw new Error('Failed to load prototype');
           }
@@ -419,13 +420,13 @@ export function useEditorPersistence({
           prototypeLoaded(data);
 
           debug('API load successful, slug:', data.slug);
-          return true;
+          return data;
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load prototype';
         console.error('[EditorPersistence] Load error:', err);
         prototypeLoadFailed(message);
-        return false;
+        return null;
       }
     },
     [stateMachine, isDemoMode, navigate, onNameChange, setHtmlContent, setLocalPrototype]
