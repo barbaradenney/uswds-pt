@@ -12,16 +12,19 @@ export function EmbedModal({ prototypeId, onClose }: EmbedModalProps) {
   const [height, setHeight] = useState('400');
 
   // Memoize the embed URL to avoid recalculating on every render
+  // Uses hash-based URL for GitHub Pages compatibility with HashRouter
   const embedUrl = useMemo(() => {
-    const baseUrl = window.location.origin + window.location.pathname.replace(/\/edit\/.*$/, '').replace(/\/new$/, '');
-    const embedPath = `/embed/${prototypeId}`;
+    // Get the base URL (origin + any base path like /uswds-pt)
+    const basePath = window.location.pathname.split('#')[0].replace(/\/$/, '');
+    const baseUrl = window.location.origin + basePath;
+    const embedPath = `#/embed/${prototypeId}`;
 
     const queryParams = new URLSearchParams();
     if (padding !== '16') queryParams.set('padding', padding);
     if (maxWidth) queryParams.set('maxWidth', maxWidth);
 
     const queryString = queryParams.toString();
-    return `${baseUrl}${embedPath}${queryString ? '?' + queryString : ''}`;
+    return `${baseUrl}/${embedPath}${queryString ? '?' + queryString : ''}`;
   }, [prototypeId, padding, maxWidth]);
 
   // Memoize the iframe code

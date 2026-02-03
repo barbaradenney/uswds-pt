@@ -155,8 +155,10 @@ export function Preview() {
     const newPrototype = createPrototype(copyName, data.htmlContent, data.gjsData);
 
     // Open the editor with the new prototype
-    const baseUrl = window.location.origin;
-    window.open(`${baseUrl}/edit/${newPrototype.id}`, '_blank');
+    // Use hash-based URL for GitHub Pages compatibility with HashRouter
+    const basePath = window.location.pathname.split('#')[0].replace(/\/$/, '');
+    const baseUrl = window.location.origin + basePath;
+    window.open(`${baseUrl}/#/edit/${newPrototype.id}`, '_blank');
   }
 
   if (isLoading) {
