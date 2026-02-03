@@ -263,8 +263,10 @@ export function Editor() {
 
     if (prototypeId) {
       // Open preview route in new tab - this survives refresh
-      debug('Preview: opening route with ID:', prototypeId);
-      const previewUrl = `${window.location.origin}/preview/${prototypeId}`;
+      // Use import.meta.env.BASE_URL to handle GitHub Pages base path (/uswds-pt/)
+      const basePath = import.meta.env.BASE_URL || '/';
+      const previewUrl = `${window.location.origin}${basePath}preview/${prototypeId}`;
+      debug('Preview: opening URL:', previewUrl);
       window.open(previewUrl, '_blank');
       return;
     }
