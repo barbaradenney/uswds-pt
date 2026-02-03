@@ -1271,20 +1271,20 @@ componentRegistry.register({
       },
     },
 
-    // Conditional: Show Element ID
+    // Conditional: Show Element ID(s) when checked
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'Show Element (ID)',
+      label: 'When checked, show (IDs)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., extra-options',
+      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Element ID
+    // Conditional: Hide Element ID(s) when checked
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'Hide Element (ID)',
+      label: 'When checked, hide (IDs)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., default-field',
+      placeholder: 'e.g., field3, field4',
     }),
   },
 });
@@ -1349,20 +1349,20 @@ componentRegistry.register({
       syncToInternal: 'input[type="radio"]',
     }),
 
-    // Conditional: Show Element ID
+    // Conditional: Show Element ID(s) when selected
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'Show Element (ID)',
+      label: 'When selected, show (IDs)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., other-specify',
+      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Element ID
+    // Conditional: Hide Element ID(s) when selected
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'Hide Element (ID)',
+      label: 'When selected, hide (IDs)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., default-options',
+      placeholder: 'e.g., field3, field4',
     }),
   },
 });

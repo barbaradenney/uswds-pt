@@ -241,10 +241,17 @@ function isSelfClosingTag(tag: string): boolean {
  * CDN URLs for USWDS resources
  * Imported from adapter package to ensure consistency
  */
-import { CDN_URLS } from '@uswds-pt/adapter';
+import { CDN_URLS, CONDITIONAL_FIELDS_SCRIPT } from '@uswds-pt/adapter';
 
 // Use the shared CDN URLs from adapter
 const PREVIEW_CDN_URLS = CDN_URLS;
+
+/**
+ * Check if the HTML content uses conditional field reveal/hide functionality
+ */
+function hasConditionalFields(html: string): boolean {
+  return /data-reveals=|data-hides=/.test(html);
+}
 
 /**
  * Generate initialization script for web components that need JS setup.
@@ -460,6 +467,11 @@ export function generateFullDocument(
     lang = 'en',
   } = options;
 
+  // Include conditional fields script only if content uses data-reveals or data-hides
+  const conditionalScript = hasConditionalFields(content) ? `
+  <!-- Conditional field show/hide functionality -->
+  ${CONDITIONAL_FIELDS_SCRIPT}` : '';
+
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
@@ -474,7 +486,7 @@ export function generateFullDocument(
   <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
   <!-- Initialize web component properties after they render -->
-  ${generateInitScript()}
+  ${generateInitScript()}${conditionalScript}
 </head>
 <body>
 ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
@@ -616,6 +628,12 @@ ${indentContent(cleanedHtml, 4)}
   const initScript = generateInitScript();
   const pageNavScript = `<script type="module">${generatePageNavigationScript()}</script>`;
 
+  // Include conditional fields script only if any page uses data-reveals or data-hides
+  const anyPageHasConditionalFields = pages.some(page => hasConditionalFields(page.html));
+  const conditionalScript = anyPageHasConditionalFields ? `
+  <!-- Conditional field show/hide functionality -->
+  ${CONDITIONAL_FIELDS_SCRIPT}` : '';
+
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
@@ -632,7 +650,7 @@ ${indentContent(cleanedHtml, 4)}
   <!-- Initialize web component properties after they render -->
   ${initScript}
   <!-- Page navigation for multi-page preview -->
-  ${pageNavScript}
+  ${pageNavScript}${conditionalScript}
 </head>
 <body>
 ${pagesHtml}

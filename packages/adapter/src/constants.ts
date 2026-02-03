@@ -129,8 +129,6 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-email-address-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`,
   'usa-date-of-birth-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" opacity="0.3"/></svg>`,
   'usa-ssn-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`,
-  'conditional-checkbox': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10l2 2 4-4-1-1-3 3-1-1z"/><path d="M7 15h10v2H7z" opacity="0.5"/></svg>`,
-  'conditional-radio': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="12" cy="12" r="5"/><path d="M7 20h10v2H7z" opacity="0.5"/></svg>`,
 
   // Grid Layout
   'grid-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
@@ -408,147 +406,6 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
 </fieldset>`,
 
-  'conditional-checkbox': `__FULL_HTML__<usa-checkbox label="Check to show/hide fields" name="conditional-trigger" value="yes"></usa-checkbox>
-<script>
-// Conditional field reveal/hide - shows/hides fields based on radio/checkbox selection
-// Use Properties panel: "Show Element (ID)" and "Hide Element (ID)" to connect to other fields
-if (!window._conditionalFieldsInit) {
-  window._conditionalFieldsInit = true;
-
-  function initConditionalFields() {
-    document.querySelectorAll('[data-reveals], [data-hides]').forEach(function(trigger) {
-      if (trigger._conditionalInit) return;
-      trigger._conditionalInit = true;
-
-      var revealsId = trigger.getAttribute('data-reveals');
-      var hidesId = trigger.getAttribute('data-hides');
-      var revealsTarget = revealsId ? document.getElementById(revealsId) : null;
-      var hidesTarget = hidesId ? document.getElementById(hidesId) : null;
-
-      if (!revealsTarget && !hidesTarget) return;
-
-      var name = trigger.getAttribute('name');
-      var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
-      var isCheckbox = trigger.tagName.toLowerCase() === 'usa-checkbox';
-
-      function updateVisibility() {
-        var input = trigger.querySelector('input');
-        var isChecked = input && input.checked;
-
-        if (revealsTarget) {
-          if (isChecked) {
-            revealsTarget.removeAttribute('hidden');
-            revealsTarget.setAttribute('aria-hidden', 'false');
-          } else {
-            revealsTarget.setAttribute('hidden', '');
-            revealsTarget.setAttribute('aria-hidden', 'true');
-          }
-        }
-
-        if (hidesTarget) {
-          if (isChecked) {
-            hidesTarget.setAttribute('hidden', '');
-            hidesTarget.setAttribute('aria-hidden', 'true');
-          } else {
-            hidesTarget.removeAttribute('hidden');
-            hidesTarget.setAttribute('aria-hidden', 'false');
-          }
-        }
-      }
-
-      if (isRadio && name) {
-        document.querySelectorAll('usa-radio[name="' + name + '"]').forEach(function(radio) {
-          if (!radio._conditionalListener) {
-            radio._conditionalListener = true;
-            radio.addEventListener('change', updateVisibility);
-          }
-        });
-      } else if (isCheckbox) {
-        trigger.addEventListener('change', updateVisibility);
-      }
-
-      updateVisibility();
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initConditionalFields, 100); });
-  } else {
-    setTimeout(initConditionalFields, 100);
-  }
-}
-</script>`,
-
-  'conditional-radio': `__FULL_HTML__<usa-radio label="Select to show/hide fields" name="conditional-radio" value="option"></usa-radio>
-<script>
-// Conditional field reveal/hide - Use Properties panel to set "Show Element (ID)" on this radio
-if (!window._conditionalFieldsInit) {
-  window._conditionalFieldsInit = true;
-
-  function initConditionalFields() {
-    document.querySelectorAll('[data-reveals], [data-hides]').forEach(function(trigger) {
-      if (trigger._conditionalInit) return;
-      trigger._conditionalInit = true;
-
-      var revealsId = trigger.getAttribute('data-reveals');
-      var hidesId = trigger.getAttribute('data-hides');
-      var revealsTarget = revealsId ? document.getElementById(revealsId) : null;
-      var hidesTarget = hidesId ? document.getElementById(hidesId) : null;
-
-      if (!revealsTarget && !hidesTarget) return;
-
-      var name = trigger.getAttribute('name');
-      var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
-      var isCheckbox = trigger.tagName.toLowerCase() === 'usa-checkbox';
-
-      function updateVisibility() {
-        var input = trigger.querySelector('input');
-        var isChecked = input && input.checked;
-
-        if (revealsTarget) {
-          if (isChecked) {
-            revealsTarget.removeAttribute('hidden');
-            revealsTarget.setAttribute('aria-hidden', 'false');
-          } else {
-            revealsTarget.setAttribute('hidden', '');
-            revealsTarget.setAttribute('aria-hidden', 'true');
-          }
-        }
-
-        if (hidesTarget) {
-          if (isChecked) {
-            hidesTarget.setAttribute('hidden', '');
-            hidesTarget.setAttribute('aria-hidden', 'true');
-          } else {
-            hidesTarget.removeAttribute('hidden');
-            hidesTarget.setAttribute('aria-hidden', 'false');
-          }
-        }
-      }
-
-      if (isRadio && name) {
-        document.querySelectorAll('usa-radio[name="' + name + '"]').forEach(function(radio) {
-          if (!radio._conditionalListener) {
-            radio._conditionalListener = true;
-            radio.addEventListener('change', updateVisibility);
-          }
-        });
-      } else if (isCheckbox) {
-        trigger.addEventListener('change', updateVisibility);
-      }
-
-      updateVisibility();
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initConditionalFields, 100); });
-  } else {
-    setTimeout(initConditionalFields, 100);
-  }
-}
-</script>`,
-
   // Grid Layout - USWDS Grid System
   // Responsive 2-column: full width on mobile, 50/50 on tablet+
   'grid-2-col': `__FULL_HTML__<div class="grid-row grid-gap">
@@ -663,3 +520,91 @@ export function generateComponentLoaderScript(): string {
   const imports = USWDS_WC_PACKAGES.map(pkg => `import '@uswds-wc/${pkg}';`).join('\n');
   return imports;
 }
+
+/**
+ * Conditional field reveal/hide script
+ * Supports showing/hiding multiple elements based on checkbox/radio selection
+ * Use data-reveals and data-hides attributes with comma-separated IDs
+ * Example: data-reveals="field1, field2" data-hides="field3"
+ */
+export const CONDITIONAL_FIELDS_SCRIPT = `
+<script>
+// Conditional field reveal/hide - shows/hides fields based on radio/checkbox selection
+// Use Properties panel: "Show Element (ID)" and "Hide Element (ID)" on checkboxes/radios
+// Supports multiple IDs separated by commas (e.g., "field1, field2, field3")
+if (!window._conditionalFieldsInit) {
+  window._conditionalFieldsInit = true;
+
+  function getElementsFromIds(idString) {
+    if (!idString) return [];
+    return idString.split(',')
+      .map(function(id) { return id.trim(); })
+      .filter(function(id) { return id; })
+      .map(function(id) { return document.getElementById(id); })
+      .filter(function(el) { return el; });
+  }
+
+  function initConditionalFields() {
+    document.querySelectorAll('[data-reveals], [data-hides]').forEach(function(trigger) {
+      if (trigger._conditionalInit) return;
+      trigger._conditionalInit = true;
+
+      var revealsIds = trigger.getAttribute('data-reveals');
+      var hidesIds = trigger.getAttribute('data-hides');
+      var revealsTargets = getElementsFromIds(revealsIds);
+      var hidesTargets = getElementsFromIds(hidesIds);
+
+      if (revealsTargets.length === 0 && hidesTargets.length === 0) return;
+
+      var name = trigger.getAttribute('name');
+      var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
+      var isCheckbox = trigger.tagName.toLowerCase() === 'usa-checkbox';
+
+      function updateVisibility() {
+        var input = trigger.querySelector('input');
+        var isChecked = input && input.checked;
+
+        revealsTargets.forEach(function(target) {
+          if (isChecked) {
+            target.removeAttribute('hidden');
+            target.setAttribute('aria-hidden', 'false');
+          } else {
+            target.setAttribute('hidden', '');
+            target.setAttribute('aria-hidden', 'true');
+          }
+        });
+
+        hidesTargets.forEach(function(target) {
+          if (isChecked) {
+            target.setAttribute('hidden', '');
+            target.setAttribute('aria-hidden', 'true');
+          } else {
+            target.removeAttribute('hidden');
+            target.setAttribute('aria-hidden', 'false');
+          }
+        });
+      }
+
+      if (isRadio && name) {
+        document.querySelectorAll('usa-radio[name="' + name + '"]').forEach(function(radio) {
+          if (!radio._conditionalListener) {
+            radio._conditionalListener = true;
+            radio.addEventListener('change', updateVisibility);
+          }
+        });
+      } else if (isCheckbox) {
+        trigger.addEventListener('change', updateVisibility);
+      }
+
+      updateVisibility();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(initConditionalFields, 100); });
+  } else {
+    setTimeout(initConditionalFields, 100);
+  }
+}
+</script>`;
+
