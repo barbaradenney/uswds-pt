@@ -133,6 +133,7 @@ export function Editor() {
         'grid-sidebar-right': 'Sidebar Right',
         'grid-container': 'Container',
         'grid-row': 'Row',
+        'usa-conditional-field': 'Conditional Field',
       };
 
       const label = labelMap[tagName] || tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -506,7 +507,7 @@ function getCategoryForComponent(tagName: string): string {
     'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
     'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
     'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
-    'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
+    'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern', 'usa-conditional-field'],
     'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
   };
 

@@ -129,6 +129,7 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-email-address-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`,
   'usa-date-of-birth-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" opacity="0.3"/></svg>`,
   'usa-ssn-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`,
+  'usa-conditional-field': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10l2 2 4-4-1-1-3 3-1-1z"/><path d="M7 15h10v2H7z" opacity="0.5"/></svg>`,
 
   // Grid Layout
   'grid-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
@@ -405,6 +406,76 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-text-input label="Social Security Number" name="ssn" type="password" hint="Enter the 9 digits of your SSN" inputmode="numeric" pattern="^(?!(000|666|9))\\d{3}-(?!00)\\d{2}-(?!0000)\\d{4}$" maxlength="11" required style="max-width: 12rem; margin-top: 1rem;"></usa-text-input>
   <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
 </fieldset>`,
+
+  'usa-conditional-field': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
+  <legend class="usa-legend">How did you hear about us?</legend>
+  <usa-radio label="Search engine" name="referral-source" value="search"></usa-radio>
+  <usa-radio label="Social media" name="referral-source" value="social"></usa-radio>
+  <usa-radio label="Friend or family" name="referral-source" value="friend"></usa-radio>
+  <usa-radio label="Other" name="referral-source" value="other" data-reveals="referral-other-field"></usa-radio>
+  <div id="referral-other-field" class="usa-form-group usa-conditional-field" hidden aria-hidden="true" style="margin-left: 2rem; margin-top: 0.5rem;">
+    <usa-text-input label="Please specify" name="referral-other" hint="Tell us how you heard about us"></usa-text-input>
+  </div>
+</fieldset>
+<script>
+// Conditional field reveal - shows/hides fields based on radio/checkbox selection
+// Only initializes once even if script is included multiple times
+if (!window._conditionalFieldsInit) {
+  window._conditionalFieldsInit = true;
+
+  function initConditionalFields() {
+    document.querySelectorAll('[data-reveals]').forEach(function(trigger) {
+      if (trigger._conditionalInit) return; // Already initialized
+      trigger._conditionalInit = true;
+
+      var targetId = trigger.getAttribute('data-reveals');
+      var target = document.getElementById(targetId);
+      if (!target) return;
+
+      var name = trigger.getAttribute('name');
+      var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
+      var isCheckbox = trigger.tagName.toLowerCase() === 'usa-checkbox';
+
+      function updateVisibility() {
+        var input = trigger.querySelector('input');
+        var shouldShow = input && input.checked;
+
+        if (shouldShow) {
+          target.removeAttribute('hidden');
+          target.setAttribute('aria-hidden', 'false');
+        } else {
+          target.setAttribute('hidden', '');
+          target.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      // Listen for changes on all inputs with the same name (for radio groups)
+      if (isRadio && name) {
+        document.querySelectorAll('usa-radio[name="' + name + '"]').forEach(function(radio) {
+          if (!radio._conditionalListener) {
+            radio._conditionalListener = true;
+            radio.addEventListener('change', updateVisibility);
+          }
+        });
+      } else if (isCheckbox) {
+        trigger.addEventListener('change', updateVisibility);
+      }
+
+      // Initial state
+      updateVisibility();
+    });
+  }
+
+  // Initialize when DOM is ready and web components are defined
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(initConditionalFields, 100);
+    });
+  } else {
+    setTimeout(initConditionalFields, 100);
+  }
+}
+</script>`,
 
   // Grid Layout - USWDS Grid System
   // Responsive 2-column: full width on mobile, 50/50 on tablet+
