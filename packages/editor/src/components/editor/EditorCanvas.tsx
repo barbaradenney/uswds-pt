@@ -27,23 +27,47 @@ const AI_SECRET = import.meta.env.VITE_AI_SECRET || '';
 // 1. API key is configured AND
 // 2. Either no secret is set, OR the URL has the correct ?ai=secret parameter
 const checkAiEnabled = (): boolean => {
-  if (!AI_API_KEY) return false;
-  if (!AI_SECRET) return true; // No secret required, always enabled
+  const hasApiKey = !!AI_API_KEY;
+  const hasSecret = !!AI_SECRET;
 
-  // Check URL parameter
+  // Debug logging (check browser console)
+  console.log('[AI Copilot] Checking AI status:', {
+    hasApiKey,
+    hasSecret,
+    search: window.location.search,
+    hash: window.location.hash,
+  });
+
+  if (!hasApiKey) {
+    console.log('[AI Copilot] Disabled: No API key configured');
+    return false;
+  }
+
+  if (!hasSecret) {
+    console.log('[AI Copilot] Enabled: No secret required');
+    return true;
+  }
+
+  // Check URL parameter (before the hash)
   const urlParams = new URLSearchParams(window.location.search);
   const aiParam = urlParams.get('ai');
 
+  console.log('[AI Copilot] URL ai param:', aiParam, 'Expected:', AI_SECRET);
+
   // Also check localStorage (so it persists after navigation)
   if (aiParam === AI_SECRET) {
+    console.log('[AI Copilot] Enabled: Secret matched, saving to localStorage');
     localStorage.setItem('uswds_pt_ai_enabled', 'true');
     return true;
   }
 
-  return localStorage.getItem('uswds_pt_ai_enabled') === 'true';
+  const fromStorage = localStorage.getItem('uswds_pt_ai_enabled') === 'true';
+  console.log('[AI Copilot] From localStorage:', fromStorage);
+  return fromStorage;
 };
 
 const AI_ENABLED = checkAiEnabled();
+console.log('[AI Copilot] Final AI_ENABLED:', AI_ENABLED);
 
 // GrapesJS editor type
 type EditorInstance = any;
