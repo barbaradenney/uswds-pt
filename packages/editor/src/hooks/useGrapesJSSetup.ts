@@ -148,6 +148,10 @@ export function useGrapesJSSetup({
       editorRef.current = editor;
       debug('Editor ready');
 
+      // Transition state machine to initializing_editor first
+      // This is required because EDITOR_READY is only valid from initializing_editor state
+      stateMachine.editorInitializing();
+
       // Clear any GrapesJS internal storage to prevent state bleeding
       clearGrapesJSStorage();
 

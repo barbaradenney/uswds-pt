@@ -20,7 +20,7 @@ import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
-import { type LocalPrototype } from '../lib/localStorage';
+import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
 import { clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
   DEFAULT_CONTENT,
@@ -242,11 +242,64 @@ export function Editor() {
     setShowExport(true);
   }, []);
 
-  // Handle preview
-  const handlePreview = useCallback(() => {
+  // Handle preview - saves first then opens preview route (survives refresh)
+  const handlePreview = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) return;
 
+    // Get current prototype ID
+    let prototypeId = slug || localPrototype?.id;
+    debug('Preview: starting, current ID:', prototypeId);
+
+    // In demo mode, get the list of existing prototypes before save
+    // so we can detect if a new one was created
+    const prototypesBefore = isDemoMode ? getPrototypes() : [];
+    const idsBefore = new Set(prototypesBefore.map(p => p.id));
+
+    // Save current state to ensure preview shows latest content
+    const saveSuccess = await persistence.save('manual');
+    debug('Preview: save result:', saveSuccess);
+
+    if (saveSuccess) {
+      // Small delay for state to settle
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // For demo mode, check localStorage directly to find the new/updated prototype
+      if (isDemoMode) {
+        const prototypesAfter = getPrototypes();
+
+        // If a new prototype was created, find it
+        const newPrototype = prototypesAfter.find(p => !idsBefore.has(p.id));
+        if (newPrototype) {
+          prototypeId = newPrototype.id;
+          debug('Preview: found new prototype ID:', prototypeId);
+        } else if (prototypesAfter.length > 0) {
+          // Otherwise get the most recently updated one
+          const sorted = [...prototypesAfter].sort(
+            (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+          prototypeId = sorted[0].id;
+          debug('Preview: using most recent prototype ID:', prototypeId);
+        }
+      } else {
+        // For API mode, check if state machine has the prototype
+        if (stateMachine.state.prototype?.slug) {
+          prototypeId = stateMachine.state.prototype.slug;
+          debug('Preview: found ID from state machine:', prototypeId);
+        }
+      }
+    }
+
+    if (prototypeId) {
+      // Open preview route in new tab - this survives refresh
+      debug('Preview: opening route with ID:', prototypeId);
+      const previewUrl = `${window.location.origin}/preview/${prototypeId}`;
+      window.open(previewUrl, '_blank');
+      return;
+    }
+
+    // Fallback to blob URL for unsaved prototypes (won't survive refresh)
+    debug('Preview: using blob URL fallback (no ID available)');
     const pages = editor.Pages?.getAll?.() || [];
     const currentPage = editor.Pages?.getSelected?.();
 
@@ -280,7 +333,7 @@ export function Editor() {
     }
 
     openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
-  }, [name]);
+  }, [name, slug, localPrototype?.id, isDemoMode, stateMachine.state.prototype?.slug, persistence]);
 
   // Handle version restore
   const handleVersionRestore = useCallback(

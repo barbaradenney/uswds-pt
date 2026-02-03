@@ -195,13 +195,31 @@ test.describe('Editor - Demo Mode', () => {
   });
 
   test.describe('Preview', () => {
-    test('should open preview in new tab', async ({ page, context }) => {
+    test('should open preview in new tab with proper URL', async ({ page, context }) => {
       await createNewPrototype(page);
       await waitForEditorReady(page);
 
-      // Save first
-      await page.getByRole('button', { name: /save/i }).first().click();
-      await page.waitForTimeout(2000); // Wait for save to complete
+      // Listen for new page
+      const pagePromise = context.waitForEvent('page');
+
+      // Click preview button - this now saves first then opens /preview/:id route
+      await page.getByRole('button', { name: /preview/i }).click();
+
+      // New tab should open
+      const newPage = await pagePromise;
+      await newPage.waitForLoadState();
+
+      // Preview should now use the proper /preview/:id route (survives refresh)
+      const previewUrl = newPage.url();
+      expect(previewUrl).toContain('/preview/');
+
+      // The preview page should have content (body should not be empty)
+      await expect(newPage.locator('body')).toBeVisible();
+    });
+
+    test('should survive page refresh', async ({ page, context }) => {
+      await createNewPrototype(page);
+      await waitForEditorReady(page);
 
       // Listen for new page
       const pagePromise = context.waitForEvent('page');
@@ -210,16 +228,22 @@ test.describe('Editor - Demo Mode', () => {
       await page.getByRole('button', { name: /preview/i }).click();
 
       // New tab should open
-      const newPage = await pagePromise;
-      await newPage.waitForLoadState();
+      const previewPage = await pagePromise;
+      await previewPage.waitForLoadState();
 
-      // Preview opens in demo mode as blob URL or in API mode as /preview/ route
-      const previewUrl = newPage.url();
-      const isValidPreview = previewUrl.includes('/preview') || previewUrl.startsWith('blob:');
-      expect(isValidPreview).toBe(true);
+      // Verify it's using the proper preview route
+      const previewUrl = previewPage.url();
+      expect(previewUrl).toContain('/preview/');
 
-      // The preview page should have content (body should not be empty)
-      await expect(newPage.locator('body')).toBeVisible();
+      // Refresh the preview page
+      await previewPage.reload();
+      await previewPage.waitForLoadState();
+
+      // Should still work after refresh - body should be visible
+      await expect(previewPage.locator('body')).toBeVisible();
+
+      // URL should still be the preview route
+      expect(previewPage.url()).toContain('/preview/');
     });
   });
 
