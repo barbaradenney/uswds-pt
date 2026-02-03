@@ -133,7 +133,8 @@ export function Editor() {
         'grid-sidebar-right': 'Sidebar Right',
         'grid-container': 'Container',
         'grid-row': 'Row',
-        'usa-conditional-field': 'Conditional Field',
+        'conditional-checkbox': 'Conditional Checkbox',
+        'conditional-radio': 'Conditional Radio',
       };
 
       const label = labelMap[tagName] || tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -501,13 +502,13 @@ function getCategoryForComponent(tagName: string): string {
   const categoryMap: Record<string, string[]> = {
     'Basics': ['heading', 'text'],
     'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
-    'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
+    'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider', 'conditional-checkbox', 'conditional-radio'],
     'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link'],
     'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
     'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
     'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
     'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
-    'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern', 'usa-conditional-field'],
+    'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
     'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
   };
 
