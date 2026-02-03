@@ -21,7 +21,29 @@ const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY || '';
 const AI_PROVIDER = (import.meta.env.VITE_AI_PROVIDER || 'claude') as 'claude' | 'openai';
 const AI_MODEL = import.meta.env.VITE_AI_MODEL || (AI_PROVIDER === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o');
-const AI_ENABLED = !!AI_API_KEY;
+const AI_SECRET = import.meta.env.VITE_AI_SECRET || '';
+
+// AI is enabled only if:
+// 1. API key is configured AND
+// 2. Either no secret is set, OR the URL has the correct ?ai=secret parameter
+const checkAiEnabled = (): boolean => {
+  if (!AI_API_KEY) return false;
+  if (!AI_SECRET) return true; // No secret required, always enabled
+
+  // Check URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const aiParam = urlParams.get('ai');
+
+  // Also check localStorage (so it persists after navigation)
+  if (aiParam === AI_SECRET) {
+    localStorage.setItem('uswds_pt_ai_enabled', 'true');
+    return true;
+  }
+
+  return localStorage.getItem('uswds_pt_ai_enabled') === 'true';
+};
+
+const AI_ENABLED = checkAiEnabled();
 
 // GrapesJS editor type
 type EditorInstance = any;
