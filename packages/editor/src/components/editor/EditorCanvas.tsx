@@ -28,17 +28,28 @@ const AI_SECRET = import.meta.env.VITE_AI_SECRET || '';
 // AI is enabled only if:
 // 1. API key is configured AND
 // 2. Either no secret is set, OR the URL has the correct ?ai=secret parameter
+// Use ?ai=off to explicitly disable
 const checkAiEnabled = (): boolean => {
   const hasApiKey = !!AI_API_KEY;
   const hasSecret = !!AI_SECRET;
+
+  // Check URL parameter (before the hash)
+  const urlParams = new URLSearchParams(window.location.search);
+  const aiParam = urlParams.get('ai');
 
   // Debug logging (check browser console)
   console.log('[AI Copilot] Checking AI status:', {
     hasApiKey,
     hasSecret,
-    search: window.location.search,
-    hash: window.location.hash,
+    aiParam,
   });
+
+  // Explicit disable with ?ai=off
+  if (aiParam === 'off' || aiParam === 'disable') {
+    console.log('[AI Copilot] Disabled: Explicit ?ai=off parameter');
+    sessionStorage.removeItem('uswds_pt_ai_enabled');
+    return false;
+  }
 
   if (!hasApiKey) {
     console.log('[AI Copilot] Disabled: No API key configured');
@@ -50,22 +61,17 @@ const checkAiEnabled = (): boolean => {
     return true;
   }
 
-  // Check URL parameter (before the hash)
-  const urlParams = new URLSearchParams(window.location.search);
-  const aiParam = urlParams.get('ai');
-
-  console.log('[AI Copilot] URL ai param:', aiParam, 'Expected:', AI_SECRET);
-
-  // Also check localStorage (so it persists after navigation)
+  // Check if secret matches
   if (aiParam === AI_SECRET) {
-    console.log('[AI Copilot] Enabled: Secret matched, saving to localStorage');
-    localStorage.setItem('uswds_pt_ai_enabled', 'true');
+    console.log('[AI Copilot] Enabled: Secret matched, saving to session');
+    sessionStorage.setItem('uswds_pt_ai_enabled', 'true');
     return true;
   }
 
-  const fromStorage = localStorage.getItem('uswds_pt_ai_enabled') === 'true';
-  console.log('[AI Copilot] From localStorage:', fromStorage);
-  return fromStorage;
+  // Check session storage (persists for browser session only, not permanently)
+  const fromSession = sessionStorage.getItem('uswds_pt_ai_enabled') === 'true';
+  console.log('[AI Copilot] From session:', fromSession);
+  return fromSession;
 };
 
 const AI_ENABLED = checkAiEnabled();
