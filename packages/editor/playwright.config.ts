@@ -53,8 +53,9 @@ export default defineConfig({
   ],
 
   // Run local dev server before starting the tests
+  // Uses --mode test which loads .env.test (demo mode, no API)
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm vite --mode test',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
