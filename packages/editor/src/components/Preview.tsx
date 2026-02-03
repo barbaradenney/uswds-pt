@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
@@ -86,19 +86,27 @@ export function Preview() {
     }
   }, [data?.name]);
 
-  // Clean the HTML content (memoized to avoid recalculating on every render)
-  const cleanedHtml = data?.htmlContent ? cleanExport(data.htmlContent) : '';
+  // Clean the HTML content - memoized to avoid recalculating on every render
+  const cleanedHtml = useMemo(() => {
+    if (!data?.htmlContent) return '';
+    return cleanExport(data.htmlContent);
+  }, [data?.htmlContent]);
 
   // Initialize USWDS components after content is rendered
+  // Using a ref to track if we've already initialized to prevent re-runs
+  const initializedRef = useRef(false);
+
   useEffect(() => {
-    if (contentRef.current && stylesLoaded && data) {
+    // Only initialize once when we have content and styles
+    if (contentRef.current && stylesLoaded && cleanedHtml && !initializedRef.current) {
+      initializedRef.current = true;
       // Small delay to ensure web components are defined
       const timer = setTimeout(() => {
         initializeUSWDSComponents(contentRef.current!);
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [cleanedHtml, stylesLoaded, data]);
+  }, [stylesLoaded, cleanedHtml]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
