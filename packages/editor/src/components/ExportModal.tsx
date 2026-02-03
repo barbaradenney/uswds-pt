@@ -1,20 +1,46 @@
 import { useState } from 'react';
-import { cleanExport, generateFullDocument } from '../lib/export';
+import { cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
 
 interface ExportModalProps {
+  /** HTML content for single-page export */
   htmlContent: string;
+  /** Optional pages data for multi-page export */
+  pages?: PageData[];
   onClose: () => void;
 }
 
 type ExportMode = 'snippet' | 'full';
 
-export function ExportModal({ htmlContent, onClose }: ExportModalProps) {
+export function ExportModal({ htmlContent, pages, onClose }: ExportModalProps) {
   const [mode, setMode] = useState<ExportMode>('snippet');
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
 
-  const cleanHtml = cleanExport(htmlContent);
-  const fullHtml = generateFullDocument(cleanHtml);
+  const isMultiPage = pages && pages.length > 1;
+
+  // For multi-page, get the selected page's content or combine all
+  const getSnippetHtml = () => {
+    if (isMultiPage) {
+      // In snippet mode, show selected page or all pages combined
+      if (selectedPageIndex === -1) {
+        // All pages combined
+        return pages.map(p => `<!-- Page: ${p.name} -->\n${cleanExport(p.html)}`).join('\n\n');
+      }
+      return cleanExport(pages[selectedPageIndex].html);
+    }
+    return cleanExport(htmlContent);
+  };
+
+  const getFullHtml = () => {
+    if (isMultiPage) {
+      return generateMultiPageDocument(pages);
+    }
+    return generateFullDocument(cleanExport(htmlContent));
+  };
+
+  const cleanHtml = getSnippetHtml();
+  const fullHtml = getFullHtml();
 
   const displayHtml = mode === 'snippet' ? cleanHtml : fullHtml;
 
@@ -111,6 +137,39 @@ export function ExportModal({ htmlContent, onClose }: ExportModalProps) {
               ? 'Clean component markup ready to paste into your codebase.'
               : 'Full HTML document with USWDS imports for sharing and testing.'}
           </p>
+
+          {/* Page selector for multi-page exports in snippet mode */}
+          {isMultiPage && mode === 'snippet' && (
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                Select page to export:
+              </label>
+              <select
+                value={selectedPageIndex}
+                onChange={(e) => setSelectedPageIndex(Number(e.target.value))}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--color-base-lighter)',
+                  width: '100%',
+                  maxWidth: '300px',
+                }}
+              >
+                <option value={-1}>All pages (combined)</option>
+                {pages.map((page, index) => (
+                  <option key={page.id} value={index}>
+                    {page.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {isMultiPage && mode === 'full' && (
+            <p style={{ color: 'var(--color-success)', marginBottom: '16px', fontSize: '0.875rem' }}>
+              ✓ All {pages.length} pages included with navigation support
+            </p>
+          )}
 
           <pre className="export-code" id="export-content" role="tabpanel">
             <code>{displayHtml || '<!-- No content to export -->'}</code>

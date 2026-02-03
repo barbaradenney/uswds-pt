@@ -33,6 +33,11 @@ pnpm-debug.log*
 # Test coverage
 coverage/
 
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+
 # Database
 *.db
 *.sqlite

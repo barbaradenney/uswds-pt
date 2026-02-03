@@ -23,6 +23,16 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 }
 
 /**
+ * React Router v7 future flags to eliminate deprecation warnings
+ */
+const routerFutureFlags = {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  },
+};
+
+/**
  * Provider wrapper for tests
  */
 function AllProviders({
@@ -36,12 +46,21 @@ function AllProviders({
   useMemoryRouter?: boolean;
   withAuth?: boolean;
 }) {
-  const Router = useMemoryRouter ? MemoryRouter : BrowserRouter;
-  const routerProps = useMemoryRouter && initialEntries ? { initialEntries } : {};
-
   const content = withAuth ? <AuthProvider>{children}</AuthProvider> : children;
 
-  return <Router {...routerProps}>{content}</Router>;
+  if (useMemoryRouter) {
+    return (
+      <MemoryRouter initialEntries={initialEntries} {...routerFutureFlags}>
+        {content}
+      </MemoryRouter>
+    );
+  }
+
+  return (
+    <BrowserRouter {...routerFutureFlags}>
+      {content}
+    </BrowserRouter>
+  );
 }
 
 /**

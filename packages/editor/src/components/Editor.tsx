@@ -62,6 +62,7 @@ export function Editor() {
   // Local state for UI
   const [name, setName] = useState('Untitled Prototype');
   const [htmlContent, setHtmlContent] = useState('');
+  const [exportPages, setExportPages] = useState<PageData[]>([]);
   const [localPrototype, setLocalPrototype] = useState<LocalPrototype | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
@@ -196,17 +197,48 @@ export function Editor() {
   // Handle export
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
-    if (editor) {
+    if (!editor) {
+      setShowExport(true);
+      return;
+    }
+
+    const pages = editor.Pages?.getAll?.() || [];
+    const currentPage = editor.Pages?.getSelected?.();
+
+    if (pages.length <= 1) {
+      // Single page export
       const html = editor.getHtml();
       debug('Export: HTML length =', html?.length);
 
-      // Store for debugging (accessible via window.__lastExportHtml)
       if (DEBUG) {
         (window as any).__lastExportHtml = html;
       }
 
       setHtmlContent(html);
+      setExportPages([]);
+    } else {
+      // Multi-page export - collect all pages
+      const pageDataList: PageData[] = [];
+      const originalPage = currentPage;
+
+      for (const page of pages) {
+        editor.Pages?.select?.(page);
+        const pageId = page.getId?.() || page.id;
+        const pageName = page.get?.('name') || page.getName?.() || `Page ${pageId}`;
+        const html = editor.getHtml();
+        pageDataList.push({ id: pageId, name: pageName, html });
+      }
+
+      // Restore original page selection
+      if (originalPage) {
+        editor.Pages?.select?.(originalPage);
+      }
+
+      debug('Export: collected', pageDataList.length, 'pages');
+      setExportPages(pageDataList);
+      setHtmlContent(pageDataList[0]?.html || '');
     }
+
     setShowExport(true);
   }, []);
 
@@ -421,6 +453,7 @@ export function Editor() {
       {showExport && (
         <ExportModal
           htmlContent={htmlContent}
+          pages={exportPages.length > 0 ? exportPages : undefined}
           onClose={() => setShowExport(false)}
         />
       )}

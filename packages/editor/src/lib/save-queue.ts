@@ -383,16 +383,83 @@ class SaveQueueManager {
   }
 
   /**
-   * Cleanup
+   * Full cleanup for hot reload or unmount scenarios
+   * Saves any pending queue to localStorage before destroying
    */
   destroy(): void {
+    debug('Destroying SaveQueueManager');
+
+    // Save any pending saves to localStorage so they survive reload
+    if (this.queue.length > 0) {
+      this.saveOfflineQueue();
+      debug('Saved', this.queue.length, 'pending saves to localStorage');
+    }
+
+    // Unsubscribe from online status
     this.unsubscribeOnline?.();
+    this.unsubscribeOnline = null;
+
+    // Clear all listeners
     this.listeners.clear();
+
+    // Clear save function reference
+    this.saveFunction = null;
+
+    // Reset state
+    this.isSaving = false;
+    this.lastError = null;
+  }
+
+  /**
+   * Reinitialize after hot reload
+   */
+  reinitialize(): void {
+    debug('Reinitializing SaveQueueManager');
+
+    // Reload offline queue
+    this.loadOfflineQueue();
+
+    // Re-subscribe to online status
+    if (!this.unsubscribeOnline) {
+      this.unsubscribeOnline = subscribeToOnlineStatus((status) => {
+        debug('Online status changed:', status.isOnline);
+        this.notifyListeners();
+        if (status.isOnline && this.queue.length > 0) {
+          debug('Back online, processing queued saves');
+          this.processQueue();
+        }
+      });
+    }
   }
 }
 
 // Singleton instance
-export const saveQueue = new SaveQueueManager();
+let saveQueueInstance: SaveQueueManager | null = null;
+
+/**
+ * Get or create the SaveQueueManager singleton
+ */
+function getSaveQueue(): SaveQueueManager {
+  if (!saveQueueInstance) {
+    saveQueueInstance = new SaveQueueManager();
+  }
+  return saveQueueInstance;
+}
+
+export const saveQueue = getSaveQueue();
+
+// Hot Module Replacement cleanup for Vite
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    debug('HMR dispose: cleaning up SaveQueueManager');
+    saveQueue.destroy();
+  });
+
+  import.meta.hot.accept(() => {
+    debug('HMR accept: reinitializing SaveQueueManager');
+    saveQueue.reinitialize();
+  });
+}
 
 /**
  * Hook-friendly function to check if save is in progress
