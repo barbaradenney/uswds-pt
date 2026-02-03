@@ -1,0 +1,148 @@
+/**
+ * AI Copilot Panel Styles
+ *
+ * Custom styles for the grapesjs-ai-copilot panel to match our UI.
+ */
+
+/* Main AI suggestion container */
+ai-suggestion {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: #1b1b1b;
+  background: #ffffff;
+}
+
+/* Override GrapesJS field styling for the explanation area */
+ai-suggestion .gjs-field {
+  background: #f0f0f0;
+  border: 1px solid #dfe1e2;
+  border-radius: 4px;
+  margin-bottom: 0;
+}
+
+ai-suggestion .gjs-field > div {
+  color: #1b1b1b !important;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Input field styling */
+ai-suggestion .gjs-field input {
+  background: #ffffff;
+  border: 1px solid #dfe1e2;
+  border-radius: 4px;
+  color: #1b1b1b;
+  font-size: 13px;
+  padding: 8px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+ai-suggestion .gjs-field input:focus {
+  outline: 2px solid #2491ff;
+  outline-offset: 0;
+  border-color: #2491ff;
+}
+
+ai-suggestion .gjs-field input::placeholder {
+  color: #71767a;
+}
+
+/* Primary button styling - USWDS blue */
+ai-suggestion .gjs-btn-prim {
+  background: #005ea2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+ai-suggestion .gjs-btn-prim:hover:not(:disabled) {
+  background: #1a4480;
+}
+
+ai-suggestion .gjs-btn-prim:disabled {
+  background: #c9c9c9;
+  cursor: not-allowed;
+}
+
+/* Link-style buttons */
+ai-suggestion .gjs-field-info {
+  color: #005ea2;
+  font-size: 12px;
+}
+
+ai-suggestion .gjs-field-info:hover {
+  color: #1a4480;
+}
+
+/* "Didn't work" link in red */
+ai-suggestion .gjs-field-info[style*="color: #c53030"] {
+  color: #b50909 !important;
+}
+
+ai-suggestion .gjs-field-info[style*="color: #c53030"]:hover {
+  color: #8b0a03 !important;
+}
+
+/* Badge styling */
+ai-suggestion .gjs-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #e7f6f8;
+  color: #0d7ea2;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+ai-suggestion .gjs-badge-warning {
+  background: #faf3d1;
+  color: #936f38;
+}
+
+ai-suggestion .gjs-badge-danger {
+  background: #f8dfe2;
+  color: #b50909;
+}
+
+ai-suggestion .gjs-badge-success {
+  background: #d4e7d4;
+  color: #2e6e31;
+}
+
+/* Code preview area */
+ai-suggestion .gjs-field-code {
+  background: #1b1b1b;
+  color: #a9aeb1;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  border: 1px solid #3d4551;
+}
+
+/* Loading spinner label */
+ai-suggestion .gjs-sm-label {
+  color: #71767a;
+  font-size: 13px;
+}
+
+/* Error state styling */
+ai-suggestion div[style*="background: #fff5f5"] {
+  background: #f8dfe2 !important;
+  border-color: #f8dfe2 !important;
+}
+
+/* Tokens badge - specific styling */
+ai-suggestion span[class*="gjs-badge"]:not(.gjs-badge-warning):not(.gjs-badge-danger):not(.gjs-badge-success) {
+  background: #005ea2;
+  color: #ffffff;
+}

@@ -13,6 +13,7 @@ import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plug
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
+import '../../styles/ai-copilot.css';
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
