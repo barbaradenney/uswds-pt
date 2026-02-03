@@ -408,18 +408,10 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
 </fieldset>`,
 
-  'conditional-checkbox': `__FULL_HTML__<div class="usa-form-group">
-  <usa-checkbox label="I live on a United States military base outside of the U.S." name="military-base" value="yes" data-reveals="country-text-field" data-hides="country-select-field"></usa-checkbox>
-  <div id="country-text-field" class="usa-form-group" hidden aria-hidden="true">
-    <usa-text-input label="Country" name="country-text" value="United States" disabled></usa-text-input>
-  </div>
-  <div id="country-select-field" class="usa-form-group">
-    <usa-select label="Country" name="country" required option-count="3" option1-label="United States" option1-value="us" option2-label="Canada" option2-value="ca" option3-label="Mexico" option3-value="mx"></usa-select>
-  </div>
-</div>
+  'conditional-checkbox': `__FULL_HTML__<usa-checkbox label="Check to show/hide fields" name="conditional-trigger" value="yes"></usa-checkbox>
 <script>
 // Conditional field reveal/hide - shows/hides fields based on radio/checkbox selection
-// Supports data-reveals (show when checked) and data-hides (hide when checked)
+// Use Properties panel: "Show Element (ID)" and "Hide Element (ID)" to connect to other fields
 if (!window._conditionalFieldsInit) {
   window._conditionalFieldsInit = true;
 
@@ -443,7 +435,6 @@ if (!window._conditionalFieldsInit) {
         var input = trigger.querySelector('input');
         var isChecked = input && input.checked;
 
-        // Show target when checked (data-reveals)
         if (revealsTarget) {
           if (isChecked) {
             revealsTarget.removeAttribute('hidden');
@@ -454,7 +445,6 @@ if (!window._conditionalFieldsInit) {
           }
         }
 
-        // Hide target when checked (data-hides)
         if (hidesTarget) {
           if (isChecked) {
             hidesTarget.setAttribute('hidden', '');
@@ -489,17 +479,9 @@ if (!window._conditionalFieldsInit) {
 }
 </script>`,
 
-  'conditional-radio': `__FULL_HTML__<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;">
-  <legend class="usa-legend">How did you hear about us?</legend>
-  <usa-radio label="Search engine" name="referral-source" value="search"></usa-radio>
-  <usa-radio label="Social media" name="referral-source" value="social"></usa-radio>
-  <usa-radio label="Friend or family" name="referral-source" value="friend"></usa-radio>
-  <usa-radio label="Other" name="referral-source" value="other" data-reveals="referral-other-field"></usa-radio>
-  <div id="referral-other-field" class="usa-form-group" hidden aria-hidden="true" style="margin-left: 2rem; margin-top: 0.5rem;">
-    <usa-text-input label="Please specify" name="referral-other" hint="Tell us how you heard about us"></usa-text-input>
-  </div>
-</fieldset>
+  'conditional-radio': `__FULL_HTML__<usa-radio label="Select to show/hide fields" name="conditional-radio" value="option"></usa-radio>
 <script>
+// Conditional field reveal/hide - Use Properties panel to set "Show Element (ID)" on this radio
 if (!window._conditionalFieldsInit) {
   window._conditionalFieldsInit = true;
 

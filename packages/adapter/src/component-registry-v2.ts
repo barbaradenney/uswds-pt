@@ -1059,10 +1059,10 @@ componentRegistry.register({
 
     // Element ID - for conditional show/hide targeting
     id: createAttributeTrait('id', {
-      label: 'Element ID (for conditional)',
+      label: 'Element ID (for show/hide)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., country-field',
+      placeholder: 'e.g., my-text-field',
     }),
   },
 });
@@ -1171,10 +1171,10 @@ componentRegistry.register({
 
     // Element ID - for conditional show/hide targeting
     id: createAttributeTrait('id', {
-      label: 'Element ID (for conditional)',
+      label: 'Element ID (for show/hide)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., comments-field',
+      placeholder: 'e.g., my-textarea',
     }),
   },
 });
@@ -1408,10 +1408,10 @@ componentRegistry.register({
 
     // Element ID - for conditional show/hide targeting
     id: createAttributeTrait('id', {
-      label: 'Element ID (for conditional)',
+      label: 'Element ID (for show/hide)',
       type: 'text',
       default: '',
-      placeholder: 'e.g., country-select',
+      placeholder: 'e.g., my-select',
     }),
   },
 });
