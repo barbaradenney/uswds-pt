@@ -19,6 +19,7 @@
   "dependencies": {
     "@grapesjs/studio-sdk": "^1.0.56",
     "@grapesjs/studio-sdk-plugins": "^1.0.31",
+    "@silexlabs/grapesjs-ai-copilot": "^0.0.33",
     "@uswds-pt/adapter": "workspace:*",
     "@uswds-pt/shared": "workspace:*",
     "grapesjs": "^0.21.0",

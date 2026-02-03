@@ -88,7 +88,32 @@ The API package has its own `.env` file at `packages/api/.env`. Key variables:
 - `FRONTEND_URL` - CORS allowed origin (default: http://localhost:3000)
 - `PORT` - API server port (default: 3001)
 
-The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config.
+The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config:
+- `VITE_GRAPESJS_LICENSE_KEY` - GrapesJS Studio SDK license key
+- `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
+- `VITE_AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI)
+- `VITE_AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)
+- `VITE_AI_MODEL` - (Optional) AI model name (default: claude-sonnet-4-20250514 or gpt-4o)
+
+## AI Copilot Feature
+
+The editor includes an optional AI assistant powered by the `@silexlabs/grapesjs-ai-copilot` plugin. When enabled, users can describe what they want to build in natural language and the AI will generate GrapesJS code to create USWDS components.
+
+### Enabling AI Copilot
+
+Add these environment variables to `packages/editor/.env`:
+```bash
+VITE_AI_API_KEY=your-api-key-here
+VITE_AI_PROVIDER=claude  # or "openai"
+VITE_AI_MODEL=claude-sonnet-4-20250514  # optional, uses default for provider
+```
+
+### How It Works
+
+- The AI is trained on all USWDS web components through a custom prompt (`src/lib/ai/uswds-prompt.ts`)
+- It generates JavaScript code that uses the GrapesJS API to add/modify components
+- Users can request things like "add a contact form" or "make this card have a warning style"
+- The AI knows about usa-button, usa-header, usa-card, usa-alert, and all other USWDS components
 
 ## Database Setup
 

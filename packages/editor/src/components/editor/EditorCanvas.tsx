@@ -11,9 +11,17 @@ import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
 import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plugins';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
+import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
+import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
+
+// AI Copilot configuration
+const AI_API_KEY = import.meta.env.VITE_AI_API_KEY || '';
+const AI_PROVIDER = (import.meta.env.VITE_AI_PROVIDER || 'claude') as 'claude' | 'openai';
+const AI_MODEL = import.meta.env.VITE_AI_MODEL || (AI_PROVIDER === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o');
+const AI_ENABLED = !!AI_API_KEY;
 
 // GrapesJS editor type
 type EditorInstance = any;
@@ -50,6 +58,23 @@ const TABLE_BLOCK_CONFIG = {
   },
 };
 
+/**
+ * AI Copilot plugin configuration
+ */
+const AI_COPILOT_CONFIG = {
+  aiProvider: AI_PROVIDER,
+  apiKey: AI_API_KEY,
+  model: AI_MODEL,
+  customPrompt: generateUSWDSPrompt(),
+  // Panel positioning
+  containerSelector: '.gjs-pn-views-container',
+  // Update suggestions less frequently to reduce API costs
+  updateInterval: 30000, // 30 seconds
+  minChangesThreshold: 10,
+  // Response limits
+  maxTokens: 2000,
+};
+
 export const EditorCanvas = memo(function EditorCanvas({
   editorKey,
   initialContent,
@@ -68,6 +93,8 @@ export const EditorCanvas = memo(function EditorCanvas({
             (editor: EditorInstance) => tableComponent(editor, TABLE_BLOCK_CONFIG),
             uswdsTablePlugin,
             uswdsComponentsPlugin,
+            // AI Copilot plugin - only add if API key is configured
+            ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
           project: {
             type: 'web',

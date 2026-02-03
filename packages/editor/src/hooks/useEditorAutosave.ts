@@ -31,8 +31,8 @@ export interface UseEditorAutosaveOptions {
   enabled: boolean;
   /** State machine for guards */
   stateMachine: UseEditorStateMachineReturn;
-  /** Function to perform the save */
-  onSave: () => Promise<boolean>;
+  /** Function to perform the save - returns truthy value on success */
+  onSave: () => Promise<unknown>;
   /** Debounce time in ms after last change (default: 5000) */
   debounceMs?: number;
   /** Maximum wait time before forcing save (default: 30000) */
@@ -131,9 +131,10 @@ export function useEditorAutosave({
     safeSetStatus('saving');
 
     try {
-      const success = await onSave();
+      const result = await onSave();
 
-      if (success) {
+      // Check for truthy result (supports both boolean and Prototype | null)
+      if (result) {
         hasPendingChangesRef.current = false;
         firstChangeTimeRef.current = null;
         setLastSavedAt(new Date());
@@ -144,7 +145,7 @@ export function useEditorAutosave({
         scheduleStatusReset(3000);
       } else {
         safeSetStatus('error');
-        debug('Autosave returned false');
+        debug('Autosave returned falsy value');
 
         // Reset to idle after showing error
         scheduleStatusReset(5000);
