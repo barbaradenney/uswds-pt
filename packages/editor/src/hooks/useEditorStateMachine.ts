@@ -115,6 +115,7 @@ const validTransitions: Record<EditorStatus, EditorAction['type'][]> = {
     'LOAD_PROTOTYPE',
     'CREATE_PROTOTYPE',
     'EDITOR_INITIALIZING',
+    'EDITOR_READY', // Allow direct transition for new prototypes
     'RESET',
   ],
   loading_prototype: [
