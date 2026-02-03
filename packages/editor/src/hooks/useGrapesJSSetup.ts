@@ -192,6 +192,9 @@ export function useGrapesJSSetup({
       // Set up page link trait updates
       setupPageLinkTrait(editor, registerListener);
 
+      // Set up conditional show/hide trait (dynamic component picker)
+      setupConditionalShowHideTrait(editor, registerListener);
+
       // Load USWDS resources
       registerListener(editor, 'canvas:frame:load', () => loadUSWDSResources(editor));
       registerListener(editor, 'canvas:frame:load', () => syncPageLinkHrefs(editor));
@@ -704,4 +707,234 @@ function syncPageLinkHrefs(editor: EditorInstance): void {
   } catch (err) {
     console.warn('USWDS-PT: Error syncing page-link hrefs:', err);
   }
+}
+
+/**
+ * Get a friendly label for a component
+ */
+function getComponentLabel(component: any): string {
+  // Try to get label from various attributes
+  const label = component.getAttributes?.()?.label
+    || component.get?.('attributes')?.label;
+
+  if (label) return label;
+
+  // Try to get name attribute
+  const name = component.getAttributes?.()?.name
+    || component.get?.('attributes')?.name;
+
+  if (name) return name;
+
+  // Try to get text content for simple components
+  const text = component.get?.('content');
+  if (text && text.length < 30) return text;
+
+  // Try to get heading text
+  const heading = component.getAttributes?.()?.heading
+    || component.get?.('attributes')?.heading;
+
+  if (heading) return heading;
+
+  return '';
+}
+
+/**
+ * Get a friendly type name for a component
+ */
+function getComponentTypeName(tagName: string): string {
+  const typeMap: Record<string, string> = {
+    'usa-text-input': 'Text Input',
+    'usa-textarea': 'Textarea',
+    'usa-select': 'Select',
+    'usa-checkbox': 'Checkbox',
+    'usa-radio': 'Radio',
+    'usa-date-picker': 'Date Picker',
+    'usa-time-picker': 'Time Picker',
+    'usa-file-input': 'File Input',
+    'usa-combo-box': 'Combo Box',
+    'usa-range-slider': 'Range Slider',
+    'usa-card': 'Card',
+    'usa-alert': 'Alert',
+    'usa-accordion': 'Accordion',
+    'fieldset': 'Fieldset',
+    'div': 'Container',
+    'section': 'Section',
+    'p': 'Paragraph',
+    'h1': 'Heading 1',
+    'h2': 'Heading 2',
+    'h3': 'Heading 3',
+    'h4': 'Heading 4',
+    'h5': 'Heading 5',
+    'h6': 'Heading 6',
+  };
+
+  return typeMap[tagName.toLowerCase()] || tagName.replace('usa-', '').replace(/-/g, ' ');
+}
+
+/**
+ * Generate a unique ID for a component if it doesn't have one
+ */
+function ensureComponentId(component: any, allIds: Set<string>): string {
+  const currentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
+
+  if (currentId && currentId.length > 0) {
+    return currentId;
+  }
+
+  // Generate a meaningful ID based on the component type and label
+  const tagName = component.get?.('tagName')?.toLowerCase() || 'element';
+  const label = getComponentLabel(component);
+
+  // Create base ID from label or tag
+  let baseId = label
+    ? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    : tagName.replace('usa-', '');
+
+  // Ensure uniqueness
+  let finalId = baseId;
+  let counter = 1;
+  while (allIds.has(finalId)) {
+    finalId = `${baseId}-${counter}`;
+    counter++;
+  }
+
+  // Set the ID on the component
+  component.addAttributes({ id: finalId });
+  allIds.add(finalId);
+
+  debug('Generated ID for component:', finalId);
+  return finalId;
+}
+
+/**
+ * Collect all targetable components from the editor
+ */
+function collectTargetableComponents(editor: EditorInstance): Array<{ id: string; label: string; component: any }> {
+  const result: Array<{ id: string; label: string; component: any }> = [];
+  const allIds = new Set<string>();
+
+  // Components that can be shown/hidden
+  const targetableTypes = [
+    'usa-text-input',
+    'usa-textarea',
+    'usa-select',
+    'usa-checkbox',
+    'usa-radio',
+    'usa-date-picker',
+    'usa-time-picker',
+    'usa-file-input',
+    'usa-combo-box',
+    'usa-range-slider',
+    'usa-card',
+    'usa-alert',
+    'usa-accordion',
+    'fieldset',
+    'div',
+    'section',
+    'p',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  ];
+
+  // First pass: collect all existing IDs
+  const wrapper = editor.DomComponents?.getWrapper?.();
+  if (!wrapper) return result;
+
+  const collectExistingIds = (comp: any) => {
+    const id = comp.getAttributes?.()?.id || comp.get?.('attributes')?.id;
+    if (id) allIds.add(id);
+
+    const children = comp.components?.();
+    if (children) {
+      children.forEach((child: any) => collectExistingIds(child));
+    }
+  };
+  collectExistingIds(wrapper);
+
+  // Second pass: collect targetable components
+  const collectComponents = (comp: any) => {
+    const tagName = comp.get?.('tagName')?.toLowerCase() || '';
+
+    if (targetableTypes.includes(tagName)) {
+      const id = ensureComponentId(comp, allIds);
+      const label = getComponentLabel(comp);
+      const typeName = getComponentTypeName(tagName);
+
+      const displayLabel = label
+        ? `${typeName} - ${label}`
+        : typeName;
+
+      result.push({
+        id,
+        label: displayLabel,
+        component: comp,
+      });
+    }
+
+    // Recurse into children
+    const children = comp.components?.();
+    if (children) {
+      children.forEach((child: any) => collectComponents(child));
+    }
+  };
+
+  collectComponents(wrapper);
+
+  return result;
+}
+
+/**
+ * Set up conditional show/hide trait with dynamic component picker
+ */
+function setupConditionalShowHideTrait(
+  editor: EditorInstance,
+  registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void
+): void {
+  const updateConditionalTraits = (component: any) => {
+    if (!component) return;
+
+    const tagName = component.get?.('tagName')?.toLowerCase() || '';
+
+    // Only apply to checkboxes and radios
+    if (tagName !== 'usa-checkbox' && tagName !== 'usa-radio') return;
+
+    // Get all targetable components except this one
+    const targetables = collectTargetableComponents(editor);
+    const currentComponentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
+
+    const options = [
+      { id: '', label: '-- None --' },
+      ...targetables
+        .filter(t => t.id !== currentComponentId) // Don't include self
+        .map(t => ({ id: t.id, label: t.label })),
+    ];
+
+    // Update the data-reveals trait
+    const revealsTrait = component.getTrait?.('data-reveals');
+    if (revealsTrait) {
+      revealsTrait.set('type', 'select');
+      revealsTrait.set('options', options);
+    }
+
+    // Update the data-hides trait
+    const hidesTrait = component.getTrait?.('data-hides');
+    if (hidesTrait) {
+      hidesTrait.set('type', 'select');
+      hidesTrait.set('options', options);
+    }
+
+    debug('Updated conditional traits with', options.length - 1, 'options');
+  };
+
+  // Update traits when a checkbox or radio is selected
+  registerListener(editor, 'component:selected', (component: any) => {
+    updateConditionalTraits(component);
+  });
+
+  // Also update when components are added (in case new targetable components are added)
+  registerListener(editor, 'component:add', () => {
+    const selected = editor.getSelected?.();
+    if (selected) {
+      updateConditionalTraits(selected);
+    }
+  });
 }

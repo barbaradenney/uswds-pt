@@ -1271,20 +1271,20 @@ componentRegistry.register({
       },
     },
 
-    // Conditional: Show Element ID(s) when checked
+    // Conditional: Show Element when checked (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When checked, show (IDs)',
-      type: 'text',
+      label: 'When checked, show',
+      type: 'select',
       default: '',
-      placeholder: 'e.g., field1, field2',
+      options: [{ id: '', label: '-- None --' }],
     }),
 
-    // Conditional: Hide Element ID(s) when checked
+    // Conditional: Hide Element when checked (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When checked, hide (IDs)',
-      type: 'text',
+      label: 'When checked, hide',
+      type: 'select',
       default: '',
-      placeholder: 'e.g., field3, field4',
+      options: [{ id: '', label: '-- None --' }],
     }),
   },
 });
@@ -1349,20 +1349,20 @@ componentRegistry.register({
       syncToInternal: 'input[type="radio"]',
     }),
 
-    // Conditional: Show Element ID(s) when selected
+    // Conditional: Show Element when selected (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When selected, show (IDs)',
-      type: 'text',
+      label: 'When selected, show',
+      type: 'select',
       default: '',
-      placeholder: 'e.g., field1, field2',
+      options: [{ id: '', label: '-- None --' }],
     }),
 
-    // Conditional: Hide Element ID(s) when selected
+    // Conditional: Hide Element when selected (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When selected, hide (IDs)',
-      type: 'text',
+      label: 'When selected, hide',
+      type: 'select',
       default: '',
-      placeholder: 'e.g., field3, field4',
+      options: [{ id: '', label: '-- None --' }],
     }),
   },
 });
