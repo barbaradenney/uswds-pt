@@ -387,12 +387,13 @@ export function canModifyContent(state: EditorState): boolean {
 
 /**
  * Check if the editor is in a loading state
+ * Note: initializing_editor is NOT included because the editor component
+ * needs to render during that state so GrapesJS can mount and call onReady
  */
 export function isLoading(state: EditorState): boolean {
   return (
     state.status === 'loading_prototype' ||
-    state.status === 'creating_prototype' ||
-    state.status === 'initializing_editor'
+    state.status === 'creating_prototype'
   );
 }
 

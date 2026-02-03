@@ -71,7 +71,8 @@ describe('useEditorStateMachine', () => {
 
       expect(result.current.state.status).toBe('initializing_editor');
       expect(result.current.state.prototype).toEqual(proto);
-      expect(result.current.isLoading).toBe(true);
+      // initializing_editor is not a loading state - editor renders so onReady can fire
+      expect(result.current.isLoading).toBe(false);
 
       // Editor ready
       act(() => {
@@ -635,7 +636,8 @@ describe('useEditorStateMachine', () => {
       it('should return true for loading states', () => {
         expect(isLoading({ ...initialState, status: 'loading_prototype' })).toBe(true);
         expect(isLoading({ ...initialState, status: 'creating_prototype' })).toBe(true);
-        expect(isLoading({ ...initialState, status: 'initializing_editor' })).toBe(true);
+        // initializing_editor is NOT a loading state - editor needs to render so onReady can fire
+        expect(isLoading({ ...initialState, status: 'initializing_editor' })).toBe(false);
         expect(isLoading({ ...initialState, status: 'ready' })).toBe(false);
         expect(isLoading({ ...initialState, status: 'saving' })).toBe(false);
       });
