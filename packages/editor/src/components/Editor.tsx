@@ -247,47 +247,18 @@ export function Editor() {
     const editor = editorRef.current;
     if (!editor) return;
 
-    // Get current prototype ID
+    // Get current prototype ID as fallback
     let prototypeId = slug || localPrototype?.id;
     debug('Preview: starting, current ID:', prototypeId);
 
-    // In demo mode, get the list of existing prototypes before save
-    // so we can detect if a new one was created
-    const prototypesBefore = isDemoMode ? getPrototypes() : [];
-    const idsBefore = new Set(prototypesBefore.map(p => p.id));
-
     // Save current state to ensure preview shows latest content
-    const saveSuccess = await persistence.save('manual');
-    debug('Preview: save result:', saveSuccess);
+    const savedPrototype = await persistence.save('manual');
+    debug('Preview: save result:', savedPrototype);
 
-    if (saveSuccess) {
-      // Small delay for state to settle
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // For demo mode, check localStorage directly to find the new/updated prototype
-      if (isDemoMode) {
-        const prototypesAfter = getPrototypes();
-
-        // If a new prototype was created, find it
-        const newPrototype = prototypesAfter.find(p => !idsBefore.has(p.id));
-        if (newPrototype) {
-          prototypeId = newPrototype.id;
-          debug('Preview: found new prototype ID:', prototypeId);
-        } else if (prototypesAfter.length > 0) {
-          // Otherwise get the most recently updated one
-          const sorted = [...prototypesAfter].sort(
-            (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          );
-          prototypeId = sorted[0].id;
-          debug('Preview: using most recent prototype ID:', prototypeId);
-        }
-      } else {
-        // For API mode, check if state machine has the prototype
-        if (stateMachine.state.prototype?.slug) {
-          prototypeId = stateMachine.state.prototype.slug;
-          debug('Preview: found ID from state machine:', prototypeId);
-        }
-      }
+    if (savedPrototype) {
+      // Use the returned prototype directly (avoids React state race condition)
+      prototypeId = savedPrototype.slug;
+      debug('Preview: using saved prototype slug:', prototypeId);
     }
 
     if (prototypeId) {
@@ -333,7 +304,7 @@ export function Editor() {
     }
 
     openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
-  }, [name, slug, localPrototype?.id, isDemoMode, stateMachine.state.prototype?.slug, persistence]);
+  }, [name, slug, localPrototype?.id, persistence]);
 
   // Handle version restore
   const handleVersionRestore = useCallback(

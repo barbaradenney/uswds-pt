@@ -199,12 +199,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let savedProto: unknown;
       await act(async () => {
-        success = await result.current.save('manual');
+        savedProto = await result.current.save('manual');
       });
 
-      expect(success!).toBe(true);
+      expect(savedProto).toBeTruthy();
       expect(stateMachine.saveStart).toHaveBeenCalledWith('manual');
       expect(stateMachine.saveSuccess).toHaveBeenCalled();
       expect(mockAuthFetch).toHaveBeenCalledWith(
@@ -276,12 +276,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let savedProto: unknown;
       await act(async () => {
-        success = await result.current.save('manual');
+        savedProto = await result.current.save('manual');
       });
 
-      expect(success!).toBe(false);
+      expect(savedProto).toBeNull();
       expect(stateMachine.saveFailed).toHaveBeenCalledWith(
         expect.stringContaining('Failed to save')
       );
@@ -316,12 +316,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let savedProto: unknown;
       await act(async () => {
-        success = await result.current.save('manual');
+        savedProto = await result.current.save('manual');
       });
 
-      expect(success!).toBe(false);
+      expect(savedProto).toBeNull();
       expect(stateMachine.saveStart).not.toHaveBeenCalled();
       expect(mockAuthFetch).not.toHaveBeenCalled();
     });
@@ -346,12 +346,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let savedProto: unknown;
       await act(async () => {
-        success = await result.current.save('manual');
+        savedProto = await result.current.save('manual');
       });
 
-      expect(success!).toBe(false);
+      expect(savedProto).toBeNull();
       expect(stateMachine.saveFailed).toHaveBeenCalledWith(
         'Editor is still loading. Please wait a moment.'
       );
@@ -428,12 +428,12 @@ describe('useEditorPersistence', () => {
         })
       );
 
-      let success: boolean;
+      let savedProto: unknown;
       await act(async () => {
-        success = await result.current.save('manual');
+        savedProto = await result.current.save('manual');
       });
 
-      expect(success!).toBe(true);
+      expect(savedProto).toBeTruthy();
       expect(mockUpdateLocalPrototype).toHaveBeenCalledWith(
         localProto.id,
         expect.objectContaining({ name: localProto.name })

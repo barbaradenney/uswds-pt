@@ -64,8 +64,8 @@ export interface UseEditorPersistenceOptions {
 }
 
 export interface UseEditorPersistenceReturn {
-  /** Save current content (manual or autosave) */
-  save: (type: 'manual' | 'autosave') => Promise<boolean>;
+  /** Save current content (manual or autosave) - returns saved prototype or null */
+  save: (type: 'manual' | 'autosave') => Promise<Prototype | null>;
   /** Load a prototype by slug - returns the loaded prototype or null */
   load: (slug: string) => Promise<Prototype | null>;
   /** Create a new prototype */
@@ -114,16 +114,16 @@ export function useEditorPersistence({
   }, []);
 
   /**
-   * Save current content
+   * Save current content - returns the saved prototype or null on failure
    */
   const save = useCallback(
-    async (type: 'manual' | 'autosave'): Promise<boolean> => {
+    async (type: 'manual' | 'autosave'): Promise<Prototype | null> => {
       const { state, canSave, saveStart, saveSuccess, saveFailed } = stateMachine;
 
       // Prevent concurrent saves
       if (isSavingRef.current) {
         debug(`Save blocked: another save is in progress`);
-        return false;
+        return null;
       }
 
       // Check guards
@@ -132,14 +132,14 @@ export function useEditorPersistence({
         if (type === 'manual') {
           saveFailed('Editor is not ready. Please wait a moment.');
         }
-        return false;
+        return null;
       }
 
       const editor = editorRef.current;
       if (!editor) {
         debug('Save blocked: editor not initialized');
         saveFailed('Editor not initialized');
-        return false;
+        return null;
       }
 
       // Check if editor is ready for data extraction
@@ -148,7 +148,7 @@ export function useEditorPersistence({
         if (type === 'manual') {
           saveFailed('Editor is still loading. Please wait a moment.');
         }
-        return false;
+        return null;
       }
 
       // Check if online for API mode
@@ -157,7 +157,7 @@ export function useEditorPersistence({
         if (type === 'manual') {
           saveFailed('You are offline. Changes will be saved when you reconnect.');
         }
-        return false;
+        return null;
       }
 
       // Acquire save lock
@@ -193,7 +193,7 @@ export function useEditorPersistence({
               setLocalPrototype(updated);
               setHtmlContent(currentHtml);
               // Create a mock prototype for state machine
-              saveSuccess({
+              const savedPrototype: Prototype = {
                 id: updated.id,
                 slug: updated.id,
                 name: updated.name,
@@ -204,10 +204,11 @@ export function useEditorPersistence({
                 createdAt: new Date(updated.createdAt),
                 updatedAt: new Date(updated.updatedAt),
                 isPublic: false,
-              } as Prototype);
+              } as Prototype;
+              saveSuccess(savedPrototype);
               debug('Demo mode save successful');
               onSaveComplete?.();
-              return true;
+              return savedPrototype;
             }
           } else {
             // Create new in demo mode
@@ -215,7 +216,7 @@ export function useEditorPersistence({
             setLocalPrototype(created);
             setHtmlContent(currentHtml);
             navigate(`/edit/${created.id}`, { replace: true });
-            saveSuccess({
+            const savedPrototype: Prototype = {
               id: created.id,
               slug: created.id,
               name: created.name,
@@ -226,10 +227,11 @@ export function useEditorPersistence({
               createdAt: new Date(created.createdAt),
               updatedAt: new Date(created.updatedAt),
               isPublic: false,
-            } as Prototype);
+            } as Prototype;
+            saveSuccess(savedPrototype);
             debug('Demo mode create successful');
             onSaveComplete?.();
-            return true;
+            return savedPrototype;
           }
         } else {
           // Save to API
@@ -327,15 +329,15 @@ export function useEditorPersistence({
           setHtmlContent(currentHtml);
           saveSuccess(data);
           onSaveComplete?.();
-          return true;
+          return data;
         }
 
-        return false;
+        return null;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save';
         console.error('[EditorPersistence] Save error:', err);
         saveFailed(message);
-        return false;
+        return null;
       } finally {
         // Release save lock
         isSavingRef.current = false;
