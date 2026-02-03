@@ -4,6 +4,115 @@
  * Custom styles for the grapesjs-ai-copilot panel to match our UI.
  */
 
+/* Panel container - make it draggable */
+.gjs-pn-ai-copilot-panel {
+  cursor: default;
+  resize: both;
+  overflow: auto;
+  min-width: 280px;
+  min-height: 200px;
+  max-width: 500px;
+  max-height: 600px;
+}
+
+/* Draggable header */
+.ai-copilot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1b1b1b;
+  color: #ffffff;
+  cursor: move;
+  border-radius: 8px 8px 0 0;
+  margin: -1px -1px 0 -1px;
+  user-select: none;
+}
+
+.ai-copilot-header-title {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-copilot-header-title::before {
+  content: "✨";
+}
+
+.ai-copilot-header-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.ai-copilot-header-btn {
+  background: transparent;
+  border: none;
+  color: #a9aeb1;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.ai-copilot-header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Minimized state */
+.gjs-pn-ai-copilot-panel.ai-copilot-minimized {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+.gjs-pn-ai-copilot-panel.ai-copilot-minimized ai-suggestion {
+  display: none;
+}
+
+.gjs-pn-ai-copilot-panel.ai-copilot-minimized .ai-copilot-header {
+  border-radius: 8px;
+}
+
+/* Hidden state */
+.gjs-pn-ai-copilot-panel.ai-copilot-hidden {
+  display: none !important;
+}
+
+/* Toggle button when panel is hidden */
+.ai-copilot-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #005ea2;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  transition: all 0.2s;
+  display: none;
+}
+
+.ai-copilot-toggle-btn:hover {
+  background: #1a4480;
+  transform: scale(1.05);
+}
+
+.ai-copilot-toggle-btn.visible {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Main AI suggestion container */
 ai-suggestion {
   display: block;
@@ -11,6 +120,7 @@ ai-suggestion {
   font-size: 13px;
   color: #1b1b1b;
   background: #ffffff;
+  border-radius: 0 0 8px 8px;
 }
 
 /* Override GrapesJS field styling for the explanation area */

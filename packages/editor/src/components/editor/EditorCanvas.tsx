@@ -5,7 +5,7 @@
  * plugins, and error boundary.
  */
 
-import { memo } from 'react';
+import { memo, useEffect, useCallback } from 'react';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
@@ -13,6 +13,7 @@ import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plug
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
+import { initAICopilotPanel, cleanupAICopilotPanel } from '../../lib/ai/ai-copilot-panel';
 import '../../styles/ai-copilot.css';
 
 // License key from environment variable
@@ -130,6 +131,23 @@ export const EditorCanvas = memo(function EditorCanvas({
   onRetry,
   onGoHome,
 }: EditorCanvasProps) {
+  // Cleanup AI copilot panel on unmount
+  useEffect(() => {
+    return () => {
+      if (AI_ENABLED) {
+        cleanupAICopilotPanel();
+      }
+    };
+  }, []);
+
+  // Wrap onReady to also initialize the AI panel
+  const handleReady = useCallback((editor: EditorInstance) => {
+    onReady(editor);
+    if (AI_ENABLED) {
+      initAICopilotPanel();
+    }
+  }, [onReady]);
+
   return (
     <EditorErrorBoundary onRetry={onRetry} onGoHome={onGoHome}>
       <StudioEditor
@@ -156,7 +174,7 @@ export const EditorCanvas = memo(function EditorCanvas({
             default: blocks as any, // Type cast needed - our blocks match GrapesJS format
           },
         }}
-        onReady={onReady}
+        onReady={handleReady}
       />
     </EditorErrorBoundary>
   );
