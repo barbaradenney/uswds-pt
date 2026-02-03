@@ -1056,6 +1056,14 @@ componentRegistry.register({
       default: false,
       syncToInternal: 'input',
     }),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for conditional)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., country-field',
+    }),
   },
 });
 
@@ -1160,6 +1168,14 @@ componentRegistry.register({
       default: false,
       syncToInternal: 'textarea',
     }),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for conditional)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., comments-field',
+    }),
   },
 });
 
@@ -1221,6 +1237,54 @@ componentRegistry.register({
       label: 'Disabled',
       default: false,
       syncToInternal: 'input[type="checkbox"]',
+    }),
+
+    // Spacing
+    'top-spacing': {
+      definition: {
+        type: 'select',
+        label: 'Top Spacing',
+        name: 'top-spacing',
+        options: [
+          { id: '', label: '- Select an option -' },
+          { id: 'margin-top-1', label: 'Small (8px)' },
+          { id: 'margin-top-2', label: 'Medium (16px)' },
+          { id: 'margin-top-3', label: 'Large (24px)' },
+          { id: 'margin-top-4', label: 'Extra Large (32px)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: string) => {
+          // Remove existing margin classes
+          element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
+          if (value) {
+            element.classList.add(value);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          if (element.classList.contains('margin-top-1')) return 'margin-top-1';
+          if (element.classList.contains('margin-top-2')) return 'margin-top-2';
+          if (element.classList.contains('margin-top-3')) return 'margin-top-3';
+          if (element.classList.contains('margin-top-4')) return 'margin-top-4';
+          return '';
+        },
+      },
+    },
+
+    // Conditional: Show Element ID
+    'data-reveals': createAttributeTrait('data-reveals', {
+      label: 'Show Element (ID)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., extra-options',
+    }),
+
+    // Conditional: Hide Element ID
+    'data-hides': createAttributeTrait('data-hides', {
+      label: 'Hide Element (ID)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., default-field',
     }),
   },
 });
@@ -1284,6 +1348,22 @@ componentRegistry.register({
       default: false,
       syncToInternal: 'input[type="radio"]',
     }),
+
+    // Conditional: Show Element ID
+    'data-reveals': createAttributeTrait('data-reveals', {
+      label: 'Show Element (ID)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., other-specify',
+    }),
+
+    // Conditional: Hide Element ID
+    'data-hides': createAttributeTrait('data-hides', {
+      label: 'Hide Element (ID)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., default-options',
+    }),
   },
 });
 
@@ -1324,6 +1404,14 @@ componentRegistry.register({
       label: 'Disabled',
       default: false,
       syncToInternal: 'select',
+    }),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for conditional)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., country-select',
     }),
   },
 });
