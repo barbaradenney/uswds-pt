@@ -86,6 +86,20 @@ export function Preview() {
     }
   }, [data?.name]);
 
+  // Clean the HTML content (memoized to avoid recalculating on every render)
+  const cleanedHtml = data?.htmlContent ? cleanExport(data.htmlContent) : '';
+
+  // Initialize USWDS components after content is rendered
+  useEffect(() => {
+    if (contentRef.current && stylesLoaded && data) {
+      // Small delay to ensure web components are defined
+      const timer = setTimeout(() => {
+        initializeUSWDSComponents(contentRef.current!);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [cleanedHtml, stylesLoaded, data]);
+
   async function loadPreview(prototypeSlug: string) {
     try {
       setIsLoading(true);
@@ -212,20 +226,6 @@ export function Preview() {
       </div>
     );
   }
-
-  // Clean the HTML content
-  const cleanedHtml = cleanExport(data.htmlContent);
-
-  // Initialize USWDS components after content is rendered
-  useEffect(() => {
-    if (contentRef.current && stylesLoaded) {
-      // Small delay to ensure web components are defined
-      const timer = setTimeout(() => {
-        initializeUSWDSComponents(contentRef.current!);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [cleanedHtml, stylesLoaded]);
 
   const copyButtonStyle: React.CSSProperties = {
     position: 'fixed',
