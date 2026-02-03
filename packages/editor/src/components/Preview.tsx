@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
+import { initializeUSWDSComponents } from '../lib/uswds-init';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
@@ -213,6 +214,18 @@ export function Preview() {
 
   // Clean the HTML content
   const cleanedHtml = cleanExport(data.htmlContent);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Initialize USWDS components after content is rendered
+  useEffect(() => {
+    if (contentRef.current && stylesLoaded) {
+      // Small delay to ensure web components are defined
+      const timer = setTimeout(() => {
+        initializeUSWDSComponents(contentRef.current!);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [cleanedHtml, stylesLoaded]);
 
   const copyButtonStyle: React.CSSProperties = {
     position: 'fixed',
@@ -233,7 +246,7 @@ export function Preview() {
   // Render the prototype content (styles are injected via useEffect into document head)
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+      <div ref={contentRef} dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
       <button
         style={copyButtonStyle}
         onClick={handleMakeCopy}
