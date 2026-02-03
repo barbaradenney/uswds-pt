@@ -5,7 +5,7 @@
  * plugins, and error boundary.
  */
 
-import { memo, useEffect, useRef } from 'react';
+import { memo } from 'react';
 import StudioEditor from '@grapesjs/studio-sdk/react';
 import '@grapesjs/studio-sdk/style';
 import { tableComponent } from '@grapesjs/studio-sdk-plugins';
@@ -13,7 +13,6 @@ import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plug
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
-import { initAICopilotPanel, cleanupAICopilotPanel } from '../../lib/ai/ai-copilot-panel';
 import '../../styles/ai-copilot.css';
 
 // License key from environment variable
@@ -137,25 +136,6 @@ export const EditorCanvas = memo(function EditorCanvas({
   onRetry,
   onGoHome,
 }: EditorCanvasProps) {
-  const aiPanelInitialized = useRef(false);
-
-  // Initialize AI copilot panel after mount, cleanup on unmount
-  useEffect(() => {
-    if (AI_ENABLED && !aiPanelInitialized.current) {
-      // Delay initialization to ensure the panel is created
-      const timer = setTimeout(() => {
-        initAICopilotPanel();
-        aiPanelInitialized.current = true;
-      }, 1000);
-
-      return () => {
-        clearTimeout(timer);
-        cleanupAICopilotPanel();
-        aiPanelInitialized.current = false;
-      };
-    }
-  }, [editorKey]); // Re-run when editor key changes (new editor instance)
-
   return (
     <EditorErrorBoundary onRetry={onRetry} onGoHome={onGoHome}>
       <StudioEditor
