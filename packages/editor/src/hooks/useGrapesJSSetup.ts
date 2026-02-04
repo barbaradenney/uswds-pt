@@ -926,29 +926,13 @@ function setupConditionalShowHideTrait(
       debug('Removed ID from trigger component to prevent duplicate IDs');
     }
 
-    // Get all targetable components
+    // Ensure all targetable components have IDs (so users can reference them)
     const targetables = collectTargetableComponents(editor);
 
-    const options = [
-      { id: '', label: '-- None --' },
-      ...targetables.map(t => ({ id: t.id, label: t.label })),
-    ];
-
-    // Update the data-reveals trait
-    const revealsTrait = component.getTrait?.('data-reveals');
-    if (revealsTrait) {
-      revealsTrait.set('type', 'select');
-      revealsTrait.set('options', options);
+    // Log available IDs for user reference
+    if (targetables.length > 0) {
+      debug('Available element IDs for show/hide:', targetables.map(t => `${t.label}: "${t.id}"`).join(', '));
     }
-
-    // Update the data-hides trait
-    const hidesTrait = component.getTrait?.('data-hides');
-    if (hidesTrait) {
-      hidesTrait.set('type', 'select');
-      hidesTrait.set('options', options);
-    }
-
-    debug('Updated conditional traits with', options.length - 1, 'options');
   };
 
   // Update traits when a checkbox or radio is selected

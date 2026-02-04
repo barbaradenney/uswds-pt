@@ -1271,20 +1271,20 @@ componentRegistry.register({
       },
     },
 
-    // Conditional: Show Element when checked (dropdown populated dynamically)
+    // Conditional: Show Elements when checked (comma-separated IDs, starts hidden)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When checked, show',
-      type: 'select',
+      label: 'When checked, show (IDs)',
+      type: 'text',
       default: '',
-      options: [{ id: '', label: '-- None --' }],
+      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Element when checked (dropdown populated dynamically)
+    // Conditional: Hide Elements when checked (comma-separated IDs, starts visible)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When checked, hide',
-      type: 'select',
+      label: 'When checked, hide (IDs)',
+      type: 'text',
       default: '',
-      options: [{ id: '', label: '-- None --' }],
+      placeholder: 'e.g., field3, field4',
     }),
   },
 });
@@ -1349,20 +1349,20 @@ componentRegistry.register({
       syncToInternal: 'input[type="radio"]',
     }),
 
-    // Conditional: Show Element when selected (dropdown populated dynamically)
+    // Conditional: Show Elements when selected (comma-separated IDs, starts hidden)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When selected, show',
-      type: 'select',
+      label: 'When selected, show (IDs)',
+      type: 'text',
       default: '',
-      options: [{ id: '', label: '-- None --' }],
+      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Element when selected (dropdown populated dynamically)
+    // Conditional: Hide Elements when selected (comma-separated IDs, starts visible)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When selected, hide',
-      type: 'select',
+      label: 'When selected, hide (IDs)',
+      type: 'text',
       default: '',
-      options: [{ id: '', label: '-- None --' }],
+      placeholder: 'e.g., field3, field4',
     }),
   },
 });

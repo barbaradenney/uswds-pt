@@ -572,6 +572,10 @@ if (!window._conditionalFieldsInit) {
         target.style.display = 'none';
       }
 
+      // Set initial state: "reveals" targets start hidden, "hides" targets start visible
+      revealsTargets.forEach(function(target) { hideElement(target); });
+      hidesTargets.forEach(function(target) { showElement(target); });
+
       function updateVisibility() {
         var input = trigger.querySelector('input');
         var isChecked = input && input.checked;

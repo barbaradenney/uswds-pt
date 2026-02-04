@@ -160,23 +160,27 @@ function initializeConditionalFields(container: HTMLElement | Document): void {
     const isRadio = tagName === 'usa-radio';
     const isCheckbox = tagName === 'usa-checkbox';
 
+    // Helper to show an element
+    const showElement = (target: HTMLElement) => {
+      target.removeAttribute('hidden');
+      target.setAttribute('aria-hidden', 'false');
+      target.style.display = '';
+    };
+
+    // Helper to hide an element
+    const hideElement = (target: HTMLElement) => {
+      target.setAttribute('hidden', '');
+      target.setAttribute('aria-hidden', 'true');
+      target.style.display = 'none';
+    };
+
+    // Set initial state: "reveals" targets start hidden, "hides" targets start visible
+    revealsTargets.forEach(target => hideElement(target));
+    hidesTargets.forEach(target => showElement(target));
+
     const updateVisibility = () => {
       const input = trigger.querySelector('input') as HTMLInputElement | null;
       const isChecked = input?.checked ?? false;
-
-      // Helper to show an element
-      const showElement = (target: HTMLElement) => {
-        target.removeAttribute('hidden');
-        target.setAttribute('aria-hidden', 'false');
-        target.style.display = '';  // Remove inline display:none
-      };
-
-      // Helper to hide an element
-      const hideElement = (target: HTMLElement) => {
-        target.setAttribute('hidden', '');
-        target.setAttribute('aria-hidden', 'true');
-        target.style.display = 'none';  // Force hide with inline style
-      };
 
       revealsTargets.forEach(target => {
         if (isChecked) {
