@@ -195,6 +195,9 @@ export function useGrapesJSSetup({
       // Set up conditional show/hide trait (dynamic component picker)
       setupConditionalShowHideTrait(editor, registerListener);
 
+      // Set up proactive ID assignment for targetable components
+      setupProactiveIdAssignment(editor, registerListener);
+
       // Clean up existing checkboxes/radios with IDs (causes duplicate ID issues)
       cleanupTriggerComponentIds(editor);
 
@@ -833,7 +836,13 @@ function ensureComponentId(component: any, allIds: Set<string>, editor?: EditorI
       view.el.setAttribute('id', finalId);
     }
 
-    // Method 5: Trigger component update to ensure GrapesJS tracks the change
+    // Method 5: Update the trait value directly to ensure it stays in sync
+    const idTrait = component.getTrait?.('id');
+    if (idTrait) {
+      idTrait.set('value', finalId);
+    }
+
+    // Method 6: Trigger component update to ensure GrapesJS tracks the change
     if (editor) {
       editor.trigger?.('component:update', component);
       editor.trigger?.('component:update:attributes', component);
@@ -1032,4 +1041,91 @@ function cleanupTriggerComponentIds(editor: EditorInstance): void {
   if (cleanedCount > 0) {
     debug('Cleaned up IDs from', cleanedCount, 'trigger components');
   }
+}
+
+/**
+ * Set up proactive ID assignment for targetable components
+ * This ensures components get IDs when they're added, not just when a checkbox/radio is selected
+ */
+function setupProactiveIdAssignment(
+  editor: EditorInstance,
+  registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void
+): void {
+  // Components that should automatically get IDs for conditional show/hide
+  const targetableTypes = [
+    'usa-text-input',
+    'usa-textarea',
+    'usa-select',
+    'usa-date-picker',
+    'usa-time-picker',
+    'usa-file-input',
+    'usa-combo-box',
+    'usa-range-slider',
+    'usa-card',
+    'usa-alert',
+    'usa-accordion',
+    'fieldset',
+  ];
+
+  // Collect all existing IDs in the editor
+  const getAllExistingIds = (): Set<string> => {
+    const ids = new Set<string>();
+    const wrapper = editor.DomComponents?.getWrapper?.();
+    if (!wrapper) return ids;
+
+    const collectIds = (comp: any) => {
+      const id = comp.getAttributes?.()?.id || comp.get?.('attributes')?.id;
+      if (id) ids.add(id);
+      const children = comp.components?.();
+      if (children) {
+        children.forEach((child: any) => collectIds(child));
+      }
+    };
+    collectIds(wrapper);
+    return ids;
+  };
+
+  // Assign ID to a component if it's targetable and doesn't have one
+  const assignIdIfNeeded = (component: any) => {
+    const tagName = component.get?.('tagName')?.toLowerCase() || '';
+
+    if (!targetableTypes.includes(tagName)) return;
+
+    const currentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
+    if (currentId && currentId.length > 0) return;
+
+    // Get all existing IDs to ensure uniqueness
+    const allIds = getAllExistingIds();
+
+    // Generate and set the ID
+    ensureComponentId(component, allIds, editor);
+  };
+
+  // When a targetable component is added, assign it an ID
+  registerListener(editor, 'component:add', (component: any) => {
+    // Use a small delay to ensure the component is fully initialized
+    setTimeout(() => {
+      assignIdIfNeeded(component);
+    }, 100);
+  });
+
+  // Also assign IDs to existing components when editor loads
+  registerListener(editor, 'load', () => {
+    const wrapper = editor.DomComponents?.getWrapper?.();
+    if (!wrapper) return;
+
+    const processComponent = (comp: any) => {
+      assignIdIfNeeded(comp);
+      const children = comp.components?.();
+      if (children) {
+        children.forEach((child: any) => processComponent(child));
+      }
+    };
+
+    // Use a delay to ensure all components are rendered
+    setTimeout(() => {
+      processComponent(wrapper);
+      debug('Assigned IDs to existing targetable components on load');
+    }, 500);
+  });
 }
