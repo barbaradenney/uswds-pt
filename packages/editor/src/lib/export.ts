@@ -65,8 +65,9 @@ export function cleanExport(html: string, options: CleanOptions = {}): string {
     cleaned = removeEmptyAttrs(cleaned);
   }
 
-  // Remove generated IDs (pattern: single letter followed by random chars)
-  cleaned = cleaned.replace(/\s+id="[a-z][a-z0-9]{3,5}"/gi, '');
+  // Remove GrapesJS generated IDs (pattern: single letter + alphanumeric with at least one digit)
+  // This preserves meaningful IDs like "select", "my-input" while removing generated ones like "i1a2b"
+  cleaned = cleaned.replace(/\s+id="[a-z](?=[a-z0-9]*\d)[a-z0-9]{3,7}"/gi, '');
 
   // Clean up GrapesJS classes
   cleaned = cleanGrapesClasses(cleaned);
