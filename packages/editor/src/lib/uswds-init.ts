@@ -192,6 +192,37 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     initializeSelectOptions(select);
   });
 
+  // Fix usa-checkbox duplicate ID issue
+  // When an ID is set on usa-checkbox for show/hide, the web component also
+  // sets it on the internal input, causing duplicate IDs. We fix this by
+  // giving the internal input a unique ID.
+  container.querySelectorAll('usa-checkbox').forEach((checkbox: Element) => {
+    const wrapperId = checkbox.getAttribute('id');
+    if (wrapperId) {
+      const input = checkbox.querySelector('input[type="checkbox"]');
+      const label = checkbox.querySelector('label');
+      if (input && label) {
+        const inputId = `${wrapperId}-input`;
+        input.setAttribute('id', inputId);
+        label.setAttribute('for', inputId);
+      }
+    }
+  });
+
+  // Fix usa-radio duplicate ID issue (same as checkbox)
+  container.querySelectorAll('usa-radio').forEach((radio: Element) => {
+    const wrapperId = radio.getAttribute('id');
+    if (wrapperId) {
+      const input = radio.querySelector('input[type="radio"]');
+      const label = radio.querySelector('label');
+      if (input && label) {
+        const inputId = `${wrapperId}-input`;
+        input.setAttribute('id', inputId);
+        label.setAttribute('for', inputId);
+      }
+    }
+  });
+
   // Initialize conditional show/hide fields
   initializeConditionalFields(container);
 }

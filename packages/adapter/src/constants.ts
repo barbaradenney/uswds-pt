@@ -415,8 +415,8 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <p style="color: #71767a; font-style: italic; margin: 0;">Drop form controls here</p>
 </form>`,
 
-  'section-container': `__FULL_HTML__<section class="usa-section" style="padding: 1rem; min-height: 80px; border: 1px dashed #adadad; background: rgba(0,0,0,0.02);">
-  <p style="color: #71767a; font-style: italic; margin: 0;">Drop content here</p>
+  'section-container': `__FULL_HTML__<section style="min-height: 40px; border: 1px dashed #adadad; background: rgba(0,0,0,0.02);">
+  <p style="color: #71767a; font-style: italic; margin: 0.5rem;">Drop content here</p>
 </section>`,
 
   // Grid Layout - USWDS Grid System

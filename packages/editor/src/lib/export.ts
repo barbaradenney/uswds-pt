@@ -571,6 +571,38 @@ function generateInitScript(): string {
       setTimeout(populateOptions, 100);
       setTimeout(populateOptions, 300);
     });
+
+    // Fix usa-checkbox duplicate ID issue
+    // When an ID is set on usa-checkbox for show/hide targeting, the web component
+    // copies that ID to the internal input element, creating two elements with the same ID.
+    // When clicking the label, the browser finds the wrapper first instead of the input.
+    // Fix: Give the internal input a unique ID and update the label's "for" attribute.
+    document.querySelectorAll('usa-checkbox').forEach(checkbox => {
+      const wrapperId = checkbox.getAttribute('id');
+      if (wrapperId) {
+        const input = checkbox.querySelector('input[type="checkbox"]');
+        const label = checkbox.querySelector('label');
+        if (input && label) {
+          const inputId = wrapperId + '-input';
+          input.setAttribute('id', inputId);
+          label.setAttribute('for', inputId);
+        }
+      }
+    });
+
+    // Fix usa-radio duplicate ID issue (same pattern as checkbox)
+    document.querySelectorAll('usa-radio').forEach(radio => {
+      const wrapperId = radio.getAttribute('id');
+      if (wrapperId) {
+        const input = radio.querySelector('input[type="radio"]');
+        const label = radio.querySelector('label');
+        if (input && label) {
+          const inputId = wrapperId + '-input';
+          input.setAttribute('id', inputId);
+          label.setAttribute('for', inputId);
+        }
+      }
+    });
   }
 
   // Run when DOM is ready
