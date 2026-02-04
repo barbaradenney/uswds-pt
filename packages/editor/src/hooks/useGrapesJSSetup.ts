@@ -195,6 +195,9 @@ export function useGrapesJSSetup({
       // Set up conditional show/hide trait (dynamic component picker)
       setupConditionalShowHideTrait(editor, registerListener);
 
+      // Clean up existing checkboxes/radios with IDs (causes duplicate ID issues)
+      cleanupTriggerComponentIds(editor);
+
       // Load USWDS resources
       registerListener(editor, 'canvas:frame:load', () => loadUSWDSResources(editor));
       registerListener(editor, 'canvas:frame:load', () => syncPageLinkHrefs(editor));
@@ -960,4 +963,47 @@ function setupConditionalShowHideTrait(
       updateConditionalTraits(selected);
     }
   });
+}
+
+/**
+ * Clean up IDs from existing checkbox/radio triggers on editor load
+ * This fixes prototypes created before the duplicate ID fix
+ */
+function cleanupTriggerComponentIds(editor: EditorInstance): void {
+  const wrapper = editor.DomComponents?.getWrapper?.();
+  if (!wrapper) return;
+
+  let cleanedCount = 0;
+
+  const cleanupComponent = (comp: any) => {
+    const tagName = comp.get?.('tagName')?.toLowerCase() || '';
+
+    // Only clean checkboxes and radios that have conditional attributes
+    if (tagName === 'usa-checkbox' || tagName === 'usa-radio') {
+      const attrs = comp.getAttributes?.() || {};
+      const hasConditional = attrs['data-reveals'] || attrs['data-hides'];
+      const hasId = attrs.id;
+
+      if (hasConditional && hasId) {
+        comp.removeAttributes(['id']);
+        const el = comp.getEl?.();
+        if (el) {
+          el.removeAttribute('id');
+        }
+        cleanedCount++;
+      }
+    }
+
+    // Recurse into children
+    const children = comp.components?.();
+    if (children) {
+      children.forEach((child: any) => cleanupComponent(child));
+    }
+  };
+
+  cleanupComponent(wrapper);
+
+  if (cleanedCount > 0) {
+    debug('Cleaned up IDs from', cleanedCount, 'trigger components');
+  }
 }
