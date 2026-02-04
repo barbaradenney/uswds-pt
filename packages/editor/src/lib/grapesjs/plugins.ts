@@ -38,9 +38,6 @@ type EditorInstance = any;
 export function uswdsComponentsPlugin(editor: EditorInstance): void {
   const Components = editor.Components || editor.DomComponents;
 
-  // Register custom multiselect trait type for conditional show/hide
-  registerMultiselectTraitType(editor);
-
   if (!Components) {
     console.error('USWDS-PT: Could not find Components API on editor');
     return;
@@ -447,109 +444,4 @@ export function uswdsTablePlugin(editor: EditorInstance): void {
   }
 
   debug('USWDS table styling plugin initialized');
-}
-
-/**
- * Register custom multiselect trait type for conditional show/hide functionality
- *
- * This creates a `<select multiple>` element that allows users to select
- * multiple target elements to show/hide when a checkbox/radio is triggered.
- * Options are displayed as "Component Type - Label" for easy identification.
- */
-function registerMultiselectTraitType(editor: EditorInstance): void {
-  const TraitManager = editor.Traits || editor.TraitManager;
-
-  if (!TraitManager) {
-    console.error('USWDS-PT: Could not find TraitManager on editor');
-    return;
-  }
-
-  TraitManager.addType('multiselect-targets', {
-    // Create the multiselect input element
-    createInput({ trait }: { trait: any }) {
-      const el = document.createElement('div');
-      el.className = 'gjs-multiselect-trait';
-
-      const select = document.createElement('select');
-      select.multiple = true;
-      select.className = 'gjs-multiselect-input';
-      select.style.cssText = 'width: 100%; min-height: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;';
-
-      // Add placeholder option styling
-      const style = document.createElement('style');
-      style.textContent = `
-        .gjs-multiselect-input option {
-          padding: 4px 8px;
-        }
-        .gjs-multiselect-input option:checked {
-          background: #0071bc linear-gradient(0deg, #0071bc 0%, #0071bc 100%);
-          color: white;
-        }
-        .gjs-multiselect-help {
-          font-size: 10px;
-          color: #666;
-          margin-top: 4px;
-          font-style: italic;
-        }
-      `;
-      el.appendChild(style);
-      el.appendChild(select);
-
-      // Add help text
-      const help = document.createElement('div');
-      help.className = 'gjs-multiselect-help';
-      help.textContent = 'Hold Ctrl/Cmd to select multiple';
-      el.appendChild(help);
-
-      return el;
-    },
-
-    // Handle selection changes
-    onEvent({ elInput, component, trait }: { elInput: HTMLElement; component: any; trait: any }) {
-      const select = elInput.querySelector('select') as HTMLSelectElement;
-      if (!select) return;
-
-      // Get all selected option IDs
-      const selectedIds: string[] = [];
-      for (const option of select.selectedOptions) {
-        if (option.value) {
-          selectedIds.push(option.value);
-        }
-      }
-
-      // Update the attribute with comma-separated IDs
-      const attrName = trait.get('name');
-      const value = selectedIds.join(', ');
-
-      if (value) {
-        component.addAttributes({ [attrName]: value });
-      } else {
-        component.removeAttributes([attrName]);
-      }
-    },
-
-    // Sync UI when component changes
-    onUpdate({ elInput, component, trait }: { elInput: HTMLElement; component: any; trait: any }) {
-      const select = elInput.querySelector('select') as HTMLSelectElement;
-      if (!select) return;
-
-      // Get current attribute value
-      const attrName = trait.get('name');
-      const attrs = component.getAttributes() || {};
-      const currentValue = attrs[attrName] || '';
-
-      // Parse comma-separated IDs
-      const selectedIds = currentValue
-        .split(',')
-        .map((id: string) => id.trim())
-        .filter((id: string) => id);
-
-      // Select matching options
-      for (const option of select.options) {
-        option.selected = selectedIds.includes(option.value);
-      }
-    },
-  });
-
-  debug('Registered multiselect-targets trait type');
 }

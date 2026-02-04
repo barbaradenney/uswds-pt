@@ -1271,18 +1271,20 @@ componentRegistry.register({
       },
     },
 
-    // Conditional: Show Elements when checked (multiselect, starts hidden)
+    // Conditional: Show Element when checked (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
       label: 'When checked, show',
-      type: 'multiselect-targets',
+      type: 'select',
       default: '',
+      options: [{ id: '', label: '-- None --' }],
     }),
 
-    // Conditional: Hide Elements when checked (multiselect, starts visible)
+    // Conditional: Hide Element when checked (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
       label: 'When checked, hide',
-      type: 'multiselect-targets',
+      type: 'select',
       default: '',
+      options: [{ id: '', label: '-- None --' }],
     }),
   },
 });
@@ -1347,18 +1349,20 @@ componentRegistry.register({
       syncToInternal: 'input[type="radio"]',
     }),
 
-    // Conditional: Show Elements when selected (multiselect, starts hidden)
+    // Conditional: Show Element when selected (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
       label: 'When selected, show',
-      type: 'multiselect-targets',
+      type: 'select',
       default: '',
+      options: [{ id: '', label: '-- None --' }],
     }),
 
-    // Conditional: Hide Elements when selected (multiselect, starts visible)
+    // Conditional: Hide Element when selected (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
       label: 'When selected, hide',
-      type: 'multiselect-targets',
+      type: 'select',
       default: '',
+      options: [{ id: '', label: '-- None --' }],
     }),
   },
 });
