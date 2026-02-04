@@ -561,6 +561,126 @@ class ComponentRegistry {
 export const componentRegistry = new ComponentRegistry();
 
 // ============================================================================
+// Select Options Trait
+// ============================================================================
+
+/**
+ * Factory for select options trait.
+ * Allows users to define dropdown options via a textarea (one option per line).
+ * Format: "value|Label Text" or just "Label Text" (value will be auto-generated)
+ *
+ * @example
+ * options: createSelectOptionsTrait({
+ *   label: 'Options',
+ *   default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
+ * })
+ */
+export function createSelectOptionsTrait(config: {
+  label: string;
+  default?: string;
+  placeholder?: string;
+}): UnifiedTrait {
+  const parseOptions = (text: string): Array<{ value: string; label: string }> => {
+    if (!text || !text.trim()) return [];
+
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line, index) => {
+        if (line.includes('|')) {
+          const [value, ...labelParts] = line.split('|');
+          return {
+            value: value.trim(),
+            label: labelParts.join('|').trim() || value.trim(),
+          };
+        } else {
+          // Auto-generate value from label
+          const label = line;
+          const value = label
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || `option-${index + 1}`;
+          return { value, label };
+        }
+      });
+  };
+
+  const updateSelectOptions = (element: HTMLElement, options: Array<{ value: string; label: string }>) => {
+    // Find the internal select element
+    const select = element.querySelector('select');
+    if (!select) {
+      // Component may not be rendered yet, try again after a delay
+      setTimeout(() => {
+        const retrySelect = element.querySelector('select');
+        if (retrySelect) {
+          updateSelectInnerOptions(retrySelect, options);
+        }
+      }, 200);
+      return;
+    }
+
+    updateSelectInnerOptions(select, options);
+  };
+
+  const updateSelectInnerOptions = (select: Element, options: Array<{ value: string; label: string }>) => {
+    // Clear existing options
+    select.innerHTML = '';
+
+    // Add placeholder option
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '- Select -';
+    select.appendChild(placeholder);
+
+    // Add new options
+    options.forEach(({ value, label }) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+  };
+
+  return {
+    definition: {
+      name: 'options',
+      label: config.label,
+      type: 'textarea',
+      default: config.default ?? '',
+      placeholder: config.placeholder ?? 'value|Label (one per line)',
+    },
+
+    handler: {
+      onChange: (element, value) => {
+        const textValue = value || '';
+
+        // Store options as data attribute for persistence
+        element.setAttribute('data-options', textValue);
+
+        // Parse and update the select options
+        const options = parseOptions(textValue);
+        updateSelectOptions(element, options);
+      },
+
+      getValue: (element) => {
+        return element.getAttribute('data-options') || (config.default ?? '');
+      },
+
+      onInit: (element, value) => {
+        const textValue = value || config.default || '';
+        if (textValue) {
+          element.setAttribute('data-options', textValue);
+          const options = parseOptions(textValue);
+          // Delay to ensure component is rendered
+          setTimeout(() => updateSelectOptions(element, options), 100);
+        }
+      },
+    },
+  };
+}
+
+// ============================================================================
 // Page Link Traits
 // ============================================================================
 
@@ -1381,15 +1501,22 @@ componentRegistry.register({
     label: createAttributeTrait('label', {
       label: 'Label',
       type: 'text',
-      default: 'Label',
+      default: 'Select',
     }),
 
     // Name - form field name
     name: createAttributeTrait('name', {
       label: 'Name',
       type: 'text',
-      default: 'field',
+      default: 'select-field',
       placeholder: 'field-name',
+    }),
+
+    // Options - dropdown options (one per line, format: value|Label or just Label)
+    options: createSelectOptionsTrait({
+      label: 'Options (one per line)',
+      default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
+      placeholder: 'value|Label Text',
     }),
 
     // Required - boolean flag

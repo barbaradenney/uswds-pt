@@ -171,7 +171,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   // Forms
   'usa-text-input': '__FULL_HTML__<usa-text-input label="Text Input" name="text-field"></usa-text-input>',
   'usa-textarea': '__FULL_HTML__<usa-textarea label="Textarea" name="textarea-field"></usa-textarea>',
-  'usa-select': '__FULL_HTML__<usa-select label="Select" name="select-field"></usa-select>',
+  'usa-select': '__FULL_HTML__<usa-select label="Select" name="select-field" data-options="option1|Option 1&#10;option2|Option 2&#10;option3|Option 3"></usa-select>',
   'usa-checkbox': '__FULL_HTML__<usa-checkbox label="Checkbox option" name="checkbox-group" value="option1"></usa-checkbox>',
   'checkbox-group': `__FULL_HTML__<fieldset class="usa-fieldset">
   <legend class="usa-legend">Select your options</legend>
