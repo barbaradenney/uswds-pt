@@ -615,6 +615,49 @@ function generateInitScript(): string {
         }
       }
     });
+
+    // Initialize fieldset legends from the legend attribute
+    document.querySelectorAll('fieldset[legend]').forEach(fieldset => {
+      const legendText = fieldset.getAttribute('legend');
+      if (legendText) {
+        const legendEl = fieldset.querySelector('legend');
+        if (legendEl) {
+          legendEl.textContent = legendText;
+        }
+      }
+    });
+
+    // Add spacing between radios inside fieldsets
+    document.querySelectorAll('fieldset').forEach(fieldset => {
+      const radios = fieldset.querySelectorAll('usa-radio');
+      radios.forEach((radio, index) => {
+        if (index > 0) {
+          radio.style.marginTop = '0.5rem';
+        }
+      });
+    });
+
+    // Initialize usa-button-group button text from attributes
+    document.querySelectorAll('usa-button-group').forEach(buttonGroup => {
+      const count = parseInt(buttonGroup.getAttribute('btn-count') || '2', 10);
+      const ul = buttonGroup.querySelector('ul.usa-button-group');
+      if (!ul) return;
+
+      const buttons = ul.querySelectorAll('li.usa-button-group__item button');
+      buttons.forEach((button, index) => {
+        const btnIndex = index + 1;
+        if (btnIndex <= count) {
+          const text = buttonGroup.getAttribute('btn' + btnIndex + '-text') || 'Button ' + btnIndex;
+          const variant = buttonGroup.getAttribute('btn' + btnIndex + '-variant') || '';
+
+          button.textContent = text;
+          button.className = 'usa-button';
+          if (variant && variant !== 'default') {
+            button.classList.add('usa-button--' + variant);
+          }
+        }
+      });
+    });
   }
 
   // Run when DOM is ready

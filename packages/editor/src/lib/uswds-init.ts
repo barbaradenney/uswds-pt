@@ -235,6 +235,50 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     }
   });
 
+  // Initialize fieldset legends from the legend attribute
+  container.querySelectorAll('fieldset[legend]').forEach((fieldset: Element) => {
+    const legendText = fieldset.getAttribute('legend');
+    if (legendText) {
+      const legendEl = fieldset.querySelector('legend');
+      if (legendEl) {
+        legendEl.textContent = legendText;
+      }
+    }
+  });
+
+  // Add spacing between radios inside fieldsets
+  container.querySelectorAll('fieldset').forEach((fieldset: Element) => {
+    const radios = fieldset.querySelectorAll('usa-radio');
+    radios.forEach((radio: Element, index: number) => {
+      if (index > 0) {
+        // Add margin-top to all radios except the first
+        (radio as HTMLElement).style.marginTop = '0.5rem';
+      }
+    });
+  });
+
+  // Initialize usa-button-group button text from attributes
+  container.querySelectorAll('usa-button-group').forEach((buttonGroup: Element) => {
+    const count = parseInt(buttonGroup.getAttribute('btn-count') || '2', 10);
+    const ul = buttonGroup.querySelector('ul.usa-button-group');
+    if (!ul) return;
+
+    const buttons = ul.querySelectorAll('li.usa-button-group__item button');
+    buttons.forEach((button: Element, index: number) => {
+      const btnIndex = index + 1;
+      if (btnIndex <= count) {
+        const text = buttonGroup.getAttribute(`btn${btnIndex}-text`) || `Button ${btnIndex}`;
+        const variant = buttonGroup.getAttribute(`btn${btnIndex}-variant`) || '';
+
+        button.textContent = text;
+        button.className = 'usa-button';
+        if (variant && variant !== 'default') {
+          button.classList.add(`usa-button--${variant}`);
+        }
+      }
+    });
+  });
+
   // Initialize conditional show/hide fields
   initializeConditionalFields(container);
 }
