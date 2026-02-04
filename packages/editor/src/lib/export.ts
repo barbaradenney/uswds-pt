@@ -628,22 +628,27 @@ function generateInitScript(): string {
     });
 
     // Add spacing between radios inside fieldsets
+    // usa-radio elements need display:block and margin for proper spacing
     document.querySelectorAll('fieldset').forEach(fieldset => {
       const radios = fieldset.querySelectorAll('usa-radio');
       radios.forEach((radio, index) => {
+        radio.style.display = 'block';
         if (index > 0) {
-          radio.style.marginTop = '0.5rem';
+          radio.style.marginTop = '0.75rem';
         }
       });
     });
 
     // Initialize usa-button-group button text from attributes
-    document.querySelectorAll('usa-button-group').forEach(buttonGroup => {
+    // Need to wait for web component to render, then apply our values
+    function initButtonGroup(buttonGroup) {
       const count = parseInt(buttonGroup.getAttribute('btn-count') || '2', 10);
       const ul = buttonGroup.querySelector('ul.usa-button-group');
-      if (!ul) return;
+      if (!ul) return false;
 
       const buttons = ul.querySelectorAll('li.usa-button-group__item button');
+      if (buttons.length === 0) return false;
+
       buttons.forEach((button, index) => {
         const btnIndex = index + 1;
         if (btnIndex <= count) {
@@ -657,6 +662,18 @@ function generateInitScript(): string {
           }
         }
       });
+      return true;
+    }
+
+    document.querySelectorAll('usa-button-group').forEach(buttonGroup => {
+      // Try immediately
+      if (!initButtonGroup(buttonGroup)) {
+        // If no buttons found, wait for render
+        setTimeout(() => initButtonGroup(buttonGroup), 100);
+      }
+      // Also run again after a delay to ensure web component hasn't overwritten
+      setTimeout(() => initButtonGroup(buttonGroup), 200);
+      setTimeout(() => initButtonGroup(buttonGroup), 500);
     });
   }
 

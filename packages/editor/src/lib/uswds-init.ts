@@ -247,23 +247,29 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
   });
 
   // Add spacing between radios inside fieldsets
+  // usa-radio elements need display:block and margin for proper spacing
   container.querySelectorAll('fieldset').forEach((fieldset: Element) => {
     const radios = fieldset.querySelectorAll('usa-radio');
     radios.forEach((radio: Element, index: number) => {
+      const radioEl = radio as HTMLElement;
+      radioEl.style.display = 'block';
       if (index > 0) {
         // Add margin-top to all radios except the first
-        (radio as HTMLElement).style.marginTop = '0.5rem';
+        radioEl.style.marginTop = '0.75rem';
       }
     });
   });
 
   // Initialize usa-button-group button text from attributes
-  container.querySelectorAll('usa-button-group').forEach((buttonGroup: Element) => {
+  // Need to wait for web component to render, then apply our values
+  const initButtonGroup = (buttonGroup: Element) => {
     const count = parseInt(buttonGroup.getAttribute('btn-count') || '2', 10);
     const ul = buttonGroup.querySelector('ul.usa-button-group');
-    if (!ul) return;
+    if (!ul) return false;
 
     const buttons = ul.querySelectorAll('li.usa-button-group__item button');
+    if (buttons.length === 0) return false;
+
     buttons.forEach((button: Element, index: number) => {
       const btnIndex = index + 1;
       if (btnIndex <= count) {
@@ -277,6 +283,18 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
         }
       }
     });
+    return true;
+  };
+
+  container.querySelectorAll('usa-button-group').forEach((buttonGroup: Element) => {
+    // Try immediately
+    if (!initButtonGroup(buttonGroup)) {
+      // If no buttons found, wait for render
+      setTimeout(() => initButtonGroup(buttonGroup), 100);
+    }
+    // Also run again after a delay to ensure web component hasn't overwritten
+    setTimeout(() => initButtonGroup(buttonGroup), 200);
+    setTimeout(() => initButtonGroup(buttonGroup), 500);
   });
 
   // Initialize conditional show/hide fields
