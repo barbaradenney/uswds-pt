@@ -1512,13 +1512,6 @@ componentRegistry.register({
       placeholder: 'field-name',
     }),
 
-    // Options - dropdown options (one per line, format: value|Label or just Label)
-    options: createSelectOptionsTrait({
-      label: 'Options (one per line)',
-      default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
-      placeholder: 'value|Label Text',
-    }),
-
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
