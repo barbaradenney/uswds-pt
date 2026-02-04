@@ -777,7 +777,7 @@ function getComponentTypeName(tagName: string): string {
 /**
  * Generate a unique ID for a component if it doesn't have one
  */
-function ensureComponentId(component: any, allIds: Set<string>): string {
+function ensureComponentId(component: any, allIds: Set<string>, editor?: EditorInstance): string {
   const currentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
 
   if (currentId && currentId.length > 0) {
@@ -806,25 +806,44 @@ function ensureComponentId(component: any, allIds: Set<string>): string {
     counter++;
   }
 
-  // Set the ID on the component model using multiple methods to ensure persistence
-  // Method 1: addAttributes (standard GrapesJS way)
-  if (component.addAttributes) {
-    component.addAttributes({ id: finalId });
-  }
-
-  // Method 2: Direct attribute setting via set()
-  const currentAttrs = component.get?.('attributes') || {};
-  component.set?.('attributes', { ...currentAttrs, id: finalId });
-
   allIds.add(finalId);
 
-  // Method 3: Also sync to the actual DOM element in the canvas
-  const el = component.getEl?.();
-  if (el) {
-    el.setAttribute('id', finalId);
+  // Set the ID using multiple methods to ensure persistence
+  try {
+    // Method 1: Use addAttributes which is the standard GrapesJS way
+    if (component.addAttributes) {
+      component.addAttributes({ id: finalId });
+    }
+
+    // Method 2: Also set via the attributes object directly
+    const currentAttrs = component.get?.('attributes') || {};
+    if (!currentAttrs.id || currentAttrs.id !== finalId) {
+      component.set?.('attributes', { ...currentAttrs, id: finalId }, { silent: false });
+    }
+
+    // Method 3: Update the DOM element directly
+    const el = component.getEl?.();
+    if (el) {
+      el.setAttribute('id', finalId);
+    }
+
+    // Method 4: Update through the view if available
+    const view = component.view;
+    if (view && view.el) {
+      view.el.setAttribute('id', finalId);
+    }
+
+    // Method 5: Trigger component update to ensure GrapesJS tracks the change
+    if (editor) {
+      editor.trigger?.('component:update', component);
+      editor.trigger?.('component:update:attributes', component);
+    }
+
+    debug('Generated and set ID for component:', finalId, '- tagName:', tagName);
+  } catch (err) {
+    console.warn('Failed to set component ID:', err);
   }
 
-  debug('Generated ID for component:', finalId, '- tagName:', tagName);
   return finalId;
 }
 
@@ -874,12 +893,12 @@ function collectTargetableComponents(editor: EditorInstance): Array<{ id: string
   };
   collectExistingIds(wrapper);
 
-  // Second pass: collect targetable components
+  // Second pass: collect targetable components and ensure they have IDs
   const collectComponents = (comp: any) => {
     const tagName = comp.get?.('tagName')?.toLowerCase() || '';
 
     if (targetableTypes.includes(tagName)) {
-      const id = ensureComponentId(comp, allIds);
+      const id = ensureComponentId(comp, allIds, editor);
       const label = getComponentLabel(comp);
       const typeName = getComponentTypeName(tagName);
 
