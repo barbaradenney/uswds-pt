@@ -569,6 +569,12 @@ export const componentRegistry = new ComponentRegistry();
  * Allows users to define dropdown options via a textarea (one option per line).
  * Format: "value|Label Text" or just "Label Text" (value will be auto-generated)
  *
+ * Uses the usa-select web component's attribute API:
+ * - option-count="3"
+ * - option1-label="Label", option1-value="value"
+ * - option2-label="Label", option2-value="value"
+ * etc.
+ *
  * @example
  * options: createSelectOptionsTrait({
  *   label: 'Options',
@@ -606,40 +612,43 @@ export function createSelectOptionsTrait(config: {
       });
   };
 
-  const updateSelectOptions = (element: HTMLElement, options: Array<{ value: string; label: string }>) => {
-    // Find the internal select element
-    const select = element.querySelector('select');
-    if (!select) {
-      // Component may not be rendered yet, try again after a delay
-      setTimeout(() => {
-        const retrySelect = element.querySelector('select');
-        if (retrySelect) {
-          updateSelectInnerOptions(retrySelect, options);
-        }
-      }, 200);
-      return;
+  const updateSelectAttributes = (element: HTMLElement, options: Array<{ value: string; label: string }>) => {
+    // First, remove any existing option attributes (up to 20 for safety)
+    for (let i = 1; i <= 20; i++) {
+      element.removeAttribute(`option${i}-label`);
+      element.removeAttribute(`option${i}-value`);
     }
 
-    updateSelectInnerOptions(select, options);
+    // Set option-count
+    element.setAttribute('option-count', String(options.length));
+
+    // Set individual option attributes
+    options.forEach((opt, index) => {
+      const num = index + 1;
+      element.setAttribute(`option${num}-label`, opt.label);
+      element.setAttribute(`option${num}-value`, opt.value);
+    });
+
+    // Trigger web component update
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+    }
   };
 
-  const updateSelectInnerOptions = (select: Element, options: Array<{ value: string; label: string }>) => {
-    // Clear existing options
-    select.innerHTML = '';
+  const readOptionsFromAttributes = (element: HTMLElement): string => {
+    const count = parseInt(element.getAttribute('option-count') || '0', 10);
+    if (count === 0) return config.default ?? '';
 
-    // Add placeholder option
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = '- Select -';
-    select.appendChild(placeholder);
+    const lines: string[] = [];
+    for (let i = 1; i <= count; i++) {
+      const label = element.getAttribute(`option${i}-label`) || '';
+      const value = element.getAttribute(`option${i}-value`) || '';
+      if (label || value) {
+        lines.push(`${value}|${label}`);
+      }
+    }
 
-    // Add new options
-    options.forEach(({ value, label }) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      select.appendChild(option);
-    });
+    return lines.length > 0 ? lines.join('\n') : (config.default ?? '');
   };
 
   return {
@@ -655,25 +664,30 @@ export function createSelectOptionsTrait(config: {
       onChange: (element, value) => {
         const textValue = value || '';
 
-        // Store options as data attribute for persistence
-        element.setAttribute('data-options', textValue);
-
-        // Parse and update the select options
+        // Parse and update the select option attributes
         const options = parseOptions(textValue);
-        updateSelectOptions(element, options);
+        updateSelectAttributes(element, options);
       },
 
       getValue: (element) => {
-        return element.getAttribute('data-options') || (config.default ?? '');
+        return readOptionsFromAttributes(element);
       },
 
       onInit: (element, value) => {
+        // Check if options are already set via attributes
+        const existingOptions = readOptionsFromAttributes(element);
+        const hasExistingOptions = existingOptions && existingOptions !== config.default;
+
+        if (hasExistingOptions) {
+          // Options already exist, don't overwrite
+          return;
+        }
+
+        // Apply default options if no existing options
         const textValue = value || config.default || '';
         if (textValue) {
-          element.setAttribute('data-options', textValue);
           const options = parseOptions(textValue);
-          // Delay to ensure component is rendered
-          setTimeout(() => updateSelectOptions(element, options), 100);
+          updateSelectAttributes(element, options);
         }
       },
     },
@@ -1510,6 +1524,13 @@ componentRegistry.register({
       type: 'text',
       default: 'select-field',
       placeholder: 'field-name',
+    }),
+
+    // Options - dropdown options (one per line, format: value|Label or just Label)
+    options: createSelectOptionsTrait({
+      label: 'Options (one per line)',
+      default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
+      placeholder: 'value|Label Text',
     }),
 
     // Required - boolean flag
