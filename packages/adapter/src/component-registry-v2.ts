@@ -560,11 +560,108 @@ class ComponentRegistry {
 
 export const componentRegistry = new ComponentRegistry();
 
-// NOTE: createSelectOptionsTrait was removed because the @uswds-wc/bundle usa-select
-// web component has internal bugs when setting option-related attributes. The component's
-// render function throws "Cannot read properties of null (reading 'map')" because its
-// internal options property is null. This needs to be fixed upstream or we need to find
-// the correct API. For now, users must add options by editing HTML directly.
+// ============================================================================
+// Select Options Helpers (for usa-select)
+// ============================================================================
+
+/**
+ * Helper to rebuild select options from individual traits
+ * Renders <option> elements inside the usa-select (uses slot)
+ */
+function rebuildSelectOptions(element: HTMLElement, count: number): void {
+  // Debug logging
+  console.log('[usa-select] rebuildSelectOptions called, count:', count);
+  console.log('[usa-select] element:', element.tagName, element);
+
+  // First, try to find the internal <select> element
+  // usa-select renders a <select> inside it (Light DOM)
+  const internalSelect = element.querySelector('select');
+  console.log('[usa-select] internal select found:', !!internalSelect);
+
+  if (internalSelect) {
+    // Clear existing options from the internal select
+    internalSelect.innerHTML = '';
+
+    // Add a default empty option
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '- Select -';
+    internalSelect.appendChild(defaultOpt);
+
+    // Add options from traits
+    for (let i = 1; i <= count; i++) {
+      const text = element.getAttribute(`option${i}-label`) || `Option ${i}`;
+      const value = element.getAttribute(`option${i}-value`) || `option${i}`;
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = text;
+      internalSelect.appendChild(opt);
+    }
+    console.log('[usa-select] options added to internal select:', internalSelect.options.length);
+  } else {
+    // Fallback: set the options property (for when select isn't rendered yet)
+    console.log('[usa-select] No internal select, using options property');
+    const options: Array<{ value: string; text: string }> = [];
+    for (let i = 1; i <= count; i++) {
+      const text = element.getAttribute(`option${i}-label`) || `Option ${i}`;
+      const value = element.getAttribute(`option${i}-value`) || `option${i}`;
+      options.push({ value, text });
+    }
+    (element as any).options = options;
+    console.log('[usa-select] options property set:', (element as any).options);
+
+    // Request update if available
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+      console.log('[usa-select] requestUpdate called');
+    }
+  }
+}
+
+/**
+ * Helper to create a select option trait
+ */
+function createSelectOptionTrait(
+  optionNum: number,
+  traitType: 'label' | 'value'
+): UnifiedTrait {
+  const attrName = `option${optionNum}-${traitType}`;
+  const label = traitType === 'label' ? `Option ${optionNum} Label` : `Option ${optionNum} Value`;
+  const defaultValue = traitType === 'label' ? `Option ${optionNum}` : `option${optionNum}`;
+
+  // Visibility function - only show if optionNum <= option-count
+  const visibleFn = (component: any) => {
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
+      return optionNum <= count;
+    } catch {
+      return true;
+    }
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('option-count') || '3', 10);
+        if (optionNum <= count) {
+          rebuildSelectOptions(element, count);
+        }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
+      },
+    },
+  };
+}
 
 // ============================================================================
 // Page Link Traits
@@ -1398,9 +1495,84 @@ componentRegistry.register({
       placeholder: 'field-name',
     }),
 
-    // NOTE: Options trait removed - usa-select web component has internal bugs
-    // when setting option attributes. Users must edit HTML directly for now.
-    // TODO: Investigate usa-select options API or file bug with @uswds-wc/bundle
+    // Option count - number of options to display
+    'option-count': {
+      definition: {
+        name: 'option-count',
+        label: 'Number of Options',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '0', label: 'No Options' },
+          { id: '1', label: '1 Option' },
+          { id: '2', label: '2 Options' },
+          { id: '3', label: '3 Options' },
+          { id: '4', label: '4 Options' },
+          { id: '5', label: '5 Options' },
+          { id: '6', label: '6 Options' },
+          { id: '7', label: '7 Options' },
+          { id: '8', label: '8 Options' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '3', 10);
+          element.setAttribute('option-count', String(count));
+          rebuildSelectOptions(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('option-count') ?? '3';
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          // Wait for the web component to render its internal <select>
+          const initOptions = () => {
+            const count = parseInt(value || '3', 10);
+            rebuildSelectOptions(element, count);
+
+            // If internal select wasn't found, retry after a delay
+            // (web component might still be rendering)
+            if (!element.querySelector('select')) {
+              setTimeout(() => rebuildSelectOptions(element, count), 200);
+              setTimeout(() => rebuildSelectOptions(element, count), 500);
+            }
+          };
+          // Wait a frame for initial render
+          requestAnimationFrame(initOptions);
+        },
+      },
+    },
+
+    // Option 1
+    'option1-label': createSelectOptionTrait(1, 'label'),
+    'option1-value': createSelectOptionTrait(1, 'value'),
+
+    // Option 2
+    'option2-label': createSelectOptionTrait(2, 'label'),
+    'option2-value': createSelectOptionTrait(2, 'value'),
+
+    // Option 3
+    'option3-label': createSelectOptionTrait(3, 'label'),
+    'option3-value': createSelectOptionTrait(3, 'value'),
+
+    // Option 4
+    'option4-label': createSelectOptionTrait(4, 'label'),
+    'option4-value': createSelectOptionTrait(4, 'value'),
+
+    // Option 5
+    'option5-label': createSelectOptionTrait(5, 'label'),
+    'option5-value': createSelectOptionTrait(5, 'value'),
+
+    // Option 6
+    'option6-label': createSelectOptionTrait(6, 'label'),
+    'option6-value': createSelectOptionTrait(6, 'value'),
+
+    // Option 7
+    'option7-label': createSelectOptionTrait(7, 'label'),
+    'option7-value': createSelectOptionTrait(7, 'value'),
+
+    // Option 8
+    'option8-label': createSelectOptionTrait(8, 'label'),
+    'option8-value': createSelectOptionTrait(8, 'value'),
 
     // Required - boolean flag
     required: createBooleanTrait('required', {

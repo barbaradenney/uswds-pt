@@ -6,7 +6,7 @@ import { initializeUSWDSComponents } from '../lib/uswds-init';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.12';
+const USWDS_WC_BUNDLE_VERSION = '2.5.13';
 
 const PREVIEW_CDN_URLS = {
   uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,

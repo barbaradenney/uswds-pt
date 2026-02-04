@@ -179,8 +179,12 @@ function initializeConditionalFields(container: HTMLElement | Document): void {
     hidesTargets.forEach(target => showElement(target));
 
     const updateVisibility = () => {
+      // Check both the internal input AND the custom element's checked attribute
+      // Web components may not have synced the internal input yet
       const input = trigger.querySelector('input') as HTMLInputElement | null;
-      const isChecked = input?.checked ?? false;
+      const elementChecked = trigger.hasAttribute('checked');
+      const inputChecked = input?.checked ?? false;
+      const isChecked = elementChecked || inputChecked;
 
       revealsTargets.forEach(target => {
         if (isChecked) {
