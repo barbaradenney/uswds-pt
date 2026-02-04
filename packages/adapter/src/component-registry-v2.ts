@@ -560,139 +560,11 @@ class ComponentRegistry {
 
 export const componentRegistry = new ComponentRegistry();
 
-// ============================================================================
-// Select Options Trait
-// ============================================================================
-
-/**
- * Factory for select options trait.
- * Allows users to define dropdown options via a textarea (one option per line).
- * Format: "value|Label Text" or just "Label Text" (value will be auto-generated)
- *
- * Uses the usa-select web component's attribute API:
- * - option-count="3"
- * - option1-label="Label", option1-value="value"
- * - option2-label="Label", option2-value="value"
- * etc.
- *
- * @example
- * options: createSelectOptionsTrait({
- *   label: 'Options',
- *   default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
- * })
- */
-export function createSelectOptionsTrait(config: {
-  label: string;
-  default?: string;
-  placeholder?: string;
-}): UnifiedTrait {
-  const parseOptions = (text: string): Array<{ value: string; label: string }> => {
-    if (!text || !text.trim()) return [];
-
-    return text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line, index) => {
-        if (line.includes('|')) {
-          const [value, ...labelParts] = line.split('|');
-          return {
-            value: value.trim(),
-            label: labelParts.join('|').trim() || value.trim(),
-          };
-        } else {
-          // Auto-generate value from label
-          const label = line;
-          const value = label
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '') || `option-${index + 1}`;
-          return { value, label };
-        }
-      });
-  };
-
-  const updateSelectAttributes = (element: HTMLElement, options: Array<{ value: string; label: string }>) => {
-    // First, remove any existing option attributes (up to 20 for safety)
-    for (let i = 1; i <= 20; i++) {
-      element.removeAttribute(`option${i}-label`);
-      element.removeAttribute(`option${i}-value`);
-    }
-
-    // Set option-count
-    element.setAttribute('option-count', String(options.length));
-
-    // Set individual option attributes
-    options.forEach((opt, index) => {
-      const num = index + 1;
-      element.setAttribute(`option${num}-label`, opt.label);
-      element.setAttribute(`option${num}-value`, opt.value);
-    });
-
-    // Trigger web component update
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
-    }
-  };
-
-  const readOptionsFromAttributes = (element: HTMLElement): string => {
-    const count = parseInt(element.getAttribute('option-count') || '0', 10);
-    if (count === 0) return config.default ?? '';
-
-    const lines: string[] = [];
-    for (let i = 1; i <= count; i++) {
-      const label = element.getAttribute(`option${i}-label`) || '';
-      const value = element.getAttribute(`option${i}-value`) || '';
-      if (label || value) {
-        lines.push(`${value}|${label}`);
-      }
-    }
-
-    return lines.length > 0 ? lines.join('\n') : (config.default ?? '');
-  };
-
-  return {
-    definition: {
-      name: 'options',
-      label: config.label,
-      type: 'textarea',
-      default: config.default ?? '',
-      placeholder: config.placeholder ?? 'value|Label (one per line)',
-    },
-
-    handler: {
-      onChange: (element, value) => {
-        const textValue = value || '';
-
-        // Parse and update the select option attributes
-        const options = parseOptions(textValue);
-        updateSelectAttributes(element, options);
-      },
-
-      getValue: (element) => {
-        return readOptionsFromAttributes(element);
-      },
-
-      onInit: (element, value) => {
-        // Check if options are already set via attributes
-        const existingOptions = readOptionsFromAttributes(element);
-        const hasExistingOptions = existingOptions && existingOptions !== config.default;
-
-        if (hasExistingOptions) {
-          // Options already exist, don't overwrite
-          return;
-        }
-
-        // Apply default options if no existing options
-        const textValue = value || config.default || '';
-        if (textValue) {
-          const options = parseOptions(textValue);
-          updateSelectAttributes(element, options);
-        }
-      },
-    },
-  };
-}
+// NOTE: createSelectOptionsTrait was removed because the @uswds-wc/bundle usa-select
+// web component has internal bugs when setting option-related attributes. The component's
+// render function throws "Cannot read properties of null (reading 'map')" because its
+// internal options property is null. This needs to be fixed upstream or we need to find
+// the correct API. For now, users must add options by editing HTML directly.
 
 // ============================================================================
 // Page Link Traits
@@ -1526,12 +1398,9 @@ componentRegistry.register({
       placeholder: 'field-name',
     }),
 
-    // Options - dropdown options (one per line, format: value|Label or just Label)
-    options: createSelectOptionsTrait({
-      label: 'Options (one per line)',
-      default: 'option1|Option 1\noption2|Option 2\noption3|Option 3',
-      placeholder: 'value|Label Text',
-    }),
+    // NOTE: Options trait removed - usa-select web component has internal bugs
+    // when setting option attributes. Users must edit HTML directly for now.
+    // TODO: Investigate usa-select options API or file bug with @uswds-wc/bundle
 
     // Required - boolean flag
     required: createBooleanTrait('required', {
