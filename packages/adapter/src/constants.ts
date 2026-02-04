@@ -560,27 +560,35 @@ if (!window._conditionalFieldsInit) {
       var isRadio = trigger.tagName.toLowerCase() === 'usa-radio';
       var isCheckbox = trigger.tagName.toLowerCase() === 'usa-checkbox';
 
+      function showElement(target) {
+        target.removeAttribute('hidden');
+        target.setAttribute('aria-hidden', 'false');
+        target.style.display = '';
+      }
+
+      function hideElement(target) {
+        target.setAttribute('hidden', '');
+        target.setAttribute('aria-hidden', 'true');
+        target.style.display = 'none';
+      }
+
       function updateVisibility() {
         var input = trigger.querySelector('input');
         var isChecked = input && input.checked;
 
         revealsTargets.forEach(function(target) {
           if (isChecked) {
-            target.removeAttribute('hidden');
-            target.setAttribute('aria-hidden', 'false');
+            showElement(target);
           } else {
-            target.setAttribute('hidden', '');
-            target.setAttribute('aria-hidden', 'true');
+            hideElement(target);
           }
         });
 
         hidesTargets.forEach(function(target) {
           if (isChecked) {
-            target.setAttribute('hidden', '');
-            target.setAttribute('aria-hidden', 'true');
+            hideElement(target);
           } else {
-            target.removeAttribute('hidden');
-            target.setAttribute('aria-hidden', 'false');
+            showElement(target);
           }
         });
       }

@@ -164,23 +164,33 @@ function initializeConditionalFields(container: HTMLElement | Document): void {
       const input = trigger.querySelector('input') as HTMLInputElement | null;
       const isChecked = input?.checked ?? false;
 
+      // Helper to show an element
+      const showElement = (target: HTMLElement) => {
+        target.removeAttribute('hidden');
+        target.setAttribute('aria-hidden', 'false');
+        target.style.display = '';  // Remove inline display:none
+      };
+
+      // Helper to hide an element
+      const hideElement = (target: HTMLElement) => {
+        target.setAttribute('hidden', '');
+        target.setAttribute('aria-hidden', 'true');
+        target.style.display = 'none';  // Force hide with inline style
+      };
+
       revealsTargets.forEach(target => {
         if (isChecked) {
-          target.removeAttribute('hidden');
-          target.setAttribute('aria-hidden', 'false');
+          showElement(target);
         } else {
-          target.setAttribute('hidden', '');
-          target.setAttribute('aria-hidden', 'true');
+          hideElement(target);
         }
       });
 
       hidesTargets.forEach(target => {
         if (isChecked) {
-          target.setAttribute('hidden', '');
-          target.setAttribute('aria-hidden', 'true');
+          hideElement(target);
         } else {
-          target.removeAttribute('hidden');
-          target.setAttribute('aria-hidden', 'false');
+          showElement(target);
         }
       });
     };
