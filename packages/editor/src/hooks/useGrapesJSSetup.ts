@@ -806,17 +806,25 @@ function ensureComponentId(component: any, allIds: Set<string>): string {
     counter++;
   }
 
-  // Set the ID on the component model
-  component.addAttributes({ id: finalId });
-  allIds.add(finalId);
-
-  // Also sync to the actual DOM element in the canvas
-  const el = component.getEl?.();
-  if (el && !el.id) {
-    el.id = finalId;
+  // Set the ID on the component model using multiple methods to ensure persistence
+  // Method 1: addAttributes (standard GrapesJS way)
+  if (component.addAttributes) {
+    component.addAttributes({ id: finalId });
   }
 
-  debug('Generated ID for component:', finalId);
+  // Method 2: Direct attribute setting via set()
+  const currentAttrs = component.get?.('attributes') || {};
+  component.set?.('attributes', { ...currentAttrs, id: finalId });
+
+  allIds.add(finalId);
+
+  // Method 3: Also sync to the actual DOM element in the canvas
+  const el = component.getEl?.();
+  if (el) {
+    el.setAttribute('id', finalId);
+  }
+
+  debug('Generated ID for component:', finalId, '- tagName:', tagName);
   return finalId;
 }
 
