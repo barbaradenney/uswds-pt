@@ -564,62 +564,152 @@ export const componentRegistry = new ComponentRegistry();
 // Select Options Helpers (for usa-select)
 // ============================================================================
 
-/**
- * Helper to rebuild select options from individual traits
- * Renders <option> elements inside the usa-select (uses slot)
- */
-function rebuildSelectOptions(element: HTMLElement, count: number): void {
-  // Debug logging
-  console.log('[usa-select] rebuildSelectOptions called, count:', count);
-  console.log('[usa-select] element:', element.tagName, element);
+// Preset option lists
+const SELECT_PRESETS: Record<string, Array<{ value: string; text: string }>> = {
+  'us-states': [
+    { value: 'AL', text: 'Alabama' }, { value: 'AK', text: 'Alaska' }, { value: 'AZ', text: 'Arizona' },
+    { value: 'AR', text: 'Arkansas' }, { value: 'CA', text: 'California' }, { value: 'CO', text: 'Colorado' },
+    { value: 'CT', text: 'Connecticut' }, { value: 'DE', text: 'Delaware' }, { value: 'FL', text: 'Florida' },
+    { value: 'GA', text: 'Georgia' }, { value: 'HI', text: 'Hawaii' }, { value: 'ID', text: 'Idaho' },
+    { value: 'IL', text: 'Illinois' }, { value: 'IN', text: 'Indiana' }, { value: 'IA', text: 'Iowa' },
+    { value: 'KS', text: 'Kansas' }, { value: 'KY', text: 'Kentucky' }, { value: 'LA', text: 'Louisiana' },
+    { value: 'ME', text: 'Maine' }, { value: 'MD', text: 'Maryland' }, { value: 'MA', text: 'Massachusetts' },
+    { value: 'MI', text: 'Michigan' }, { value: 'MN', text: 'Minnesota' }, { value: 'MS', text: 'Mississippi' },
+    { value: 'MO', text: 'Missouri' }, { value: 'MT', text: 'Montana' }, { value: 'NE', text: 'Nebraska' },
+    { value: 'NV', text: 'Nevada' }, { value: 'NH', text: 'New Hampshire' }, { value: 'NJ', text: 'New Jersey' },
+    { value: 'NM', text: 'New Mexico' }, { value: 'NY', text: 'New York' }, { value: 'NC', text: 'North Carolina' },
+    { value: 'ND', text: 'North Dakota' }, { value: 'OH', text: 'Ohio' }, { value: 'OK', text: 'Oklahoma' },
+    { value: 'OR', text: 'Oregon' }, { value: 'PA', text: 'Pennsylvania' }, { value: 'RI', text: 'Rhode Island' },
+    { value: 'SC', text: 'South Carolina' }, { value: 'SD', text: 'South Dakota' }, { value: 'TN', text: 'Tennessee' },
+    { value: 'TX', text: 'Texas' }, { value: 'UT', text: 'Utah' }, { value: 'VT', text: 'Vermont' },
+    { value: 'VA', text: 'Virginia' }, { value: 'WA', text: 'Washington' }, { value: 'WV', text: 'West Virginia' },
+    { value: 'WI', text: 'Wisconsin' }, { value: 'WY', text: 'Wyoming' }, { value: 'DC', text: 'District of Columbia' },
+    { value: 'AS', text: 'American Samoa' }, { value: 'GU', text: 'Guam' }, { value: 'MP', text: 'Northern Mariana Islands' },
+    { value: 'PR', text: 'Puerto Rico' }, { value: 'VI', text: 'U.S. Virgin Islands' },
+  ],
+  'countries': [
+    { value: 'US', text: 'United States' }, { value: 'CA', text: 'Canada' }, { value: 'MX', text: 'Mexico' },
+    { value: 'AF', text: 'Afghanistan' }, { value: 'AL', text: 'Albania' }, { value: 'DZ', text: 'Algeria' },
+    { value: 'AR', text: 'Argentina' }, { value: 'AU', text: 'Australia' }, { value: 'AT', text: 'Austria' },
+    { value: 'BD', text: 'Bangladesh' }, { value: 'BE', text: 'Belgium' }, { value: 'BR', text: 'Brazil' },
+    { value: 'BG', text: 'Bulgaria' }, { value: 'KH', text: 'Cambodia' }, { value: 'CM', text: 'Cameroon' },
+    { value: 'CL', text: 'Chile' }, { value: 'CN', text: 'China' }, { value: 'CO', text: 'Colombia' },
+    { value: 'CR', text: 'Costa Rica' }, { value: 'HR', text: 'Croatia' }, { value: 'CU', text: 'Cuba' },
+    { value: 'CZ', text: 'Czech Republic' }, { value: 'DK', text: 'Denmark' }, { value: 'DO', text: 'Dominican Republic' },
+    { value: 'EC', text: 'Ecuador' }, { value: 'EG', text: 'Egypt' }, { value: 'SV', text: 'El Salvador' },
+    { value: 'ET', text: 'Ethiopia' }, { value: 'FI', text: 'Finland' }, { value: 'FR', text: 'France' },
+    { value: 'DE', text: 'Germany' }, { value: 'GH', text: 'Ghana' }, { value: 'GR', text: 'Greece' },
+    { value: 'GT', text: 'Guatemala' }, { value: 'HT', text: 'Haiti' }, { value: 'HN', text: 'Honduras' },
+    { value: 'HK', text: 'Hong Kong' }, { value: 'HU', text: 'Hungary' }, { value: 'IS', text: 'Iceland' },
+    { value: 'IN', text: 'India' }, { value: 'ID', text: 'Indonesia' }, { value: 'IR', text: 'Iran' },
+    { value: 'IQ', text: 'Iraq' }, { value: 'IE', text: 'Ireland' }, { value: 'IL', text: 'Israel' },
+    { value: 'IT', text: 'Italy' }, { value: 'JM', text: 'Jamaica' }, { value: 'JP', text: 'Japan' },
+    { value: 'JO', text: 'Jordan' }, { value: 'KE', text: 'Kenya' }, { value: 'KR', text: 'South Korea' },
+    { value: 'KW', text: 'Kuwait' }, { value: 'LB', text: 'Lebanon' }, { value: 'MY', text: 'Malaysia' },
+    { value: 'MA', text: 'Morocco' }, { value: 'NL', text: 'Netherlands' }, { value: 'NZ', text: 'New Zealand' },
+    { value: 'NG', text: 'Nigeria' }, { value: 'NO', text: 'Norway' }, { value: 'PK', text: 'Pakistan' },
+    { value: 'PA', text: 'Panama' }, { value: 'PE', text: 'Peru' }, { value: 'PH', text: 'Philippines' },
+    { value: 'PL', text: 'Poland' }, { value: 'PT', text: 'Portugal' }, { value: 'RO', text: 'Romania' },
+    { value: 'RU', text: 'Russia' }, { value: 'SA', text: 'Saudi Arabia' }, { value: 'SG', text: 'Singapore' },
+    { value: 'ZA', text: 'South Africa' }, { value: 'ES', text: 'Spain' }, { value: 'SE', text: 'Sweden' },
+    { value: 'CH', text: 'Switzerland' }, { value: 'TW', text: 'Taiwan' }, { value: 'TH', text: 'Thailand' },
+    { value: 'TR', text: 'Turkey' }, { value: 'UA', text: 'Ukraine' }, { value: 'AE', text: 'United Arab Emirates' },
+    { value: 'GB', text: 'United Kingdom' }, { value: 'VE', text: 'Venezuela' }, { value: 'VN', text: 'Vietnam' },
+  ],
+  'months': [
+    { value: '01', text: 'January' }, { value: '02', text: 'February' }, { value: '03', text: 'March' },
+    { value: '04', text: 'April' }, { value: '05', text: 'May' }, { value: '06', text: 'June' },
+    { value: '07', text: 'July' }, { value: '08', text: 'August' }, { value: '09', text: 'September' },
+    { value: '10', text: 'October' }, { value: '11', text: 'November' }, { value: '12', text: 'December' },
+  ],
+  'years': Array.from({ length: 100 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { value: String(year), text: String(year) };
+  }),
+  'yes-no': [
+    { value: 'yes', text: 'Yes' }, { value: 'no', text: 'No' },
+  ],
+};
 
-  // First, try to find the internal <select> element
-  // usa-select renders a <select> inside it (Light DOM)
+/**
+ * Parse custom options from textarea format
+ * Format: one option per line, either "value|label" or just "label" (value = label)
+ */
+function parseCustomOptions(text: string): Array<{ value: string; text: string }> {
+  if (!text || !text.trim()) return [];
+
+  return text.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => {
+      if (line.includes('|')) {
+        const [value, ...rest] = line.split('|');
+        return { value: value.trim(), text: rest.join('|').trim() || value.trim() };
+      }
+      return { value: line, text: line };
+    });
+}
+
+/**
+ * Render options into the usa-select element
+ */
+function renderSelectOptions(element: HTMLElement, options: Array<{ value: string; text: string }>): void {
   const internalSelect = element.querySelector('select');
-  console.log('[usa-select] internal select found:', !!internalSelect);
 
   if (internalSelect) {
-    // Clear existing options from the internal select
+    // Clear existing options
     internalSelect.innerHTML = '';
 
-    // Add a default empty option
+    // Add default empty option
     const defaultOpt = document.createElement('option');
     defaultOpt.value = '';
     defaultOpt.textContent = '- Select -';
     internalSelect.appendChild(defaultOpt);
 
-    // Add options from traits
-    for (let i = 1; i <= count; i++) {
-      const text = element.getAttribute(`option${i}-label`) || `Option ${i}`;
-      const value = element.getAttribute(`option${i}-value`) || `option${i}`;
+    // Add all options
+    options.forEach(({ value, text }) => {
       const opt = document.createElement('option');
       opt.value = value;
       opt.textContent = text;
       internalSelect.appendChild(opt);
-    }
-    console.log('[usa-select] options added to internal select:', internalSelect.options.length);
+    });
   } else {
-    // Fallback: set the options property (for when select isn't rendered yet)
-    console.log('[usa-select] No internal select, using options property');
-    const options: Array<{ value: string; text: string }> = [];
-    for (let i = 1; i <= count; i++) {
-      const text = element.getAttribute(`option${i}-label`) || `Option ${i}`;
-      const value = element.getAttribute(`option${i}-value`) || `option${i}`;
-      options.push({ value, text });
-    }
+    // Fallback: set the options property
     (element as any).options = options;
-    console.log('[usa-select] options property set:', (element as any).options);
-
-    // Request update if available
     if (typeof (element as any).requestUpdate === 'function') {
       (element as any).requestUpdate();
-      console.log('[usa-select] requestUpdate called');
     }
   }
 }
 
 /**
- * Helper to create a select option trait
+ * Rebuild select options based on preset or custom options
+ */
+function rebuildSelectOptionsFromSource(element: HTMLElement): void {
+  const preset = element.getAttribute('options-preset') || 'manual';
+  const customOptions = element.getAttribute('custom-options') || '';
+
+  let options: Array<{ value: string; text: string }> = [];
+
+  if (preset === 'custom') {
+    options = parseCustomOptions(customOptions);
+  } else if (preset !== 'manual' && SELECT_PRESETS[preset]) {
+    options = SELECT_PRESETS[preset];
+  } else {
+    // Manual mode - use individual option traits
+    const count = parseInt(element.getAttribute('option-count') || '3', 10);
+    for (let i = 1; i <= count; i++) {
+      const text = element.getAttribute(`option${i}-label`) || `Option ${i}`;
+      const value = element.getAttribute(`option${i}-value`) || `option${i}`;
+      options.push({ value, text });
+    }
+  }
+
+  renderSelectOptions(element, options);
+}
+
+/**
+ * Helper to create a select option trait (for manual mode)
  */
 function createSelectOptionTrait(
   optionNum: number,
@@ -629,14 +719,16 @@ function createSelectOptionTrait(
   const label = traitType === 'label' ? `Option ${optionNum} Label` : `Option ${optionNum} Value`;
   const defaultValue = traitType === 'label' ? `Option ${optionNum}` : `option${optionNum}`;
 
-  // Visibility function - only show if optionNum <= option-count
+  // Only show in manual mode and when optionNum <= option-count
   const visibleFn = (component: any) => {
     try {
-      if (!component) return true;
+      if (!component) return false;
+      const preset = component.get?.('attributes')?.['options-preset'] || 'manual';
+      if (preset !== 'manual') return false;
       const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
       return optionNum <= count;
     } catch {
-      return true;
+      return false;
     }
   };
 
@@ -651,10 +743,7 @@ function createSelectOptionTrait(
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('option-count') || '3', 10);
-        if (optionNum <= count) {
-          rebuildSelectOptions(element, count);
-        }
+        rebuildSelectOptionsFromSource(element);
       },
       getValue: (element: HTMLElement) => {
         return element.getAttribute(attrName) ?? defaultValue;
@@ -1495,7 +1584,74 @@ componentRegistry.register({
       placeholder: 'field-name',
     }),
 
-    // Option count - number of options to display
+    // Options preset - quick selection of common option lists
+    'options-preset': {
+      definition: {
+        name: 'options-preset',
+        label: 'Options Source',
+        type: 'select',
+        default: 'manual',
+        options: [
+          { id: 'manual', label: 'Manual Entry' },
+          { id: 'us-states', label: 'US States & Territories' },
+          { id: 'countries', label: 'Countries' },
+          { id: 'months', label: 'Months' },
+          { id: 'years', label: 'Years (last 100)' },
+          { id: 'yes-no', label: 'Yes / No' },
+          { id: 'custom', label: 'Custom List (bulk)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('options-preset', value || 'manual');
+          rebuildSelectOptionsFromSource(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('options-preset') ?? 'manual';
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          // Wait for the web component to render its internal <select>
+          const initOptions = () => {
+            rebuildSelectOptionsFromSource(element);
+
+            // If internal select wasn't found, retry after a delay
+            if (!element.querySelector('select')) {
+              setTimeout(() => rebuildSelectOptionsFromSource(element), 200);
+              setTimeout(() => rebuildSelectOptionsFromSource(element), 500);
+            }
+          };
+          requestAnimationFrame(initOptions);
+        },
+      },
+    },
+
+    // Custom options textarea - for bulk entry (shown when preset = 'custom')
+    'custom-options': {
+      definition: {
+        name: 'custom-options',
+        label: 'Custom Options (one per line)',
+        type: 'text', // GrapesJS doesn't have textarea, but we can style it
+        placeholder: 'value|label or just label\nOne option per line',
+        visible: (component: any) => {
+          try {
+            return component?.get?.('attributes')?.['options-preset'] === 'custom';
+          } catch {
+            return false;
+          }
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('custom-options', value || '');
+          rebuildSelectOptionsFromSource(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('custom-options') ?? '';
+        },
+      },
+    },
+
+    // Option count - number of options for manual mode
     'option-count': {
       definition: {
         name: 'option-count',
@@ -1503,7 +1659,6 @@ componentRegistry.register({
         type: 'select',
         default: '3',
         options: [
-          { id: '0', label: 'No Options' },
           { id: '1', label: '1 Option' },
           { id: '2', label: '2 Options' },
           { id: '3', label: '3 Options' },
@@ -1512,67 +1667,50 @@ componentRegistry.register({
           { id: '6', label: '6 Options' },
           { id: '7', label: '7 Options' },
           { id: '8', label: '8 Options' },
+          { id: '9', label: '9 Options' },
+          { id: '10', label: '10 Options' },
         ],
+        visible: (component: any) => {
+          try {
+            const preset = component?.get?.('attributes')?.['options-preset'] || 'manual';
+            return preset === 'manual';
+          } catch {
+            return true;
+          }
+        },
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const count = parseInt(value || '3', 10);
-          element.setAttribute('option-count', String(count));
-          rebuildSelectOptions(element, count);
+          element.setAttribute('option-count', value || '3');
+          rebuildSelectOptionsFromSource(element);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('option-count') ?? '3';
         },
-        onInit: (element: HTMLElement, value: any) => {
-          // Wait for the web component to render its internal <select>
-          const initOptions = () => {
-            const count = parseInt(value || '3', 10);
-            rebuildSelectOptions(element, count);
-
-            // If internal select wasn't found, retry after a delay
-            // (web component might still be rendering)
-            if (!element.querySelector('select')) {
-              setTimeout(() => rebuildSelectOptions(element, count), 200);
-              setTimeout(() => rebuildSelectOptions(element, count), 500);
-            }
-          };
-          // Wait a frame for initial render
-          requestAnimationFrame(initOptions);
-        },
       },
     },
 
-    // Option 1
+    // Manual option traits (1-10)
     'option1-label': createSelectOptionTrait(1, 'label'),
     'option1-value': createSelectOptionTrait(1, 'value'),
-
-    // Option 2
     'option2-label': createSelectOptionTrait(2, 'label'),
     'option2-value': createSelectOptionTrait(2, 'value'),
-
-    // Option 3
     'option3-label': createSelectOptionTrait(3, 'label'),
     'option3-value': createSelectOptionTrait(3, 'value'),
-
-    // Option 4
     'option4-label': createSelectOptionTrait(4, 'label'),
     'option4-value': createSelectOptionTrait(4, 'value'),
-
-    // Option 5
     'option5-label': createSelectOptionTrait(5, 'label'),
     'option5-value': createSelectOptionTrait(5, 'value'),
-
-    // Option 6
     'option6-label': createSelectOptionTrait(6, 'label'),
     'option6-value': createSelectOptionTrait(6, 'value'),
-
-    // Option 7
     'option7-label': createSelectOptionTrait(7, 'label'),
     'option7-value': createSelectOptionTrait(7, 'value'),
-
-    // Option 8
     'option8-label': createSelectOptionTrait(8, 'label'),
     'option8-value': createSelectOptionTrait(8, 'value'),
+    'option9-label': createSelectOptionTrait(9, 'label'),
+    'option9-value': createSelectOptionTrait(9, 'value'),
+    'option10-label': createSelectOptionTrait(10, 'label'),
+    'option10-value': createSelectOptionTrait(10, 'value'),
 
     // Required - boolean flag
     required: createBooleanTrait('required', {
