@@ -119,6 +119,84 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
       }
     }
   });
+
+  // Initialize conditional show/hide fields
+  initializeConditionalFields(container);
+}
+
+/**
+ * Initialize conditional show/hide fields
+ * Handles checkboxes and radios with data-reveals and data-hides attributes
+ */
+function initializeConditionalFields(container: HTMLElement | Document): void {
+  // Helper to get elements from comma-separated IDs
+  const getElementsFromIds = (idString: string | null): HTMLElement[] => {
+    if (!idString) return [];
+    return idString.split(',')
+      .map(id => id.trim())
+      .filter(id => id)
+      .map(id => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+  };
+
+  // Find all triggers with data-reveals or data-hides
+  container.querySelectorAll('[data-reveals], [data-hides]').forEach((trigger: Element) => {
+    // Skip if already initialized
+    if ((trigger as any)._conditionalInit) return;
+    (trigger as any)._conditionalInit = true;
+
+    const revealsIds = trigger.getAttribute('data-reveals');
+    const hidesIds = trigger.getAttribute('data-hides');
+    const revealsTargets = getElementsFromIds(revealsIds);
+    const hidesTargets = getElementsFromIds(hidesIds);
+
+    if (revealsTargets.length === 0 && hidesTargets.length === 0) return;
+
+    const name = trigger.getAttribute('name');
+    const tagName = trigger.tagName.toLowerCase();
+    const isRadio = tagName === 'usa-radio';
+    const isCheckbox = tagName === 'usa-checkbox';
+
+    const updateVisibility = () => {
+      const input = trigger.querySelector('input') as HTMLInputElement | null;
+      const isChecked = input?.checked ?? false;
+
+      revealsTargets.forEach(target => {
+        if (isChecked) {
+          target.removeAttribute('hidden');
+          target.setAttribute('aria-hidden', 'false');
+        } else {
+          target.setAttribute('hidden', '');
+          target.setAttribute('aria-hidden', 'true');
+        }
+      });
+
+      hidesTargets.forEach(target => {
+        if (isChecked) {
+          target.setAttribute('hidden', '');
+          target.setAttribute('aria-hidden', 'true');
+        } else {
+          target.removeAttribute('hidden');
+          target.setAttribute('aria-hidden', 'false');
+        }
+      });
+    };
+
+    if (isRadio && name) {
+      // For radios, listen to all radios in the same group
+      container.querySelectorAll(`usa-radio[name="${name}"]`).forEach((radio: Element) => {
+        if (!(radio as any)._conditionalListener) {
+          (radio as any)._conditionalListener = true;
+          radio.addEventListener('change', updateVisibility);
+        }
+      });
+    } else if (isCheckbox) {
+      trigger.addEventListener('change', updateVisibility);
+    }
+
+    // Set initial visibility
+    updateVisibility();
+  });
 }
 
 /**
