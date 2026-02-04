@@ -825,12 +825,14 @@ function collectTargetableComponents(editor: EditorInstance): Array<{ id: string
   const allIds = new Set<string>();
 
   // Components that can be shown/hidden
+  // NOTE: usa-checkbox and usa-radio are excluded because they have internal inputs
+  // that inherit the ID, causing duplicate ID issues that break functionality
   const targetableTypes = [
     'usa-text-input',
     'usa-textarea',
     'usa-select',
-    'usa-checkbox',
-    'usa-radio',
+    // 'usa-checkbox', // Excluded - causes duplicate ID issues
+    // 'usa-radio',    // Excluded - causes duplicate ID issues
     'usa-date-picker',
     'usa-time-picker',
     'usa-file-input',
@@ -908,15 +910,25 @@ function setupConditionalShowHideTrait(
     // Only apply to checkboxes and radios
     if (tagName !== 'usa-checkbox' && tagName !== 'usa-radio') return;
 
-    // Get all targetable components except this one
+    // IMPORTANT: Remove any ID from checkboxes/radios acting as triggers
+    // USWDS web components copy the outer ID to internal elements (input, label)
+    // causing duplicate IDs that break checkbox functionality
+    const currentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
+    if (currentId) {
+      component.removeAttributes(['id']);
+      const el = component.getEl?.();
+      if (el) {
+        el.removeAttribute('id');
+      }
+      debug('Removed ID from trigger component to prevent duplicate IDs');
+    }
+
+    // Get all targetable components
     const targetables = collectTargetableComponents(editor);
-    const currentComponentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
 
     const options = [
       { id: '', label: '-- None --' },
-      ...targetables
-        .filter(t => t.id !== currentComponentId) // Don't include self
-        .map(t => ({ id: t.id, label: t.label })),
+      ...targetables.map(t => ({ id: t.id, label: t.label })),
     ];
 
     // Update the data-reveals trait
