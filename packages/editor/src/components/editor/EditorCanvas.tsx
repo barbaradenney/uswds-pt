@@ -128,6 +128,56 @@ const AI_COPILOT_CONFIG = {
   maxTokens: 2000,
 };
 
+/**
+ * Custom layout configuration
+ * - Blocks panel in left sidebar as tab alongside Pages
+ * - Properties tab as default on right sidebar (instead of Styles)
+ */
+const CUSTOM_LAYOUT = {
+  default: {
+    type: 'row',
+    children: [
+      // Left sidebar: Pages tab, Blocks tab, and Layers
+      {
+        type: 'sidebarLeft',
+        children: [
+          {
+            type: 'tabs',
+            children: [
+              { type: 'panelPages' },
+              { type: 'panelBlocks' },
+            ],
+          },
+          { type: 'panelLayers' },
+        ],
+      },
+      // Main canvas with top toolbar
+      {
+        type: 'column',
+        style: { flex: '1 1 auto', minWidth: '400px' },
+        children: [
+          { type: 'canvasSidebarTop' },
+          { type: 'canvas' },
+        ],
+      },
+      // Right sidebar: Properties first (default), then Styles
+      {
+        type: 'sidebarRight',
+        children: [
+          {
+            type: 'tabs',
+            defaultTab: 1, // 0 = Styles, 1 = Properties
+            children: [
+              { type: 'panelStyles' },
+              { type: 'panelProperties' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 export const EditorCanvas = memo(function EditorCanvas({
   editorKey,
   initialContent,
@@ -142,6 +192,7 @@ export const EditorCanvas = memo(function EditorCanvas({
         key={editorKey}
         options={{
           licenseKey: LICENSE_KEY,
+          layout: CUSTOM_LAYOUT as any,
           plugins: [
             (editor: EditorInstance) => tableComponent(editor, TABLE_BLOCK_CONFIG),
             uswdsTablePlugin,
