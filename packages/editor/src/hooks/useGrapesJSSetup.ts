@@ -1101,16 +1101,8 @@ function setupProactiveIdAssignment(
     ensureComponentId(component, allIds, editor);
   };
 
-  // When a targetable component is added, assign it an ID
-  registerListener(editor, 'component:add', (component: any) => {
-    // Use a small delay to ensure the component is fully initialized
-    setTimeout(() => {
-      assignIdIfNeeded(component);
-    }, 100);
-  });
-
-  // Also assign IDs to existing components when editor loads
-  registerListener(editor, 'load', () => {
+  // Process all components in the wrapper and assign IDs
+  const processAllComponents = () => {
     const wrapper = editor.DomComponents?.getWrapper?.();
     if (!wrapper) return;
 
@@ -1122,10 +1114,32 @@ function setupProactiveIdAssignment(
       }
     };
 
-    // Use a delay to ensure all components are rendered
+    processComponent(wrapper);
+    debug('Processed all components for ID assignment');
+  };
+
+  // When a targetable component is added, assign it an ID
+  registerListener(editor, 'component:add', (component: any) => {
+    // Use a small delay to ensure the component is fully initialized
     setTimeout(() => {
-      processComponent(wrapper);
-      debug('Assigned IDs to existing targetable components on load');
-    }, 500);
+      assignIdIfNeeded(component);
+    }, 100);
+  });
+
+  // Assign IDs after project data is loaded
+  registerListener(editor, 'load', () => {
+    // Use multiple delays to catch different loading scenarios
+    setTimeout(processAllComponents, 300);
+    setTimeout(processAllComponents, 1000);
+  });
+
+  // Also run when canvas frame loads (catches page switches and initial render)
+  registerListener(editor, 'canvas:frame:load', () => {
+    setTimeout(processAllComponents, 200);
+  });
+
+  // Run when page is selected (in case components were loaded from another page)
+  registerListener(editor, 'page:select', () => {
+    setTimeout(processAllComponents, 300);
   });
 }
