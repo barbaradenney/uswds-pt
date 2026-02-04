@@ -1431,6 +1431,59 @@ componentRegistry.register({
       syncToInternal: 'input[type="checkbox"]',
     }),
 
+    // Hint - help text displayed below the label
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Help Text',
+        type: 'text',
+        default: '',
+        placeholder: 'Optional help text',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const hintText = value?.trim() || '';
+          element.setAttribute('hint', hintText);
+
+          // Find the label inside the checkbox
+          const label = element.querySelector('.usa-checkbox__label');
+          if (!label) return;
+
+          // Find or manage the description span
+          let descSpan = label.querySelector('.usa-checkbox__label-description');
+
+          if (hintText) {
+            if (!descSpan) {
+              descSpan = document.createElement('span');
+              descSpan.className = 'usa-checkbox__label-description';
+              label.appendChild(descSpan);
+            }
+            descSpan.textContent = hintText;
+          } else {
+            descSpan?.remove();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('hint') || '';
+        },
+        onInit: (element: HTMLElement, value: any) => {
+          const hintText = value?.trim() || element.getAttribute('hint') || '';
+          if (hintText) {
+            // Wait for component to render
+            setTimeout(() => {
+              const label = element.querySelector('.usa-checkbox__label');
+              if (label && !label.querySelector('.usa-checkbox__label-description')) {
+                const descSpan = document.createElement('span');
+                descSpan.className = 'usa-checkbox__label-description';
+                descSpan.textContent = hintText;
+                label.appendChild(descSpan);
+              }
+            }, 100);
+          }
+        },
+      },
+    },
+
     // Spacing
     'top-spacing': {
       definition: {
@@ -1540,6 +1593,38 @@ componentRegistry.register({
       default: false,
       syncToInternal: 'input[type="radio"]',
     }),
+
+    // Spacing
+    'top-spacing': {
+      definition: {
+        type: 'select',
+        label: 'Top Spacing',
+        name: 'top-spacing',
+        options: [
+          { id: '', label: '- Select an option -' },
+          { id: 'margin-top-1', label: 'Small (8px)' },
+          { id: 'margin-top-2', label: 'Medium (16px)' },
+          { id: 'margin-top-3', label: 'Large (24px)' },
+          { id: 'margin-top-4', label: 'Extra Large (32px)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: string) => {
+          // Remove existing margin classes
+          element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
+          if (value) {
+            element.classList.add(value);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          if (element.classList.contains('margin-top-1')) return 'margin-top-1';
+          if (element.classList.contains('margin-top-2')) return 'margin-top-2';
+          if (element.classList.contains('margin-top-3')) return 'margin-top-3';
+          if (element.classList.contains('margin-top-4')) return 'margin-top-4';
+          return '';
+        },
+      },
+    },
 
     // Conditional: Show Element when selected (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
@@ -2840,6 +2925,38 @@ componentRegistry.register({
       label: 'Initially Hidden',
       default: false,
     }),
+
+    // Spacing
+    'top-spacing': {
+      definition: {
+        type: 'select',
+        label: 'Top Spacing',
+        name: 'top-spacing',
+        options: [
+          { id: '', label: '- Select an option -' },
+          { id: 'margin-top-1', label: 'Small (8px)' },
+          { id: 'margin-top-2', label: 'Medium (16px)' },
+          { id: 'margin-top-3', label: 'Large (24px)' },
+          { id: 'margin-top-4', label: 'Extra Large (32px)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: string) => {
+          // Remove existing margin classes
+          element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
+          if (value) {
+            element.classList.add(value);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          if (element.classList.contains('margin-top-1')) return 'margin-top-1';
+          if (element.classList.contains('margin-top-2')) return 'margin-top-2';
+          if (element.classList.contains('margin-top-3')) return 'margin-top-3';
+          if (element.classList.contains('margin-top-4')) return 'margin-top-4';
+          return '';
+        },
+      },
+    },
   },
 });
 
@@ -3264,6 +3381,48 @@ componentRegistry.register({
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('btn-count') || '2';
+        },
+      },
+    },
+
+    // Individual button traits (text and variant for each button)
+    'btn1-text': createButtonGroupItemTrait(1, 'text'),
+    'btn1-variant': createButtonGroupItemTrait(1, 'variant'),
+    'btn2-text': createButtonGroupItemTrait(2, 'text'),
+    'btn2-variant': createButtonGroupItemTrait(2, 'variant'),
+    'btn3-text': createButtonGroupItemTrait(3, 'text'),
+    'btn3-variant': createButtonGroupItemTrait(3, 'variant'),
+    'btn4-text': createButtonGroupItemTrait(4, 'text'),
+    'btn4-variant': createButtonGroupItemTrait(4, 'variant'),
+
+    // Spacing
+    'top-spacing': {
+      definition: {
+        type: 'select',
+        label: 'Top Spacing',
+        name: 'top-spacing',
+        options: [
+          { id: '', label: '- Select an option -' },
+          { id: 'margin-top-1', label: 'Small (8px)' },
+          { id: 'margin-top-2', label: 'Medium (16px)' },
+          { id: 'margin-top-3', label: 'Large (24px)' },
+          { id: 'margin-top-4', label: 'Extra Large (32px)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: string) => {
+          // Remove existing margin classes
+          element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
+          if (value) {
+            element.classList.add(value);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          if (element.classList.contains('margin-top-1')) return 'margin-top-1';
+          if (element.classList.contains('margin-top-2')) return 'margin-top-2';
+          if (element.classList.contains('margin-top-3')) return 'margin-top-3';
+          if (element.classList.contains('margin-top-4')) return 'margin-top-4';
+          return '';
         },
       },
     },

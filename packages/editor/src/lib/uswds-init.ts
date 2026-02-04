@@ -192,7 +192,7 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     initializeSelectOptions(select);
   });
 
-  // Fix usa-checkbox duplicate ID issue
+  // Fix usa-checkbox duplicate ID issue and initialize hint text
   // When an ID is set on usa-checkbox for show/hide, the web component also
   // sets it on the internal input, causing duplicate IDs. We fix this by
   // giving the internal input a unique ID.
@@ -205,6 +205,18 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
         const inputId = `${wrapperId}-input`;
         input.setAttribute('id', inputId);
         label.setAttribute('for', inputId);
+      }
+    }
+
+    // Initialize hint text if present
+    const hintText = checkbox.getAttribute('hint');
+    if (hintText) {
+      const label = checkbox.querySelector('.usa-checkbox__label');
+      if (label && !label.querySelector('.usa-checkbox__label-description')) {
+        const descSpan = document.createElement('span');
+        descSpan.className = 'usa-checkbox__label-description';
+        descSpan.textContent = hintText;
+        label.appendChild(descSpan);
       }
     }
   });

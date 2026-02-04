@@ -572,7 +572,7 @@ function generateInitScript(): string {
       setTimeout(populateOptions, 300);
     });
 
-    // Fix usa-checkbox duplicate ID issue
+    // Fix usa-checkbox duplicate ID issue and initialize hint text
     // When an ID is set on usa-checkbox for show/hide targeting, the web component
     // copies that ID to the internal input element, creating two elements with the same ID.
     // When clicking the label, the browser finds the wrapper first instead of the input.
@@ -586,6 +586,18 @@ function generateInitScript(): string {
           const inputId = wrapperId + '-input';
           input.setAttribute('id', inputId);
           label.setAttribute('for', inputId);
+        }
+      }
+
+      // Initialize hint text if present
+      const hintText = checkbox.getAttribute('hint');
+      if (hintText) {
+        const label = checkbox.querySelector('.usa-checkbox__label');
+        if (label && !label.querySelector('.usa-checkbox__label-description')) {
+          const descSpan = document.createElement('span');
+          descSpan.className = 'usa-checkbox__label-description';
+          descSpan.textContent = hintText;
+          label.appendChild(descSpan);
         }
       }
     });
