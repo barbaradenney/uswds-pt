@@ -2957,6 +2957,38 @@ componentRegistry.register({
         },
       },
     },
+
+    // Bottom Spacing
+    'bottom-spacing': {
+      definition: {
+        type: 'select',
+        label: 'Bottom Spacing',
+        name: 'bottom-spacing',
+        options: [
+          { id: '', label: '- Select an option -' },
+          { id: 'margin-bottom-1', label: 'Small (8px)' },
+          { id: 'margin-bottom-2', label: 'Medium (16px)' },
+          { id: 'margin-bottom-3', label: 'Large (24px)' },
+          { id: 'margin-bottom-4', label: 'Extra Large (32px)' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: string) => {
+          // Remove existing margin classes
+          element.classList.remove('margin-bottom-1', 'margin-bottom-2', 'margin-bottom-3', 'margin-bottom-4');
+          if (value) {
+            element.classList.add(value);
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          if (element.classList.contains('margin-bottom-1')) return 'margin-bottom-1';
+          if (element.classList.contains('margin-bottom-2')) return 'margin-bottom-2';
+          if (element.classList.contains('margin-bottom-3')) return 'margin-bottom-3';
+          if (element.classList.contains('margin-bottom-4')) return 'margin-bottom-4';
+          return '';
+        },
+      },
+    },
   },
 });
 
