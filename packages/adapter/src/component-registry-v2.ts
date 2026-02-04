@@ -222,7 +222,7 @@ export function createAttributeTrait(
   traitName: string,
   config: {
     label: string;
-    type: 'text' | 'select' | 'number' | 'textarea';
+    type: 'text' | 'select' | 'number' | 'textarea' | 'multiselect-targets' | string;
     default?: string | number;
     placeholder?: string;
     options?: Array<{ id: string; label: string }>;
@@ -1271,20 +1271,18 @@ componentRegistry.register({
       },
     },
 
-    // Conditional: Show Elements when checked (comma-separated IDs, starts hidden)
+    // Conditional: Show Elements when checked (multiselect, starts hidden)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When checked, show (IDs)',
-      type: 'text',
+      label: 'When checked, show',
+      type: 'multiselect-targets',
       default: '',
-      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Elements when checked (comma-separated IDs, starts visible)
+    // Conditional: Hide Elements when checked (multiselect, starts visible)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When checked, hide (IDs)',
-      type: 'text',
+      label: 'When checked, hide',
+      type: 'multiselect-targets',
       default: '',
-      placeholder: 'e.g., field3, field4',
     }),
   },
 });
@@ -1349,20 +1347,18 @@ componentRegistry.register({
       syncToInternal: 'input[type="radio"]',
     }),
 
-    // Conditional: Show Elements when selected (comma-separated IDs, starts hidden)
+    // Conditional: Show Elements when selected (multiselect, starts hidden)
     'data-reveals': createAttributeTrait('data-reveals', {
-      label: 'When selected, show (IDs)',
-      type: 'text',
+      label: 'When selected, show',
+      type: 'multiselect-targets',
       default: '',
-      placeholder: 'e.g., field1, field2',
     }),
 
-    // Conditional: Hide Elements when selected (comma-separated IDs, starts visible)
+    // Conditional: Hide Elements when selected (multiselect, starts visible)
     'data-hides': createAttributeTrait('data-hides', {
-      label: 'When selected, hide (IDs)',
-      type: 'text',
+      label: 'When selected, hide',
+      type: 'multiselect-targets',
       default: '',
-      placeholder: 'e.g., field3, field4',
     }),
   },
 });

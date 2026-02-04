@@ -926,13 +926,14 @@ function setupConditionalShowHideTrait(
       debug('Removed ID from trigger component to prevent duplicate IDs');
     }
 
-    // Ensure all targetable components have IDs (so users can reference them)
+    // Collect all targetable components
     const targetables = collectTargetableComponents(editor);
 
-    // Log available IDs for user reference
-    if (targetables.length > 0) {
-      debug('Available element IDs for show/hide:', targetables.map(t => `${t.label}: "${t.id}"`).join(', '));
-    }
+    // Populate the multiselect dropdowns
+    populateMultiselectTraits(component, targetables, 'data-reveals');
+    populateMultiselectTraits(component, targetables, 'data-hides');
+
+    debug('Updated conditional traits with', targetables.length, 'targetable components');
   };
 
   // Update traits when a checkbox or radio is selected
@@ -947,6 +948,62 @@ function setupConditionalShowHideTrait(
       updateConditionalTraits(selected);
     }
   });
+}
+
+/**
+ * Populate a multiselect trait with targetable component options
+ */
+function populateMultiselectTraits(
+  component: any,
+  targetables: Array<{ id: string; label: string; component: any }>,
+  traitName: string
+): void {
+  // Get the trait view to access the DOM element
+  const trait = component.getTrait?.(traitName);
+  if (!trait) return;
+
+  // We need to find the select element in the trait's rendered view
+  // Use a small delay to ensure the trait view is rendered
+  setTimeout(() => {
+    // Find the trait view element in the traits panel
+    const traitsContainer = document.querySelector('.gjs-trt-traits');
+    if (!traitsContainer) return;
+
+    // Find the multiselect for this specific trait
+    const traitRows = traitsContainer.querySelectorAll('.gjs-trt-trait');
+    for (const row of traitRows) {
+      const label = row.querySelector('.gjs-trt-trait__wrp-title');
+      const traitLabel = trait.get('label') || traitName;
+
+      // Match by trait label
+      if (label?.textContent?.trim() === traitLabel) {
+        const select = row.querySelector('select.gjs-multiselect-input') as HTMLSelectElement;
+        if (select) {
+          // Get current value to preserve selections
+          const currentValue = component.getAttributes()?.[traitName] || '';
+          const selectedIds = currentValue
+            .split(',')
+            .map((id: string) => id.trim())
+            .filter((id: string) => id);
+
+          // Clear and repopulate options
+          select.innerHTML = '';
+
+          // Add options for each targetable component
+          for (const target of targetables) {
+            const option = document.createElement('option');
+            option.value = target.id;
+            option.textContent = target.label;
+            option.selected = selectedIds.includes(target.id);
+            select.appendChild(option);
+          }
+
+          debug(`Populated ${traitName} with ${targetables.length} options`);
+        }
+        break;
+      }
+    }
+  }, 50);
 }
 
 /**
