@@ -130,6 +130,10 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-date-of-birth-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" opacity="0.3"/></svg>`,
   'usa-ssn-pattern': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`,
 
+  // Containers
+  'form-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="1.5" opacity="0.6"/></svg>`,
+  'section-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,2"/></svg>`,
+
   // Grid Layout
   'grid-container': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
   'grid-row': `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="8" width="18" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
@@ -405,6 +409,15 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   <usa-text-input label="Social Security Number" name="ssn" type="password" hint="Enter the 9 digits of your SSN" inputmode="numeric" pattern="^(?!(000|666|9))\\d{3}-(?!00)\\d{2}-(?!0000)\\d{4}$" maxlength="11" required style="max-width: 12rem; margin-top: 1rem;"></usa-text-input>
   <usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox>
 </fieldset>`,
+
+  // Containers
+  'form-container': `__FULL_HTML__<form class="usa-form usa-form--large" action="#" method="post" novalidate style="padding: 1rem; min-height: 100px; border: 1px dashed #adadad; background: rgba(0,0,0,0.02);">
+  <p style="color: #71767a; font-style: italic; margin: 0;">Drop form controls here</p>
+</form>`,
+
+  'section-container': `__FULL_HTML__<section class="usa-section" style="padding: 1rem; min-height: 80px; border: 1px dashed #adadad; background: rgba(0,0,0,0.02);">
+  <p style="color: #71767a; font-style: italic; margin: 0;">Drop content here</p>
+</section>`,
 
   // Grid Layout - USWDS Grid System
   // Responsive 2-column: full width on mobile, 50/50 on tablet+

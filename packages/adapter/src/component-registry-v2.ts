@@ -2744,6 +2744,106 @@ componentRegistry.register({
 });
 
 /**
+ * Form Container
+ *
+ * A proper HTML form element for wrapping form controls.
+ * Provides accessible form structure with action, method, and validation attributes.
+ */
+componentRegistry.register({
+  tagName: 'form',
+  droppable: true, // Can contain form controls
+
+  traits: {
+    // Form action URL
+    action: createAttributeTrait('action', {
+      label: 'Action URL',
+      type: 'text',
+      default: '#',
+      placeholder: '/submit or https://...',
+    }),
+
+    // Form method
+    method: {
+      definition: {
+        name: 'method',
+        label: 'Method',
+        type: 'select',
+        default: 'post',
+        options: [
+          { id: 'post', label: 'POST' },
+          { id: 'get', label: 'GET' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('method', value || 'post');
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('method') ?? 'post';
+        },
+      },
+    },
+
+    // Form name
+    name: createAttributeTrait('name', {
+      label: 'Form Name',
+      type: 'text',
+      default: '',
+      placeholder: 'contact-form',
+    }),
+
+    // Disable browser validation (use custom validation)
+    novalidate: createBooleanTrait('novalidate', {
+      label: 'Disable Browser Validation',
+      default: true,
+    }),
+
+    // Element ID - for targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-form',
+    }),
+  },
+});
+
+/**
+ * Section Container
+ *
+ * A generic container for grouping content.
+ * Can be targeted by show/hide conditional logic.
+ */
+componentRegistry.register({
+  tagName: 'section',
+  droppable: true, // Can contain any content
+
+  traits: {
+    // Element ID - essential for show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., additional-info',
+    }),
+
+    // ARIA label for accessibility
+    'aria-label': createAttributeTrait('aria-label', {
+      label: 'Accessible Label',
+      type: 'text',
+      default: '',
+      placeholder: 'Describe this section',
+    }),
+
+    // Hidden state - for initial visibility
+    hidden: createBooleanTrait('hidden', {
+      label: 'Initially Hidden',
+      default: false,
+    }),
+  },
+});
+
+/**
  * USA Link Component
  *
  * Link/anchor element with USWDS styling.
