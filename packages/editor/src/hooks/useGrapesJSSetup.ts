@@ -790,6 +790,11 @@ function ensureComponentId(component: any, allIds: Set<string>): string {
     ? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     : tagName.replace('usa-', '');
 
+  // Ensure we have at least a basic ID
+  if (!baseId) {
+    baseId = 'element';
+  }
+
   // Ensure uniqueness
   let finalId = baseId;
   let counter = 1;
@@ -798,9 +803,15 @@ function ensureComponentId(component: any, allIds: Set<string>): string {
     counter++;
   }
 
-  // Set the ID on the component
+  // Set the ID on the component model
   component.addAttributes({ id: finalId });
   allIds.add(finalId);
+
+  // Also sync to the actual DOM element in the canvas
+  const el = component.getEl?.();
+  if (el && !el.id) {
+    el.id = finalId;
+  }
 
   debug('Generated ID for component:', finalId);
   return finalId;

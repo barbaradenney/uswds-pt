@@ -129,13 +129,16 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
  * Handles checkboxes and radios with data-reveals and data-hides attributes
  */
 function initializeConditionalFields(container: HTMLElement | Document): void {
+  // Get the root element to search in (could be container or document)
+  const root = container instanceof Document ? container : container.ownerDocument || document;
+
   // Helper to get elements from comma-separated IDs
   const getElementsFromIds = (idString: string | null): HTMLElement[] => {
     if (!idString) return [];
     return idString.split(',')
       .map(id => id.trim())
       .filter(id => id)
-      .map(id => document.getElementById(id))
+      .map(id => root.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
   };
 
