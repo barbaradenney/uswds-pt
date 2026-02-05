@@ -378,35 +378,40 @@ export class WebComponentTraitManager {
     this.activeListeners.set(listenerId, attributeListener);
     component.on('change:attributes', attributeListener);
 
-    // Also listen for individual trait changes via component:update events
-    // This catches cases where GrapesJS updates traits without triggering change:attributes
-    Object.keys(handlers).forEach(traitName => {
-      const traitListenerId = `${componentId}-trait-${traitName}`;
-      const traitListener = () => {
-        debug(`Trait update event for '${traitName}'`);
-        const element = component.getEl();
-        if (!element) return;
+    // Listen for trait value updates directly from the Trait Manager
+    // This catches all trait changes including when values are reset to defaults
+    const traitUpdateListenerId = `${componentId}-trait-update`;
+    const traitUpdateListener = (trait: any) => {
+      const traitName = trait.get('name');
+      const handler = handlers[traitName];
+      if (!handler) return;
 
-        const attrs = component.get('attributes') || {};
-        const value = attrs[traitName];
-        const handler = handlers[traitName];
+      const element = component.getEl();
+      if (!element) return;
 
-        if (handler) {
-          debug(`Calling handler for '${traitName}' with value:`, value);
-          try {
-            handler.onChange(element, value, undefined, component);
-            if (typeof (element as any).requestUpdate === 'function') {
-              (element as any).requestUpdate();
-            }
-          } catch (error) {
-            console.error(`Error handling trait '${traitName}':`, error);
-          }
+      // Get the trait's current value directly from the trait object
+      const value = trait.get('value');
+      debug(`Trait '${traitName}' updated to:`, value);
+
+      try {
+        handler.onChange(element, value, undefined, component);
+        if (typeof (element as any).requestUpdate === 'function') {
+          (element as any).requestUpdate();
         }
-      };
+      } catch (error) {
+        console.error(`Error handling trait '${traitName}':`, error);
+      }
+    };
 
-      this.activeListeners.set(traitListenerId, traitListener);
-      component.on(`change:attributes:${traitName}`, traitListener);
-    });
+    this.activeListeners.set(traitUpdateListenerId, traitUpdateListener);
+
+    // Listen for trait value changes on the component's traits
+    const traits = component.get('traits');
+    if (traits) {
+      traits.forEach((trait: any) => {
+        trait.on('change:value', () => traitUpdateListener(trait));
+      });
+    }
   }
 
   /**
