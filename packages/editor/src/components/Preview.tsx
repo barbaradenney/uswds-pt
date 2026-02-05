@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
@@ -17,10 +17,98 @@ const PREVIEW_CDN_URLS = {
 // Check if we're in demo mode
 const isDemoMode = !import.meta.env.VITE_API_URL;
 
+interface PageData {
+  id: string;
+  name: string;
+  html: string;
+}
+
 interface PreviewData {
   name: string;
   htmlContent: string;
   gjsData?: string;
+}
+
+/**
+ * Extract pages from GrapesJS project data
+ */
+function extractPagesFromGjsData(gjsDataString: string | undefined): PageData[] {
+  if (!gjsDataString) return [];
+
+  try {
+    const gjsData = typeof gjsDataString === 'string' ? JSON.parse(gjsDataString) : gjsDataString;
+    const pages = gjsData?.pages || [];
+
+    if (!Array.isArray(pages) || pages.length === 0) return [];
+
+    return pages.map((page: any) => {
+      // Get HTML from page frames
+      const mainFrame = page.frames?.[0];
+      const component = mainFrame?.component;
+
+      // Build HTML from component tree
+      let html = '';
+      if (component) {
+        html = buildHtmlFromComponent(component);
+      }
+
+      return {
+        id: page.id || '',
+        name: page.name || 'Page',
+        html,
+      };
+    }).filter((page: PageData) => page.id && page.html);
+  } catch (e) {
+    console.error('Failed to parse gjsData:', e);
+    return [];
+  }
+}
+
+/**
+ * Recursively build HTML from GrapesJS component tree
+ */
+function buildHtmlFromComponent(component: any): string {
+  if (!component) return '';
+
+  const tagName = component.tagName || 'div';
+  const attributes = component.attributes || {};
+  const components = component.components || [];
+  const content = component.content || '';
+
+  // Skip wrapper components that don't render
+  if (tagName === 'wrapper' || component.type === 'wrapper') {
+    return components.map((c: any) => buildHtmlFromComponent(c)).join('');
+  }
+
+  // Build attribute string
+  const attrParts: string[] = [];
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value !== undefined && value !== null && value !== '') {
+      attrParts.push(`${key}="${String(value).replace(/"/g, '&quot;')}"`);
+    }
+  }
+
+  // Handle classes
+  const classes = component.classes || [];
+  if (classes.length > 0) {
+    const classNames = classes.map((c: any) => typeof c === 'string' ? c : c.name).join(' ');
+    if (classNames) {
+      attrParts.push(`class="${classNames}"`);
+    }
+  }
+
+  const attrString = attrParts.length > 0 ? ' ' + attrParts.join(' ') : '';
+
+  // Self-closing tags
+  const voidElements = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+  if (voidElements.includes(tagName.toLowerCase())) {
+    return `<${tagName}${attrString}>`;
+  }
+
+  // Build children HTML
+  const childrenHtml = components.map((c: any) => buildHtmlFromComponent(c)).join('');
+
+  return `<${tagName}${attrString}>${content}${childrenHtml}</${tagName}>`;
 }
 
 export function Preview() {
@@ -29,6 +117,7 @@ export function Preview() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stylesLoaded, setStylesLoaded] = useState(false);
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Inject stylesheets into document head
@@ -86,27 +175,88 @@ export function Preview() {
     }
   }, [data?.name]);
 
+  // Extract pages from gjsData if available
+  const pages = useMemo(() => {
+    return extractPagesFromGjsData(data?.gjsData);
+  }, [data?.gjsData]);
+
+  // Determine if we have multi-page content
+  const isMultiPage = pages.length > 1;
+
+  // Set initial page when pages are loaded
+  useEffect(() => {
+    if (pages.length > 0 && !currentPageId) {
+      setCurrentPageId(pages[0].id);
+    }
+  }, [pages, currentPageId]);
+
   // Clean the HTML content - memoized to avoid recalculating on every render
   const cleanedHtml = useMemo(() => {
     if (!data?.htmlContent) return '';
     return cleanExport(data.htmlContent);
   }, [data?.htmlContent]);
 
-  // Initialize USWDS components after content is rendered
-  // Using a ref to track if we've already initialized to prevent re-runs
-  const initializedRef = useRef(false);
+  // Handle page link clicks to prevent HashRouter interference
+  const handlePageLinkClick = useCallback((e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest('a[href^="#page-"]') as HTMLAnchorElement | null;
 
+    if (link) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const href = link.getAttribute('href');
+      if (href) {
+        const pageId = href.replace('#page-', '');
+        setCurrentPageId(pageId);
+      }
+    }
+  }, []);
+
+  // Attach click handler for page links
   useEffect(() => {
-    // Only initialize once when we have content and styles
-    if (contentRef.current && stylesLoaded && cleanedHtml && !initializedRef.current) {
-      initializedRef.current = true;
-      // Small delay to ensure web components are defined
+    const container = contentRef.current;
+    if (!container || !isMultiPage) return;
+
+    container.addEventListener('click', handlePageLinkClick, true);
+    return () => {
+      container.removeEventListener('click', handlePageLinkClick, true);
+    };
+  }, [isMultiPage, handlePageLinkClick]);
+
+  // Track which pages have been initialized
+  const initializedPagesRef = useRef<Set<string>>(new Set());
+
+  // Initialize USWDS components after content is rendered
+  useEffect(() => {
+    if (!contentRef.current || !stylesLoaded) return;
+
+    const hasContent = isMultiPage ? pages.length > 0 : !!cleanedHtml;
+    if (!hasContent) return;
+
+    // For multi-page, initialize the current page if not already done
+    if (isMultiPage && currentPageId) {
+      if (initializedPagesRef.current.has(currentPageId)) return;
+
       const timer = setTimeout(() => {
-        initializeUSWDSComponents(contentRef.current!);
+        const pageContainer = contentRef.current?.querySelector(`[data-page-id="${currentPageId}"]`);
+        if (pageContainer) {
+          initializeUSWDSComponents(pageContainer as HTMLElement);
+          initializedPagesRef.current.add(currentPageId);
+        }
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [stylesLoaded, cleanedHtml]);
+
+    // For single page, initialize once
+    if (!isMultiPage && !initializedPagesRef.current.has('single')) {
+      const timer = setTimeout(() => {
+        initializeUSWDSComponents(contentRef.current!);
+        initializedPagesRef.current.add('single');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [stylesLoaded, cleanedHtml, isMultiPage, currentPageId, pages.length]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
@@ -253,10 +403,24 @@ export function Preview() {
     zIndex: 1000,
   };
 
+  // Build multi-page HTML with page containers
+  const multiPageHtml = useMemo(() => {
+    if (!isMultiPage) return '';
+
+    return pages.map(page => {
+      const cleanedPageHtml = cleanExport(page.html);
+      const isVisible = page.id === currentPageId;
+      return `<div data-page-id="${page.id}" data-page-name="${page.name}" style="display: ${isVisible ? 'block' : 'none'};">${cleanedPageHtml}</div>`;
+    }).join('\n');
+  }, [isMultiPage, pages, currentPageId]);
+
   // Render the prototype content (styles are injected via useEffect into document head)
   return (
     <>
-      <div ref={contentRef} dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+      <div
+        ref={contentRef}
+        dangerouslySetInnerHTML={{ __html: isMultiPage ? multiPageHtml : cleanedHtml }}
+      />
       <button
         style={copyButtonStyle}
         onClick={handleMakeCopy}
