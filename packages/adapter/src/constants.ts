@@ -177,14 +177,14 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-textarea': '__FULL_HTML__<usa-textarea label="Textarea" name="textarea-field"></usa-textarea>',
   'usa-select': '__FULL_HTML__<usa-select label="Select" name="select-field"></usa-select>',
   'usa-checkbox': '__FULL_HTML__<usa-checkbox label="Checkbox option" name="checkbox-group" value="option1"></usa-checkbox>',
-  'checkbox-group': `__FULL_HTML__<fieldset class="usa-fieldset">
+  'checkbox-group': `__FULL_HTML__<fieldset class="usa-fieldset usa-form-group">
   <legend class="usa-legend">Select your options</legend>
   <usa-checkbox label="Option 1" name="checkbox-group" value="option1"></usa-checkbox>
   <usa-checkbox label="Option 2" name="checkbox-group" value="option2"></usa-checkbox>
   <usa-checkbox label="Option 3" name="checkbox-group" value="option3"></usa-checkbox>
 </fieldset>`,
   'usa-radio': '__FULL_HTML__<usa-radio label="Radio option" name="radio-group" value="option1"></usa-radio>',
-  'radio-group': `__FULL_HTML__<fieldset class="usa-fieldset">
+  'radio-group': `__FULL_HTML__<fieldset class="usa-fieldset usa-form-group">
   <legend class="usa-legend">Select one option</legend>
   <usa-radio label="Option 1" name="radio-group" value="option1"></usa-radio>
   <usa-radio label="Option 2" name="radio-group" value="option2"></usa-radio>

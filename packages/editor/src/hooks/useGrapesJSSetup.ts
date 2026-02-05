@@ -8,7 +8,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import type { Prototype } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
-import { loadUSWDSResources, addCardContainerCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
   forceCanvasUpdate,
   setupCanvasEventHandlers,
@@ -170,6 +170,7 @@ export function useGrapesJSSetup({
 
       // Add custom CSS to canvas
       addCardContainerCSS(editor);
+      addFieldsetSpacingCSS(editor);
 
       // Set up spacing trait for all components
       setupSpacingTrait(editor, registerListener);

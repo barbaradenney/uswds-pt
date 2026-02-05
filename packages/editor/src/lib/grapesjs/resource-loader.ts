@@ -237,6 +237,27 @@ export function addCardContainerCSS(editor: EditorInstance): void {
 }
 
 /**
+ * Add custom CSS to canvas for fieldset spacing
+ * USWDS .usa-fieldset sets margin: 0, which overrides .usa-form-group margin-top
+ * This CSS ensures fieldsets get proper spacing in the canvas
+ */
+export function addFieldsetSpacingCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Ensure fieldsets with usa-form-group get proper margin-top */
+      /* This overrides the usa-fieldset margin: 0 reset */
+      fieldset.usa-fieldset.usa-form-group {
+        margin-top: 1.5rem !important;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added fieldset spacing CSS to canvas');
+  }
+}
+
+/**
  * Clear GrapesJS localStorage to prevent state bleeding between prototypes
  */
 export function clearGrapesJSStorage(): void {
