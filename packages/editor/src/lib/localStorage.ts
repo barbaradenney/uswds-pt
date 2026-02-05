@@ -4,25 +4,9 @@
  * Includes error handling for quota exceeded and localStorage unavailability.
  */
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (() => {
-    try {
-      return (
-        new URLSearchParams(window.location.search).get('debug') === 'true' ||
-        localStorage.getItem('uswds_pt_debug') === 'true'
-      );
-    } catch {
-      return false;
-    }
-  })();
+import { createDebugLogger } from '@uswds-pt/shared';
 
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[LocalStorage]', ...args);
-  }
-}
+const debug = createDebugLogger('LocalStorage');
 
 export interface LocalPrototype {
   id: string;
@@ -218,7 +202,7 @@ export function createPrototype(
 
   if (!result.success) {
     // Log error but still return the prototype (caller can check storage)
-    console.error('[LocalStorage] Failed to save prototype:', result.error?.message);
+    debug('Error: Failed to save prototype:', result.error?.message);
     // Try to clean up old prototypes and retry
     if (result.error?.type === 'quota_exceeded' && prototypes.length > 5) {
       debug('Attempting to clean up old prototypes...');
@@ -254,7 +238,7 @@ export function updatePrototype(
   const result = safeSetItem(STORAGE_KEY, JSON.stringify(prototypes));
 
   if (!result.success) {
-    console.error('[LocalStorage] Failed to update prototype:', result.error?.message);
+    debug('Error: Failed to update prototype:', result.error?.message);
     // Return the updated prototype anyway - it's in memory even if storage failed
   }
 
@@ -273,7 +257,7 @@ export function deletePrototype(id: string): boolean {
   const result = safeSetItem(STORAGE_KEY, JSON.stringify(filtered));
 
   if (!result.success) {
-    console.error('[LocalStorage] Failed to delete prototype:', result.error?.message);
+    debug('Error: Failed to delete prototype:', result.error?.message);
     return false;
   }
 
@@ -287,7 +271,7 @@ export function clearAllPrototypes(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error('[LocalStorage] Failed to clear prototypes:', error);
+    debug('Error: Failed to clear prototypes:', error);
   }
 }
 
