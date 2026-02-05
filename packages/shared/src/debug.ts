@@ -17,7 +17,11 @@ const DEBUG_PARAM = 'debug';
 function isDebugEnabled(): boolean {
   if (typeof window === 'undefined') {
     // Node.js environment - check process.env
-    return process.env.DEBUG === 'true' || process.env.USWDS_PT_DEBUG === 'true';
+    // Access via globalThis to avoid requiring @types/node at build time
+    const env = (globalThis as Record<string, unknown>).process as
+      | { env: Record<string, string | undefined> }
+      | undefined;
+    return env?.env.DEBUG === 'true' || env?.env.USWDS_PT_DEBUG === 'true';
   }
 
   // Browser environment
