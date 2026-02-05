@@ -114,7 +114,7 @@ export class WebComponentTraitManager {
       this.destroy();
     });
 
-    console.log('WebComponentTraitManager: Global listeners initialized');
+    debug('Global listeners initialized');
   }
 
   /**
@@ -246,7 +246,7 @@ export class WebComponentTraitManager {
         try {
           handler.onInit(element, value);
         } catch (err) {
-          console.warn(`WebComponentTraitManager: Error in onInit for '${traitName}':`, err);
+          debug(`Error in onInit for '${traitName}':`, err);
         }
       }
 
@@ -256,7 +256,7 @@ export class WebComponentTraitManager {
         try {
           handler.onChange(element, value, undefined, component);
         } catch (err) {
-          console.warn(`WebComponentTraitManager: Error in onChange for '${traitName}':`, err);
+          debug(`Error in onChange for '${traitName}':`, err);
         }
       }
     });
@@ -390,7 +390,7 @@ export class WebComponentTraitManager {
           (element as any).requestUpdate();
         }
       } catch (error) {
-        console.error(`Error handling trait '${traitName}':`, error);
+        debug(`Error handling trait '${traitName}':`, error);
       }
     };
 
@@ -411,7 +411,7 @@ export class WebComponentTraitManager {
   private handleTraitChanges(component: any, handlers: Record<string, TraitHandler>): void {
     const element = component.getEl();
     if (!element) {
-      console.warn('WebComponentTraitManager: No element found for component');
+      debug('No element found for component');
       return;
     }
 
@@ -440,7 +440,7 @@ export class WebComponentTraitManager {
             (element as any).requestUpdate();
           }
         } catch (error) {
-          console.error(`WebComponentTraitManager: Error handling trait '${traitName}':`, error);
+          debug(`Error handling trait '${traitName}':`, error);
         }
       }
     });
@@ -479,7 +479,7 @@ export class WebComponentTraitManager {
     if (internalElement instanceof HTMLElement) {
       updater(internalElement);
     } else {
-      console.warn(`WebComponentTraitManager: Internal element '${selector}' not found`);
+      debug(`Internal element '${selector}' not found`);
     }
   }
 

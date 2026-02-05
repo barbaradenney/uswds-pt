@@ -28,7 +28,7 @@ export function uswdsComponentsPlugin(editor: EditorInstance): void {
   const Components = editor.Components || editor.DomComponents;
 
   if (!Components) {
-    console.error('USWDS-PT: Could not find Components API on editor');
+    debug('Could not find Components API on editor');
     return;
   }
 
@@ -103,7 +103,7 @@ export function uswdsComponentsPlugin(editor: EditorInstance): void {
         }
       }
     } catch (e) {
-      console.warn('Invalid options JSON:', e);
+      debug('Invalid options JSON:', e);
     }
   });
 }

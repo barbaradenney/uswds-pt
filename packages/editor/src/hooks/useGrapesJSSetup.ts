@@ -241,7 +241,7 @@ export function useGrapesJSSetup({
         editor.loadProjectData(projectData);
         debug('Loaded project data from localStorage');
       } catch (e) {
-        console.warn('Failed to load project data:', e);
+        debug('Failed to load project data:', e);
       }
     } else if (!isDemoMode) {
       // API mode: check both pendingPrototype and state prototype
@@ -263,7 +263,7 @@ export function useGrapesJSSetup({
             debug('Loaded project data, pages:', projectData.pages?.length);
           }
         } catch (e) {
-          console.warn('Failed to load project data:', e);
+          debug('Failed to load project data:', e);
         }
       }
     }
@@ -579,7 +579,7 @@ function setupPageEventHandlers(
           }
         }
       } catch (err) {
-        console.warn('[USWDS-PT] Error adding template to new page:', err);
+        debug('Error adding template to new page:', err);
       }
     }
   });
@@ -702,7 +702,7 @@ function syncPageLinkHrefs(editor: EditorInstance): void {
       }
     });
   } catch (err) {
-    console.warn('USWDS-PT: Error syncing page-link hrefs:', err);
+    debug('Error syncing page-link hrefs:', err);
   }
 }
 
@@ -841,7 +841,7 @@ function ensureComponentId(component: any, allIds: Set<string>, editor?: EditorI
 
     debug('Generated and set ID for component:', finalId, '- tagName:', tagName);
   } catch (err) {
-    console.warn('Failed to set component ID:', err);
+    debug('Failed to set component ID:', err);
   }
 
   return finalId;

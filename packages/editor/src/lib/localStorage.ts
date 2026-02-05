@@ -28,7 +28,7 @@ export interface StorageResult<T> {
   error?: StorageError;
 }
 
-const STORAGE_KEY = 'uswds-pt-prototypes';
+const STORAGE_KEY = 'uswds_pt_prototypes';
 const MAX_STORAGE_SIZE_MB = 4; // Leave buffer below 5MB limit
 const MAX_STORAGE_SIZE_BYTES = MAX_STORAGE_SIZE_MB * 1024 * 1024;
 

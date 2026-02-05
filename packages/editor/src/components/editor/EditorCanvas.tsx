@@ -13,7 +13,10 @@ import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plug
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
+import { createDebugLogger } from '@uswds-pt/shared';
 import '../../styles/ai-copilot.css';
+
+const debug = createDebugLogger('AI Copilot');
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
@@ -36,45 +39,41 @@ const checkAiEnabled = (): boolean => {
   const urlParams = new URLSearchParams(window.location.search);
   const aiParam = urlParams.get('ai');
 
-  // Debug logging (check browser console)
-  console.log('[AI Copilot] Checking AI status:', {
-    hasApiKey,
-    hasSecret,
-    aiParam,
-  });
+  // Debug logging
+  debug('Checking AI status:', { hasApiKey, hasSecret, aiParam });
 
   // Explicit disable with ?ai=off
   if (aiParam === 'off' || aiParam === 'disable') {
-    console.log('[AI Copilot] Disabled: Explicit ?ai=off parameter');
+    debug('Disabled: Explicit ?ai=off parameter');
     sessionStorage.removeItem('uswds_pt_ai_enabled');
     return false;
   }
 
   if (!hasApiKey) {
-    console.log('[AI Copilot] Disabled: No API key configured');
+    debug('Disabled: No API key configured');
     return false;
   }
 
   if (!hasSecret) {
-    console.log('[AI Copilot] Enabled: No secret required');
+    debug('Enabled: No secret required');
     return true;
   }
 
   // Check if secret matches
   if (aiParam === AI_SECRET) {
-    console.log('[AI Copilot] Enabled: Secret matched, saving to session');
+    debug('Enabled: Secret matched, saving to session');
     sessionStorage.setItem('uswds_pt_ai_enabled', 'true');
     return true;
   }
 
   // Check session storage (persists for browser session only, not permanently)
   const fromSession = sessionStorage.getItem('uswds_pt_ai_enabled') === 'true';
-  console.log('[AI Copilot] From session:', fromSession);
+  debug('From session:', fromSession);
   return fromSession;
 };
 
 const AI_ENABLED = checkAiEnabled();
-console.log('[AI Copilot] Final AI_ENABLED:', AI_ENABLED);
+debug('Final AI_ENABLED:', AI_ENABLED);
 
 import type { EditorInstance } from '../../types/grapesjs';
 
