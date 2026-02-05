@@ -870,8 +870,14 @@ function getComponentTypeName(tagName: string): string {
     'usa-alert': 'Alert',
     'usa-accordion': 'Accordion',
     'fieldset': 'Fieldset',
+    'form': 'Form',
     'div': 'Container',
     'section': 'Section',
+    'article': 'Article',
+    'aside': 'Aside',
+    'main': 'Main',
+    'nav': 'Navigation',
+    'span': 'Span',
     'p': 'Paragraph',
     'h1': 'Heading 1',
     'h2': 'Heading 2',
@@ -988,11 +994,33 @@ function collectTargetableComponents(editor: EditorInstance): Array<{ id: string
     'usa-alert',
     'usa-accordion',
     'fieldset',
+    'form',
     'div',
     'section',
+    'article',
+    'aside',
+    'main',
+    'nav',
     'p',
+    'span',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   ];
+
+  // Helper to check if a component has a custom layer name
+  const hasCustomLayerName = (comp: any): boolean => {
+    const layerName = comp.getName?.() || comp.get?.('name');
+    if (!layerName || typeof layerName !== 'string') return false;
+
+    // Skip auto-generated names
+    const tagName = comp.get?.('tagName')?.toLowerCase() || '';
+    const autoNames = ['box', 'text', 'section', 'container', 'wrapper', 'div', 'row', 'cell', 'body', 'form'];
+    const isAutoName = autoNames.some(auto =>
+      layerName.toLowerCase() === auto ||
+      layerName.toLowerCase() === tagName.replace('usa-', '').replace(/-/g, ' ')
+    );
+
+    return !isAutoName;
+  };
 
   // First pass: collect all existing IDs
   const wrapper = editor.DomComponents?.getWrapper?.();
@@ -1013,7 +1041,11 @@ function collectTargetableComponents(editor: EditorInstance): Array<{ id: string
   const collectComponents = (comp: any) => {
     const tagName = comp.get?.('tagName')?.toLowerCase() || '';
 
-    if (targetableTypes.includes(tagName)) {
+    // Include if: tag is in targetable types OR component has a custom layer name
+    const isTargetableType = targetableTypes.includes(tagName);
+    const hasCustomName = hasCustomLayerName(comp);
+
+    if (isTargetableType || hasCustomName) {
       const id = ensureComponentId(comp, allIds, editor);
       const label = getComponentLabel(comp);
       const typeName = getComponentTypeName(tagName);
