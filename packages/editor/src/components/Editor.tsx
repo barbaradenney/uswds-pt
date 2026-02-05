@@ -234,11 +234,14 @@ export function Editor() {
           debug('Global symbol created:', created.id);
         }
       } else {
-        // Create as local symbol - use the callback to complete GrapesJS symbol creation
         debug('Creating local symbol:', name);
-        if (pendingSymbolCallbackRef.current) {
-          pendingSymbolCallbackRef.current(scope, name);
-        }
+      }
+
+      // Always call the callback to handle the GrapesJS symbol
+      // For local: updates the symbol name
+      // For global: removes the local symbol (since we created it via API)
+      if (pendingSymbolCallbackRef.current) {
+        pendingSymbolCallbackRef.current(scope, name);
       }
 
       // Reset pending state

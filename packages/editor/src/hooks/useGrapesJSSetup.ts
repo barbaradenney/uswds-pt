@@ -120,26 +120,39 @@ export function useGrapesJSSetup({
   // This handles the case where symbols load after the editor is ready
   useEffect(() => {
     const editor = editorRef.current;
-    if (!editor || globalSymbols.length === 0) return;
+    console.log('[GrapesJSSetup] Global symbols effect triggered, count:', globalSymbols.length);
+
+    if (!editor || globalSymbols.length === 0) {
+      console.log('[GrapesJSSetup] Skipping injection: editor=', !!editor, 'symbols=', globalSymbols.length);
+      return;
+    }
 
     // Check if editor is fully initialized
-    if (!editor.getProjectData || !editor.loadProjectData) return;
+    if (!editor.getProjectData || !editor.loadProjectData) {
+      console.log('[GrapesJSSetup] Editor not fully initialized yet');
+      return;
+    }
 
     try {
       const currentData = editor.getProjectData();
       const existingSymbolIds = new Set(
         (currentData.symbols || []).map((s: any) => s.id)
       );
+      console.log('[GrapesJSSetup] Existing symbol IDs:', [...existingSymbolIds]);
 
       // Only add symbols that aren't already in the editor
       const newSymbols = globalSymbols.filter(
         (s) => !existingSymbolIds.has(s.id)
       );
 
+      console.log('[GrapesJSSetup] New symbols to inject:', newSymbols.length, newSymbols.map(s => s.id));
+
       if (newSymbols.length > 0) {
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
+        console.log('[GrapesJSSetup] Merged data symbols:', mergedData.symbols?.length);
         editor.loadProjectData(mergedData);
+        console.log('[GrapesJSSetup] Injection complete');
       }
     } catch (e) {
       console.warn('Failed to inject global symbols:', e);

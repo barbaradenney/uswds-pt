@@ -127,10 +127,12 @@ export function useGlobalSymbols({
   const create = useCallback(
     async (name: string, symbolData: GrapesJSSymbol): Promise<GlobalSymbol | null> => {
       if (!teamId) {
+        console.error('[GlobalSymbols] Create failed: No team selected');
         setState((prev) => ({ ...prev, error: 'No team selected' }));
         return null;
       }
 
+      console.log('[GlobalSymbols] Creating global symbol:', { name, teamId, symbolData });
       debug('Creating global symbol:', name);
 
       // Ensure the symbol has a unique global ID
@@ -139,11 +141,14 @@ export function useGlobalSymbols({
         id: `${GLOBAL_SYMBOL_PREFIX}${symbolData.id || Date.now()}`,
       };
 
+      console.log('[GlobalSymbols] Calling API with:', { teamId, name, globalSymbolData });
       const result = await createGlobalSymbol(teamId, name, globalSymbolData);
+      console.log('[GlobalSymbols] API result:', result);
 
       if (!mountedRef.current) return null;
 
       if (result.success && result.data) {
+        console.log('[GlobalSymbols] Symbol created successfully:', result.data);
         debug('Created global symbol:', result.data.id);
         setState((prev) => ({
           ...prev,
@@ -153,6 +158,7 @@ export function useGlobalSymbols({
         return result.data;
       }
 
+      console.error('[GlobalSymbols] Create failed:', result.error);
       setState((prev) => ({ ...prev, error: result.error || 'Failed to create symbol' }));
       return null;
     },
