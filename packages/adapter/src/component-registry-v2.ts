@@ -456,14 +456,14 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
         default: '',
         // Options are populated dynamically by Editor.tsx
         options: [
-          { id: '', label: '-- Select a page --' },
+          { id: 'none', label: '-- Select a page --' },
         ],
         visible: pageLinkVisible,
         category: { id: 'link', label: 'Link' },
       },
       handler: {
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
-          if (value) {
+          if (value && value !== 'none') {
             const href = `#page-${value}`;
             // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);
@@ -1055,7 +1055,7 @@ componentRegistry.register({
         label: 'Top Spacing',
         name: 'top-spacing',
         options: [
-          { id: '', label: '- Select an option -' },
+          { id: 'none', label: '- Select an option -' },
           { id: 'margin-top-1', label: 'Small (8px)' },
           { id: 'margin-top-2', label: 'Medium (16px)' },
           { id: 'margin-top-3', label: 'Large (24px)' },
@@ -1066,7 +1066,7 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: string) => {
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value) {
+          if (value && value !== 'none') {
             element.classList.add(value);
           }
         },
@@ -1075,7 +1075,7 @@ componentRegistry.register({
           if (element.classList.contains('margin-top-2')) return 'margin-top-2';
           if (element.classList.contains('margin-top-3')) return 'margin-top-3';
           if (element.classList.contains('margin-top-4')) return 'margin-top-4';
-          return '';
+          return 'none';
         },
       },
     },
@@ -1084,16 +1084,18 @@ componentRegistry.register({
     'data-reveals': createAttributeTrait('data-reveals', {
       label: 'When checked, show',
       type: 'select',
-      default: '',
-      options: [{ id: '', label: '-- None --' }],
+      default: 'none',
+      options: [{ id: 'none', label: '-- None --' }],
+      removeDefaults: ['none'],
     }),
 
     // Conditional: Hide Element when checked (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
       label: 'When checked, hide',
       type: 'select',
-      default: '',
-      options: [{ id: '', label: '-- None --' }],
+      default: 'none',
+      options: [{ id: 'none', label: '-- None --' }],
+      removeDefaults: ['none'],
     }),
   },
 });
@@ -1165,7 +1167,7 @@ componentRegistry.register({
         label: 'Top Spacing',
         name: 'top-spacing',
         options: [
-          { id: '', label: '- Select an option -' },
+          { id: 'none', label: '- Select an option -' },
           { id: 'margin-top-1', label: 'Small (8px)' },
           { id: 'margin-top-2', label: 'Medium (16px)' },
           { id: 'margin-top-3', label: 'Large (24px)' },
@@ -1176,7 +1178,7 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: string) => {
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value) {
+          if (value && value !== 'none') {
             element.classList.add(value);
           }
         },
@@ -1185,7 +1187,7 @@ componentRegistry.register({
           if (element.classList.contains('margin-top-2')) return 'margin-top-2';
           if (element.classList.contains('margin-top-3')) return 'margin-top-3';
           if (element.classList.contains('margin-top-4')) return 'margin-top-4';
-          return '';
+          return 'none';
         },
       },
     },
@@ -1194,16 +1196,18 @@ componentRegistry.register({
     'data-reveals': createAttributeTrait('data-reveals', {
       label: 'When selected, show',
       type: 'select',
-      default: '',
-      options: [{ id: '', label: '-- None --' }],
+      default: 'none',
+      options: [{ id: 'none', label: '-- None --' }],
+      removeDefaults: ['none'],
     }),
 
     // Conditional: Hide Element when selected (dropdown populated dynamically)
     'data-hides': createAttributeTrait('data-hides', {
       label: 'When selected, hide',
       type: 'select',
-      default: '',
-      options: [{ id: '', label: '-- None --' }],
+      default: 'none',
+      options: [{ id: 'none', label: '-- None --' }],
+      removeDefaults: ['none'],
     }),
   },
 });
@@ -2497,7 +2501,7 @@ componentRegistry.register({
         label: 'Top Spacing',
         name: 'top-spacing',
         options: [
-          { id: '', label: '- Select an option -' },
+          { id: 'none', label: '- Select an option -' },
           { id: 'margin-top-1', label: 'Small (8px)' },
           { id: 'margin-top-2', label: 'Medium (16px)' },
           { id: 'margin-top-3', label: 'Large (24px)' },
@@ -2508,7 +2512,7 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: string) => {
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value) {
+          if (value && value !== 'none') {
             element.classList.add(value);
           }
         },
@@ -2517,7 +2521,7 @@ componentRegistry.register({
           if (element.classList.contains('margin-top-2')) return 'margin-top-2';
           if (element.classList.contains('margin-top-3')) return 'margin-top-3';
           if (element.classList.contains('margin-top-4')) return 'margin-top-4';
-          return '';
+          return 'none';
         },
       },
     },
@@ -2529,7 +2533,7 @@ componentRegistry.register({
         label: 'Bottom Spacing',
         name: 'bottom-spacing',
         options: [
-          { id: '', label: '- Select an option -' },
+          { id: 'none', label: '- Select an option -' },
           { id: 'margin-bottom-1', label: 'Small (8px)' },
           { id: 'margin-bottom-2', label: 'Medium (16px)' },
           { id: 'margin-bottom-3', label: 'Large (24px)' },
@@ -2540,7 +2544,7 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: string) => {
           // Remove existing margin classes
           element.classList.remove('margin-bottom-1', 'margin-bottom-2', 'margin-bottom-3', 'margin-bottom-4');
-          if (value) {
+          if (value && value !== 'none') {
             element.classList.add(value);
           }
         },
@@ -2549,7 +2553,7 @@ componentRegistry.register({
           if (element.classList.contains('margin-bottom-2')) return 'margin-bottom-2';
           if (element.classList.contains('margin-bottom-3')) return 'margin-bottom-3';
           if (element.classList.contains('margin-bottom-4')) return 'margin-bottom-4';
-          return '';
+          return 'none';
         },
       },
     },
@@ -2998,7 +3002,7 @@ componentRegistry.register({
         label: 'Top Spacing',
         name: 'top-spacing',
         options: [
-          { id: '', label: '- Select an option -' },
+          { id: 'none', label: '- Select an option -' },
           { id: 'margin-top-1', label: 'Small (8px)' },
           { id: 'margin-top-2', label: 'Medium (16px)' },
           { id: 'margin-top-3', label: 'Large (24px)' },
@@ -3009,7 +3013,7 @@ componentRegistry.register({
         onChange: (element: HTMLElement, value: string) => {
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value) {
+          if (value && value !== 'none') {
             element.classList.add(value);
           }
         },
@@ -3018,7 +3022,7 @@ componentRegistry.register({
           if (element.classList.contains('margin-top-2')) return 'margin-top-2';
           if (element.classList.contains('margin-top-3')) return 'margin-top-3';
           if (element.classList.contains('margin-top-4')) return 'margin-top-4';
-          return '';
+          return 'none';
         },
       },
     },
