@@ -6,6 +6,10 @@
  * programmatically to trigger proper rendering.
  */
 
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('USWDSInit');
+
 // Preset option lists for usa-select
 const SELECT_PRESETS: Record<string, Array<{ value: string; text: string }>> = {
   'us-states': [
@@ -88,7 +92,7 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
       new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
     ]);
   } catch (err) {
-    console.warn('USWDS web components may not be fully loaded:', err);
+    debug('USWDS web components may not be fully loaded:', err);
   }
 
   // Initialize usa-banner components

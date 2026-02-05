@@ -375,12 +375,21 @@ export function useEditorPersistence({
           setHtmlContent(data.htmlContent);
 
           // Create mock prototype for state machine
+          let parsedGrapesData = { pages: [], styles: [], assets: [] };
+          if (data.gjsData) {
+            try {
+              parsedGrapesData = JSON.parse(data.gjsData);
+            } catch (e) {
+              debug('Failed to parse gjsData:', e);
+            }
+          }
+
           const prototype: Prototype = {
             id: data.id,
             slug: data.id,
             name: data.name,
             htmlContent: data.htmlContent,
-            grapesData: data.gjsData ? JSON.parse(data.gjsData) : { pages: [], styles: [], assets: [] },
+            grapesData: parsedGrapesData,
             teamId: '',
             createdBy: '',
             createdAt: new Date(data.createdAt),
