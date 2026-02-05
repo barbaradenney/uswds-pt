@@ -209,33 +209,54 @@ export function Preview() {
   }, [isMultiPage, pages, currentPageId]);
 
   // Handle page link clicks to prevent HashRouter interference
-  const handlePageLinkClick = useCallback((e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const link = target.closest('a[href^="#page-"]') as HTMLAnchorElement | null;
+  // Use a ref for the handler so we can access current pages state
+  const pagesRef = useRef<PageData[]>([]);
+  pagesRef.current = pages;
 
-    if (link) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const href = link.getAttribute('href');
-      if (href) {
-        const pageId = href.replace('#page-', '');
-        setCurrentPageId(pageId);
-      }
-    }
-  }, []);
-
-  // Attach click handler for page links - always attach to prevent HashRouter interference
-  // Even for single-page content, we need to intercept #page-xxx links
+  // Attach global click handler at document level during capture phase
+  // This runs before HashRouter can intercept the click
   useEffect(() => {
-    const container = contentRef.current;
-    if (!container || !stylesLoaded || !data) return;
+    const handlePageLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a[href^="#page-"]') as HTMLAnchorElement | null;
 
-    container.addEventListener('click', handlePageLinkClick, true);
-    return () => {
-      container.removeEventListener('click', handlePageLinkClick, true);
+      if (link) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const href = link.getAttribute('href');
+        if (href) {
+          const pageId = href.replace('#page-', '');
+
+          // For multi-page: show/hide page containers
+          if (pagesRef.current.length > 1) {
+            setCurrentPageId(pageId);
+          } else {
+            // For single page with page links: try to scroll to element or show alert
+            const pageContainer = document.querySelector(`[data-page-id="${pageId}"]`);
+            if (pageContainer) {
+              // If we have the container, show it
+              document.querySelectorAll('[data-page-id]').forEach(el => {
+                (el as HTMLElement).style.display = 'none';
+              });
+              (pageContainer as HTMLElement).style.display = 'block';
+            }
+            // Update state regardless
+            setCurrentPageId(pageId);
+          }
+        }
+        return false;
+      }
     };
-  }, [handlePageLinkClick, stylesLoaded, data]);
+
+    // Attach to document during capture phase to intercept before HashRouter
+    document.addEventListener('click', handlePageLinkClick, true);
+
+    return () => {
+      document.removeEventListener('click', handlePageLinkClick, true);
+    };
+  }, []); // Empty deps - handler uses refs for current state
 
   // Track which pages have been initialized
   const initializedPagesRef = useRef<Set<string>>(new Set());

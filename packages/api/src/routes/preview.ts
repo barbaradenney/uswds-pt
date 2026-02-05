@@ -25,6 +25,7 @@ export async function previewRoutes(app: FastifyInstance) {
         .select({
           name: prototypes.name,
           htmlContent: prototypes.htmlContent,
+          grapesData: prototypes.grapesData,
         })
         .from(prototypes)
         .where(eq(prototypes.slug, slug))
@@ -34,7 +35,12 @@ export async function previewRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'Prototype not found' });
       }
 
-      return prototype;
+      // Return with gjsData key for frontend compatibility
+      return {
+        name: prototype.name,
+        htmlContent: prototype.htmlContent,
+        gjsData: prototype.grapesData ? JSON.stringify(prototype.grapesData) : undefined,
+      };
     }
   );
 }
