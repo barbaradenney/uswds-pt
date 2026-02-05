@@ -225,16 +225,17 @@ export function Preview() {
     }
   }, []);
 
-  // Attach click handler for page links
+  // Attach click handler for page links - always attach to prevent HashRouter interference
+  // Even for single-page content, we need to intercept #page-xxx links
   useEffect(() => {
     const container = contentRef.current;
-    if (!container || !isMultiPage) return;
+    if (!container || !stylesLoaded || !data) return;
 
     container.addEventListener('click', handlePageLinkClick, true);
     return () => {
       container.removeEventListener('click', handlePageLinkClick, true);
     };
-  }, [isMultiPage, handlePageLinkClick]);
+  }, [handlePageLinkClick, stylesLoaded, data]);
 
   // Track which pages have been initialized
   const initializedPagesRef = useRef<Set<string>>(new Set());
