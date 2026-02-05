@@ -6,18 +6,9 @@
  */
 
 import { subscribeToOnlineStatus, isOnline, getOnlineStatus } from './retry';
+import { createDebugLogger } from '@uswds-pt/shared';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[SaveQueue]', ...args);
-  }
-}
+const debug = createDebugLogger('SaveQueue');
 
 const OFFLINE_QUEUE_KEY = 'uswds_pt_offline_queue';
 

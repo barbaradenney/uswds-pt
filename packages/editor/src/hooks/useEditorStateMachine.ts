@@ -7,18 +7,9 @@
 
 import { useReducer, useCallback, useRef, useMemo } from 'react';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[EditorStateMachine]', ...args);
-  }
-}
+const debug = createDebugLogger('EditorStateMachine');
 
 // ============================================================================
 // Type Definitions

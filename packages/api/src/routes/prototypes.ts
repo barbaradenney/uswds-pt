@@ -6,25 +6,11 @@
 import { FastifyInstance } from 'fastify';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import { prototypes, prototypeVersions, teamMemberships } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
-
-interface CreatePrototypeBody {
-  name: string;
-  description?: string;
-  htmlContent?: string;
-  grapesData?: Record<string, unknown>;
-  teamId: string;
-}
-
-interface UpdatePrototypeBody {
-  name?: string;
-  description?: string;
-  htmlContent?: string;
-  grapesData?: Record<string, unknown>;
-}
 
 /**
  * Normalize GrapesJS project data to ensure consistent structure

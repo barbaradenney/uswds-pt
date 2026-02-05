@@ -4,6 +4,11 @@
  * Adds drag, minimize, and close functionality to the AI copilot panel.
  */
 
+// localStorage key constants
+const AI_COPILOT_MINIMIZED_KEY = 'uswds_pt_ai_copilot_minimized';
+const AI_COPILOT_HIDDEN_KEY = 'uswds_pt_ai_copilot_hidden';
+const AI_COPILOT_POSITION_KEY = 'uswds_pt_ai_copilot_position';
+
 let toggleBtn: HTMLButtonElement | null = null;
 
 /**
@@ -126,27 +131,27 @@ function makeDraggable(panel: HTMLElement, handle: HTMLElement): void {
 }
 
 function toggleMinimize(panel: HTMLElement, button: HTMLElement): void {
-  const isMinimized = panel.classList.toggle('ai-copilot-minimized');
+  const isMinimized = panel.classList.toggle(AI_COPILOT_MINIMIZED_KEY);
   button.textContent = isMinimized ? '+' : '−';
   button.title = isMinimized ? 'Expand' : 'Minimize';
 
-  localStorage.setItem('ai-copilot-minimized', String(isMinimized));
+  localStorage.setItem(AI_COPILOT_MINIMIZED_KEY, String(isMinimized));
 }
 
 function hidePanel(panel: HTMLElement): void {
-  panel.classList.add('ai-copilot-hidden');
+  panel.classList.add(AI_COPILOT_HIDDEN_KEY);
   if (toggleBtn) {
     toggleBtn.classList.add('visible');
   }
-  localStorage.setItem('ai-copilot-hidden', 'true');
+  localStorage.setItem(AI_COPILOT_HIDDEN_KEY, 'true');
 }
 
 function showPanel(panel: HTMLElement): void {
-  panel.classList.remove('ai-copilot-hidden');
+  panel.classList.remove(AI_COPILOT_HIDDEN_KEY);
   if (toggleBtn) {
     toggleBtn.classList.remove('visible');
   }
-  localStorage.setItem('ai-copilot-hidden', 'false');
+  localStorage.setItem(AI_COPILOT_HIDDEN_KEY, 'false');
 }
 
 function createToggleButton(panel: HTMLElement): void {
@@ -160,21 +165,21 @@ function createToggleButton(panel: HTMLElement): void {
   document.body.appendChild(toggleBtn);
 
   // Check if panel was hidden
-  if (localStorage.getItem('ai-copilot-hidden') === 'true') {
+  if (localStorage.getItem(AI_COPILOT_HIDDEN_KEY) === 'true') {
     hidePanel(panel);
   }
 }
 
 function savePanelPosition(panel: HTMLElement): void {
   const rect = panel.getBoundingClientRect();
-  localStorage.setItem('ai-copilot-position', JSON.stringify({
+  localStorage.setItem(AI_COPILOT_POSITION_KEY, JSON.stringify({
     left: rect.left,
     top: rect.top,
   }));
 }
 
 function loadPanelPosition(panel: HTMLElement): void {
-  const saved = localStorage.getItem('ai-copilot-position');
+  const saved = localStorage.getItem(AI_COPILOT_POSITION_KEY);
   if (saved) {
     try {
       const pos = JSON.parse(saved);
@@ -188,8 +193,8 @@ function loadPanelPosition(panel: HTMLElement): void {
   }
 
   // Restore minimized state
-  if (localStorage.getItem('ai-copilot-minimized') === 'true') {
-    panel.classList.add('ai-copilot-minimized');
+  if (localStorage.getItem(AI_COPILOT_MINIMIZED_KEY) === 'true') {
+    panel.classList.add(AI_COPILOT_MINIMIZED_KEY);
     const btn = panel.querySelector('[data-action="minimize"]');
     if (btn) {
       btn.textContent = '+';

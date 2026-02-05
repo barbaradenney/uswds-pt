@@ -6,6 +6,7 @@
 import { FastifyInstance } from 'fastify';
 import { eq, and, gt } from 'drizzle-orm';
 import crypto from 'crypto';
+import type { CreateInvitationBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import { invitations, teams, teamMemberships, users, organizations } from '../db/schema.js';
 import { ROLES, canAssignRole, Role, INVITATION_STATUS, INVITATION_EXPIRY_DAYS } from '../db/roles.js';
@@ -15,11 +16,6 @@ import {
   requireTeamRole,
 } from '../middleware/permissions.js';
 import { normalizeEmail } from '../lib/email.js';
-
-interface CreateInvitationBody {
-  email: string;
-  role?: string;
-}
 
 /**
  * Generate a secure random token for invitations

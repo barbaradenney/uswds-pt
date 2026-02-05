@@ -5,6 +5,12 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
+import type {
+  CreateTeamBody,
+  UpdateTeamBody,
+  AddMemberBody,
+  UpdateMemberBody,
+} from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import { teams, teamMemberships, users, organizations } from '../db/schema.js';
 import { ROLES, canAssignRole, Role } from '../db/roles.js';
@@ -14,26 +20,6 @@ import {
   requireTeamMember,
   requireTeamRole,
 } from '../middleware/permissions.js';
-
-interface CreateTeamBody {
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-interface UpdateTeamBody {
-  name?: string;
-  description?: string;
-}
-
-interface AddMemberBody {
-  userId: string;
-  role?: string;
-}
-
-interface UpdateMemberBody {
-  role: string;
-}
 
 // Helper to generate a slug from a name
 function generateSlug(name: string): string {

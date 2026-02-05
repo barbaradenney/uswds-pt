@@ -5,21 +5,10 @@
  */
 
 import { CDN_URLS } from '@uswds-pt/adapter';
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('ResourceLoader');
 
 /**
  * Helper to wait for a resource to load
@@ -59,7 +48,7 @@ function waitForLoad(element: HTMLElement, type: string, signal?: AbortSignal): 
     element.onerror = (e) => {
       signal?.removeEventListener('abort', abortHandler);
       cleanup();
-      console.error(`USWDS-PT: ${type} failed to load`, e);
+      debug(`${type} failed to load`, e);
       reject(e);
     };
   });
@@ -94,7 +83,7 @@ async function waitForCustomElements(
   }
 
   const missing = elements.filter(el => customElements.get(el) === undefined);
-  console.warn('USWDS-PT: Some custom elements not registered after timeout:', missing);
+  debug('Some custom elements not registered after timeout:', missing);
   return false;
 }
 
@@ -206,7 +195,7 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
       debug('loadUSWDSResources aborted');
       return;
     }
-    console.error('USWDS-PT: Error loading resources:', err);
+    debug('Error loading resources:', err);
   }
 }
 
@@ -296,6 +285,6 @@ export function clearGrapesJSStorage(): void {
       debug('Cleared GrapesJS storage keys:', storageKeys);
     }
   } catch (e) {
-    console.warn('Failed to clear GrapesJS storage:', e);
+    debug('Failed to clear GrapesJS storage:', e);
   }
 }

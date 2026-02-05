@@ -5,17 +5,9 @@
  * Used by save operations to handle transient failures.
  */
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
+import { createDebugLogger } from '@uswds-pt/shared';
 
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[Retry]', ...args);
-  }
-}
+const debug = createDebugLogger('Retry');
 
 /**
  * Error classification for retry decisions

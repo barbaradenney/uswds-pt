@@ -169,7 +169,21 @@ export function isGrapesEditor(obj: unknown): obj is GrapesEditor {
 }
 
 /**
- * Legacy type alias for gradual migration
- * Use GrapesEditor instead when possible
+ * Editor Instance Type
+ *
+ * Uses 'any' intentionally for GrapesJS SDK compatibility:
+ *
+ * 1. **SDK Variability**: GrapesJS model methods use `this` binding that
+ *    doesn't work well with TypeScript's strict typing (see plugins).
+ *
+ * 2. **Test Mocking**: Allows creating partial mocks without implementing
+ *    the entire GrapesEditor interface.
+ *
+ * 3. **Plugin Compatibility**: Third-party plugins may extend the editor
+ *    with properties not in our interface definitions.
+ *
+ * For type-safe code, use the `GrapesEditor` interface directly when the
+ * full interface is needed, or use `isGrapesEditor()` type guard.
  */
-export type EditorInstance = GrapesEditor;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EditorInstance = any;

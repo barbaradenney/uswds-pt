@@ -7,20 +7,16 @@
  * All timeouts and event listeners are tracked for proper cleanup.
  */
 
-// Debug logging
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
+
+const debug = createDebugLogger('Canvas');
+
+// Debug mode check for exposeDebugHelpers
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
     localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
 
 // ============================================================================
 // Timeout Management
@@ -170,9 +166,21 @@ export function forceCanvasUpdate(editor: EditorInstance): void {
 
 /**
  * Schedule a canvas update with tracked timeout
+ * Uses debouncing to prevent multiple updates from rapid event firing
  */
+let pendingCanvasUpdate: ReturnType<typeof setTimeout> | null = null;
+
 function scheduleCanvasUpdate(editor: EditorInstance, delay: number = 100): void {
-  createTrackedTimeout(() => forceCanvasUpdate(editor), delay);
+  // Cancel any pending update to debounce rapid calls
+  if (pendingCanvasUpdate !== null) {
+    clearTimeout(pendingCanvasUpdate);
+    activeTimeouts.delete(pendingCanvasUpdate);
+  }
+
+  pendingCanvasUpdate = createTrackedTimeout(() => {
+    pendingCanvasUpdate = null;
+    forceCanvasUpdate(editor);
+  }, delay);
 }
 
 // ============================================================================
@@ -237,11 +245,6 @@ export function setupCanvasEventHandlers(
         debug('Modal closed after clear command');
       }
     }, 50);
-  });
-
-  // Log ALL commands being run for debugging
-  registerListener('run', (...args: unknown[]) => {
-    debug('Command run:', args[0]);
   });
 
   // Listen for any component deletion command

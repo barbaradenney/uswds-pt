@@ -13,10 +13,14 @@ import { mockPrototype } from '../test/fixtures/prototypes';
 // Mock resource loader functions
 const mockLoadUSWDSResources = vi.fn();
 const mockAddCardContainerCSS = vi.fn();
+const mockAddFieldsetSpacingCSS = vi.fn();
+const mockAddButtonGroupCSS = vi.fn();
 const mockClearGrapesJSStorage = vi.fn();
 vi.mock('../lib/grapesjs/resource-loader', () => ({
   loadUSWDSResources: (...args: unknown[]) => mockLoadUSWDSResources(...args),
   addCardContainerCSS: (...args: unknown[]) => mockAddCardContainerCSS(...args),
+  addFieldsetSpacingCSS: (...args: unknown[]) => mockAddFieldsetSpacingCSS(...args),
+  addButtonGroupCSS: (...args: unknown[]) => mockAddButtonGroupCSS(...args),
   clearGrapesJSStorage: (...args: unknown[]) => mockClearGrapesJSStorage(...args),
 }));
 

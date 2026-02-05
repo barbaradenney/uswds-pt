@@ -10,6 +10,7 @@
 
 import { FastifyInstance, FastifyError, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+import { createDebugLogger } from '@uswds-pt/shared';
 import {
   ApiError,
   isApiError,
@@ -18,6 +19,8 @@ import {
   DatabaseError,
   ServiceUnavailableError,
 } from './errors.js';
+
+const debug = createDebugLogger('ErrorHandler');
 
 // ============================================================================
 // Types
@@ -215,8 +218,8 @@ export async function withDatabaseRetry<T>(
 
       // Wait before retry
       const delay = calculateDelay(attempt, initialDelayMs, maxDelayMs);
-      console.warn(
-        `[DB Retry] ${operationName} failed (attempt ${attempt + 1}/${maxRetries + 1}), ` +
+      debug(
+        `DB Retry: ${operationName} failed (attempt ${attempt + 1}/${maxRetries + 1}), ` +
         `retrying in ${Math.round(delay)}ms: ${lastError.message}`
       );
       await sleep(delay);

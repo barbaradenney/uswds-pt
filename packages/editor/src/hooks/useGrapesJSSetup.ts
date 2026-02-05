@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useEffect } from 'react';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
@@ -18,21 +19,9 @@ import {
   cleanupCanvasHelpers,
 } from '../lib/grapesjs/canvas-helpers';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
+import type { EditorInstance } from '../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[GrapesJSSetup]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('GrapesJSSetup');
 
 export interface UseGrapesJSSetupOptions {
   /** State machine for lifecycle management */
@@ -252,7 +241,7 @@ export function useGrapesJSSetup({
         editor.loadProjectData(projectData);
         debug('Loaded project data from localStorage');
       } catch (e) {
-        console.warn('Failed to load project data:', e);
+        debug('Failed to load project data:', e);
       }
     } else if (!isDemoMode) {
       // API mode: check both pendingPrototype and state prototype
@@ -274,7 +263,7 @@ export function useGrapesJSSetup({
             debug('Loaded project data, pages:', projectData.pages?.length);
           }
         } catch (e) {
-          console.warn('Failed to load project data:', e);
+          debug('Failed to load project data:', e);
         }
       }
     }
@@ -590,7 +579,7 @@ function setupPageEventHandlers(
           }
         }
       } catch (err) {
-        console.warn('[USWDS-PT] Error adding template to new page:', err);
+        debug('Error adding template to new page:', err);
       }
     }
   });
@@ -713,7 +702,7 @@ function syncPageLinkHrefs(editor: EditorInstance): void {
       }
     });
   } catch (err) {
-    console.warn('USWDS-PT: Error syncing page-link hrefs:', err);
+    debug('Error syncing page-link hrefs:', err);
   }
 }
 
@@ -852,7 +841,7 @@ function ensureComponentId(component: any, allIds: Set<string>, editor?: EditorI
 
     debug('Generated and set ID for component:', finalId, '- tagName:', tagName);
   } catch (err) {
-    console.warn('Failed to set component ID:', err);
+    debug('Failed to set component ID:', err);
   }
 
   return finalId;

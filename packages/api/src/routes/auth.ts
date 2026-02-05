@@ -4,6 +4,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
+import type { LoginBody, RegisterBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import {
   users,
@@ -132,17 +133,6 @@ async function setupNewUserOrganization(userId: string, email: string) {
     userId: userId,
     role: ROLES.ORG_ADMIN,
   });
-}
-
-interface LoginBody {
-  email: string;
-  password: string;
-}
-
-interface RegisterBody {
-  email: string;
-  password: string;
-  name?: string;
 }
 
 export async function authRoutes(app: FastifyInstance) {

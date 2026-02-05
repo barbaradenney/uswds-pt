@@ -724,17 +724,15 @@ ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </html>`;
 }
 
-// Debug logging
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('Export');
+
+// Used in generateInitScript and preview functions
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
     localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[Export]', ...args);
-  }
-}
 
 /**
  * Open a preview of the HTML content in a new browser tab

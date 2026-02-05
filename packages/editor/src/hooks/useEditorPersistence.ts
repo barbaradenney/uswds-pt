@@ -9,6 +9,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
 import { useOrganization } from './useOrganization';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
@@ -22,21 +23,9 @@ import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/d
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
+import type { EditorInstance } from '../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[EditorPersistence]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('EditorPersistence');
 
 export interface UseEditorPersistenceOptions {
   /** State machine instance */
@@ -335,7 +324,7 @@ export function useEditorPersistence({
         return null;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save';
-        console.error('[EditorPersistence] Save error:', err);
+        debug('Save error:', err);
         saveFailed(message);
         return null;
       } finally {
@@ -386,12 +375,21 @@ export function useEditorPersistence({
           setHtmlContent(data.htmlContent);
 
           // Create mock prototype for state machine
+          let parsedGrapesData = { pages: [], styles: [], assets: [] };
+          if (data.gjsData) {
+            try {
+              parsedGrapesData = JSON.parse(data.gjsData);
+            } catch (e) {
+              debug('Failed to parse gjsData:', e);
+            }
+          }
+
           const prototype: Prototype = {
             id: data.id,
             slug: data.id,
             name: data.name,
             htmlContent: data.htmlContent,
-            grapesData: data.gjsData ? JSON.parse(data.gjsData) : { pages: [], styles: [], assets: [] },
+            grapesData: parsedGrapesData,
             teamId: '',
             createdBy: '',
             createdAt: new Date(data.createdAt),
@@ -426,7 +424,7 @@ export function useEditorPersistence({
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load prototype';
-        console.error('[EditorPersistence] Load error:', err);
+        debug('Load error:', err);
         prototypeLoadFailed(message);
         return null;
       }
@@ -498,7 +496,7 @@ export function useEditorPersistence({
       return data.slug;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create prototype';
-      console.error('[EditorPersistence] Create error:', err);
+      debug('Create error:', err);
       prototypeCreateFailed(message);
       return null;
     } finally {

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
@@ -26,24 +27,18 @@ import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
 } from '@uswds-pt/adapter';
+import type { EditorInstance } from '../types/grapesjs';
 
 // License key from environment variable
 const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('Editor');
 
-// Debug logging
+// Debug mode check for window debug helpers
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
     localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[Editor]', ...args);
-  }
-}
 
 export function Editor() {
   const { slug } = useParams<{ slug: string }>();
