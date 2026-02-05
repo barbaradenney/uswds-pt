@@ -9,6 +9,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
 import { useOrganization } from './useOrganization';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
@@ -22,21 +23,9 @@ import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/d
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
+import type { EditorInstance } from '../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[EditorPersistence]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('EditorPersistence');
 
 export interface UseEditorPersistenceOptions {
   /** State machine instance */

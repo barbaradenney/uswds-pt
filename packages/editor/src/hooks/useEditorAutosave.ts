@@ -12,19 +12,10 @@
  */
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { createDebugLogger } from '@uswds-pt/shared';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[EditorAutosave]', ...args);
-  }
-}
+const debug = createDebugLogger('EditorAutosave');
 
 export interface UseEditorAutosaveOptions {
   /** Whether autosave is enabled */

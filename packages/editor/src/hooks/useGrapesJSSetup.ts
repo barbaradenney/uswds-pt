@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useEffect } from 'react';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
@@ -18,21 +19,9 @@ import {
   cleanupCanvasHelpers,
 } from '../lib/grapesjs/canvas-helpers';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
+import type { EditorInstance } from '../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[GrapesJSSetup]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('GrapesJSSetup');
 
 export interface UseGrapesJSSetupOptions {
   /** State machine for lifecycle management */

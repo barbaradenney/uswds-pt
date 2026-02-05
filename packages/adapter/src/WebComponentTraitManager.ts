@@ -7,18 +7,9 @@
  */
 
 import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals, type TraitHandler as RegistryTraitHandler } from './component-registry-v2.js';
+import { createDebugLogger } from '@uswds-pt/shared';
 
-// Debug logging flag - only log verbose output in development with explicit flag
-const DEBUG = false; // Set to true during development for detailed logs
-
-/**
- * Debug logging helper - only logs when DEBUG flag is enabled
- */
-function debug(...args: any[]): void {
-  if (DEBUG) {
-    console.log('[WebComponentTraitManager]', ...args);
-  }
-}
+const debug = createDebugLogger('WebComponentTraitManager');
 
 export interface TraitHandler {
   /**

@@ -9,21 +9,10 @@ import {
   componentRegistry,
   WebComponentTraitManager,
 } from '@uswds-pt/adapter';
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT]', ...args);
-  }
-}
-
-// GrapesJS editor type (using any for flexibility with SDK versions)
-type EditorInstance = any;
+const debug = createDebugLogger('Plugins');
 
 /**
  * GrapesJS plugin to register USWDS component types

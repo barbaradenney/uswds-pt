@@ -6,7 +6,6 @@
 export { parseCustomElementsManifest, extractCategory } from './cem-parser.js';
 export { generateBlocks, generateBlock } from './block-generator.js';
 export { generateTraits, mapAttributeToTrait } from './trait-generator.js';
-export { registerUSWDSComponents, createComponentType } from './component-registry.js';
 export {
   BLOCK_CATEGORIES,
   COMPONENT_ICONS,

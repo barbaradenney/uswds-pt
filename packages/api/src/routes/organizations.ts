@@ -5,16 +5,11 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
+import type { UpdateOrgBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import { organizations, users, teams, teamMemberships } from '../db/schema.js';
 import { ROLES } from '../db/roles.js';
 import { requireOrgAdmin, loadUserOrganization, getAuthUser } from '../middleware/permissions.js';
-
-interface UpdateOrgBody {
-  name?: string;
-  description?: string;
-  logoUrl?: string;
-}
 
 export async function organizationRoutes(app: FastifyInstance) {
   /**

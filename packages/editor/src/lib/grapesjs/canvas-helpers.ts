@@ -7,20 +7,16 @@
  * All timeouts and event listeners are tracked for proper cleanup.
  */
 
-// Debug logging
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
+
+const debug = createDebugLogger('Canvas');
+
+// Debug mode check for exposeDebugHelpers
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
     localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
 
 // ============================================================================
 // Timeout Management

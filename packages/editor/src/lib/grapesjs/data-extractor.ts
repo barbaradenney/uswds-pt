@@ -6,20 +6,10 @@
  * with a single, well-documented extraction function.
  */
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
 
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT DataExtractor]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('DataExtractor');
 
 /**
  * Result of data extraction

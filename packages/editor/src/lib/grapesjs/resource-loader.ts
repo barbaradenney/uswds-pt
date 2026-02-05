@@ -5,21 +5,10 @@
  */
 
 import { CDN_URLS } from '@uswds-pt/adapter';
+import { createDebugLogger } from '@uswds-pt/shared';
+import type { EditorInstance } from '../../types/grapesjs';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[USWDS-PT]', ...args);
-  }
-}
-
-// GrapesJS editor type
-type EditorInstance = any;
+const debug = createDebugLogger('ResourceLoader');
 
 /**
  * Helper to wait for a resource to load

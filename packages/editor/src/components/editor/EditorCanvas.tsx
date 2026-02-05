@@ -76,8 +76,7 @@ const checkAiEnabled = (): boolean => {
 const AI_ENABLED = checkAiEnabled();
 console.log('[AI Copilot] Final AI_ENABLED:', AI_ENABLED);
 
-// GrapesJS editor type
-type EditorInstance = any;
+import type { EditorInstance } from '../../types/grapesjs';
 
 export interface EditorCanvasProps {
   /** Unique key to force remount */
