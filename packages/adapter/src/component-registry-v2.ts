@@ -5721,7 +5721,7 @@ componentRegistry.register({
         options: [
           { id: 'none', label: 'None' },
           { id: 'default', label: 'Numbers' },
-          { id: 'small', label: 'Small Numbers' },
+          { id: 'sm', label: 'Small Numbers' },
         ],
       },
       handler: {
