@@ -2806,10 +2806,10 @@ componentRegistry.register({
     target: createAttributeTrait('target', {
       label: 'Target',
       type: 'select',
-      default: '',
-      removeDefaults: ['', '_self'],
+      default: '_self',
+      removeDefaults: ['_self'],
       options: [
-        { id: '', label: 'Same Window' },
+        { id: '_self', label: 'Same Window' },
         { id: '_blank', label: 'New Window' },
       ],
     }),
@@ -3843,16 +3843,16 @@ componentRegistry.register({
         name: 'target',
         label: 'Link Target',
         type: 'select',
-        default: '',
+        default: '_self',
         options: [
-          { id: '', label: 'Same Window' },
+          { id: '_self', label: 'Same Window' },
           { id: '_blank', label: 'New Window' },
         ],
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const target = value || '';
-          if (target) {
+          const target = value || '_self';
+          if (target && target !== '_self') {
             element.setAttribute('target', target);
           } else {
             element.removeAttribute('target');
@@ -3863,7 +3863,7 @@ componentRegistry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).target || element.getAttribute('target') || '';
+          return (element as any).target || element.getAttribute('target') || '_self';
         },
       },
     },
@@ -5713,27 +5713,29 @@ componentRegistry.register({
         name: 'counters',
         label: 'Counter Style',
         type: 'select',
-        default: '',
+        default: 'none',
         options: [
-          { id: '', label: 'None' },
+          { id: 'none', label: 'None' },
           { id: 'default', label: 'Numbers' },
           { id: 'small', label: 'Small Numbers' },
         ],
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          if (value) {
+          if (value && value !== 'none') {
             element.setAttribute('counters', value);
+            (element as any).counters = value;
           } else {
             element.removeAttribute('counters');
+            (element as any).counters = '';
           }
-          (element as any).counters = value || '';
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).counters || element.getAttribute('counters') || '';
+          const val = (element as any).counters || element.getAttribute('counters') || '';
+          return val || 'none';
         },
       },
     },
