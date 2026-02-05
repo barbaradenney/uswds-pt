@@ -3140,33 +3140,81 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
   for (let i = 1; i <= count; i++) {
     const text = element.getAttribute(`btn${i}-text`) || `Button ${i}`;
     const variant = element.getAttribute(`btn${i}-variant`) || '';
+    const href = element.getAttribute(`btn${i}-href`) || '';
 
     if (i <= existingCount) {
-      // Update existing button in place
+      // Update existing button/anchor in place
       const li = existingItems[i - 1];
-      const button = li.querySelector('button');
-      if (button) {
-        button.textContent = text;
-        // Reset button classes and apply variant
+      const existingButton = li.querySelector('button');
+      const existingAnchor = li.querySelector('a');
+
+      if (href) {
+        // Need an anchor
+        if (existingAnchor) {
+          // Update existing anchor
+          existingAnchor.textContent = text;
+          existingAnchor.setAttribute('href', href);
+          existingAnchor.className = 'usa-button';
+          if (variant && variant !== 'default') {
+            existingAnchor.classList.add(`usa-button--${variant}`);
+          }
+        } else if (existingButton) {
+          // Convert button to anchor
+          const anchor = document.createElement('a');
+          anchor.setAttribute('href', href);
+          anchor.className = 'usa-button';
+          if (variant && variant !== 'default') {
+            anchor.classList.add(`usa-button--${variant}`);
+          }
+          anchor.textContent = text;
+          existingButton.replaceWith(anchor);
+        }
+      } else {
+        // Need a button
+        if (existingButton) {
+          // Update existing button
+          existingButton.textContent = text;
+          existingButton.className = 'usa-button';
+          if (variant && variant !== 'default') {
+            existingButton.classList.add(`usa-button--${variant}`);
+          }
+        } else if (existingAnchor) {
+          // Convert anchor to button
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'usa-button';
+          if (variant && variant !== 'default') {
+            button.classList.add(`usa-button--${variant}`);
+          }
+          button.textContent = text;
+          existingAnchor.replaceWith(button);
+        }
+      }
+    } else {
+      // Create new button or anchor
+      const li = document.createElement('li');
+      li.className = 'usa-button-group__item';
+
+      if (href) {
+        const anchor = document.createElement('a');
+        anchor.setAttribute('href', href);
+        anchor.className = 'usa-button';
+        if (variant && variant !== 'default') {
+          anchor.classList.add(`usa-button--${variant}`);
+        }
+        anchor.textContent = text;
+        li.appendChild(anchor);
+      } else {
+        const button = document.createElement('button');
+        button.type = 'button';
         button.className = 'usa-button';
         if (variant && variant !== 'default') {
           button.classList.add(`usa-button--${variant}`);
         }
+        button.textContent = text;
+        li.appendChild(button);
       }
-    } else {
-      // Create new button
-      const li = document.createElement('li');
-      li.className = 'usa-button-group__item';
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'usa-button';
-      if (variant && variant !== 'default') {
-        button.classList.add(`usa-button--${variant}`);
-      }
-      button.textContent = text;
-
-      li.appendChild(button);
       ul.appendChild(li);
     }
   }
@@ -3178,6 +3226,153 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
       li.parentNode.removeChild(li);
     }
   }
+}
+
+// Helper to create button group link traits
+function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-link' | 'href'): UnifiedTrait {
+  const attrName = `btn${index}-${type}`;
+
+  // Base visibility - only show if index <= btn-count
+  const baseVisibleFn = (component: any) => {
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
+      return index <= count;
+    } catch {
+      return true;
+    }
+  };
+
+  // Additional visibility for page-link (only when link-type is 'page')
+  const pageLinkVisibleFn = (component: any) => {
+    if (!baseVisibleFn(component)) return false;
+    try {
+      const attrs = component.get?.('attributes') || {};
+      return attrs[`btn${index}-link-type`] === 'page';
+    } catch {
+      return false;
+    }
+  };
+
+  // Additional visibility for href (only when link-type is 'external')
+  const hrefVisibleFn = (component: any) => {
+    if (!baseVisibleFn(component)) return false;
+    try {
+      const attrs = component.get?.('attributes') || {};
+      return attrs[`btn${index}-link-type`] === 'external';
+    } catch {
+      return false;
+    }
+  };
+
+  if (type === 'link-type') {
+    return {
+      definition: {
+        name: attrName,
+        label: `Button ${index} Link To`,
+        type: 'select',
+        default: 'none',
+        visible: baseVisibleFn,
+        options: [
+          { id: 'none', label: 'None (Button Only)' },
+          { id: 'page', label: 'Page in Prototype' },
+          { id: 'external', label: 'External URL' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+          const linkType = value || 'none';
+          element.setAttribute(attrName, linkType);
+
+          // Clear href when switching to none or page
+          if (linkType === 'none' || linkType === 'page') {
+            element.removeAttribute(`btn${index}-href`);
+            if (component?.addAttributes) {
+              component.addAttributes({ [`btn${index}-href`]: '' });
+            }
+          }
+          // Clear page-link when switching to none or external
+          if (linkType === 'none' || linkType === 'external') {
+            element.removeAttribute(`btn${index}-page-link`);
+            if (component?.addAttributes) {
+              component.addAttributes({ [`btn${index}-page-link`]: '' });
+            }
+          }
+
+          const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          rebuildButtonGroupButtons(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute(attrName) || 'none';
+        },
+      },
+    };
+  }
+
+  if (type === 'page-link') {
+    return {
+      definition: {
+        name: attrName,
+        label: `Button ${index} Page`,
+        type: 'select',
+        default: '',
+        visible: pageLinkVisibleFn,
+        // Options are populated dynamically by Editor.tsx
+        options: [
+          { id: 'none', label: '-- Select a page --' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+          if (value && value !== 'none') {
+            const href = `#page-${value}`;
+            element.setAttribute(attrName, value);
+            element.setAttribute(`btn${index}-href`, href);
+            if (component?.addAttributes) {
+              component.addAttributes({ [attrName]: value, [`btn${index}-href`]: href });
+            }
+          } else {
+            element.removeAttribute(attrName);
+            element.removeAttribute(`btn${index}-href`);
+            if (component?.addAttributes) {
+              component.addAttributes({ [attrName]: '', [`btn${index}-href`]: '' });
+            }
+          }
+          const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          rebuildButtonGroupButtons(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute(attrName) || '';
+        },
+      },
+    };
+  }
+
+  // type === 'href'
+  return {
+    definition: {
+      name: attrName,
+      label: `Button ${index} URL`,
+      type: 'text',
+      default: '',
+      visible: hrefVisibleFn,
+      placeholder: 'https://example.com',
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        if (value) {
+          element.setAttribute(attrName, value);
+        } else {
+          element.removeAttribute(attrName);
+        }
+        const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+        rebuildButtonGroupButtons(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) || '';
+      },
+    },
+  };
 }
 
 // Helper to create a button group item trait
@@ -3275,15 +3470,31 @@ componentRegistry.register({
       },
     },
 
-    // Individual button traits (text and variant for each button)
+    // Individual button traits (text, variant, and link for each button)
+    // Button 1
     'btn1-text': createButtonGroupItemTrait(1, 'text'),
     'btn1-variant': createButtonGroupItemTrait(1, 'variant'),
+    'btn1-link-type': createButtonGroupLinkTrait(1, 'link-type'),
+    'btn1-page-link': createButtonGroupLinkTrait(1, 'page-link'),
+    'btn1-href': createButtonGroupLinkTrait(1, 'href'),
+    // Button 2
     'btn2-text': createButtonGroupItemTrait(2, 'text'),
     'btn2-variant': createButtonGroupItemTrait(2, 'variant'),
+    'btn2-link-type': createButtonGroupLinkTrait(2, 'link-type'),
+    'btn2-page-link': createButtonGroupLinkTrait(2, 'page-link'),
+    'btn2-href': createButtonGroupLinkTrait(2, 'href'),
+    // Button 3
     'btn3-text': createButtonGroupItemTrait(3, 'text'),
     'btn3-variant': createButtonGroupItemTrait(3, 'variant'),
+    'btn3-link-type': createButtonGroupLinkTrait(3, 'link-type'),
+    'btn3-page-link': createButtonGroupLinkTrait(3, 'page-link'),
+    'btn3-href': createButtonGroupLinkTrait(3, 'href'),
+    // Button 4
     'btn4-text': createButtonGroupItemTrait(4, 'text'),
     'btn4-variant': createButtonGroupItemTrait(4, 'variant'),
+    'btn4-link-type': createButtonGroupLinkTrait(4, 'link-type'),
+    'btn4-page-link': createButtonGroupLinkTrait(4, 'page-link'),
+    'btn4-href': createButtonGroupLinkTrait(4, 'href'),
 
     // Spacing
     'top-spacing': {

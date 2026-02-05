@@ -687,9 +687,6 @@ function setupPageLinkTrait(
   const updatePageLinkOptions = (component: any) => {
     if (!component) return;
 
-    const pageLinkTrait = component.getTrait?.('page-link');
-    if (!pageLinkTrait) return;
-
     const pages = editor.Pages?.getAll?.() || [];
     const currentPage = editor.Pages?.getSelected?.();
 
@@ -703,8 +700,21 @@ function setupPageLinkTrait(
         })),
     ];
 
-    pageLinkTrait.set('options', pageOptions);
-    debug('Updated page-link options:', pageOptions);
+    // Update the main page-link trait (for usa-button, usa-link)
+    const pageLinkTrait = component.getTrait?.('page-link');
+    if (pageLinkTrait) {
+      pageLinkTrait.set('options', pageOptions);
+      debug('Updated page-link options:', pageOptions);
+    }
+
+    // Update button group page-link traits (btn1-page-link, btn2-page-link, etc.)
+    for (let i = 1; i <= 4; i++) {
+      const btnPageLinkTrait = component.getTrait?.(`btn${i}-page-link`);
+      if (btnPageLinkTrait) {
+        btnPageLinkTrait.set('options', pageOptions);
+        debug(`Updated btn${i}-page-link options`);
+      }
+    }
   };
 
   registerListener(editor, 'component:selected', (component: any) => {
