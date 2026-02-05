@@ -258,6 +258,32 @@ export function addFieldsetSpacingCSS(editor: EditorInstance): void {
 }
 
 /**
+ * Add custom CSS to canvas for button group styling
+ * Removes excessive padding from usa-button-group web component
+ */
+export function addButtonGroupCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Reset padding on usa-button-group web component */
+      usa-button-group {
+        display: block;
+        padding: 0 !important;
+        margin: 0;
+      }
+      /* Ensure the inner ul has proper USWDS styling */
+      usa-button-group ul.usa-button-group {
+        padding: 0;
+        margin: 0;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added button group CSS to canvas');
+  }
+}
+
+/**
  * Clear GrapesJS localStorage to prevent state bleeding between prototypes
  */
 export function clearGrapesJSStorage(): void {
