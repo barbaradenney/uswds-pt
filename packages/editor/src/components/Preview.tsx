@@ -196,6 +196,18 @@ export function Preview() {
     return cleanExport(data.htmlContent);
   }, [data?.htmlContent]);
 
+  // Build multi-page HTML with page containers
+  // Must be defined before any early returns to satisfy React hooks rules
+  const multiPageHtml = useMemo(() => {
+    if (!isMultiPage || pages.length === 0) return '';
+
+    return pages.map(page => {
+      const cleanedPageHtml = cleanExport(page.html);
+      const isVisible = page.id === currentPageId;
+      return `<div data-page-id="${page.id}" data-page-name="${page.name}" style="display: ${isVisible ? 'block' : 'none'};">${cleanedPageHtml}</div>`;
+    }).join('\n');
+  }, [isMultiPage, pages, currentPageId]);
+
   // Handle page link clicks to prevent HashRouter interference
   const handlePageLinkClick = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -402,17 +414,6 @@ export function Preview() {
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
     zIndex: 1000,
   };
-
-  // Build multi-page HTML with page containers
-  const multiPageHtml = useMemo(() => {
-    if (!isMultiPage) return '';
-
-    return pages.map(page => {
-      const cleanedPageHtml = cleanExport(page.html);
-      const isVisible = page.id === currentPageId;
-      return `<div data-page-id="${page.id}" data-page-name="${page.name}" style="display: ${isVisible ? 'block' : 'none'};">${cleanedPageHtml}</div>`;
-    }).join('\n');
-  }, [isMultiPage, pages, currentPageId]);
 
   // Render the prototype content (styles are injected via useEffect into document head)
   return (
