@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Role, InvitationWithTeam } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
+
+const debug = createDebugLogger('Invitations');
 
 interface InvitationsState {
   invitations: InvitationWithTeam[];
@@ -46,7 +49,7 @@ export function useInvitations(): UseInvitationsReturn {
         }));
       }
     } catch (err) {
-      console.error('Failed to fetch invitations:', err);
+      debug('Failed to fetch invitations:', err);
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -68,11 +71,15 @@ export function useInvitations(): UseInvitationsReturn {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        setState((prev) => ({
-          ...prev,
-          error: error.message || 'Failed to accept invitation',
-        }));
+        try {
+          const error = await response.json();
+          setState((prev) => ({
+            ...prev,
+            error: error.message || 'Failed to accept invitation',
+          }));
+        } catch {
+          setState((prev) => ({ ...prev, error: 'Failed to accept invitation' }));
+        }
         return false;
       }
 
@@ -97,11 +104,15 @@ export function useInvitations(): UseInvitationsReturn {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        setState((prev) => ({
-          ...prev,
-          error: error.message || 'Failed to decline invitation',
-        }));
+        try {
+          const error = await response.json();
+          setState((prev) => ({
+            ...prev,
+            error: error.message || 'Failed to decline invitation',
+          }));
+        } catch {
+          setState((prev) => ({ ...prev, error: 'Failed to decline invitation' }));
+        }
         return false;
       }
 
@@ -148,11 +159,18 @@ export async function acceptInvitationByToken(token: string): Promise<{
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return {
-        success: false,
-        error: error.message || 'Failed to accept invitation',
-      };
+      try {
+        const error = await response.json();
+        return {
+          success: false,
+          error: error.message || 'Failed to accept invitation',
+        };
+      } catch {
+        return {
+          success: false,
+          error: 'Failed to accept invitation',
+        };
+      }
     }
 
     const data = await response.json();

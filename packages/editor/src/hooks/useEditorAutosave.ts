@@ -142,7 +142,7 @@ export function useEditorAutosave({
         scheduleStatusReset(5000);
       }
     } catch (err) {
-      console.warn('[Autosave] Error:', err);
+      debug('Autosave error:', err);
       safeSetStatus('error');
 
       // Reset to idle after showing error

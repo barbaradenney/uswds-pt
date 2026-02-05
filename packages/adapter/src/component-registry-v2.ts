@@ -4,6 +4,9 @@
  */
 
 import type { GrapesTrait } from './types.js';
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('ComponentRegistry');
 
 // ============================================================================
 // Core Types
@@ -409,8 +412,8 @@ export function createInternalSyncTrait(
         clearInterval(intervalId);
         activeIntervals.delete(key);
         if (attempts >= retryConfig.maxAttempts && element.isConnected) {
-          console.warn(
-            `USWDS-PT: Could not sync '${traitName}' to '${config.internalSelector}' after ${retryConfig.maxAttempts} attempts`
+          debug(
+            `Could not sync '${traitName}' to '${config.internalSelector}' after ${retryConfig.maxAttempts} attempts`
           );
         }
       }

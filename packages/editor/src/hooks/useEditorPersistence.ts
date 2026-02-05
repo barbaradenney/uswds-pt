@@ -324,7 +324,7 @@ export function useEditorPersistence({
         return null;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save';
-        console.error('[EditorPersistence] Save error:', err);
+        debug('Save error:', err);
         saveFailed(message);
         return null;
       } finally {
@@ -415,7 +415,7 @@ export function useEditorPersistence({
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load prototype';
-        console.error('[EditorPersistence] Load error:', err);
+        debug('Load error:', err);
         prototypeLoadFailed(message);
         return null;
       }
@@ -487,7 +487,7 @@ export function useEditorPersistence({
       return data.slug;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create prototype';
-      console.error('[EditorPersistence] Create error:', err);
+      debug('Create error:', err);
       prototypeCreateFailed(message);
       return null;
     } finally {
