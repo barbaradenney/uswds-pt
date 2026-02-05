@@ -805,25 +805,44 @@ function syncPageLinkHrefs(editor: EditorInstance): void {
 
 /**
  * Get a friendly label for a component
+ * Priority: Layer name > label attribute > name attribute > content > heading
  */
 function getComponentLabel(component: any): string {
-  // Try to get label from various attributes
+  // First priority: GrapesJS component name (layer name in the layers panel)
+  // This allows users to rename components in layers and have those names appear
+  // in the show/hide dropdowns
+  const layerName = component.getName?.() || component.get?.('name');
+  if (layerName && typeof layerName === 'string') {
+    // Skip auto-generated names like "Box", "Text", etc. that match type names
+    const tagName = component.get?.('tagName')?.toLowerCase() || '';
+    const autoNames = ['box', 'text', 'section', 'container', 'wrapper', 'div', 'row', 'cell'];
+    const isAutoName = autoNames.some(auto =>
+      layerName.toLowerCase() === auto ||
+      layerName.toLowerCase() === tagName.replace('usa-', '').replace(/-/g, ' ')
+    );
+
+    if (!isAutoName) {
+      return layerName;
+    }
+  }
+
+  // Second priority: label attribute (for form components)
   const label = component.getAttributes?.()?.label
     || component.get?.('attributes')?.label;
 
   if (label) return label;
 
-  // Try to get name attribute
+  // Third priority: name attribute
   const name = component.getAttributes?.()?.name
     || component.get?.('attributes')?.name;
 
   if (name) return name;
 
-  // Try to get text content for simple components
+  // Fourth priority: text content for simple components
   const text = component.get?.('content');
   if (text && text.length < 30) return text;
 
-  // Try to get heading text
+  // Fifth priority: heading attribute
   const heading = component.getAttributes?.()?.heading
     || component.get?.('attributes')?.heading;
 
@@ -1084,6 +1103,19 @@ function setupConditionalShowHideTrait(
     const selected = editor.getSelected?.();
     if (selected) {
       updateConditionalTraits(selected);
+    }
+  });
+
+  // Update when a component is renamed (in layers panel)
+  // This ensures the dropdown options reflect the new name
+  registerListener(editor, 'component:update', (...args: unknown[]) => {
+    const property = args[1] as string | undefined;
+    // Only refresh if the 'name' property changed (layer name)
+    if (property === 'name') {
+      const selected = editor.getSelected?.();
+      if (selected) {
+        updateConditionalTraits(selected);
+      }
     }
   });
 }
