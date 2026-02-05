@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -27,11 +27,16 @@ const isDemoMode = !import.meta.env.VITE_API_URL;
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Use pathname as key to reset ErrorBoundary on route changes
+  // This ensures errors don't persist when navigating between pages
+  const errorBoundaryKey = location.pathname;
 
   // In demo mode, skip auth entirely - show home page with option to create prototype
   if (isDemoMode) {
     return (
-      <ErrorBoundary>
+      <ErrorBoundary key={errorBoundaryKey}>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -51,7 +56,7 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary key={errorBoundaryKey}>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
