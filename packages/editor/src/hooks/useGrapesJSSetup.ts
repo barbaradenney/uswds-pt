@@ -1286,12 +1286,33 @@ function setupSymbolCreationHandler(
     component.set('toolbar', newToolbar);
   });
 
+  // Debug: Log symbol-related events to find the correct event names
+  // This helps identify which events GrapesJS Studio SDK fires
+  const symbolEventNames = [
+    'symbol:add',
+    'symbol:main:add',
+    'symbol:instance:add',
+    'symbols:add',
+    'symbols:main:add',
+    'component:symbol',
+    'component:symbol:add',
+    'symbol:create',
+    'symbols:create',
+  ];
+  symbolEventNames.forEach(eventName => {
+    registerListener(editor, eventName, (...args: any[]) => {
+      console.log(`[GrapesJS] EVENT "${eventName}" fired:`, args);
+      debug(`EVENT "${eventName}" fired:`, args);
+    });
+  });
+
   // GrapesJS fires symbol events when a symbol is created
   // We intercept this to show our scope selection dialog
   // Try multiple event names since different GrapesJS versions use different names
   const handleSymbolAdd = (symbol: any) => {
     if (isPendingSymbolCreation) return;
 
+    console.log('[GrapesJS] handleSymbolAdd called with:', symbol);
     debug('Symbol creation detected:', symbol);
 
     // Extract symbol data
