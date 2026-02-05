@@ -1181,25 +1181,83 @@ function setupProactiveIdAssignment(
 
 /**
  * Set up symbol creation handler to intercept new symbols
- * and prompt the user to choose between local and global scope
+ * and prompt the user to choose between local and global scope.
+ * Also adds a "Create Symbol" button to the component toolbar.
  */
 function setupSymbolCreationHandler(
   editor: EditorInstance,
   registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void,
   onSymbolCreate: (symbolData: any, callback: (scope: 'local' | 'global', name: string) => void) => void
 ): void {
-  // GrapesJS fires 'symbol:add' when a symbol is created
-  // We need to intercept this to show our scope selection dialog
-
-  // Note: GrapesJS Studio SDK may have different events for symbol creation
-  // The exact event name may vary - common ones are:
-  // - 'symbol:add' - when a symbol is added
-  // - 'symbol:main:add' - when main symbol is added
-  // - 'symbols:add' - plural version
-
   // Track pending symbol creation to avoid duplicate handling
   let isPendingSymbolCreation = false;
 
+  // Register the create-symbol command
+  editor.Commands.add('create-symbol', {
+    run(editor: EditorInstance) {
+      const selected = editor.getSelected();
+      if (!selected) {
+        debug('No component selected for symbol creation');
+        return;
+      }
+
+      // Check if this component is already a symbol instance
+      const symbolInfo = selected.getSymbolInfo?.();
+      if (symbolInfo?.isSymbol) {
+        debug('Component is already a symbol');
+        return;
+      }
+
+      debug('Creating symbol from component:', selected.getId());
+
+      // Use the Components API to create a symbol
+      // This will trigger the 'symbol:add' event which we intercept below
+      try {
+        const Components = editor.Components;
+        if (Components?.addSymbol) {
+          Components.addSymbol(selected);
+        } else {
+          console.warn('Components.addSymbol not available');
+        }
+      } catch (e) {
+        console.warn('Failed to create symbol:', e);
+      }
+    },
+  });
+
+  // Add "Create Symbol" button to toolbar when a component is selected
+  registerListener(editor, 'component:selected', (component: any) => {
+    if (!component) return;
+
+    // Get current toolbar
+    const toolbar = component.get('toolbar') || [];
+
+    // Check if symbol button already exists
+    const hasSymbolButton = toolbar.some((item: any) => item.command === 'create-symbol');
+    if (hasSymbolButton) return;
+
+    // Check if this component is already a symbol (don't show button for symbol instances)
+    const symbolInfo = component.getSymbolInfo?.();
+    if (symbolInfo?.isSymbol) return;
+
+    // Add the create symbol button with SVG icon
+    const newToolbar = [
+      ...toolbar,
+      {
+        attributes: { title: 'Create Symbol' },
+        command: 'create-symbol',
+        // Use SVG icon (cube/box shape to represent a reusable component)
+        label: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align: middle;">
+          <path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.38v-6.71L5 9.21v6.7zm14 0v-6.7l-6 3.37v6.71l6-3.38z"/>
+        </svg>`,
+      },
+    ];
+
+    component.set('toolbar', newToolbar);
+  });
+
+  // GrapesJS fires 'symbol:add' when a symbol is created
+  // We intercept this to show our scope selection dialog
   registerListener(editor, 'symbol:add', (symbol: any) => {
     if (isPendingSymbolCreation) return;
 
