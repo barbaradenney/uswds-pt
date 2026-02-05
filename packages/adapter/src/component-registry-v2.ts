@@ -1205,7 +1205,7 @@ componentRegistry.register({
       default: '',
       removeDefaults: ['', 'default'],
       options: [
-        { id: '', label: 'Default' },
+        { id: 'default', label: 'Default' },
         { id: '2xs', label: '2XS (5 characters)' },
         { id: 'xs', label: 'XS (9 characters)' },
         { id: 'sm', label: 'Small (13 characters)' },
@@ -1317,7 +1317,7 @@ componentRegistry.register({
       default: '',
       removeDefaults: ['', 'default'],
       options: [
-        { id: '', label: 'Default' },
+        { id: 'default', label: 'Default' },
         { id: '2xs', label: '2XS (5 characters)' },
         { id: 'xs', label: 'XS (9 characters)' },
         { id: 'sm', label: 'Small (13 characters)' },
@@ -3232,7 +3232,7 @@ componentRegistry.register({
       default: '',
       removeDefaults: ['', 'default'],
       options: [
-        { id: '', label: 'Default' },
+        { id: 'default', label: 'Default' },
         { id: 'external', label: 'External' },
         { id: 'unstyled', label: 'Unstyled' },
       ],
@@ -4493,7 +4493,7 @@ componentRegistry.register({
         type: 'select',
         default: '',
         options: [
-          { id: '', label: 'Default' },
+          { id: 'default', label: 'Default' },
           { id: '3', label: 'Size 3 (24px)' },
           { id: '4', label: 'Size 4 (32px)' },
           { id: '5', label: 'Size 5 (40px)' },
