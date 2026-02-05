@@ -579,6 +579,131 @@ function createPageLinkTraits(): Record<string, UnifiedTrait> {
 }
 
 // ============================================================================
+// Form Trait Factories
+// ============================================================================
+
+/**
+ * Create a hint trait for form inputs (text-input, textarea, select, etc.)
+ * Uses the usa-hint class pattern
+ */
+function createFormHintTrait(): UnifiedTrait {
+  return {
+    definition: {
+      name: 'hint',
+      label: 'Help Text',
+      type: 'text',
+      default: '',
+      placeholder: 'Optional help text',
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        const hintText = value?.trim() || '';
+        if (hintText) {
+          element.setAttribute('hint', hintText);
+        } else {
+          element.removeAttribute('hint');
+        }
+        // The web component should handle rendering the hint
+        if (typeof (element as any).requestUpdate === 'function') {
+          (element as any).requestUpdate();
+        }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute('hint') || '';
+      },
+    },
+  };
+}
+
+/**
+ * Create a hint trait for radio buttons (similar to checkbox pattern)
+ */
+function createRadioHintTrait(): UnifiedTrait {
+  return {
+    definition: {
+      name: 'hint',
+      label: 'Help Text',
+      type: 'text',
+      default: '',
+      placeholder: 'Optional help text',
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        const hintText = value?.trim() || '';
+        element.setAttribute('hint', hintText);
+
+        // Find the label inside the radio
+        const label = element.querySelector('.usa-radio__label');
+        if (!label) return;
+
+        // Find or manage the description span
+        let descSpan = label.querySelector('.usa-radio__label-description');
+
+        if (hintText) {
+          if (!descSpan) {
+            descSpan = document.createElement('span');
+            descSpan.className = 'usa-radio__label-description';
+            label.appendChild(descSpan);
+          }
+          descSpan.textContent = hintText;
+        } else {
+          descSpan?.remove();
+        }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute('hint') || '';
+      },
+      onInit: (element: HTMLElement, value: any) => {
+        const hintText = value?.trim() || element.getAttribute('hint') || '';
+        if (hintText) {
+          setTimeout(() => {
+            const label = element.querySelector('.usa-radio__label');
+            if (label && !label.querySelector('.usa-radio__label-description')) {
+              const descSpan = document.createElement('span');
+              descSpan.className = 'usa-radio__label-description';
+              descSpan.textContent = hintText;
+              label.appendChild(descSpan);
+            }
+          }, 100);
+        }
+      },
+    },
+  };
+}
+
+/**
+ * Create an error-message trait for form components
+ */
+function createErrorMessageTrait(): UnifiedTrait {
+  return {
+    definition: {
+      name: 'error-message',
+      label: 'Error Message',
+      type: 'text',
+      default: '',
+      placeholder: 'Error message to display',
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        const errorMsg = value?.trim() || '';
+        if (errorMsg) {
+          element.setAttribute('error-message', errorMsg);
+        } else {
+          element.removeAttribute('error-message');
+        }
+        // The web component should handle rendering the error message
+        if (typeof (element as any).requestUpdate === 'function') {
+          (element as any).requestUpdate();
+        }
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute('error-message') || '';
+      },
+    },
+  };
+}
+
+// ============================================================================
 // Component Definitions
 // ============================================================================
 
@@ -780,11 +905,17 @@ componentRegistry.register({
       ],
     }),
 
+    // Hint - help text
+    hint: createFormHintTrait(),
+
     // Error - error state
     error: createBooleanTrait('error', {
       label: 'Error State',
       default: false,
     }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
 
     // Success - success state
     success: createBooleanTrait('success', {
@@ -892,11 +1023,17 @@ componentRegistry.register({
       ],
     }),
 
+    // Hint - help text
+    hint: createFormHintTrait(),
+
     // Error - error state
     error: createBooleanTrait('error', {
       label: 'Error State',
       default: false,
     }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
 
     // Success - success state
     success: createBooleanTrait('success', {
@@ -1080,6 +1217,23 @@ componentRegistry.register({
       },
     },
 
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-checkbox',
+    }),
+
     // Conditional: Show Element when checked (dropdown populated dynamically)
     'data-reveals': createAttributeTrait('data-reveals', {
       label: 'When checked, show',
@@ -1158,6 +1312,26 @@ componentRegistry.register({
       label: 'Disabled',
       default: false,
       syncToInternal: 'input[type="radio"]',
+    }),
+
+    // Hint - help text displayed below the label
+    hint: createRadioHintTrait(),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-radio',
     }),
 
     // Spacing
@@ -1365,6 +1539,24 @@ componentRegistry.register({
     'option10-label': createSelectOptionTrait(10, 'label'),
     'option10-value': createSelectOptionTrait(10, 'value'),
 
+    // Hint - help text
+    hint: createFormHintTrait(),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
+    // Success - success state
+    success: createBooleanTrait('success', {
+      label: 'Success State',
+      default: false,
+    }),
+
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
@@ -1429,6 +1621,18 @@ componentRegistry.register({
       syncToInternal: 'input[type="file"]',
     }),
 
+    // Hint - help text
+    hint: createFormHintTrait(),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
     // Required - boolean flag
     required: createBooleanTrait('required', {
       label: 'Required',
@@ -1441,6 +1645,14 @@ componentRegistry.register({
       label: 'Disabled',
       default: false,
       syncToInternal: 'input[type="file"]',
+    }),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-file-input',
     }),
   },
 });
@@ -1644,11 +1856,38 @@ componentRegistry.register({
       },
     },
 
+    // Hint - help text
+    hint: createFormHintTrait(),
+
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
+    // Required - boolean flag
+    required: createBooleanTrait('required', {
+      label: 'Required',
+      default: false,
+      syncToInternal: 'input[type="range"]',
+    }),
+
     // Disabled - boolean flag
     disabled: createBooleanTrait('disabled', {
       label: 'Disabled',
       default: false,
       syncToInternal: 'input[type="range"]',
+    }),
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-range-slider',
     }),
   },
 });
@@ -1820,6 +2059,15 @@ componentRegistry.register({
       },
     },
 
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
     // Disabled
     disabled: {
       definition: {
@@ -1846,6 +2094,14 @@ componentRegistry.register({
         },
       },
     },
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-date-picker',
+    }),
   },
 });
 
@@ -2044,6 +2300,15 @@ componentRegistry.register({
       },
     },
 
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
     // Disabled
     disabled: {
       definition: {
@@ -2070,6 +2335,14 @@ componentRegistry.register({
         },
       },
     },
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-time-picker',
+    }),
   },
 });
 
@@ -2367,6 +2640,15 @@ componentRegistry.register({
       },
     },
 
+    // Error - error state
+    error: createBooleanTrait('error', {
+      label: 'Error State',
+      default: false,
+    }),
+
+    // Error Message - displayed when in error state
+    'error-message': createErrorMessageTrait(),
+
     // Disabled
     disabled: {
       definition: {
@@ -2393,6 +2675,14 @@ componentRegistry.register({
         },
       },
     },
+
+    // Element ID - for conditional show/hide targeting
+    id: createAttributeTrait('id', {
+      label: 'Element ID (for show/hide)',
+      type: 'text',
+      default: '',
+      placeholder: 'e.g., my-combo-box',
+    }),
   },
 });
 
