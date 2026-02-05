@@ -635,26 +635,68 @@ function generateInitScript(): string {
       }
     });
 
-    // Initialize usa-button-group button text from attributes
+    // Initialize usa-button-group button text and links from attributes
     // Need to wait for web component to render, then apply our values
     function initButtonGroup(buttonGroup) {
       const count = parseInt(buttonGroup.getAttribute('btn-count') || '2', 10);
       const ul = buttonGroup.querySelector('ul.usa-button-group');
       if (!ul) return false;
 
-      const buttons = ul.querySelectorAll('li.usa-button-group__item button');
-      if (buttons.length === 0) return false;
+      const items = ul.querySelectorAll('li.usa-button-group__item');
+      if (items.length === 0) return false;
 
-      buttons.forEach((button, index) => {
+      items.forEach((li, index) => {
         const btnIndex = index + 1;
         if (btnIndex <= count) {
           const text = buttonGroup.getAttribute('btn' + btnIndex + '-text') || 'Button ' + btnIndex;
           const variant = buttonGroup.getAttribute('btn' + btnIndex + '-variant') || '';
+          const linkType = buttonGroup.getAttribute('btn' + btnIndex + '-link-type') || 'none';
+          const pageLink = buttonGroup.getAttribute('btn' + btnIndex + '-page-link') || '';
+          let href = buttonGroup.getAttribute('btn' + btnIndex + '-href') || '';
 
-          button.textContent = text;
-          button.className = 'usa-button';
+          // Resolve href from page-link if needed
+          if (linkType === 'page' && pageLink) {
+            href = '#page-' + pageLink;
+          } else if (linkType === 'external' && href && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
+            href = 'https://' + href;
+          }
+
+          const existingButton = li.querySelector('button');
+          const existingAnchor = li.querySelector('a');
+
+          // Build class string
+          let className = 'usa-button';
           if (variant && variant !== 'default') {
-            button.classList.add('usa-button--' + variant);
+            className += ' usa-button--' + variant;
+          }
+
+          if (href && linkType !== 'none') {
+            // Need an anchor element
+            if (existingAnchor) {
+              existingAnchor.href = href;
+              existingAnchor.textContent = text;
+              existingAnchor.className = className;
+            } else if (existingButton) {
+              // Convert button to anchor
+              const anchor = document.createElement('a');
+              anchor.href = href;
+              anchor.textContent = text;
+              anchor.className = className;
+              existingButton.replaceWith(anchor);
+            }
+          } else {
+            // Need a button element
+            if (existingButton) {
+              existingButton.textContent = text;
+              existingButton.className = className;
+            } else if (existingAnchor) {
+              // Convert anchor to button
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.textContent = text;
+              button.className = className;
+              existingAnchor.replaceWith(button);
+            }
           }
         }
       });
