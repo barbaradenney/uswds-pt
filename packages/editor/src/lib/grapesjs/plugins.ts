@@ -22,6 +22,7 @@ import {
   registerCardComponents,
   registerTextComponents,
 } from './components';
+import { baseDefaults } from './component-defaults';
 
 const debug = createDebugLogger('Plugins');
 
@@ -98,7 +99,7 @@ function registerUswdsWebComponents(Components: ComponentsAPI): void {
       model: {
         defaults: {
           tagName: registration.tagName,
-          draggable: true,
+          ...baseDefaults,
           droppable: registration.droppable ?? false,
           // Define the traits that will show in the properties panel
           traits: traitDefinitions,
@@ -123,9 +124,7 @@ function overrideDefaultComponent(Components: ComponentsAPI): void {
       model: {
         defaults: {
           ...defaultType.model?.prototype?.defaults,
-          selectable: true,
-          hoverable: true,
-          removable: true,
+          ...baseDefaults,
         },
       },
     });
