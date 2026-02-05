@@ -288,3 +288,54 @@ export interface AcceptInvitationResponse {
     joinedAt: Date;
   };
 }
+
+// ============================================================================
+// Global Symbol Types
+// ============================================================================
+
+/**
+ * GrapesJS symbol structure (stored in symbolData)
+ */
+export interface GrapesJSSymbol {
+  id: string;
+  label: string;
+  icon?: string;
+  components: GrapesComponentData[];
+  [key: string]: unknown; // Allow additional GrapesJS symbol properties
+}
+
+/**
+ * Global symbol - shared across prototypes within a team
+ */
+export interface GlobalSymbol {
+  id: string;
+  teamId: string;
+  name: string;
+  symbolData: GrapesJSSymbol;
+  createdBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Symbol scope for distinguishing local vs global
+ */
+export type SymbolScope = 'local' | 'global';
+
+/**
+ * API Request/Response Types for Symbols
+ */
+
+export interface CreateGlobalSymbolRequest {
+  name: string;
+  symbolData: GrapesJSSymbol;
+}
+
+export interface UpdateGlobalSymbolRequest {
+  name?: string;
+  symbolData?: GrapesJSSymbol;
+}
+
+export interface GlobalSymbolListResponse {
+  symbols: GlobalSymbol[];
+}

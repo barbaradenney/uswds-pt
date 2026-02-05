@@ -13,6 +13,7 @@ import { previewRoutes } from './routes/preview.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { teamRoutes } from './routes/teams.js';
 import { invitationRoutes } from './routes/invitations.js';
+import { symbolRoutes } from './routes/symbols.js';
 import { errorHandler, checkDatabaseHealth } from './lib/error-handler.js';
 import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
@@ -77,6 +78,7 @@ async function main() {
   await app.register(previewRoutes, { prefix: '/api/preview' });
   await app.register(organizationRoutes, { prefix: '/api/organizations' });
   await app.register(teamRoutes, { prefix: '/api/teams' });
+  await app.register(symbolRoutes, { prefix: '/api/teams' });
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
 
   // Health check endpoint with database status

@@ -6,9 +6,10 @@
  */
 
 import { useCallback, useRef, useEffect } from 'react';
-import type { Prototype } from '@uswds-pt/shared';
+import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
+import { mergeGlobalSymbols, extractLocalSymbols, GLOBAL_SYMBOL_PREFIX } from './useGlobalSymbols';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
   forceCanvasUpdate,
@@ -51,6 +52,10 @@ export interface UseGrapesJSSetupOptions {
     media: string;
     category: string;
   }>;
+  /** Global symbols to merge into project data */
+  globalSymbols?: GrapesJSSymbol[];
+  /** Callback when a symbol is being created (to show scope dialog) */
+  onSymbolCreate?: (symbolData: GrapesJSSymbol, callback: (scope: SymbolScope, name: string) => void) => void;
 }
 
 export interface UseGrapesJSSetupReturn {
@@ -72,6 +77,8 @@ export function useGrapesJSSetup({
   prototype,
   onContentChange,
   blocks,
+  globalSymbols = [],
+  onSymbolCreate,
 }: UseGrapesJSSetupOptions): UseGrapesJSSetupReturn {
   // Track registered event listeners for cleanup
   const listenersRef = useRef<Array<{ event: string; handler: (...args: unknown[]) => void }>>([]);
@@ -201,6 +208,11 @@ export function useGrapesJSSetup({
       // Expose debug helpers
       exposeDebugHelpers(editor);
 
+      // Set up symbol creation interception
+      if (onSymbolCreate) {
+        setupSymbolCreationHandler(editor, registerListener, onSymbolCreate);
+      }
+
       // Mark editor as ready in state machine
       stateMachine.editorReady();
     },
@@ -215,6 +227,8 @@ export function useGrapesJSSetup({
       blocks,
       stateMachine,
       registerListener,
+      globalSymbols,
+      onSymbolCreate,
     ]
   );
 
@@ -229,6 +243,19 @@ export function useGrapesJSSetup({
       if (wrapper) {
         const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
         wrapper.components(blankTemplate);
+      }
+      // Even for new prototypes, merge global symbols if available
+      if (globalSymbols.length > 0) {
+        try {
+          const currentData = editor.getProjectData?.() || {};
+          const mergedData = mergeGlobalSymbols(currentData, globalSymbols);
+          if (mergedData.symbols?.length > 0) {
+            editor.loadProjectData(mergedData);
+            debug('Merged', globalSymbols.length, 'global symbols into new prototype');
+          }
+        } catch (e) {
+          console.warn('Failed to merge global symbols:', e);
+        }
       }
       return;
     }
@@ -248,7 +275,7 @@ export function useGrapesJSSetup({
       const prototypeData = pendingPrototype || prototype;
       if (prototypeData?.grapesData) {
         try {
-          const projectData = prototypeData.grapesData as any;
+          let projectData = prototypeData.grapesData as any;
           debug('Loading project data from API');
 
           // Check if grapesData has actual content
@@ -259,11 +286,28 @@ export function useGrapesJSSetup({
             debug('grapesData is empty, using htmlContent instead');
             // Don't load empty grapesData - the htmlContent will be parsed from project config
           } else {
+            // Merge global symbols into project data before loading
+            if (globalSymbols.length > 0) {
+              projectData = mergeGlobalSymbols(projectData, globalSymbols);
+              debug('Merged', globalSymbols.length, 'global symbols into project data');
+            }
             editor.loadProjectData(projectData);
             debug('Loaded project data, pages:', projectData.pages?.length);
           }
         } catch (e) {
           debug('Failed to load project data:', e);
+        }
+      } else if (globalSymbols.length > 0) {
+        // No prototype data but we have global symbols - load them
+        try {
+          const currentData = editor.getProjectData?.() || {};
+          const mergedData = mergeGlobalSymbols(currentData, globalSymbols);
+          if (mergedData.symbols?.length > 0) {
+            editor.loadProjectData(mergedData);
+            debug('Loaded', globalSymbols.length, 'global symbols (no prototype data)');
+          }
+        } catch (e) {
+          console.warn('Failed to load global symbols:', e);
         }
       }
     }
@@ -1132,5 +1176,81 @@ function setupProactiveIdAssignment(
   // Run when page is selected (in case components were loaded from another page)
   registerListener(editor, 'page:select', () => {
     setTimeout(processAllComponents, 300);
+  });
+}
+
+/**
+ * Set up symbol creation handler to intercept new symbols
+ * and prompt the user to choose between local and global scope
+ */
+function setupSymbolCreationHandler(
+  editor: EditorInstance,
+  registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void,
+  onSymbolCreate: (symbolData: any, callback: (scope: 'local' | 'global', name: string) => void) => void
+): void {
+  // GrapesJS fires 'symbol:add' when a symbol is created
+  // We need to intercept this to show our scope selection dialog
+
+  // Note: GrapesJS Studio SDK may have different events for symbol creation
+  // The exact event name may vary - common ones are:
+  // - 'symbol:add' - when a symbol is added
+  // - 'symbol:main:add' - when main symbol is added
+  // - 'symbols:add' - plural version
+
+  // Track pending symbol creation to avoid duplicate handling
+  let isPendingSymbolCreation = false;
+
+  registerListener(editor, 'symbol:add', (symbol: any) => {
+    if (isPendingSymbolCreation) return;
+
+    debug('Symbol creation detected:', symbol);
+
+    // Extract symbol data
+    const symbolData = {
+      id: symbol.getId?.() || symbol.get?.('id') || `symbol-${Date.now()}`,
+      label: symbol.get?.('label') || symbol.getName?.() || 'New Symbol',
+      icon: symbol.get?.('icon'),
+      components: symbol.get?.('components') || [],
+    };
+
+    // Show the scope dialog
+    isPendingSymbolCreation = true;
+
+    onSymbolCreate(symbolData, (scope, name) => {
+      isPendingSymbolCreation = false;
+
+      if (scope === 'local') {
+        // For local symbols, update the symbol name/label if changed
+        try {
+          if (symbol.set && name !== symbolData.label) {
+            symbol.set('label', name);
+          }
+        } catch (e) {
+          console.warn('Failed to update symbol label:', e);
+        }
+        debug('Local symbol created:', name);
+      } else {
+        // For global symbols, the parent component handles API creation
+        // We might want to remove the local symbol that was just created
+        // since it will be replaced by the global one
+        try {
+          const symbols = editor.Symbols;
+          if (symbols?.remove) {
+            symbols.remove(symbol);
+            debug('Removed local symbol to replace with global');
+          }
+        } catch (e) {
+          console.warn('Failed to remove local symbol:', e);
+        }
+      }
+    });
+  });
+
+  // Also listen for symbol:main:add which some GrapesJS versions use
+  registerListener(editor, 'symbol:main:add', (symbol: any) => {
+    if (isPendingSymbolCreation) return;
+    // Trigger the same handler - the symbol:add event should have already fired
+    // This is just a fallback
+    debug('Symbol main add detected (fallback)');
   });
 }

@@ -24,6 +24,7 @@ import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
 import type { EditorInstance } from '../types/grapesjs';
+import { extractLocalSymbols } from './useGlobalSymbols';
 
 const debug = createDebugLogger('EditorPersistence');
 
@@ -158,10 +159,15 @@ export function useEditorPersistence({
 
       try {
         // Extract data from editor
-        const { html: currentHtml, projectData: grapesData, warnings } = extractEditorData(
+        const { html: currentHtml, projectData: rawGrapesData, warnings } = extractEditorData(
           editor,
           htmlContent
         );
+
+        // Filter out global symbols - they're stored separately via the API
+        // This ensures only local symbols are saved with the prototype
+        const grapesData = extractLocalSymbols(rawGrapesData);
+        debug('Filtered grapesData - local symbols only');
 
         if (warnings.length > 0) {
           debug('Extraction warnings:', warnings);

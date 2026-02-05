@@ -155,6 +155,7 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   memberships: many(teamMemberships),
   invitations: many(invitations),
   prototypes: many(prototypes),
+  symbols: many(symbols),
 }));
 
 export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
@@ -265,6 +266,40 @@ export const prototypeVersionsRelations = relations(prototypeVersions, ({ one })
 }));
 
 /**
+ * Global symbols table
+ * Stores reusable symbol components that can be shared across prototypes within a team
+ */
+export const symbols = pgTable(
+  'symbols',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id')
+      .references(() => teams.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    symbolData: jsonb('symbol_data').notNull(), // GrapesJS symbol structure
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    teamIdx: index('symbols_team_idx').on(table.teamId),
+    createdByIdx: index('symbols_created_by_idx').on(table.createdBy),
+  })
+);
+
+export const symbolsRelations = relations(symbols, ({ one }) => ({
+  team: one(teams, {
+    fields: [symbols.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [symbols.createdBy],
+    references: [users.id],
+  }),
+}));
+
+/**
  * Audit logs table (for future use)
  */
 export const auditLogs = pgTable(
@@ -311,3 +346,6 @@ export type NewPrototypeVersion = typeof prototypeVersions.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type Symbol = typeof symbols.$inferSelect;
+export type NewSymbol = typeof symbols.$inferInsert;

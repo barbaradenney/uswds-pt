@@ -39,6 +39,10 @@ export const API_ENDPOINTS = {
   // Prototype Versions
   PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${slug}/versions`,
   PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${slug}/versions/${version}/restore`,
+
+  // Global Symbols
+  TEAM_SYMBOLS: (teamId: string) => `/api/teams/${teamId}/symbols`,
+  TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${teamId}/symbols/${symbolId}`,
 } as const;
 
 /**
@@ -133,4 +137,69 @@ export function apiPut<T>(endpoint: string, body?: unknown, defaultError?: strin
  */
 export function apiDelete<T>(endpoint: string, defaultError?: string): Promise<ApiResult<T>> {
   return apiRequest<T>(endpoint, { method: 'DELETE', defaultError });
+}
+
+// ============================================================================
+// Global Symbols API Functions
+// ============================================================================
+
+import type {
+  GlobalSymbol,
+  GlobalSymbolListResponse,
+  CreateGlobalSymbolRequest,
+  UpdateGlobalSymbolRequest,
+  GrapesJSSymbol,
+} from '@uswds-pt/shared';
+
+/**
+ * Fetch all global symbols for a team
+ */
+export function fetchGlobalSymbols(teamId: string): Promise<ApiResult<GlobalSymbolListResponse>> {
+  return apiGet<GlobalSymbolListResponse>(
+    API_ENDPOINTS.TEAM_SYMBOLS(teamId),
+    'Failed to fetch global symbols'
+  );
+}
+
+/**
+ * Create a new global symbol
+ */
+export function createGlobalSymbol(
+  teamId: string,
+  name: string,
+  symbolData: GrapesJSSymbol
+): Promise<ApiResult<GlobalSymbol>> {
+  return apiPost<GlobalSymbol>(
+    API_ENDPOINTS.TEAM_SYMBOLS(teamId),
+    { name, symbolData } as CreateGlobalSymbolRequest,
+    'Failed to create global symbol'
+  );
+}
+
+/**
+ * Update an existing global symbol
+ */
+export function updateGlobalSymbol(
+  teamId: string,
+  symbolId: string,
+  updates: UpdateGlobalSymbolRequest
+): Promise<ApiResult<GlobalSymbol>> {
+  return apiPut<GlobalSymbol>(
+    API_ENDPOINTS.TEAM_SYMBOL(teamId, symbolId),
+    updates,
+    'Failed to update global symbol'
+  );
+}
+
+/**
+ * Delete a global symbol
+ */
+export function deleteGlobalSymbol(
+  teamId: string,
+  symbolId: string
+): Promise<ApiResult<{ message: string }>> {
+  return apiDelete<{ message: string }>(
+    API_ENDPOINTS.TEAM_SYMBOL(teamId, symbolId),
+    'Failed to delete global symbol'
+  );
 }

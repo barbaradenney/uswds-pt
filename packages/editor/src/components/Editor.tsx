@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { Prototype } from '@uswds-pt/shared';
+import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
@@ -15,11 +15,13 @@ import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
 import { useEditorAutosave } from '../hooks/useEditorAutosave';
 import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
+import { useGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
+import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
 import { clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
@@ -53,6 +55,17 @@ export function Editor() {
 
   // Editor state machine
   const stateMachine = useEditorStateMachine();
+
+  // Global symbols hook
+  const globalSymbols = useGlobalSymbols({
+    teamId: currentTeam?.id || null,
+    enabled: !isDemoMode,
+  });
+
+  // State for symbol scope dialog
+  const [showSymbolDialog, setShowSymbolDialog] = useState(false);
+  const [pendingSymbolData, setPendingSymbolData] = useState<GrapesJSSymbol | null>(null);
+  const pendingSymbolCallbackRef = useRef<((scope: SymbolScope, name: string) => void) | null>(null);
 
   // Local state for UI
   const [name, setName] = useState('Untitled Prototype');
@@ -154,6 +167,18 @@ export function Editor() {
     return [...uswdsBlocks, tableBlock];
   }, []);
 
+  // Callback for when a symbol is being created in GrapesJS
+  // Must be defined before useGrapesJSSetup which uses it
+  const handleSymbolCreate = useCallback(
+    (symbolData: GrapesJSSymbol, callback: (scope: SymbolScope, name: string) => void) => {
+      debug('Symbol creation requested:', symbolData);
+      setPendingSymbolData(symbolData);
+      pendingSymbolCallbackRef.current = callback;
+      setShowSymbolDialog(true);
+    },
+    []
+  );
+
   // GrapesJS setup hook
   const grapesSetup = useGrapesJSSetup({
     stateMachine,
@@ -165,6 +190,8 @@ export function Editor() {
     prototype: stateMachine.state.prototype,
     onContentChange: autosave.triggerChange,
     blocks,
+    globalSymbols: globalSymbols.getGrapesJSSymbols(),
+    onSymbolCreate: handleSymbolCreate,
   });
 
   // Handle back navigation - save before leaving if there are unsaved changes
@@ -190,6 +217,36 @@ export function Editor() {
     // Reset state machine to allow fresh initialization
     stateMachine.reset();
   }, [stateMachine]);
+
+  // Handle symbol scope selection from dialog
+  const handleSymbolScopeConfirm = useCallback(
+    async (scope: SymbolScope, name: string) => {
+      if (!pendingSymbolData) return;
+
+      if (scope === 'global') {
+        // Create as global symbol via API
+        debug('Creating global symbol:', name);
+        const created = await globalSymbols.create(name, {
+          ...pendingSymbolData,
+          label: name,
+        });
+        if (created) {
+          debug('Global symbol created:', created.id);
+        }
+      } else {
+        // Create as local symbol - use the callback to complete GrapesJS symbol creation
+        debug('Creating local symbol:', name);
+        if (pendingSymbolCallbackRef.current) {
+          pendingSymbolCallbackRef.current(scope, name);
+        }
+      }
+
+      // Reset pending state
+      setPendingSymbolData(null);
+      pendingSymbolCallbackRef.current = null;
+    },
+    [pendingSymbolData, globalSymbols]
+  );
 
   // Handle export
   const handleExport = useCallback(() => {
@@ -488,6 +545,20 @@ export function Editor() {
           onClose={() => setShowEmbed(false)}
         />
       )}
+
+      {/* Symbol Scope Dialog */}
+      <SymbolScopeDialog
+        isOpen={showSymbolDialog}
+        onClose={() => {
+          setShowSymbolDialog(false);
+          setPendingSymbolData(null);
+          pendingSymbolCallbackRef.current = null;
+        }}
+        onConfirm={handleSymbolScopeConfirm}
+        pendingSymbol={pendingSymbolData}
+        isDemoMode={isDemoMode}
+        hasTeam={!!currentTeam}
+      />
     </div>
   );
 }
