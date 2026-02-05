@@ -530,49 +530,54 @@ export async function prototypeRoutes(app: FastifyInstance) {
       const { slug } = request.params;
       const userId = getAuthUser(request).id;
 
-      // Get the original prototype
-      const [original] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
+      try {
+        // Get the original prototype
+        const [original] = await db
+          .select()
+          .from(prototypes)
+          .where(eq(prototypes.slug, slug))
+          .limit(1);
 
-      if (!original) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check access (user must be able to view the original)
-      if (!(await canAccessPrototype(userId, original))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      // For team prototypes, check that user can create in that team
-      if (original.teamId) {
-        const membership = await getTeamMembership(userId, original.teamId);
-        if (!membership || !hasPermission(membership.role as Role, ROLES.TEAM_MEMBER)) {
-          return reply.status(403).send({ message: 'Cannot create prototypes in this team' });
+        if (!original) {
+          return reply.status(404).send({ message: 'Prototype not found' });
         }
+
+        // Check access (user must be able to view the original)
+        if (!(await canAccessPrototype(userId, original))) {
+          return reply.status(403).send({ message: 'Access denied' });
+        }
+
+        // For team prototypes, check that user can create in that team
+        if (original.teamId) {
+          const membership = await getTeamMembership(userId, original.teamId);
+          if (!membership || !hasPermission(membership.role as Role, ROLES.TEAM_MEMBER)) {
+            return reply.status(403).send({ message: 'Cannot create prototypes in this team' });
+          }
+        }
+
+        // Create new slug and name
+        const newSlug = nanoid(10);
+        const newName = `Copy of ${original.name}`;
+
+        // Create the duplicate - ensure grapesData has a default value
+        const [duplicate] = await db
+          .insert(prototypes)
+          .values({
+            slug: newSlug,
+            name: newName,
+            description: original.description,
+            htmlContent: original.htmlContent || '',
+            grapesData: original.grapesData || {},
+            teamId: original.teamId,
+            createdBy: userId,
+          })
+          .returning();
+
+        return duplicate;
+      } catch (error) {
+        console.error('Failed to duplicate prototype:', error);
+        return reply.status(500).send({ message: 'Failed to duplicate prototype' });
       }
-
-      // Create new slug and name
-      const newSlug = nanoid(10);
-      const newName = `Copy of ${original.name}`;
-
-      // Create the duplicate
-      const [duplicate] = await db
-        .insert(prototypes)
-        .values({
-          slug: newSlug,
-          name: newName,
-          description: original.description,
-          htmlContent: original.htmlContent,
-          grapesData: original.grapesData,
-          teamId: original.teamId,
-          createdBy: userId,
-        })
-        .returning();
-
-      return duplicate;
     }
   );
 }
