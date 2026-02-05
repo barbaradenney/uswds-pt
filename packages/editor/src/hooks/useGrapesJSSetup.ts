@@ -116,6 +116,36 @@ export function useGrapesJSSetup({
     return cleanup;
   }, [cleanup]);
 
+  // Inject global symbols into editor when they become available
+  // This handles the case where symbols load after the editor is ready
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || globalSymbols.length === 0) return;
+
+    // Check if editor is fully initialized
+    if (!editor.getProjectData || !editor.loadProjectData) return;
+
+    try {
+      const currentData = editor.getProjectData();
+      const existingSymbolIds = new Set(
+        (currentData.symbols || []).map((s: any) => s.id)
+      );
+
+      // Only add symbols that aren't already in the editor
+      const newSymbols = globalSymbols.filter(
+        (s) => !existingSymbolIds.has(s.id)
+      );
+
+      if (newSymbols.length > 0) {
+        debug('Injecting', newSymbols.length, 'new global symbols into editor');
+        const mergedData = mergeGlobalSymbols(currentData, newSymbols);
+        editor.loadProjectData(mergedData);
+      }
+    } catch (e) {
+      console.warn('Failed to inject global symbols:', e);
+    }
+  }, [globalSymbols, editorRef]);
+
   // Refresh canvas helper
   const refreshCanvas = useCallback(() => {
     const editor = editorRef.current;
