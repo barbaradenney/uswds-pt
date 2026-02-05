@@ -369,14 +369,44 @@ export class WebComponentTraitManager {
       component.off('change:attributes', oldListener);
     }
 
-    // Create new listener
-    const listener = () => {
+    // Create new listener for attribute changes
+    const attributeListener = () => {
       this.handleTraitChanges(component, handlers);
     };
 
     // Store and attach listener
-    this.activeListeners.set(listenerId, listener);
-    component.on('change:attributes', listener);
+    this.activeListeners.set(listenerId, attributeListener);
+    component.on('change:attributes', attributeListener);
+
+    // Also listen for individual trait changes via component:update events
+    // This catches cases where GrapesJS updates traits without triggering change:attributes
+    Object.keys(handlers).forEach(traitName => {
+      const traitListenerId = `${componentId}-trait-${traitName}`;
+      const traitListener = () => {
+        debug(`Trait update event for '${traitName}'`);
+        const element = component.getEl();
+        if (!element) return;
+
+        const attrs = component.get('attributes') || {};
+        const value = attrs[traitName];
+        const handler = handlers[traitName];
+
+        if (handler) {
+          debug(`Calling handler for '${traitName}' with value:`, value);
+          try {
+            handler.onChange(element, value, undefined, component);
+            if (typeof (element as any).requestUpdate === 'function') {
+              (element as any).requestUpdate();
+            }
+          } catch (error) {
+            console.error(`Error handling trait '${traitName}':`, error);
+          }
+        }
+      };
+
+      this.activeListeners.set(traitListenerId, traitListener);
+      component.on(`change:attributes:${traitName}`, traitListener);
+    });
   }
 
   /**

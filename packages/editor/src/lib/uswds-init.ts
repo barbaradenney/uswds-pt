@@ -246,19 +246,12 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     }
   });
 
-  // Add spacing between radios inside fieldsets
-  // Apply margin to the inner .usa-radio div, not the wrapper
-  container.querySelectorAll('fieldset').forEach((fieldset: Element) => {
-    const radios = fieldset.querySelectorAll('usa-radio');
-    radios.forEach((radio: Element, index: number) => {
-      const radioEl = radio as HTMLElement;
-      radioEl.style.display = 'block';
-      // Apply margin to the inner .usa-radio div for proper spacing
-      const innerDiv = radio.querySelector('.usa-radio') as HTMLElement;
-      if (innerDiv && index > 0) {
-        innerDiv.style.marginTop = '1rem';
-      }
-    });
+  // Add usa-form-group class to fieldsets for proper USWDS spacing
+  // This class provides margin-top: 1.5rem which creates consistent spacing between form elements
+  container.querySelectorAll('fieldset.usa-fieldset').forEach((fieldset: Element) => {
+    if (!fieldset.classList.contains('usa-form-group')) {
+      fieldset.classList.add('usa-form-group');
+    }
   });
 
   // Initialize usa-button-group button text from attributes

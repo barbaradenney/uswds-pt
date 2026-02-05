@@ -627,18 +627,12 @@ function generateInitScript(): string {
       }
     });
 
-    // Add spacing between radios inside fieldsets
-    // Apply margin to the inner .usa-radio div, not the wrapper
-    document.querySelectorAll('fieldset').forEach(fieldset => {
-      const radios = fieldset.querySelectorAll('usa-radio');
-      radios.forEach((radio, index) => {
-        radio.style.display = 'block';
-        // Apply margin to the inner .usa-radio div for proper spacing
-        const innerDiv = radio.querySelector('.usa-radio');
-        if (innerDiv && index > 0) {
-          innerDiv.style.marginTop = '1rem';
-        }
-      });
+    // Add usa-form-group class to fieldsets for proper USWDS spacing
+    // This class provides margin-top: 1.5rem which creates consistent spacing between form elements
+    document.querySelectorAll('fieldset.usa-fieldset').forEach(fieldset => {
+      if (!fieldset.classList.contains('usa-form-group')) {
+        fieldset.classList.add('usa-form-group');
+      }
     });
 
     // Initialize usa-button-group button text from attributes
