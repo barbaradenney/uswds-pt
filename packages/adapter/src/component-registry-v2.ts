@@ -3117,6 +3117,11 @@ componentRegistry.register({
  * Uses dynamic traits for easy editing of individual buttons.
  */
 
+// Track which button groups we're observing to avoid duplicate observers
+const buttonGroupObservers = new WeakMap<HTMLElement, MutationObserver>();
+// Track when we're applying changes to avoid infinite loops
+const buttonGroupApplying = new WeakSet<HTMLElement>();
+
 // Helper function to rebuild button group buttons from individual traits
 // Uses DOM methods instead of innerHTML to preserve event listeners
 function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
@@ -3125,41 +3130,113 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
 
   // If no ul exists yet, the component may need to render first
   if (!ul) {
-    // Try to trigger initial render
+    // Try to trigger initial render and retry
     if (typeof (element as any).requestUpdate === 'function') {
       (element as any).requestUpdate();
     }
+    // Retry after a delay to wait for web component to render
+    setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
     return;
   }
 
-  // Get existing list items
-  const existingItems = ul.querySelectorAll('li.usa-button-group__item');
-  const existingCount = existingItems.length;
+  // Set up a MutationObserver to re-apply changes when the web component re-renders
+  if (!buttonGroupObservers.has(element)) {
+    const observer = new MutationObserver((mutations) => {
+      // Skip if we're currently applying changes (avoid infinite loop)
+      if (buttonGroupApplying.has(element)) return;
 
-  // Update existing buttons or create new ones
-  for (let i = 1; i <= count; i++) {
-    const text = element.getAttribute(`btn${i}-text`) || `Button ${i}`;
-    const variant = element.getAttribute(`btn${i}-variant`) || '';
-    const href = element.getAttribute(`btn${i}-href`) || '';
+      // Check if the mutation affected our button structure
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+          // The web component re-rendered, re-apply our changes
+          const currentCount = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          // Use setTimeout to let mutation finish first
+          setTimeout(() => applyButtonGroupChanges(element, currentCount), 10);
+          break;
+        }
+      }
+    });
+    observer.observe(element, { childList: true, subtree: true });
+    buttonGroupObservers.set(element, observer);
+  }
 
-    if (i <= existingCount) {
-      // Update existing button/anchor in place
-      const li = existingItems[i - 1];
-      const existingButton = li.querySelector('button');
-      const existingAnchor = li.querySelector('a');
+  applyButtonGroupChanges(element, count);
+}
 
-      if (href) {
-        // Need an anchor
-        if (existingAnchor) {
-          // Update existing anchor
-          existingAnchor.textContent = text;
-          existingAnchor.setAttribute('href', href);
-          existingAnchor.className = 'usa-button';
-          if (variant && variant !== 'default') {
-            existingAnchor.classList.add(`usa-button--${variant}`);
+// Apply the actual button changes (separated to allow re-application)
+function applyButtonGroupChanges(element: HTMLElement, count: number): void {
+  // Prevent infinite loops
+  if (buttonGroupApplying.has(element)) return;
+  buttonGroupApplying.add(element);
+
+  try {
+    const ul = element.querySelector('ul.usa-button-group');
+    if (!ul) return;
+
+    // Get existing list items
+    const existingItems = ul.querySelectorAll('li.usa-button-group__item');
+    const existingCount = existingItems.length;
+
+    // Update existing buttons or create new ones
+    for (let i = 1; i <= count; i++) {
+      const text = element.getAttribute(`btn${i}-text`) || `Button ${i}`;
+      const variant = element.getAttribute(`btn${i}-variant`) || '';
+      const href = element.getAttribute(`btn${i}-href`) || '';
+
+      if (i <= existingCount) {
+        // Update existing button/anchor in place
+        const li = existingItems[i - 1];
+        const existingButton = li.querySelector('button');
+        const existingAnchor = li.querySelector('a');
+
+        if (href) {
+          // Need an anchor
+          if (existingAnchor) {
+            // Update existing anchor
+            existingAnchor.textContent = text;
+            existingAnchor.setAttribute('href', href);
+            existingAnchor.className = 'usa-button';
+            if (variant && variant !== 'default') {
+              existingAnchor.classList.add(`usa-button--${variant}`);
+            }
+          } else if (existingButton) {
+            // Convert button to anchor
+            const anchor = document.createElement('a');
+            anchor.setAttribute('href', href);
+            anchor.className = 'usa-button';
+            if (variant && variant !== 'default') {
+              anchor.classList.add(`usa-button--${variant}`);
+            }
+            anchor.textContent = text;
+            existingButton.replaceWith(anchor);
           }
-        } else if (existingButton) {
-          // Convert button to anchor
+        } else {
+          // Need a button
+          if (existingButton) {
+            // Update existing button
+            existingButton.textContent = text;
+            existingButton.className = 'usa-button';
+            if (variant && variant !== 'default') {
+              existingButton.classList.add(`usa-button--${variant}`);
+            }
+          } else if (existingAnchor) {
+            // Convert anchor to button
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'usa-button';
+            if (variant && variant !== 'default') {
+              button.classList.add(`usa-button--${variant}`);
+            }
+            button.textContent = text;
+            existingAnchor.replaceWith(button);
+          }
+        }
+      } else {
+        // Create new button or anchor
+        const li = document.createElement('li');
+        li.className = 'usa-button-group__item';
+
+        if (href) {
           const anchor = document.createElement('a');
           anchor.setAttribute('href', href);
           anchor.className = 'usa-button';
@@ -3167,19 +3244,8 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
             anchor.classList.add(`usa-button--${variant}`);
           }
           anchor.textContent = text;
-          existingButton.replaceWith(anchor);
-        }
-      } else {
-        // Need a button
-        if (existingButton) {
-          // Update existing button
-          existingButton.textContent = text;
-          existingButton.className = 'usa-button';
-          if (variant && variant !== 'default') {
-            existingButton.classList.add(`usa-button--${variant}`);
-          }
-        } else if (existingAnchor) {
-          // Convert anchor to button
+          li.appendChild(anchor);
+        } else {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'usa-button';
@@ -3187,44 +3253,23 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
             button.classList.add(`usa-button--${variant}`);
           }
           button.textContent = text;
-          existingAnchor.replaceWith(button);
+          li.appendChild(button);
         }
+
+        ul.appendChild(li);
       }
-    } else {
-      // Create new button or anchor
-      const li = document.createElement('li');
-      li.className = 'usa-button-group__item';
+    }
 
-      if (href) {
-        const anchor = document.createElement('a');
-        anchor.setAttribute('href', href);
-        anchor.className = 'usa-button';
-        if (variant && variant !== 'default') {
-          anchor.classList.add(`usa-button--${variant}`);
-        }
-        anchor.textContent = text;
-        li.appendChild(anchor);
-      } else {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'usa-button';
-        if (variant && variant !== 'default') {
-          button.classList.add(`usa-button--${variant}`);
-        }
-        button.textContent = text;
-        li.appendChild(button);
+    // Remove extra buttons if count decreased
+    for (let i = existingCount; i > count; i--) {
+      const li = existingItems[i - 1];
+      if (li && li.parentNode) {
+        li.parentNode.removeChild(li);
       }
-
-      ul.appendChild(li);
     }
-  }
-
-  // Remove extra buttons if count decreased
-  for (let i = existingCount; i > count; i--) {
-    const li = existingItems[i - 1];
-    if (li && li.parentNode) {
-      li.parentNode.removeChild(li);
-    }
+  } finally {
+    // Release the lock after a short delay to allow DOM to settle
+    setTimeout(() => buttonGroupApplying.delete(element), 50);
   }
 }
 
