@@ -1256,24 +1256,6 @@ function setupSymbolCreationHandler(
     component.set('toolbar', newToolbar);
   });
 
-  // Debug: Log all events to find the correct symbol event name
-  // This helps identify which event GrapesJS Studio SDK fires for symbol creation
-  if (debug.enabled) {
-    const symbolEvents = [
-      'symbol:add',
-      'symbol:main:add',
-      'symbol:instance:add',
-      'symbols:add',
-      'component:symbol',
-      'component:symbol:add',
-    ];
-    symbolEvents.forEach(eventName => {
-      registerListener(editor, eventName, (...args: any[]) => {
-        debug(`EVENT "${eventName}" fired:`, args);
-      });
-    });
-  }
-
   // GrapesJS fires symbol events when a symbol is created
   // We intercept this to show our scope selection dialog
   // Try multiple event names since different GrapesJS versions use different names
