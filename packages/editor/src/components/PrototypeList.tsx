@@ -73,6 +73,26 @@ export function PrototypeList() {
     }
   }
 
+  async function handleDuplicate(slug: string, e: React.MouseEvent) {
+    e.stopPropagation();
+
+    try {
+      const response = await authFetch(`/api/prototypes/${slug}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to duplicate prototype');
+      }
+
+      const duplicate = await response.json();
+      // Add the duplicate to the list
+      setPrototypes((prev) => [duplicate, ...prev]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate');
+    }
+  }
+
   async function handleAcceptInvitation(token: string) {
     setAcceptingToken(token);
     const success = await acceptInvitation(token);
@@ -241,17 +261,30 @@ export function PrototypeList() {
                 }}
               >
                 <h3 className="prototype-card-title">{prototype.name}</h3>
-                <button
-                  className="btn"
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '0.875rem',
-                    color: 'var(--color-base-light)',
-                  }}
-                  onClick={(e) => handleDelete(prototype.slug, e)}
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <button
+                    className="btn"
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '0.875rem',
+                      color: 'var(--color-base-light)',
+                    }}
+                    onClick={(e) => handleDelete(prototype.slug, e)}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="btn"
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '0.875rem',
+                      color: 'var(--color-base-light)',
+                    }}
+                    onClick={(e) => handleDuplicate(prototype.slug, e)}
+                  >
+                    Duplicate
+                  </button>
+                </div>
               </div>
               {prototype.description && (
                 <p
