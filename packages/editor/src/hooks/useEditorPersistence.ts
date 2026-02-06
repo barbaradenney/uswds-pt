@@ -93,6 +93,12 @@ export function useEditorPersistence({
   // Track if a save is in progress (prevents concurrent saves)
   const isSavingRef = useRef(false);
 
+  // Ref that always points to the latest stateMachine. The save callback reads
+  // canSave / saveStart / etc. via this ref so it never uses a stale closure value
+  // (e.g., canSave=false from a render during initializing_editor).
+  const stateMachineRef = useRef(stateMachine);
+  stateMachineRef.current = stateMachine;
+
   // Track online status
   const [online, setOnline] = useState(isOnline());
   const [lastSaveRetries, setLastSaveRetries] = useState(0);
@@ -109,7 +115,8 @@ export function useEditorPersistence({
    */
   const save = useCallback(
     async (type: 'manual' | 'autosave'): Promise<Prototype | null> => {
-      const { state, canSave, saveStart, saveSuccess, saveFailed } = stateMachine;
+      // Read from ref to always get the latest stateMachine (avoids stale closure)
+      const { state, canSave, saveStart, saveSuccess, saveFailed } = stateMachineRef.current;
 
       // Prevent concurrent saves
       if (isSavingRef.current) {
@@ -346,7 +353,6 @@ export function useEditorPersistence({
       }
     },
     [
-      stateMachine,
       editorRef,
       isDemoMode,
       slug,

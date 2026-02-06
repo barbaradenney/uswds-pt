@@ -99,11 +99,21 @@ export function Editor() {
     onSaveComplete: () => onSaveCompleteRef.current(),
   });
 
+  // Refs for all save call sites: handleBack, handleSave, handlePreview,
+  // autosave onSave, visibilitychange, and unmount cleanup.
+  // Updated every render so closures/timeouts always read the latest values.
+  const saveDirtyRef = useRef(false);
+  const saveCanSaveRef = useRef(false);
+  const saveCallRef = useRef(persistence.save);
+  saveDirtyRef.current = stateMachine.state.dirty;
+  saveCanSaveRef.current = stateMachine.canSave;
+  saveCallRef.current = persistence.save;
+
   // Autosave hook - enabled when we have a prototype (new or existing)
   const autosave = useEditorAutosave({
     enabled: !isDemoMode && !!stateMachine.state.prototype,
     stateMachine,
-    onSave: () => persistence.save('autosave'),
+    onSave: () => saveCallRef.current('autosave'),
     debounceMs: 5000,
     maxWaitMs: 30000,
   });
@@ -252,20 +262,21 @@ export function Editor() {
     onSymbolCreate: handleSymbolCreate,
   });
 
-  // Handle back navigation - save before leaving if there are unsaved changes
+  // Handle back navigation - save before leaving if there are unsaved changes.
+  // Uses refs (saveDirtyRef, saveCanSaveRef, saveCallRef) so we always read the
+  // latest dirty/canSave values — same pattern as the working unmount handler.
   const handleBack = useCallback(async () => {
-    // If there are unsaved changes, try to save first
-    if (stateMachine.state.dirty && stateMachine.canSave) {
+    if (saveDirtyRef.current && saveCanSaveRef.current) {
       debug('Saving before navigation...');
-      await persistence.save('autosave');
+      await saveCallRef.current('autosave');
     }
     navigate('/');
-  }, [navigate, stateMachine.state.dirty, stateMachine.canSave, persistence]);
+  }, [navigate]);
 
-  // Handle save
+  // Handle save — uses ref so it always calls the latest persistence.save
   const handleSave = useCallback(async () => {
-    await persistence.save('manual');
-  }, [persistence]);
+    await saveCallRef.current('manual');
+  }, []);
 
   // Handle editor error retry - forces remount of the editor
   const handleEditorRetry = useCallback(() => {
@@ -403,7 +414,7 @@ export function Editor() {
     debug('Preview: starting, current ID:', prototypeId);
 
     // Save current state to ensure preview shows latest content
-    const savedPrototype = await persistence.save('manual');
+    const savedPrototype = await saveCallRef.current('manual');
     debug('Preview: save result:', savedPrototype);
 
     if (savedPrototype) {
@@ -457,7 +468,7 @@ export function Editor() {
     }
 
     openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
-  }, [name, slug, localPrototype?.id, persistence]);
+  }, [name, slug, localPrototype?.id]);
 
   // Handle version restore — uses Path 2 (in-place reload)
   // Uses RESTORE_VERSION_START → RESTORE_VERSION_COMPLETE state machine flow
@@ -527,14 +538,6 @@ export function Editor() {
   }, [stateMachine.state.dirty]);
 
   // Save when the tab becomes hidden (browser back, tab switch, minimize).
-  // Uses refs to always read the latest state without re-registering the listener.
-  const saveDirtyRef = useRef(false);
-  const saveCanSaveRef = useRef(false);
-  const saveCallRef = useRef(persistence.save);
-  saveDirtyRef.current = stateMachine.state.dirty;
-  saveCanSaveRef.current = stateMachine.canSave;
-  saveCallRef.current = persistence.save;
-
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && saveDirtyRef.current && saveCanSaveRef.current) {
