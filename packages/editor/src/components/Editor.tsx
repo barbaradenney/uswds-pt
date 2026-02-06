@@ -445,12 +445,12 @@ export function Editor() {
         setEditorKey(slug);
       } else {
         pendingPrototypeRef.current = null;
-        setEditorKey(slug);
-
+        // Don't setEditorKey here — on refresh, editorKey is already slug
+        // from useState init. loadPrototypeAndRemount will trigger the
+        // remount with a unique key after data is available.
         if (isDemoMode) {
           persistence.load(slug);
         } else {
-          // Load data before triggering editor remount
           loadPrototypeAndRemount(slug);
         }
       }
@@ -473,7 +473,9 @@ export function Editor() {
       // Use the returned prototype directly instead of relying on state
       // (React state update is async and won't be available yet)
       pendingPrototypeRef.current = loadedPrototype;
-      setEditorKey(prototypeSlug);
+      // Use a unique key to force remount — on refresh, editorKey is already
+      // slug from useState init, so setEditorKey(slug) would be a no-op.
+      setEditorKey(`${prototypeSlug}-${Date.now()}`);
       debug('Prototype loaded, triggering editor remount');
     }
   }
