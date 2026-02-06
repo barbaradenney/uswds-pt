@@ -247,6 +247,27 @@ export function addFieldsetSpacingCSS(editor: EditorInstance): void {
 }
 
 /**
+ * Add custom CSS to canvas for USWDS typography on plain HTML elements.
+ * USWDS scopes its heading/paragraph font styles to .usa-prose, so bare
+ * h1-h6 and p elements fall back to browser defaults.  This ensures the
+ * USWDS font stack is applied to all common text elements in the canvas.
+ */
+export function addTypographyCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Apply USWDS font stack to base text elements */
+      body, h1, h2, h3, h4, h5, h6, p, li, td, th, label, input, textarea, select, button {
+        font-family: "Source Sans Pro Web", "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added typography CSS to canvas');
+  }
+}
+
+/**
  * Add custom CSS to canvas for button group styling
  * Removes excessive padding from usa-button-group web component
  */

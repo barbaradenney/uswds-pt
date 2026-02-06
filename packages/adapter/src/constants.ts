@@ -155,9 +155,9 @@ export const COMPONENT_ICONS: Record<string, string> = {
  * Default content templates for drag-and-drop
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
-  // Basic Elements
-  'heading': '__FULL_HTML__<h2>Heading</h2>',
-  'text': '__FULL_HTML__<p>This is a paragraph of text. Click to edit.</p>',
+  // Basic Elements (wrapped in usa-prose so USWDS typography applies)
+  'heading': '__FULL_HTML__<div class="usa-prose"><h2>Heading</h2></div>',
+  'text': '__FULL_HTML__<div class="usa-prose"><p>This is a paragraph of text. Click to edit.</p></div>',
 
   // Actions
   'usa-button': 'Click me',

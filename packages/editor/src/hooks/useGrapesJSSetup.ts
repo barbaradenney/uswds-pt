@@ -10,7 +10,7 @@ import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
-import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
   forceCanvasUpdate,
   setupCanvasEventHandlers,
@@ -211,6 +211,7 @@ export function useGrapesJSSetup({
       addCardContainerCSS(editor);
       addFieldsetSpacingCSS(editor);
       addButtonGroupCSS(editor);
+      addTypographyCSS(editor);
 
       // Set up spacing trait for all components
       setupSpacingTrait(editor, registerListener);
