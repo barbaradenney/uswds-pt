@@ -1399,12 +1399,19 @@ function setupSymbolCreationHandler(
   const handleSymbolAdd = (symbol: any) => {
     if (isPendingSymbolCreation) return;
 
+    // Ignore symbols being loaded from the database (global symbols have the prefix)
+    const symbolId = symbol.getId?.() || symbol.get?.('id') || '';
+    if (symbolId.startsWith(GLOBAL_SYMBOL_PREFIX)) {
+      debug('Ignoring global symbol load event:', symbolId);
+      return;
+    }
+
     console.log('[GrapesJS] handleSymbolAdd called with:', symbol);
     debug('Symbol creation detected:', symbol);
 
     // Extract symbol data
     const symbolData = {
-      id: symbol.getId?.() || symbol.get?.('id') || `symbol-${Date.now()}`,
+      id: symbolId || `symbol-${Date.now()}`,
       label: symbol.get?.('label') || symbol.getName?.() || 'New Symbol',
       icon: symbol.get?.('icon'),
       components: symbol.get?.('components') || [],
