@@ -17,6 +17,7 @@ import {
   setupCanvasEventHandlers,
   registerClearCommand,
   setupAllInteractiveHandlers,
+  setupPageLinkHandler,
   exposeDebugHelpers,
   cleanupCanvasHelpers,
 } from '../lib/grapesjs/canvas-helpers';
@@ -486,6 +487,11 @@ function setupPageEventHandlers(
     // Cancel any pending page switch operation
     if (pendingPageSwitch) {
       pendingPageSwitch.abort();
+      // Complete the previous switch in the state machine so it returns to "ready".
+      // The aborted switch's finally block will skip pageSwitchComplete (signal.aborted),
+      // so we must do it here to avoid getting stuck in "page_switching".
+      // Safe to call even if already "ready" — invalid transitions are silently ignored.
+      stateMachine.pageSwitchComplete();
     }
     pendingPageSwitch = new AbortController();
     const signal = pendingPageSwitch.signal;
@@ -517,6 +523,13 @@ function setupPageEventHandlers(
       }
 
       forceCanvasUpdate(editor);
+
+      // Re-attach page link click handler to the now-ready document.
+      // The handler registered via setupAllInteractiveHandlers fires on page:select
+      // BEFORE the frame is ready, so it may attach to the wrong document.
+      // This call ensures the handler is on the correct document after resources load.
+      setupPageLinkHandler(editor);
+
       debug('Page switch completed');
     } catch (err) {
       // Don't log abort errors - they're expected during rapid page switching
@@ -529,13 +542,8 @@ function setupPageEventHandlers(
       }
     } finally {
       if (!signal.aborted) {
-        // Use requestAnimationFrame for smoother timing with the render cycle
-        requestAnimationFrame(() => {
-          if (!signal.aborted) {
-            stateMachine.pageSwitchComplete();
-            debug('Page switch lock released');
-          }
-        });
+        stateMachine.pageSwitchComplete();
+        debug('Page switch lock released');
       }
     }
   });
