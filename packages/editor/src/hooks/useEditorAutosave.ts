@@ -26,6 +26,8 @@ export interface UseEditorAutosaveOptions {
   onSave: () => Promise<unknown>;
   /** Debounce time in ms after last change (default: 5000) */
   debounceMs?: number;
+  /** Shorter debounce for the first save before any save has happened (default: 2000) */
+  initialDebounceMs?: number;
   /** Maximum wait time before forcing save (default: 30000) */
   maxWaitMs?: number;
 }
@@ -52,6 +54,7 @@ export function useEditorAutosave({
   stateMachine,
   onSave,
   debounceMs = 5000,
+  initialDebounceMs = 2000,
   maxWaitMs = 30000,
 }: UseEditorAutosaveOptions): UseEditorAutosaveReturn {
   const [status, setStatus] = useState<UseEditorAutosaveReturn['status']>('idle');
@@ -191,14 +194,21 @@ export function useEditorAutosave({
       clearTimeout(debounceTimeoutRef.current);
     }
 
+    // Use shorter debounce for the first save (before any save has happened).
+    // This ensures new prototypes get saved quickly so content isn't lost
+    // if the user navigates away before the normal debounce fires.
+    const effectiveDebounce = lastSavedAt === null && stateMachine.state.lastSavedAt === null
+      ? initialDebounceMs
+      : debounceMs;
+
     // Set new debounce timeout
     debounceTimeoutRef.current = setTimeout(() => {
       debug('Debounce complete, triggering save');
       performSave();
-    }, debounceMs);
+    }, effectiveDebounce);
 
-    debug('Change triggered, debounce reset');
-  }, [enabled, isPaused, stateMachine, performSave, debounceMs, maxWaitMs, safeSetStatus]);
+    debug('Change triggered, debounce reset, debounce:', effectiveDebounce, 'ms');
+  }, [enabled, isPaused, stateMachine, performSave, debounceMs, initialDebounceMs, maxWaitMs, safeSetStatus, lastSavedAt]);
 
   // Pause autosave
   const pause = useCallback(() => {

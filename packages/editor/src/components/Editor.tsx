@@ -526,6 +526,38 @@ export function Editor() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [stateMachine.state.dirty]);
 
+  // Save when the tab becomes hidden (browser back, tab switch, minimize).
+  // Uses refs to always read the latest state without re-registering the listener.
+  const saveDirtyRef = useRef(false);
+  const saveCanSaveRef = useRef(false);
+  const saveCallRef = useRef(persistence.save);
+  saveDirtyRef.current = stateMachine.state.dirty;
+  saveCanSaveRef.current = stateMachine.canSave;
+  saveCallRef.current = persistence.save;
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && saveDirtyRef.current && saveCanSaveRef.current) {
+        debug('Tab hidden with unsaved changes — saving');
+        saveCallRef.current('autosave').catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Save on component unmount (catches React Router in-app navigation).
+  // Fire-and-forget: the fetch continues even after unmount.
+  useEffect(() => {
+    return () => {
+      if (saveDirtyRef.current && saveCanSaveRef.current) {
+        debug('Component unmounting with unsaved changes — saving');
+        saveCallRef.current('autosave').catch(() => {});
+      }
+    };
+  }, []);
+
   // Load prototype on mount or slug change
   useEffect(() => {
     clearGrapesJSStorage();
