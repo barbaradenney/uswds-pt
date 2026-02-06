@@ -20,6 +20,7 @@ import {
   type LocalPrototype,
 } from '../lib/localStorage';
 import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
+import { loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
@@ -168,6 +169,12 @@ export function useEditorPersistence({
         // This ensures only local symbols are saved with the prototype
         const grapesData = extractLocalSymbols(rawGrapesData);
         debug('Filtered grapesData - local symbols only');
+
+        // Reload USWDS CSS after extraction — extractPerPageHtml cycles pages which
+        // can disrupt CSS in the active canvas iframe. Fire-and-forget (non-blocking).
+        loadUSWDSResources(editor).catch((e) =>
+          debug('Post-save CSS reload warning:', e)
+        );
 
         if (warnings.length > 0) {
           debug('Extraction warnings:', warnings);

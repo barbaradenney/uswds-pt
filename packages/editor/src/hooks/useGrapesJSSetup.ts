@@ -53,6 +53,8 @@ export interface UseGrapesJSSetupOptions {
     media: string;
     category: string;
   }>;
+  /** Pre-loaded project data for safety-net loading in onReady */
+  projectData?: Record<string, any> | null;
   /** Global symbols to merge into project data */
   globalSymbols?: GrapesJSSymbol[];
   /** Callback when a symbol is being created (to show scope dialog) */
@@ -74,6 +76,7 @@ export function useGrapesJSSetup({
   // isDemoMode, slug, pendingPrototype, localPrototype, prototype are accepted
   // for interface compatibility but no longer used in onReady — project data is
   // now loaded via SDK storage.project config in EditorCanvas.
+  projectData,
   onContentChange,
   blocks,
   globalSymbols = [],
@@ -81,6 +84,11 @@ export function useGrapesJSSetup({
 }: UseGrapesJSSetupOptions): UseGrapesJSSetupReturn {
   // Track registered event listeners for cleanup
   const listenersRef = useRef<Array<{ event: string; handler: (...args: unknown[]) => void }>>([]);
+
+  // Ref for project data — used in onReady as a safety-net fallback.
+  // Stored as ref (not in onReady deps) to avoid recreating onReady on save.
+  const projectDataRef = useRef<Record<string, any> | null>(projectData ?? null);
+  projectDataRef.current = projectData ?? null;
 
   // Helper to register editor event listeners with automatic tracking
   const registerListener = useCallback(
@@ -203,8 +211,16 @@ export function useGrapesJSSetup({
       registerListener(editor, 'component:update', changeHandler);
       registerListener(editor, 'style:change', changeHandler);
 
-      // Project data is now loaded via SDK's storage.project config in EditorCanvas,
-      // eliminating the need for manual loadProjectData() calls and timing races.
+      // Safety-net: redundant when SDK's storage.project loads correctly,
+      // but critical fallback when it doesn't (e.g., silent SDK failure).
+      if (projectDataRef.current) {
+        try {
+          debug('Safety-net: loading project data via loadProjectData');
+          editor.loadProjectData(projectDataRef.current);
+        } catch (e) {
+          debug('Safety-net loadProjectData failed (non-fatal):', e);
+        }
+      }
 
       // Add custom CSS to canvas
       addCardContainerCSS(editor);

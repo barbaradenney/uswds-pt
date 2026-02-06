@@ -152,6 +152,8 @@ export const EditorCanvas = memo(function EditorCanvas({
           ],
           storage: {
             type: 'self' as const,
+            autosaveChanges: 0, // Disable SDK internal auto-save timer
+            onSave: async () => {}, // No-op prevents errors if SDK triggers save internally
             // When projectData is available, SDK loads it directly during init —
             // no manual loadProjectData needed, no timing races with onReady.
             ...(projectData ? { project: projectData } : {}),

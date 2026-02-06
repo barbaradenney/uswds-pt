@@ -167,6 +167,62 @@ export function Editor() {
     return [...uswdsBlocks, tableBlock];
   }, []);
 
+  // Stable initialContent: only recompute when editorKey changes (editor will remount).
+  // Between key changes, return the same string to prevent memo() from detecting changes.
+  const initialContentCacheRef = useRef({ key: '', content: '' });
+  if (initialContentCacheRef.current.key !== editorKey) {
+    initialContentCacheRef.current = {
+      key: editorKey,
+      content: (isDemoMode
+        ? localPrototype?.htmlContent
+        : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)
+      ) || '',
+    };
+  }
+
+  // Stable projectData: only recompute when editorKey changes (editor will remount).
+  // Passed to EditorCanvas → SDK's storage.project so the SDK loads it during init,
+  // avoiding manual loadProjectData() calls and timing races in onReady.
+  // Also passed to useGrapesJSSetup for safety-net loadProjectData in onReady.
+  const projectDataCacheRef = useRef<{ key: string; data: Record<string, any> | null }>({ key: '', data: null });
+  if (projectDataCacheRef.current.key !== editorKey) {
+    let grapesData: Record<string, any> | null = null;
+
+    if (isDemoMode) {
+      if (localPrototype?.gjsData) {
+        try {
+          grapesData = JSON.parse(localPrototype.gjsData);
+        } catch {
+          // Invalid JSON, fall through to null
+        }
+      }
+    } else {
+      const protoData = pendingPrototypeRef.current || stateMachine.state.prototype;
+      if (protoData?.grapesData) {
+        grapesData = protoData.grapesData as Record<string, any>;
+      }
+    }
+
+    // Only use grapesData if it has actual content
+    if (grapesData) {
+      const firstPageComponents = (grapesData as any).pages?.[0]?.frames?.[0]?.component?.components;
+      const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
+      if (!hasActualContent) {
+        grapesData = null;
+      }
+    }
+
+    // Merge global symbols if we have project data
+    if (grapesData) {
+      const symbols = globalSymbols.getGrapesJSSymbols();
+      if (symbols.length > 0) {
+        grapesData = mergeGlobalSymbols(grapesData, symbols);
+      }
+    }
+
+    projectDataCacheRef.current = { key: editorKey, data: grapesData };
+  }
+
   // Callback for when a symbol is being created in GrapesJS
   // Dialog-first: receives serialized data and the selected component ref
   const handleSymbolCreate = useCallback(
@@ -188,6 +244,7 @@ export function Editor() {
     pendingPrototype: pendingPrototypeRef.current,
     localPrototype,
     prototype: stateMachine.state.prototype,
+    projectData: projectDataCacheRef.current.data,
     onContentChange: autosave.triggerChange,
     blocks,
     globalSymbols: globalSymbols.getGrapesJSSymbols(),
@@ -237,61 +294,6 @@ export function Editor() {
   const stableOnReady = useCallback((editor: EditorInstance) => stableOnReadyRef.current(editor), []);
   const stableOnRetry = useCallback(() => stableOnRetryRef.current(), []);
   const stableOnGoHome = useCallback(() => stableOnGoHomeRef.current(), []);
-
-  // Stable initialContent: only recompute when editorKey changes (editor will remount).
-  // Between key changes, return the same string to prevent memo() from detecting changes.
-  const initialContentCacheRef = useRef({ key: '', content: '' });
-  if (initialContentCacheRef.current.key !== editorKey) {
-    initialContentCacheRef.current = {
-      key: editorKey,
-      content: (isDemoMode
-        ? localPrototype?.htmlContent
-        : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)
-      ) || '',
-    };
-  }
-
-  // Stable projectData: only recompute when editorKey changes (editor will remount).
-  // Passed to EditorCanvas → SDK's storage.project so the SDK loads it during init,
-  // avoiding manual loadProjectData() calls and timing races in onReady.
-  const projectDataCacheRef = useRef<{ key: string; data: Record<string, any> | null }>({ key: '', data: null });
-  if (projectDataCacheRef.current.key !== editorKey) {
-    let grapesData: Record<string, any> | null = null;
-
-    if (isDemoMode) {
-      if (localPrototype?.gjsData) {
-        try {
-          grapesData = JSON.parse(localPrototype.gjsData);
-        } catch {
-          // Invalid JSON, fall through to null
-        }
-      }
-    } else {
-      const protoData = pendingPrototypeRef.current || stateMachine.state.prototype;
-      if (protoData?.grapesData) {
-        grapesData = protoData.grapesData as Record<string, any>;
-      }
-    }
-
-    // Only use grapesData if it has actual content
-    if (grapesData) {
-      const firstPageComponents = (grapesData as any).pages?.[0]?.frames?.[0]?.component?.components;
-      const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
-      if (!hasActualContent) {
-        grapesData = null;
-      }
-    }
-
-    // Merge global symbols if we have project data
-    if (grapesData) {
-      const symbols = globalSymbols.getGrapesJSSymbols();
-      if (symbols.length > 0) {
-        grapesData = mergeGlobalSymbols(grapesData, symbols);
-      }
-    }
-
-    projectDataCacheRef.current = { key: editorKey, data: grapesData };
-  }
 
   // Handle symbol scope selection from dialog
   const handleSymbolScopeConfirm = useCallback(

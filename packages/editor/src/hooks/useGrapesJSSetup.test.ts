@@ -420,11 +420,12 @@ describe('useGrapesJSSetup', () => {
   // ============================================================================
 
   describe('project data loading', () => {
-    // Project data is now loaded via SDK's storage.project config in EditorCanvas,
-    // not via manual loadProjectData() calls in onReady. These tests verify that
-    // onReady does NOT call loadProjectData (the SDK handles it).
+    // Project data is loaded via SDK's storage.project config in EditorCanvas,
+    // AND as a safety-net fallback via loadProjectData() in onReady.
+    // When projectData is provided, onReady calls loadProjectData as a redundant
+    // safety net. When null, it does not.
 
-    it('should not call loadProjectData for new prototypes (SDK uses project.default)', () => {
+    it('should not call loadProjectData when projectData is null (new prototype)', () => {
       const stateMachine = createMockStateMachine();
       const editorRef = { current: null };
       const mockEditor = createMockEditor();
@@ -438,6 +439,7 @@ describe('useGrapesJSSetup', () => {
           pendingPrototype: null,
           localPrototype: null,
           prototype: null,
+          projectData: null,
           onContentChange: vi.fn(),
           blocks: [],
         })
@@ -447,46 +449,10 @@ describe('useGrapesJSSetup', () => {
         result.current.onReady(mockEditor);
       });
 
-      // onReady should NOT call loadProjectData — SDK handles it via storage config
       expect(mockEditor.loadProjectData).not.toHaveBeenCalled();
     });
 
-    it('should not call loadProjectData in demo mode (SDK uses storage.project)', () => {
-      const stateMachine = createMockStateMachine();
-      const editorRef = { current: null };
-      const mockEditor = createMockEditor();
-      const localPrototype = {
-        gjsData: JSON.stringify({
-          pages: [{ id: 'page-1', name: 'Test' }],
-          styles: [],
-          assets: [],
-        }),
-        htmlContent: '<div>Local content</div>',
-      };
-
-      const { result } = renderHook(() =>
-        useGrapesJSSetup({
-          stateMachine,
-          editorRef,
-          isDemoMode: true,
-          slug: 'local-123',
-          pendingPrototype: null,
-          localPrototype,
-          prototype: null,
-          onContentChange: vi.fn(),
-          blocks: [],
-        })
-      );
-
-      act(() => {
-        result.current.onReady(mockEditor);
-      });
-
-      // onReady should NOT call loadProjectData — SDK handles it via storage config
-      expect(mockEditor.loadProjectData).not.toHaveBeenCalled();
-    });
-
-    it('should not call loadProjectData from API prototype (SDK uses storage.project)', () => {
+    it('should call loadProjectData as safety-net when projectData is provided', () => {
       const proto = mockPrototype();
       const stateMachine = createMockStateMachine();
       const editorRef = { current: null };
@@ -501,6 +467,7 @@ describe('useGrapesJSSetup', () => {
           pendingPrototype: proto,
           localPrototype: null,
           prototype: null,
+          projectData: proto.grapesData as Record<string, any>,
           onContentChange: vi.fn(),
           blocks: [],
         })
@@ -510,11 +477,46 @@ describe('useGrapesJSSetup', () => {
         result.current.onReady(mockEditor);
       });
 
-      // onReady should NOT call loadProjectData — SDK handles it via storage config
-      expect(mockEditor.loadProjectData).not.toHaveBeenCalled();
+      // Safety-net: loadProjectData called with the provided project data
+      expect(mockEditor.loadProjectData).toHaveBeenCalledWith(proto.grapesData);
     });
 
-    it('should not call loadProjectData even with state prototype (SDK uses storage.project)', () => {
+    it('should call loadProjectData in demo mode when projectData is provided', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const projectData = {
+        pages: [{ id: 'page-1', name: 'Test' }],
+        styles: [],
+        assets: [],
+      };
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: true,
+          slug: 'local-123',
+          pendingPrototype: null,
+          localPrototype: {
+            gjsData: JSON.stringify(projectData),
+            htmlContent: '<div>Local content</div>',
+          },
+          prototype: null,
+          projectData,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.loadProjectData).toHaveBeenCalledWith(projectData);
+    });
+
+    it('should not call loadProjectData when projectData is not provided', () => {
       const proto = mockPrototype();
       const stateMachine = createMockStateMachine();
       const editorRef = { current: null };
@@ -538,7 +540,7 @@ describe('useGrapesJSSetup', () => {
         result.current.onReady(mockEditor);
       });
 
-      // onReady should NOT call loadProjectData — SDK handles it via storage config
+      // No projectData provided — should NOT call loadProjectData
       expect(mockEditor.loadProjectData).not.toHaveBeenCalled();
     });
   });
