@@ -4,7 +4,7 @@ This document describes the GrapesJS editor architecture, known issues, and thei
 
 ## Overview
 
-The USWDS-PT editor uses GrapesJS Studio SDK to provide a visual drag-and-drop interface. The editor must handle two distinct scenarios:
+The USWDS-PT editor uses GrapesJS core (`grapesjs` + `@grapesjs/react`) to provide a visual drag-and-drop interface. The editor must handle two distinct scenarios:
 
 1. **NEW prototypes** - Created from scratch with a blank template
 2. **EXISTING prototypes** - Loaded from the database with saved state
@@ -65,7 +65,7 @@ interface GrapesPage {
 **Symptom**: When switching to a different page in a multi-page prototype, the canvas goes blank and content appears to be deleted.
 
 **Root Cause**:
-- New prototypes initialize from HTML strings via `project.default`
+- New prototypes initialize from HTML strings via `projectData`
 - Existing prototypes load from structured JSON via `loadProjectData()`
 - These create different internal GrapesJS state structures
 - Page switching relies on proper page state, which new prototypes don't have
@@ -82,7 +82,7 @@ interface GrapesPage {
 **Root Cause**: Three separate places could initialize/load project data:
 1. `loadPrototype()` function (before render)
 2. `onReady()` callback (after render)
-3. `project.default` in StudioEditor options
+3. `projectData` option in GjsEditor
 
 **Fix**:
 - Consolidated to single initialization point in `onReady()`
@@ -97,7 +97,7 @@ interface GrapesPage {
 NEW PROTOTYPE:
 1. Editor mounts with no slug
 2. onReady() fires
-3. GrapesJS initializes with project.default template
+3. GrapesJS initializes with projectData template
 4. On first save, data is normalized and stored
 5. URL updates to include slug
 6. Subsequent saves work with properly structured data
@@ -129,6 +129,10 @@ After fixes, page switching:
 ## Key Files
 
 - `packages/editor/src/components/Editor.tsx` - Main editor component
+- `packages/editor/src/components/editor/EditorCanvas.tsx` - GjsEditor wrapper
+- `packages/editor/src/hooks/useGrapesJSSetup.ts` - Editor initialization and event setup
+- `packages/editor/src/hooks/useEditorPersistence.ts` - Save/load/createNew API calls
+- `packages/editor/src/lib/grapesjs/data-extractor.ts` - HTML + grapesData extraction
 - `packages/editor/src/hooks/useAutosave.ts` - Autosave logic
 - `packages/api/src/routes/prototypes.ts` - API endpoints
 - `packages/shared/src/types/prototype.ts` - Type definitions

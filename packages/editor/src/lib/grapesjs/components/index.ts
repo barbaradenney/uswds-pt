@@ -7,4 +7,3 @@
 export { registerGridComponents } from './grid-components';
 export { registerCardComponents } from './card-components';
 export { registerTextComponents } from './text-components';
-export { uswdsTablePlugin } from './table-plugin';

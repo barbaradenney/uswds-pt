@@ -30,9 +30,8 @@ async function createNewPrototype(page: Page) {
   // Wait for navigation to editor
   await expect(page).toHaveURL(/\/new|\/edit\//, { timeout: 10000 });
 
-  // Wait for editor to load - look for StudioEditor elements
-  // The GrapesJS Studio SDK renders a specific structure
-  await page.waitForSelector('[class*="gjs"], [class*="studio"], [data-gjs-type]', { timeout: 60000 });
+  // Wait for editor to load - look for GrapesJS elements
+  await page.waitForSelector('[class*="gjs"], [data-gjs-type]', { timeout: 60000 });
 }
 
 /**
@@ -40,8 +39,7 @@ async function createNewPrototype(page: Page) {
  */
 async function waitForEditorReady(page: Page) {
   // Wait for the editor container to be visible
-  // GrapesJS Studio SDK has different class names than standard GrapesJS
-  await page.waitForSelector('[class*="gjs"], [class*="studio"]', {
+  await page.waitForSelector('[class*="gjs"]', {
     state: 'visible',
     timeout: 60000,
   });

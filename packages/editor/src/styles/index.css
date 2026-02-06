@@ -1,23 +1,8 @@
 /* USWDS Prototyping Tool Styles */
 
 /* ============================================
-   GrapesJS Studio SDK Customizations
+   GrapesJS Core UI Customizations
    ============================================ */
-
-/* Add "Components" label next to the blocks panel toggle button (purple + button) */
-[class*="BlocksBtn"] {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding-right: 12px !important;
-}
-
-[class*="BlocksBtn"]::after {
-  content: 'Components';
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-}
 
 :root {
   --color-primary: #005ea2;

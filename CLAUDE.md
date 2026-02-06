@@ -89,7 +89,6 @@ The API package has its own `.env` file at `packages/api/.env`. Key variables:
 - `PORT` - API server port (default: 3001)
 
 The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config:
-- `VITE_GRAPESJS_LICENSE_KEY` - GrapesJS Studio SDK license key
 - `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
 - `VITE_AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI)
 - `VITE_AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)

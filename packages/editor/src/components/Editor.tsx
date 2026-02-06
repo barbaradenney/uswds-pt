@@ -1,8 +1,8 @@
 /**
  * Editor Component
  *
- * Main visual editor for USWDS prototypes using GrapesJS Studio SDK.
- * Refactored to use composable hooks for state management, persistence, and setup.
+ * Main visual editor for USWDS prototypes using GrapesJS core.
+ * Uses composable hooks for state management, persistence, and setup.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -31,9 +31,6 @@ import {
   COMPONENT_ICONS,
 } from '@uswds-pt/adapter';
 import type { EditorInstance } from '../types/grapesjs';
-
-// License key from environment variable
-const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 
 const debug = createDebugLogger('Editor');
 
@@ -174,15 +171,7 @@ export function Editor() {
       };
     });
 
-    const tableBlock = {
-      id: 'table',
-      label: 'Table',
-      content: { type: 'table', classes: ['usa-table'] },
-      media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v2h14V7zm0 4H5v2h14v-2zm0 4H5v2h14v-2z"/></svg>`,
-      category: 'Data Display',
-    };
-
-    return [...uswdsBlocks, tableBlock];
+    return uswdsBlocks;
   }, []);
 
   // Stable initialContent: only recompute when editorKey changes (editor will remount).
@@ -296,10 +285,10 @@ export function Editor() {
 
   // === Stable prop wrappers for EditorCanvas ===
   // EditorCanvas is memo()'d. If ANY prop changes reference, it re-renders and
-  // creates a new inline `options` object, which causes the StudioEditor SDK to
-  // reinitialize with initialContent, wiping the user's work (see pitfall #1).
-  // These ref-based wrappers ensure stable function references across re-renders
-  // so memo() prevents EditorCanvas from re-rendering after saves, state changes, etc.
+  // creates a new inline `options` object, which causes GjsEditor to reinitialize
+  // with initialContent, wiping the user's work. These ref-based wrappers ensure
+  // stable function references across re-renders so memo() prevents EditorCanvas
+  // from re-rendering after saves, state changes, etc.
   const stableOnReadyRef = useRef<(editor: EditorInstance) => void>(() => {});
   const stableOnRetryRef = useRef<() => void>(() => {});
   const stableOnGoHomeRef = useRef<() => void>(() => {});
@@ -331,21 +320,10 @@ export function Editor() {
       }
 
       if (scope === 'local') {
-        // Create local symbol via GrapesJS
-        debug('Creating local symbol:', name);
-        try {
-          if (editor?.Components?.addSymbol) {
-            const symbol = editor.Components.addSymbol(selectedComponent);
-            // Update label if the user changed it
-            if (symbol?.set && name !== pendingSymbolData.label) {
-              symbol.set('label', name);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to create local symbol:', e);
-        }
+        // Local symbols are not supported in GrapesJS core
+        debug('Local symbols not supported, skipping:', name);
       } else {
-        // Create as global symbol via API (no local symbol needed)
+        // Create as global symbol via API
         debug('Creating global symbol:', name);
         const created = await globalSymbols.create(name, {
           ...pendingSymbolData,
@@ -625,30 +603,6 @@ export function Editor() {
       <div className="loading-screen">
         <div className="loading-spinner" />
         <p>Loading editor...</p>
-      </div>
-    );
-  }
-
-  // License key required screen
-  if (!LICENSE_KEY) {
-    return (
-      <div className="editor-container">
-        <header className="editor-header">
-          <div className="editor-header-left">
-            <button className="btn btn-secondary" onClick={handleBack} style={{ padding: '6px 12px' }}>
-              ← Back
-            </button>
-          </div>
-        </header>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
-          <div className="card" style={{ maxWidth: '500px', textAlign: 'center' }}>
-            <h2>License Key Required</h2>
-            <p style={{ color: 'var(--color-base-light)', marginTop: '12px' }}>
-              The GrapesJS Studio SDK license key is not configured.
-              Please add the <code>VITE_GRAPESJS_LICENSE_KEY</code> environment variable.
-            </p>
-          </div>
-        </div>
       </div>
     );
   }
