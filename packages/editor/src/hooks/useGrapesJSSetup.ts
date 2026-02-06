@@ -26,10 +26,26 @@ const debug = createDebugLogger('GrapesJSSetup');
 
 /**
  * Module-level flag to suppress the symbol scope dialog during data loading.
- * Set to true before calling editor.loadProjectData() and cleared after,
- * so that symbol:add events fired by loading don't trigger the dialog.
+ * Set to true before calling editor.loadProjectData() and cleared after a
+ * delay, so that symbol:add events fired synchronously or asynchronously
+ * by loading don't trigger the dialog.
  */
 let isLoadingProjectData = false;
+let loadingProjectDataTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function setLoadingProjectData(value: boolean) {
+  if (value) {
+    // Clear any pending timer
+    if (loadingProjectDataTimer) clearTimeout(loadingProjectDataTimer);
+    isLoadingProjectData = true;
+  } else {
+    // Delay clearing so async symbol events are still suppressed
+    loadingProjectDataTimer = setTimeout(() => {
+      isLoadingProjectData = false;
+      loadingProjectDataTimer = null;
+    }, 500);
+  }
+}
 
 export interface UseGrapesJSSetupOptions {
   /** State machine for lifecycle management */
@@ -158,11 +174,11 @@ export function useGrapesJSSetup({
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
         console.log('[GrapesJSSetup] Merged data symbols:', mergedData.symbols?.length);
-        isLoadingProjectData = true;
+        setLoadingProjectData(true);
         try {
           editor.loadProjectData(mergedData);
         } finally {
-          isLoadingProjectData = false;
+          setLoadingProjectData(false);
         }
         console.log('[GrapesJSSetup] Injection complete');
       }
@@ -292,11 +308,11 @@ export function useGrapesJSSetup({
    */
   function loadProjectData(editor: EditorInstance) {
     // Suppress symbol scope dialog during data loading
-    isLoadingProjectData = true;
+    setLoadingProjectData(true);
     try {
       _loadProjectDataInner(editor);
     } finally {
-      isLoadingProjectData = false;
+      setLoadingProjectData(false);
     }
   }
 

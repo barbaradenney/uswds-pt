@@ -14,7 +14,7 @@ import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
 import { useEditorAutosave } from '../hooks/useEditorAutosave';
-import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
+import { useGrapesJSSetup, setLoadingProjectData } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
@@ -380,7 +380,12 @@ export function Editor() {
           // Reload editor content using the returned prototype directly
           const editor = editorRef.current;
           if (editor && proto?.grapesData) {
-            editor.loadProjectData(proto.grapesData as any);
+            setLoadingProjectData(true);
+            try {
+              editor.loadProjectData(proto.grapesData as any);
+            } finally {
+              setLoadingProjectData(false);
+            }
           }
 
           await fetchVersions();
