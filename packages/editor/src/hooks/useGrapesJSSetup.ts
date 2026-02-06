@@ -11,6 +11,7 @@ import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { isExtractingPerPageHtml } from '../lib/grapesjs/data-extractor';
 import {
   forceCanvasUpdate,
   setupCanvasEventHandlers,
@@ -535,6 +536,9 @@ function setupPageEventHandlers(
   let pendingPageSwitch: AbortController | null = null;
 
   registerListener(editor, 'page:select', async (page: any) => {
+    // Skip side effects when data extractor is cycling pages for HTML extraction
+    if (isExtractingPerPageHtml()) return;
+
     const pageId = page?.getId?.() || page?.id;
     const pageName = page?.get?.('name') || page?.getName?.() || 'unnamed';
     debug('Page selected:', pageId, '-', pageName);
@@ -609,6 +613,9 @@ function setupPageEventHandlers(
 
   // Add template when new page is selected
   registerListener(editor, 'page:select', async (page: any) => {
+    // Skip side effects when data extractor is cycling pages for HTML extraction
+    if (isExtractingPerPageHtml()) return;
+
     const pageId = page?.getId?.() || page?.id;
 
     if (pageId && pagesNeedingTemplate.has(pageId)) {

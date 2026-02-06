@@ -25,6 +25,7 @@ export {
 export {
   extractEditorData,
   isEditorReadyForExtraction,
+  isExtractingPerPageHtml,
   hasActualContent,
   type ExtractionResult,
   type GrapesProjectData,

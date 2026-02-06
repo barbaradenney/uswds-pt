@@ -26,6 +26,11 @@ vi.mock('../lib/grapesjs/resource-loader', () => ({
   clearGrapesJSStorage: (...args: unknown[]) => mockClearGrapesJSStorage(...args),
 }));
 
+// Mock data extractor
+vi.mock('../lib/grapesjs/data-extractor', () => ({
+  isExtractingPerPageHtml: () => false,
+}));
+
 // Mock canvas helpers
 const mockForceCanvasUpdate = vi.fn();
 const mockSetupCanvasEventHandlers = vi.fn();

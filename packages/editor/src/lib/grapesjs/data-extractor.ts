@@ -35,6 +35,17 @@ import type { EditorInstance } from '../../types/grapesjs';
 const debug = createDebugLogger('DataExtractor');
 
 /**
+ * Flag indicating that extractPerPageHtml is currently cycling through pages.
+ * When true, page:select handlers should skip side effects (resource loading,
+ * canvas refresh, template injection) to avoid async operations that outlive
+ * the extraction and interfere with the editor state.
+ */
+let _extractingPerPageHtml = false;
+export function isExtractingPerPageHtml(): boolean {
+  return _extractingPerPageHtml;
+}
+
+/**
  * Result of data extraction
  */
 export interface ExtractionResult {
@@ -276,6 +287,9 @@ function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectDa
 
   const currentPage = editor.Pages?.getSelected?.();
 
+  // Suppress page:select side effects (resource loading, canvas refresh,
+  // template injection) while we cycle through pages for HTML extraction.
+  _extractingPerPageHtml = true;
   try {
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
@@ -290,6 +304,7 @@ function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectDa
       }
     }
   } finally {
+    _extractingPerPageHtml = false;
     // Restore original page selection
     if (currentPage) {
       editor.Pages?.select?.(currentPage);
