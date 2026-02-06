@@ -17,13 +17,15 @@ interface ComponentsAPI {
  * Register grid layout component types
  */
 export function registerGridComponents(Components: ComponentsAPI): void {
-  // Grid container
+  // Grid container — classes must be in defaults so GrapesJS persists
+  // them through serialization and editor.getHtml() includes them.
   Components.addType('grid-container', {
     isComponent: (el: HTMLElement) => el.classList?.contains('grid-container'),
     model: {
       defaults: {
         tagName: 'div',
         name: 'Grid Container',
+        classes: ['grid-container'],
         ...containerDefaults,
       },
     },
@@ -36,6 +38,7 @@ export function registerGridComponents(Components: ComponentsAPI): void {
       defaults: {
         tagName: 'div',
         name: 'Grid Row',
+        classes: ['grid-row'],
         ...containerDefaults,
       },
     },
@@ -55,6 +58,17 @@ export function registerGridComponents(Components: ComponentsAPI): void {
         highlightable: true,
         layerable: true,
         editable: true,
+      },
+      // Preserve grid-col-* classes from the parsed element
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      init(this: any) {
+        const el = this.getEl?.();
+        if (el?.classList) {
+          const gridClasses = Array.from(el.classList as Iterable<string>).filter((cls) => cls.startsWith('grid-col'));
+          if (gridClasses.length > 0) {
+            gridClasses.forEach((cls: string) => this.addClass(cls));
+          }
+        }
       },
     },
   });
