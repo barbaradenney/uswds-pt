@@ -121,6 +121,7 @@ const validTransitions: Record<EditorStatus, EditorAction['type'][]> = {
   ],
   initializing_editor: [
     'EDITOR_READY',
+    'LOAD_PROTOTYPE',  // Safety net: allow re-loading if needed
     'RESET',
   ],
   ready: [

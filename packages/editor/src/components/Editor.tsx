@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
+import { authFetch } from '../hooks/useAuth';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
@@ -458,39 +459,56 @@ export function Editor() {
     openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
   }, [name, slug, localPrototype?.id, persistence]);
 
-  // Handle version restore
+  // Handle version restore — uses Path 2 (in-place reload)
+  // Uses RESTORE_VERSION_START → RESTORE_VERSION_COMPLETE state machine flow
+  // instead of persistence.load() which would use LOAD_PROTOTYPE → PROTOTYPE_LOADED
+  // and get stuck in initializing_editor (onReady never fires without remount).
   const handleVersionRestore = useCallback(
     async (versionNumber: number): Promise<boolean> => {
       autosave.pause();
-
       try {
+        // 1. Transition state machine: ready → restoring_version
+        stateMachine.restoreVersionStart(versionNumber);
+
+        // 2. Call API to restore version
         const success = await restoreVersion(versionNumber);
-
-        if (success && slug) {
-          // Reload the prototype via persistence
-          const proto = await persistence.load(slug);
-
-          // Reload editor content using the returned prototype directly
-          const editor = editorRef.current;
-          if (editor && proto?.grapesData) {
-            editor.loadProjectData(proto.grapesData as any);
-            // Ensure USWDS web component resources are loaded so complex
-            // components (usa-header, usa-step-indicator) re-render from
-            // their attributes after loadProjectData rebuilds the DOM.
-            await loadUSWDSResources(editor);
-            editor.refresh();
-          }
-
-          await fetchVersions();
-          autosave.markSaved();
+        if (!success || !slug) {
+          stateMachine.restoreVersionFailed('Failed to restore version');
+          return false;
         }
 
-        return success;
+        // 3. Fetch the restored prototype directly (NOT persistence.load)
+        const response = await authFetch(`/api/prototypes/${slug}`);
+        if (!response.ok) {
+          stateMachine.restoreVersionFailed('Failed to load restored prototype');
+          return false;
+        }
+        const proto: Prototype = await response.json();
+
+        // 4. In-place reload into editor
+        const editor = editorRef.current;
+        if (editor && proto.grapesData) {
+          editor.loadProjectData(proto.grapesData as any);
+          await loadUSWDSResources(editor);
+          editor.refresh();
+        }
+
+        // 5. Transition state machine back: restoring_version → ready
+        stateMachine.restoreVersionComplete(proto);
+
+        // 6. Refresh UI
+        await fetchVersions();
+        autosave.markSaved();
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Restore failed';
+        stateMachine.restoreVersionFailed(message);
+        return false;
       } finally {
         autosave.resume();
       }
     },
-    [restoreVersion, slug, persistence, fetchVersions, autosave]
+    [restoreVersion, slug, stateMachine, fetchVersions, autosave, editorRef]
   );
 
   // Warn users before leaving with unsaved changes
@@ -513,24 +531,11 @@ export function Editor() {
     clearGrapesJSStorage();
 
     if (slug) {
-      // Check if we already have this prototype loaded (e.g., just created via createNew)
-      const alreadyLoaded = stateMachine.state.prototype?.slug === slug;
-
-      if (alreadyLoaded) {
-        // Prototype already in state — just set it as pending and remount the editor
-        pendingPrototypeRef.current = stateMachine.state.prototype;
-        setEditorKey(slug);
-      } else {
-        pendingPrototypeRef.current = null;
-        // Don't setEditorKey here — on refresh, editorKey is already slug
-        // from useState init. loadPrototypeAndRemount will trigger the
-        // remount with a unique key after data is available.
-        if (isDemoMode) {
-          persistence.load(slug);
-        } else {
-          loadPrototypeAndRemount(slug);
-        }
-      }
+      // Always use the unified load-and-remount path for both demo and API mode.
+      // This ensures data is fetched fresh and editorKey always gets a unique value
+      // (avoiding no-op setEditorKey when key already equals slug).
+      pendingPrototypeRef.current = null;
+      loadPrototypeAndRemount(slug);
     } else if (!isDemoMode && currentTeam) {
       // Create new prototype in authenticated mode
       persistence.createNew();

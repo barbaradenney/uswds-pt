@@ -657,6 +657,126 @@ describe('useEditorStateMachine', () => {
   });
 
   // ============================================================================
+  // Safety Net: LOAD_PROTOTYPE from initializing_editor
+  // ============================================================================
+
+  describe('initializing_editor re-load safety net', () => {
+    it('should allow LOAD_PROTOTYPE from initializing_editor', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype();
+
+      // Get to initializing_editor state
+      act(() => {
+        result.current.loadPrototype('test-slug');
+      });
+      act(() => {
+        result.current.prototypeLoaded(proto);
+      });
+
+      expect(result.current.state.status).toBe('initializing_editor');
+
+      // Should be able to start a new load (safety net)
+      act(() => {
+        result.current.loadPrototype('new-slug');
+      });
+
+      expect(result.current.state.status).toBe('loading_prototype');
+      expect(result.current.state.meta.slug).toBe('new-slug');
+    });
+  });
+
+  // ============================================================================
+  // Full Restore Version Flow (start → complete)
+  // ============================================================================
+
+  describe('restore version full flow', () => {
+    it('should transition ready → restoring_version → ready with correct data', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype({ slug: 'my-proto' });
+      const restoredProto = mockPrototype({
+        slug: 'my-proto',
+        htmlContent: '<div>Version 2 content</div>',
+      });
+
+      // Get to ready state
+      act(() => {
+        result.current.loadPrototype('my-proto');
+      });
+      act(() => {
+        result.current.prototypeLoaded(proto);
+      });
+      act(() => {
+        result.current.editorReady();
+      });
+
+      expect(result.current.state.status).toBe('ready');
+
+      // Start version restore
+      act(() => {
+        result.current.restoreVersionStart(5);
+      });
+
+      expect(result.current.state.status).toBe('restoring_version');
+      expect(result.current.state.meta.versionNumber).toBe(5);
+      expect(result.current.state.previousStatus).toBe('ready');
+
+      // Complete version restore
+      act(() => {
+        result.current.restoreVersionComplete(restoredProto);
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype).toEqual(restoredProto);
+      expect(result.current.state.dirty).toBe(false);
+      expect(result.current.state.lastSavedAt).not.toBeNull();
+      expect(result.current.state.meta.slug).toBe('my-proto');
+    });
+
+    it('should allow consecutive restores (ready → restoring → ready → restoring → ready)', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+      const proto = mockPrototype({ slug: 'my-proto' });
+      const v1 = mockPrototype({ slug: 'my-proto', htmlContent: '<div>V1</div>' });
+      const v2 = mockPrototype({ slug: 'my-proto', htmlContent: '<div>V2</div>' });
+
+      // Get to ready state
+      act(() => {
+        result.current.loadPrototype('my-proto');
+      });
+      act(() => {
+        result.current.prototypeLoaded(proto);
+      });
+      act(() => {
+        result.current.editorReady();
+      });
+
+      // First restore
+      act(() => {
+        result.current.restoreVersionStart(1);
+      });
+      act(() => {
+        result.current.restoreVersionComplete(v1);
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype).toEqual(v1);
+
+      // Second restore (should not be stuck)
+      act(() => {
+        result.current.restoreVersionStart(2);
+      });
+
+      expect(result.current.state.status).toBe('restoring_version');
+
+      act(() => {
+        result.current.restoreVersionComplete(v2);
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype).toEqual(v2);
+    });
+  });
+
+  // ============================================================================
   // Reducer Direct Tests
   // ============================================================================
 
