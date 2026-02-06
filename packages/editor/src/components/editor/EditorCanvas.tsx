@@ -8,7 +8,6 @@
 import { memo } from 'react';
 import grapesjs from 'grapesjs';
 import GjsEditor from '@grapesjs/react';
-import 'grapesjs/dist/css/grapes.min.css';
 import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
