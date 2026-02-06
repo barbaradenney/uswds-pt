@@ -14,7 +14,7 @@ import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
 import { useEditorAutosave } from '../hooks/useEditorAutosave';
-import { useGrapesJSSetup, setLoadingProjectData } from '../hooks/useGrapesJSSetup';
+import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
@@ -65,7 +65,7 @@ export function Editor() {
   // State for symbol scope dialog
   const [showSymbolDialog, setShowSymbolDialog] = useState(false);
   const [pendingSymbolData, setPendingSymbolData] = useState<GrapesJSSymbol | null>(null);
-  const pendingSymbolCallbackRef = useRef<((scope: SymbolScope, name: string) => void) | null>(null);
+  const pendingSymbolComponentRef = useRef<any>(null);
 
   // Local state for UI
   const [name, setName] = useState('Untitled Prototype');
@@ -168,12 +168,12 @@ export function Editor() {
   }, []);
 
   // Callback for when a symbol is being created in GrapesJS
-  // Must be defined before useGrapesJSSetup which uses it
+  // Dialog-first: receives serialized data and the selected component ref
   const handleSymbolCreate = useCallback(
-    (symbolData: GrapesJSSymbol, callback: (scope: SymbolScope, name: string) => void) => {
+    (symbolData: GrapesJSSymbol, selectedComponent: any) => {
       debug('Symbol creation requested:', symbolData);
       setPendingSymbolData(symbolData);
-      pendingSymbolCallbackRef.current = callback;
+      pendingSymbolComponentRef.current = selectedComponent;
       setShowSymbolDialog(true);
     },
     []
@@ -223,8 +223,33 @@ export function Editor() {
     async (scope: SymbolScope, name: string) => {
       if (!pendingSymbolData) return;
 
-      if (scope === 'global') {
-        // Create as global symbol via API
+      const selectedComponent = pendingSymbolComponentRef.current;
+      const editor = editorRef.current;
+
+      // Guard: ensure the component still exists in the editor
+      if (!selectedComponent?.getEl?.()) {
+        debug('Selected component no longer exists, aborting symbol creation');
+        setPendingSymbolData(null);
+        pendingSymbolComponentRef.current = null;
+        return;
+      }
+
+      if (scope === 'local') {
+        // Create local symbol via GrapesJS
+        debug('Creating local symbol:', name);
+        try {
+          if (editor?.Components?.addSymbol) {
+            const symbol = editor.Components.addSymbol(selectedComponent);
+            // Update label if the user changed it
+            if (symbol?.set && name !== pendingSymbolData.label) {
+              symbol.set('label', name);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to create local symbol:', e);
+        }
+      } else {
+        // Create as global symbol via API (no local symbol needed)
         debug('Creating global symbol:', name);
         const created = await globalSymbols.create(name, {
           ...pendingSymbolData,
@@ -233,22 +258,13 @@ export function Editor() {
         if (created) {
           debug('Global symbol created:', created.id);
         }
-      } else {
-        debug('Creating local symbol:', name);
-      }
-
-      // Always call the callback to handle the GrapesJS symbol
-      // For local: updates the symbol name
-      // For global: removes the local symbol (since we created it via API)
-      if (pendingSymbolCallbackRef.current) {
-        pendingSymbolCallbackRef.current(scope, name);
       }
 
       // Reset pending state
       setPendingSymbolData(null);
-      pendingSymbolCallbackRef.current = null;
+      pendingSymbolComponentRef.current = null;
     },
-    [pendingSymbolData, globalSymbols]
+    [pendingSymbolData, globalSymbols, editorRef]
   );
 
   // Handle export
@@ -380,12 +396,7 @@ export function Editor() {
           // Reload editor content using the returned prototype directly
           const editor = editorRef.current;
           if (editor && proto?.grapesData) {
-            setLoadingProjectData(true);
-            try {
-              editor.loadProjectData(proto.grapesData as any);
-            } finally {
-              setLoadingProjectData(false);
-            }
+            editor.loadProjectData(proto.grapesData as any);
           }
 
           await fetchVersions();
@@ -420,15 +431,23 @@ export function Editor() {
     clearGrapesJSStorage();
 
     if (slug) {
-      // Load existing prototype
-      pendingPrototypeRef.current = null;
-      setEditorKey(slug);
+      // Check if we already have this prototype loaded (e.g., just created via createNew)
+      const alreadyLoaded = stateMachine.state.prototype?.slug === slug;
 
-      if (isDemoMode) {
-        persistence.load(slug);
+      if (alreadyLoaded) {
+        // Prototype already in state — just set it as pending and remount the editor
+        pendingPrototypeRef.current = stateMachine.state.prototype;
+        setEditorKey(slug);
       } else {
-        // Load data before triggering editor remount
-        loadPrototypeAndRemount(slug);
+        pendingPrototypeRef.current = null;
+        setEditorKey(slug);
+
+        if (isDemoMode) {
+          persistence.load(slug);
+        } else {
+          // Load data before triggering editor remount
+          loadPrototypeAndRemount(slug);
+        }
       }
     } else if (!isDemoMode && currentTeam) {
       // Create new prototype in authenticated mode
@@ -560,7 +579,7 @@ export function Editor() {
         onClose={() => {
           setShowSymbolDialog(false);
           setPendingSymbolData(null);
-          pendingSymbolCallbackRef.current = null;
+          pendingSymbolComponentRef.current = null;
         }}
         onConfirm={handleSymbolScopeConfirm}
         pendingSymbol={pendingSymbolData}
