@@ -563,9 +563,12 @@ export function Editor() {
     clearGrapesJSStorage();
 
     if (slug) {
-      // Always use the unified load-and-remount path for both demo and API mode.
-      // This ensures data is fetched fresh and editorKey always gets a unique value
-      // (avoiding no-op setEditorKey when key already equals slug).
+      // Skip reload if we already have this prototype loaded.
+      // This prevents dependency changes (e.g., currentTeam loading async)
+      // from re-firing the effect and wiping unsaved editor content.
+      if (stateMachine.state.prototype?.slug === slug) {
+        return;
+      }
       pendingPrototypeRef.current = null;
       loadPrototypeAndRemount(slug);
     } else if (!isDemoMode && currentTeam) {
