@@ -6,10 +6,10 @@
  */
 
 import { useCallback, useRef, useEffect } from 'react';
-import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
+import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
-import { mergeGlobalSymbols, extractLocalSymbols, GLOBAL_SYMBOL_PREFIX } from './useGlobalSymbols';
+import { mergeGlobalSymbols } from './useGlobalSymbols';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import {
   forceCanvasUpdate,
@@ -23,29 +23,6 @@ import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import type { EditorInstance } from '../types/grapesjs';
 
 const debug = createDebugLogger('GrapesJSSetup');
-
-/**
- * Module-level flag to suppress the symbol scope dialog during data loading.
- * Set to true before calling editor.loadProjectData() and cleared after a
- * delay, so that symbol:add events fired synchronously or asynchronously
- * by loading don't trigger the dialog.
- */
-let isLoadingProjectData = false;
-let loadingProjectDataTimer: ReturnType<typeof setTimeout> | null = null;
-
-export function setLoadingProjectData(value: boolean) {
-  if (value) {
-    // Clear any pending timer
-    if (loadingProjectDataTimer) clearTimeout(loadingProjectDataTimer);
-    isLoadingProjectData = true;
-  } else {
-    // Delay clearing so async symbol events are still suppressed
-    loadingProjectDataTimer = setTimeout(() => {
-      isLoadingProjectData = false;
-      loadingProjectDataTimer = null;
-    }, 500);
-  }
-}
 
 export interface UseGrapesJSSetupOptions {
   /** State machine for lifecycle management */
@@ -78,7 +55,7 @@ export interface UseGrapesJSSetupOptions {
   /** Global symbols to merge into project data */
   globalSymbols?: GrapesJSSymbol[];
   /** Callback when a symbol is being created (to show scope dialog) */
-  onSymbolCreate?: (symbolData: GrapesJSSymbol, callback: (scope: SymbolScope, name: string) => void) => void;
+  onSymbolCreate?: (symbolData: GrapesJSSymbol, selectedComponent: any) => void;
 }
 
 export interface UseGrapesJSSetupReturn {
@@ -143,16 +120,16 @@ export function useGrapesJSSetup({
   // This handles the case where symbols load after the editor is ready
   useEffect(() => {
     const editor = editorRef.current;
-    console.log('[GrapesJSSetup] Global symbols effect triggered, count:', globalSymbols.length);
+    debug('Global symbols effect triggered, count:', globalSymbols.length);
 
     if (!editor || globalSymbols.length === 0) {
-      console.log('[GrapesJSSetup] Skipping injection: editor=', !!editor, 'symbols=', globalSymbols.length);
+      debug('Skipping injection: editor=', !!editor, 'symbols=', globalSymbols.length);
       return;
     }
 
     // Check if editor is fully initialized
     if (!editor.getProjectData || !editor.loadProjectData) {
-      console.log('[GrapesJSSetup] Editor not fully initialized yet');
+      debug('Editor not fully initialized yet');
       return;
     }
 
@@ -161,29 +138,24 @@ export function useGrapesJSSetup({
       const existingSymbolIds = new Set(
         (currentData.symbols || []).map((s: any) => s.id)
       );
-      console.log('[GrapesJSSetup] Existing symbol IDs:', [...existingSymbolIds]);
+      debug('Existing symbol IDs:', [...existingSymbolIds]);
 
       // Only add symbols that aren't already in the editor
       const newSymbols = globalSymbols.filter(
         (s) => !existingSymbolIds.has(s.id)
       );
 
-      console.log('[GrapesJSSetup] New symbols to inject:', newSymbols.length, newSymbols.map(s => s.id));
+      debug('New symbols to inject:', newSymbols.length, newSymbols.map(s => s.id));
 
       if (newSymbols.length > 0) {
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
-        console.log('[GrapesJSSetup] Merged data symbols:', mergedData.symbols?.length);
-        setLoadingProjectData(true);
-        try {
-          editor.loadProjectData(mergedData);
-        } finally {
-          setLoadingProjectData(false);
-        }
-        console.log('[GrapesJSSetup] Injection complete');
+        debug('Merged data symbols:', mergedData.symbols?.length);
+        editor.loadProjectData(mergedData);
+        debug('Injection complete');
       }
     } catch (e) {
-      console.warn('Failed to inject global symbols:', e);
+      debug('Failed to inject global symbols:', e);
     }
   }, [globalSymbols, editorRef]);
 
@@ -307,16 +279,6 @@ export function useGrapesJSSetup({
    * Load project data into editor based on mode
    */
   function loadProjectData(editor: EditorInstance) {
-    // Suppress symbol scope dialog during data loading
-    setLoadingProjectData(true);
-    try {
-      _loadProjectDataInner(editor);
-    } finally {
-      setLoadingProjectData(false);
-    }
-  }
-
-  function _loadProjectDataInner(editor: EditorInstance) {
     // For new prototypes (no slug), load the blank template
     if (!slug) {
       debug('New prototype - loading blank template');
@@ -335,7 +297,7 @@ export function useGrapesJSSetup({
             debug('Merged', globalSymbols.length, 'global symbols into new prototype');
           }
         } catch (e) {
-          console.warn('Failed to merge global symbols:', e);
+          debug('Failed to merge global symbols:', e);
         }
       }
       return;
@@ -388,7 +350,7 @@ export function useGrapesJSSetup({
             debug('Loaded', globalSymbols.length, 'global symbols (no prototype data)');
           }
         } catch (e) {
-          console.warn('Failed to load global symbols:', e);
+          debug('Failed to load global symbols:', e);
         }
       }
     }
@@ -1277,6 +1239,8 @@ function setupProactiveIdAssignment(
 
   // Assign ID to a component if it's targetable and doesn't have one
   const assignIdIfNeeded = (component: any) => {
+    if (!component?.get) return; // guard against stale/destroyed component refs
+
     const tagName = component.get?.('tagName')?.toLowerCase() || '';
 
     if (!targetableTypes.includes(tagName)) return;
@@ -1310,44 +1274,45 @@ function setupProactiveIdAssignment(
 
   // When a targetable component is added, assign it an ID
   registerListener(editor, 'component:add', (component: any) => {
-    // Use a small delay to ensure the component is fully initialized
-    setTimeout(() => {
+    requestAnimationFrame(() => {
+      if (!component?.get) return;
       assignIdIfNeeded(component);
-    }, 100);
+    });
   });
+
+  // Debounced rAF for bulk events to avoid redundant processing
+  let pendingRaf: number | null = null;
+  const scheduleIdProcessing = () => {
+    if (pendingRaf !== null) cancelAnimationFrame(pendingRaf);
+    pendingRaf = requestAnimationFrame(() => {
+      pendingRaf = null;
+      processAllComponents();
+    });
+  };
 
   // Assign IDs after project data is loaded
-  registerListener(editor, 'load', () => {
-    // Use multiple delays to catch different loading scenarios
-    setTimeout(processAllComponents, 300);
-    setTimeout(processAllComponents, 1000);
-  });
+  registerListener(editor, 'load', scheduleIdProcessing);
 
   // Also run when canvas frame loads (catches page switches and initial render)
-  registerListener(editor, 'canvas:frame:load', () => {
-    setTimeout(processAllComponents, 200);
-  });
+  registerListener(editor, 'canvas:frame:load', scheduleIdProcessing);
 
   // Run when page is selected (in case components were loaded from another page)
-  registerListener(editor, 'page:select', () => {
-    setTimeout(processAllComponents, 300);
-  });
+  registerListener(editor, 'page:select', scheduleIdProcessing);
 }
 
 /**
- * Set up symbol creation handler to intercept new symbols
- * and prompt the user to choose between local and global scope.
+ * Set up symbol creation handler with dialog-first architecture.
+ * Shows the scope dialog BEFORE creating any GrapesJS symbol.
  * Also adds a "Create Symbol" button to the component toolbar.
  */
 function setupSymbolCreationHandler(
   editor: EditorInstance,
   registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void,
-  onSymbolCreate: (symbolData: any, callback: (scope: 'local' | 'global', name: string) => void) => void
+  onSymbolCreate: (symbolData: any, selectedComponent: any) => void
 ): void {
-  // Track pending symbol creation to avoid duplicate handling
-  let isPendingSymbolCreation = false;
-
   // Register the create-symbol command
+  // Dialog-first: extract serialized data and pass component ref to dialog.
+  // No symbol is created here — that happens after the user confirms scope.
   editor.Commands.add('create-symbol', {
     run(editor: EditorInstance) {
       const selected = editor.getSelected();
@@ -1365,18 +1330,17 @@ function setupSymbolCreationHandler(
 
       debug('Creating symbol from component:', selected.getId());
 
-      // Use the Components API to create a symbol
-      // This will trigger the 'symbol:add' event which we intercept below
-      try {
-        const Components = editor.Components;
-        if (Components?.addSymbol) {
-          Components.addSymbol(selected);
-        } else {
-          console.warn('Components.addSymbol not available');
-        }
-      } catch (e) {
-        console.warn('Failed to create symbol:', e);
-      }
+      // Extract serialized data via toJSON for clean snapshot
+      const json = selected.toJSON?.() || {};
+      const symbolData = {
+        id: `symbol-${Date.now()}`,
+        label: selected.getName?.() || selected.get?.('name') || 'New Symbol',
+        icon: json.icon,
+        components: json.components || [],
+      };
+
+      // Pass data and component ref to dialog — no addSymbol call yet
+      onSymbolCreate(symbolData, selected);
     },
   });
 
@@ -1410,85 +1374,4 @@ function setupSymbolCreationHandler(
 
     component.set('toolbar', newToolbar);
   });
-
-  // Debug: Log symbol-related events to find the correct event names
-  // This helps identify which events GrapesJS Studio SDK fires
-  const symbolEventNames = [
-    'symbol:add',
-    'symbol:main:add',
-    'symbol:instance:add',
-    'symbols:add',
-    'symbols:main:add',
-    'component:symbol',
-    'component:symbol:add',
-    'symbol:create',
-    'symbols:create',
-  ];
-  symbolEventNames.forEach(eventName => {
-    registerListener(editor, eventName, (...args: any[]) => {
-      console.log(`[GrapesJS] EVENT "${eventName}" fired:`, args);
-      debug(`EVENT "${eventName}" fired:`, args);
-    });
-  });
-
-  // GrapesJS fires symbol events when a symbol is created
-  // We intercept this to show our scope selection dialog
-  // Try multiple event names since different GrapesJS versions use different names
-  const handleSymbolAdd = (symbol: any) => {
-    if (isPendingSymbolCreation) return;
-
-    // Ignore symbol:add events fired during loadProjectData (loading, not user action)
-    if (isLoadingProjectData) {
-      debug('Ignoring symbol event during data loading');
-      return;
-    }
-
-    console.log('[GrapesJS] handleSymbolAdd called with:', symbol);
-    debug('Symbol creation detected:', symbol);
-
-    // Extract symbol data
-    const symbolData = {
-      id: symbol.getId?.() || symbol.get?.('id') || `symbol-${Date.now()}`,
-      label: symbol.get?.('label') || symbol.getName?.() || 'New Symbol',
-      icon: symbol.get?.('icon'),
-      components: symbol.get?.('components') || [],
-    };
-
-    // Show the scope dialog
-    isPendingSymbolCreation = true;
-
-    onSymbolCreate(symbolData, (scope, name) => {
-      isPendingSymbolCreation = false;
-
-      if (scope === 'local') {
-        // For local symbols, update the symbol name/label if changed
-        try {
-          if (symbol.set && name !== symbolData.label) {
-            symbol.set('label', name);
-          }
-        } catch (e) {
-          console.warn('Failed to update symbol label:', e);
-        }
-        debug('Local symbol created:', name);
-      } else {
-        // For global symbols, the parent component handles API creation
-        // We might want to remove the local symbol that was just created
-        // since it will be replaced by the global one
-        try {
-          const symbols = editor.Symbols;
-          if (symbols?.remove) {
-            symbols.remove(symbol);
-            debug('Removed local symbol to replace with global');
-          }
-        } catch (e) {
-          console.warn('Failed to remove local symbol:', e);
-        }
-      }
-    });
-  };
-
-  // Register the handler for multiple possible event names
-  registerListener(editor, 'symbol:add', handleSymbolAdd);
-  registerListener(editor, 'symbol:main:add', handleSymbolAdd);
-  registerListener(editor, 'symbols:add', handleSymbolAdd);
 }

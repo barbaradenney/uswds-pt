@@ -139,6 +139,9 @@ function createMockEditor() {
       getAll: vi.fn((): Array<{ get: (prop: string) => string }> => []),
       remove: vi.fn(),
     },
+    Commands: {
+      add: vi.fn(),
+    },
     getSelected: vi.fn(),
     refresh: vi.fn(),
     _eventHandlers: eventHandlers,
@@ -839,6 +842,328 @@ describe('useGrapesJSSetup', () => {
         mockEditor,
         expect.any(Function)
       );
+    });
+  });
+
+  // ============================================================================
+  // Symbol Creation Handler Tests
+  // ============================================================================
+
+  describe('symbol creation handler', () => {
+    it('should register create-symbol command when onSymbolCreate provided', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.Commands.add).toHaveBeenCalledWith('create-symbol', expect.objectContaining({
+        run: expect.any(Function),
+      }));
+    });
+
+    it('should not register create-symbol command when onSymbolCreate not provided', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      expect(mockEditor.Commands.add).not.toHaveBeenCalled();
+    });
+
+    it('should add symbol button to toolbar on component:selected', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      const mockTraits = { where: vi.fn().mockReturnValue([]), add: vi.fn() };
+      const componentData: Record<string, any> = { traits: mockTraits, toolbar: [], tagName: 'div' };
+      const mockComponent = {
+        get: vi.fn((key: string) => componentData[key]),
+        set: vi.fn(),
+        getClasses: vi.fn().mockReturnValue([]),
+        getSymbolInfo: vi.fn().mockReturnValue(null),
+      };
+
+      act(() => {
+        mockEditor.trigger('component:selected', mockComponent);
+      });
+
+      expect(mockComponent.set).toHaveBeenCalledWith('toolbar', expect.arrayContaining([
+        expect.objectContaining({ command: 'create-symbol' }),
+      ]));
+    });
+
+    it('should not add symbol button if already present', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      const mockTraits = { where: vi.fn().mockReturnValue([]), add: vi.fn() };
+      const componentData: Record<string, any> = {
+        traits: mockTraits,
+        toolbar: [{ command: 'create-symbol', label: 'existing' }],
+        tagName: 'div',
+      };
+      const mockComponent = {
+        get: vi.fn((key: string) => componentData[key]),
+        set: vi.fn(),
+        getClasses: vi.fn().mockReturnValue([]),
+        getSymbolInfo: vi.fn().mockReturnValue(null),
+      };
+
+      act(() => {
+        mockEditor.trigger('component:selected', mockComponent);
+      });
+
+      expect(mockComponent.set).not.toHaveBeenCalledWith('toolbar', expect.anything());
+    });
+
+    it('should not add symbol button for symbol instances', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      const mockTraits = { where: vi.fn().mockReturnValue([]), add: vi.fn() };
+      const componentData: Record<string, any> = { traits: mockTraits, toolbar: [], tagName: 'div' };
+      const mockComponent = {
+        get: vi.fn((key: string) => componentData[key]),
+        set: vi.fn(),
+        getClasses: vi.fn().mockReturnValue([]),
+        getSymbolInfo: vi.fn().mockReturnValue({ isSymbol: true }),
+      };
+
+      act(() => {
+        mockEditor.trigger('component:selected', mockComponent);
+      });
+
+      expect(mockComponent.set).not.toHaveBeenCalled();
+    });
+
+    it('should call onSymbolCreate with serialized data when command runs', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      // Get the command object passed to Commands.add
+      const commandObj = mockEditor.Commands.add.mock.calls[0][1];
+
+      const mockSelected = {
+        getId: vi.fn().mockReturnValue('comp-1'),
+        getName: vi.fn().mockReturnValue('My Component'),
+        get: vi.fn().mockReturnValue('My Component'),
+        getSymbolInfo: vi.fn().mockReturnValue(null),
+        toJSON: vi.fn().mockReturnValue({
+          icon: 'icon-test',
+          components: [{ type: 'div' }],
+        }),
+      };
+
+      mockEditor.getSelected.mockReturnValue(mockSelected);
+
+      act(() => {
+        commandObj.run(mockEditor);
+      });
+
+      expect(onSymbolCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          label: 'My Component',
+          components: [{ type: 'div' }],
+        }),
+        mockSelected
+      );
+    });
+
+    it('should not call onSymbolCreate when no component selected', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      const commandObj = mockEditor.Commands.add.mock.calls[0][1];
+
+      mockEditor.getSelected.mockReturnValue(null);
+
+      act(() => {
+        commandObj.run(mockEditor);
+      });
+
+      expect(onSymbolCreate).not.toHaveBeenCalled();
+    });
+
+    it('should not call onSymbolCreate for existing symbol instances', () => {
+      const stateMachine = createMockStateMachine();
+      const editorRef = { current: null };
+      const mockEditor = createMockEditor();
+      const onSymbolCreate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useGrapesJSSetup({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: 'test-slug',
+          pendingPrototype: null,
+          localPrototype: null,
+          prototype: null,
+          onContentChange: vi.fn(),
+          blocks: [],
+          onSymbolCreate,
+        })
+      );
+
+      act(() => {
+        result.current.onReady(mockEditor);
+      });
+
+      const commandObj = mockEditor.Commands.add.mock.calls[0][1];
+
+      const mockSelected = {
+        getId: vi.fn().mockReturnValue('comp-1'),
+        getSymbolInfo: vi.fn().mockReturnValue({ isSymbol: true }),
+      };
+
+      mockEditor.getSelected.mockReturnValue(mockSelected);
+
+      act(() => {
+        commandObj.run(mockEditor);
+      });
+
+      expect(onSymbolCreate).not.toHaveBeenCalled();
     });
   });
 });
