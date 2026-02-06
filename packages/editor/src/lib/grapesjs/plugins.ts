@@ -26,9 +26,6 @@ import { baseDefaults } from './component-defaults';
 
 const debug = createDebugLogger('Plugins');
 
-// Re-export table plugin for external use
-export { uswdsTablePlugin } from './components';
-
 /**
  * GrapesJS plugin to register USWDS component types
  *

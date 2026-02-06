@@ -1,25 +1,23 @@
 /**
  * EditorCanvas Component
  *
- * Wraps the GrapesJS StudioEditor with all required configuration,
- * plugins, and error boundary.
+ * Wraps the GrapesJS core editor via @grapesjs/react with all required
+ * configuration, plugins, and error boundary.
  */
 
 import { memo } from 'react';
-import StudioEditor from '@grapesjs/studio-sdk/react';
-import '@grapesjs/studio-sdk/style';
-import { tableComponent } from '@grapesjs/studio-sdk-plugins';
-import { uswdsComponentsPlugin, uswdsTablePlugin } from '../../lib/grapesjs/plugins';
+import grapesjs from 'grapesjs';
+import GjsEditor from '@grapesjs/react';
+import 'grapesjs/dist/css/grapes.min.css';
+import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
 import { createDebugLogger } from '@uswds-pt/shared';
 import '../../styles/ai-copilot.css';
+import '../../styles/grapesjs-overrides.css';
 
 const debug = createDebugLogger('AI Copilot');
-
-// License key from environment variable
-const LICENSE_KEY = import.meta.env.VITE_GRAPESJS_LICENSE_KEY || '';
 
 // AI Copilot configuration
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY || '';
@@ -82,7 +80,7 @@ export interface EditorCanvasProps {
   editorKey: string;
   /** Initial HTML content for the canvas */
   initialContent: string;
-  /** Pre-loaded project data (grapesData) to pass via SDK storage config */
+  /** Pre-loaded project data (grapesData) */
   projectData?: Record<string, any> | null;
   /** Block definitions for the editor */
   blocks: Array<{
@@ -99,17 +97,6 @@ export interface EditorCanvasProps {
   /** Callback to go home after error */
   onGoHome: () => void;
 }
-
-/**
- * Table block configuration for the table plugin
- */
-const TABLE_BLOCK_CONFIG = {
-  block: {
-    label: 'Table',
-    category: 'Data Display',
-    media: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16 4H5v12h14V7zm-8 4h6v2h-6v-2zm0 4h6v2h-6v-2zm-6-4h4v6H5v-6z"/></svg>`,
-  },
-};
 
 /**
  * AI Copilot plugin configuration
@@ -139,39 +126,29 @@ export const EditorCanvas = memo(function EditorCanvas({
 }: EditorCanvasProps) {
   return (
     <EditorErrorBoundary onRetry={onRetry} onGoHome={onGoHome}>
-      <StudioEditor
+      <GjsEditor
         key={editorKey}
+        grapesjs={grapesjs}
+        grapesjsCss="https://unpkg.com/grapesjs@0.22.14/dist/css/grapes.min.css"
+        onReady={onReady}
         options={{
-          licenseKey: LICENSE_KEY,
+          height: '100%',
+          width: '100%',
+          storageManager: false,
           plugins: [
-            (editor: EditorInstance) => tableComponent(editor, TABLE_BLOCK_CONFIG),
-            uswdsTablePlugin,
             uswdsComponentsPlugin,
-            // AI Copilot plugin - only add if API key is configured
             ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
-          storage: {
-            type: 'self' as const,
-            autosaveChanges: 0, // Disable SDK internal auto-save timer
-            onSave: async () => {}, // No-op prevents errors if SDK triggers save internally
-            // When projectData is available, SDK loads it directly during init —
-            // no manual loadProjectData needed, no timing races with onReady.
-            ...(projectData ? { project: projectData } : {}),
+          projectData: projectData || {
+            pages: [{
+              name: 'Prototype',
+              component: initialContent,
+            }],
           },
-          project: {
-            type: 'web',
-            default: {
-              pages: [{
-                name: 'Prototype',
-                component: initialContent,
-              }],
-            },
-          },
-          blocks: {
-            default: blocks as any, // Type cast needed - our blocks match GrapesJS format
+          blockManager: {
+            blocks: blocks as any,
           },
         }}
-        onReady={onReady}
       />
     </EditorErrorBoundary>
   );

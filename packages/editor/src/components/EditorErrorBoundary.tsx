@@ -1,7 +1,7 @@
 /**
  * Editor Error Boundary
  *
- * Specialized error boundary for the GrapesJS StudioEditor component.
+ * Specialized error boundary for the GrapesJS editor component.
  * Provides recovery options specifically designed for editor crashes.
  */
 

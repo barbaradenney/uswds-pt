@@ -2,7 +2,7 @@
  * GrapesJS Setup Hook
  *
  * Handles editor initialization, event registration, and resource loading.
- * Returns a configured onReady callback for the StudioEditor component.
+ * Returns a configured onReady callback for the GjsEditor component.
  */
 
 import { useCallback, useRef, useEffect } from 'react';
@@ -63,7 +63,7 @@ export interface UseGrapesJSSetupOptions {
 }
 
 export interface UseGrapesJSSetupReturn {
-  /** Callback to pass to StudioEditor onReady prop */
+  /** Callback to pass to GjsEditor onReady prop */
   onReady: (editor: EditorInstance) => void;
   /** Clean up function for component unmount */
   cleanup: () => void;
@@ -76,7 +76,7 @@ export function useGrapesJSSetup({
   editorRef,
   // isDemoMode, slug, pendingPrototype, localPrototype, prototype are accepted
   // for interface compatibility but no longer used in onReady — project data is
-  // now loaded via SDK storage.project config in EditorCanvas.
+  // now loaded via projectData option in EditorCanvas.
   projectData,
   onContentChange,
   blocks,
@@ -220,8 +220,8 @@ export function useGrapesJSSetup({
       registerListener(editor, 'component:update', changeHandler);
       registerListener(editor, 'style:change', changeHandler);
 
-      // Safety-net: redundant when SDK's storage.project loads correctly,
-      // but critical fallback when it doesn't (e.g., silent SDK failure).
+      // Safety-net: redundant when projectData option loads correctly,
+      // but critical fallback when it doesn't (e.g., silent init failure).
       if (projectDataRef.current) {
         try {
           debug('Safety-net: loading project data via loadProjectData');
@@ -287,9 +287,9 @@ export function useGrapesJSSetup({
     [
       editorRef,
       // isDemoMode, slug, pendingPrototype, localPrototype, globalSymbols
-      // intentionally omitted — project data is now loaded via SDK storage.project
-      // config in EditorCanvas, not in onReady. This prevents recreating onReady
-      // (and thus re-rendering EditorCanvas / reinitializing the SDK) on save.
+      // intentionally omitted — project data is now loaded via projectData option
+      // in EditorCanvas, not in onReady. This prevents recreating onReady
+      // (and thus re-rendering EditorCanvas / reinitializing the editor) on save.
       // onContentChange intentionally omitted — accessed via onContentChangeRef
       // to avoid stale closures in GrapesJS event handlers.
       blocks,
@@ -1277,11 +1277,15 @@ function setupSymbolCreationHandler(
         return;
       }
 
-      // Check if this component is already a symbol instance
-      const symbolInfo = selected.getSymbolInfo?.();
-      if (symbolInfo?.isSymbol) {
-        debug('Component is already a symbol');
-        return;
+      // Check if this component is already a symbol instance (if method exists)
+      try {
+        const symbolInfo = selected.getSymbolInfo?.();
+        if (symbolInfo?.isSymbol) {
+          debug('Component is already a symbol');
+          return;
+        }
+      } catch {
+        // getSymbolInfo not available in core — proceed with creation
       }
 
       debug('Creating symbol from component:', selected.getId());
@@ -1312,8 +1316,12 @@ function setupSymbolCreationHandler(
     if (hasSymbolButton) return;
 
     // Check if this component is already a symbol (don't show button for symbol instances)
-    const symbolInfo = component.getSymbolInfo?.();
-    if (symbolInfo?.isSymbol) return;
+    try {
+      const symbolInfo = component.getSymbolInfo?.();
+      if (symbolInfo?.isSymbol) return;
+    } catch {
+      // getSymbolInfo not available in core — show button
+    }
 
     // Add the create symbol button with SVG icon
     const newToolbar = [

@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           // Split vendor chunks for better caching
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-grapesjs': ['@grapesjs/studio-sdk', '@grapesjs/studio-sdk/react'],
+          'vendor-grapesjs': ['grapesjs', '@grapesjs/react'],
           'vendor-adapter': ['@uswds-pt/adapter'],
         },
       },

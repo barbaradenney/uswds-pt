@@ -4,7 +4,7 @@
  * Centralized exports for all GrapesJS-related functionality.
  */
 
-export { uswdsComponentsPlugin, uswdsTablePlugin } from './plugins';
+export { uswdsComponentsPlugin } from './plugins';
 export {
   loadUSWDSResources,
   addCardContainerCSS,
