@@ -261,6 +261,43 @@ function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): 
 }
 
 /**
+ * Extract per-page HTML from the editor and store it on each page in projectData.
+ *
+ * For multi-page prototypes (>1 page), this iterates through pages, selects each,
+ * calls editor.getHtml(), and stores the result on page.htmlContent. This ensures
+ * the Preview can render pages reliably without reconstructing HTML from the
+ * component tree JSON (which is lossy and buggy for textnodes, etc.).
+ *
+ * The original page selection is restored in the finally block.
+ */
+function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectData): void {
+  const pages = editor.Pages?.getAll?.();
+  if (!pages || pages.length <= 1) return;
+
+  const currentPage = editor.Pages?.getSelected?.();
+
+  try {
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      editor.Pages?.select?.(page);
+      const html = editor.getHtml();
+
+      // Match page in projectData by id
+      const pageId = page.getId?.() || page.id;
+      const pdPage = projectData.pages.find((p: any) => p.id === pageId);
+      if (pdPage && html) {
+        (pdPage as any).htmlContent = html;
+      }
+    }
+  } finally {
+    // Restore original page selection
+    if (currentPage) {
+      editor.Pages?.select?.(currentPage);
+    }
+  }
+}
+
+/**
  * Extract editor data with robust error handling
  *
  * This is the main entry point for data extraction. It tries the primary
@@ -320,6 +357,13 @@ export function extractEditorData(
 
   // Normalize the project data
   projectData = normalizeProjectData(projectData, editor);
+
+  // Extract per-page HTML for reliable multi-page preview
+  try {
+    extractPerPageHtml(editor, projectData);
+  } catch (err) {
+    warnings.push(`Per-page HTML extraction failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // Log extraction details in debug mode
   debug('Extraction complete:');

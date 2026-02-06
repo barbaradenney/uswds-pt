@@ -176,6 +176,8 @@ export interface GrapesPage {
   name?: string;
   component?: string;
   frames?: GrapesFrame[];
+  /** Pre-rendered HTML for this page, stored at save time for reliable preview */
+  htmlContent?: string;
 }
 
 export interface GrapesFrame {

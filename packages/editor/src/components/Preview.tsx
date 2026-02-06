@@ -42,14 +42,16 @@ function extractPagesFromGjsData(gjsDataString: string | undefined): PageData[] 
     if (!Array.isArray(pages) || pages.length === 0) return [];
 
     return pages.map((page: any) => {
-      // Get HTML from page frames
-      const mainFrame = page.frames?.[0];
-      const component = mainFrame?.component;
+      // Prefer pre-rendered HTML stored at save time (new saves)
+      let html = page.htmlContent || '';
 
-      // Build HTML from component tree
-      let html = '';
-      if (component) {
-        html = buildHtmlFromComponent(component);
+      // Fall back to reconstructing from component tree (old data)
+      if (!html) {
+        const mainFrame = page.frames?.[0];
+        const component = mainFrame?.component;
+        if (component) {
+          html = buildHtmlFromComponent(component);
+        }
       }
 
       return {
@@ -69,6 +71,11 @@ function extractPagesFromGjsData(gjsDataString: string | undefined): PageData[] 
  */
 function buildHtmlFromComponent(component: any): string {
   if (!component) return '';
+
+  // Handle text nodes — output content as plain text, no wrapping tag
+  if (component.type === 'textnode') {
+    return component.content || '';
+  }
 
   const tagName = component.tagName || 'div';
   const attributes = component.attributes || {};
@@ -442,7 +449,7 @@ export function Preview() {
     <>
       <div
         ref={contentRef}
-        dangerouslySetInnerHTML={{ __html: isMultiPage ? multiPageHtml : cleanedHtml }}
+        dangerouslySetInnerHTML={{ __html: isMultiPage && multiPageHtml ? multiPageHtml : cleanedHtml }}
       />
       <button
         style={copyButtonStyle}
