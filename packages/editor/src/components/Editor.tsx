@@ -226,9 +226,9 @@ export function Editor() {
       const selectedComponent = pendingSymbolComponentRef.current;
       const editor = editorRef.current;
 
-      // Guard: ensure the component still exists in the editor
-      if (!selectedComponent?.getEl?.()) {
-        debug('Selected component no longer exists, aborting symbol creation');
+      // Guard: only local symbols need the live component reference
+      if (scope === 'local' && !selectedComponent?.getEl?.()) {
+        debug('Selected component no longer exists, aborting local symbol creation');
         setPendingSymbolData(null);
         pendingSymbolComponentRef.current = null;
         return;
