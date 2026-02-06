@@ -304,11 +304,13 @@ function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectDa
       }
     }
   } finally {
-    _extractingPerPageHtml = false;
-    // Restore original page selection
+    // Restore original page selection while still suppressing side effects.
+    // The flag must stay true during restore — otherwise the page:select
+    // handler fires its full async flow (resource loading, canvas refresh).
     if (currentPage) {
       editor.Pages?.select?.(currentPage);
     }
+    _extractingPerPageHtml = false;
   }
 }
 

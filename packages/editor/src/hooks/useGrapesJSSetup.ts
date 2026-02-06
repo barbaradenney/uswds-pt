@@ -81,6 +81,12 @@ export function useGrapesJSSetup({
   globalSymbols = [],
   onSymbolCreate,
 }: UseGrapesJSSetupOptions): UseGrapesJSSetupReturn {
+  // Use a ref for prototype so loadProjectData always sees the latest value
+  // without causing onReady to be recreated (which would re-render EditorCanvas
+  // and potentially cause the StudioEditor SDK to reinitialize, wiping content).
+  const prototypeRef = useRef(prototype);
+  prototypeRef.current = prototype;
+
   // Track registered event listeners for cleanup
   const listenersRef = useRef<Array<{ event: string; handler: (...args: unknown[]) => void }>>([]);
 
@@ -267,7 +273,9 @@ export function useGrapesJSSetup({
       slug,
       pendingPrototype,
       localPrototype,
-      prototype,
+      // prototype intentionally omitted — accessed via prototypeRef to avoid
+      // recreating onReady after save, which would re-render EditorCanvas and
+      // cause the StudioEditor SDK to reinitialize, wiping the canvas.
       onContentChange,
       blocks,
       stateMachine,
@@ -317,7 +325,7 @@ export function useGrapesJSSetup({
       }
     } else if (!isDemoMode) {
       // API mode: check both pendingPrototype and state prototype
-      const prototypeData = pendingPrototype || prototype;
+      const prototypeData = pendingPrototype || prototypeRef.current;
       if (prototypeData?.grapesData) {
         try {
           let projectData = prototypeData.grapesData as any;
