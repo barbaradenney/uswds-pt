@@ -218,6 +218,9 @@ export function useEditorPersistence({
               debug('Demo mode save successful');
               onSaveComplete?.();
               return savedPrototype;
+            } else {
+              saveFailed('Failed to update local prototype');
+              return null;
             }
           } else {
             // Create new in demo mode

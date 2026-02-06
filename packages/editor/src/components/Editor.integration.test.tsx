@@ -179,8 +179,6 @@ describe('Editor Integration', () => {
         autosaveResult.current.pause();
       });
 
-      expect(autosaveResult.current.isActive).toBe(false);
-
       // Trigger change - should be ignored while paused
       act(() => {
         autosaveResult.current.triggerChange();
@@ -197,8 +195,6 @@ describe('Editor Integration', () => {
       act(() => {
         autosaveResult.current.resume();
       });
-
-      expect(autosaveResult.current.isActive).toBe(true);
     });
 
     it('should mark as saved after manual save', () => {

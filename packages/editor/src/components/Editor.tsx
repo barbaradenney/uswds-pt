@@ -109,11 +109,14 @@ export function Editor() {
   saveCanSaveRef.current = stateMachine.canSave;
   saveCallRef.current = persistence.save;
 
+  // Stable callback for autosave — avoids recreating performSave every render
+  const stableAutosaveOnSave = useCallback(() => saveCallRef.current('autosave'), []);
+
   // Autosave hook - enabled when we have a prototype (new or existing)
   const autosave = useEditorAutosave({
     enabled: !isDemoMode && !!stateMachine.state.prototype,
     stateMachine,
-    onSave: () => saveCallRef.current('autosave'),
+    onSave: stableAutosaveOnSave,
     debounceMs: 5000,
     maxWaitMs: 30000,
   });
@@ -542,7 +545,9 @@ export function Editor() {
     const handleVisibilityChange = () => {
       if (document.hidden && saveDirtyRef.current && saveCanSaveRef.current) {
         debug('Tab hidden with unsaved changes — saving');
-        saveCallRef.current('autosave').catch(() => {});
+        saveCallRef.current('autosave').catch((err) => {
+          debug('Tab visibility save failed:', err instanceof Error ? err.message : String(err));
+        });
       }
     };
 
@@ -556,7 +561,9 @@ export function Editor() {
     return () => {
       if (saveDirtyRef.current && saveCanSaveRef.current) {
         debug('Component unmounting with unsaved changes — saving');
-        saveCallRef.current('autosave').catch(() => {});
+        saveCallRef.current('autosave').catch((err) => {
+          debug('Unmount save failed:', err instanceof Error ? err.message : String(err));
+        });
       }
     };
   }, []);

@@ -59,7 +59,7 @@ export function useEditorAutosave({
 }: UseEditorAutosaveOptions): UseEditorAutosaveReturn {
   const [status, setStatus] = useState<UseEditorAutosaveReturn['status']>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
 
   // Refs for tracking state without causing re-renders
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,6 +67,7 @@ export function useEditorAutosave({
   const statusResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstChangeTimeRef = useRef<number | null>(null);
   const hasPendingChangesRef = useRef(false);
+  const changeCounterRef = useRef(0);
   const isMountedRef = useRef(true);
 
   // Clean up timeouts
@@ -116,7 +117,7 @@ export function useEditorAutosave({
       return;
     }
 
-    if (isPaused) {
+    if (isPausedRef.current) {
       debug('Autosave skipped: paused');
       return;
     }
@@ -129,13 +130,19 @@ export function useEditorAutosave({
     debug('Autosave starting...');
     safeSetStatus('saving');
 
+    // Capture change counter before async save so we can detect new edits
+    const countAtStart = changeCounterRef.current;
+
     try {
       const result = await onSave();
 
       // Check for truthy result (supports both boolean and Prototype | null)
       if (result) {
-        hasPendingChangesRef.current = false;
-        firstChangeTimeRef.current = null;
+        // Only clear pending flag if no new changes arrived during save
+        if (changeCounterRef.current === countAtStart) {
+          hasPendingChangesRef.current = false;
+          firstChangeTimeRef.current = null;
+        }
         setLastSavedAt(new Date());
         safeSetStatus('saved');
         debug('Autosave successful');
@@ -157,8 +164,18 @@ export function useEditorAutosave({
       scheduleStatusReset(5000);
     }
 
-    clearTimeouts();
-  }, [stateMachine.canAutosave, isPaused, onSave, clearTimeouts, safeSetStatus, scheduleStatusReset]);
+    // Only clear save timers if no new changes arrived during save
+    if (changeCounterRef.current === countAtStart) {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
+      if (maxWaitTimeoutRef.current) {
+        clearTimeout(maxWaitTimeoutRef.current);
+        maxWaitTimeoutRef.current = null;
+      }
+    }
+  }, [stateMachine.canAutosave, onSave, safeSetStatus, scheduleStatusReset]);
 
   // Keep ref pointing to the latest performSave
   performSaveRef.current = performSave;
@@ -171,8 +188,8 @@ export function useEditorAutosave({
       stateMachine.contentChanged();
     }
 
-    if (!enabled || isPaused) {
-      debug('Autosave skipped: enabled=', enabled, 'paused=', isPaused);
+    if (!enabled || isPausedRef.current) {
+      debug('Autosave skipped: enabled=', enabled, 'paused=', isPausedRef.current);
       return;
     }
 
@@ -183,6 +200,7 @@ export function useEditorAutosave({
     }
 
     hasPendingChangesRef.current = true;
+    changeCounterRef.current++;
     safeSetStatus('pending');
 
     // Track first change time for max wait
@@ -217,19 +235,19 @@ export function useEditorAutosave({
     }, effectiveDebounce);
 
     debug('Change triggered, debounce reset, debounce:', effectiveDebounce, 'ms');
-  }, [enabled, isPaused, stateMachine, debounceMs, initialDebounceMs, maxWaitMs, safeSetStatus, lastSavedAt]);
+  }, [enabled, stateMachine, debounceMs, initialDebounceMs, maxWaitMs, safeSetStatus, lastSavedAt]);
 
   // Pause autosave
   const pause = useCallback(() => {
     debug('Autosave paused');
-    setIsPaused(true);
+    isPausedRef.current = true;
     clearTimeouts();
   }, [clearTimeouts]);
 
   // Resume autosave
   const resume = useCallback(() => {
     debug('Autosave resumed');
-    setIsPaused(false);
+    isPausedRef.current = false;
 
     // If there are pending changes, restart the timer
     if (hasPendingChangesRef.current && enabled) {
@@ -269,7 +287,7 @@ export function useEditorAutosave({
   return {
     status,
     lastSavedAt,
-    isActive: enabled && !isPaused,
+    isActive: enabled && !isPausedRef.current,
     triggerChange,
     pause,
     resume,
