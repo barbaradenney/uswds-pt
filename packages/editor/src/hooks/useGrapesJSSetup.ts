@@ -90,6 +90,12 @@ export function useGrapesJSSetup({
   const projectDataRef = useRef<Record<string, any> | null>(projectData ?? null);
   projectDataRef.current = projectData ?? null;
 
+  // Ref for onContentChange — the GrapesJS event handlers registered in onReady
+  // capture this ref once and always call the latest triggerChange through it,
+  // avoiding stale closures when autosave state (enabled, canAutosave, etc.) changes.
+  const onContentChangeRef = useRef(onContentChange);
+  onContentChangeRef.current = onContentChange;
+
   // Helper to register editor event listeners with automatic tracking
   const registerListener = useCallback(
     (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => {
@@ -200,10 +206,12 @@ export function useGrapesJSSetup({
       // Clear registered listeners array (old ones were cleaned up above)
       listenersRef.current = [];
 
-      // Set up change event listeners for autosave
+      // Set up change event listeners for autosave.
+      // Uses onContentChangeRef (not onContentChange) so this handler always
+      // calls the latest triggerChange, even though it's registered once at mount.
       const changeHandler = () => {
         debug('[Change detected]');
-        onContentChange();
+        onContentChangeRef.current();
       };
 
       registerListener(editor, 'component:add', changeHandler);
@@ -281,7 +289,8 @@ export function useGrapesJSSetup({
       // intentionally omitted — project data is now loaded via SDK storage.project
       // config in EditorCanvas, not in onReady. This prevents recreating onReady
       // (and thus re-rendering EditorCanvas / reinitializing the SDK) on save.
-      onContentChange,
+      // onContentChange intentionally omitted — accessed via onContentChangeRef
+      // to avoid stale closures in GrapesJS event handlers.
       blocks,
       stateMachine,
       registerListener,

@@ -103,6 +103,11 @@ export function useEditorAutosave({
     }, delayMs);
   }, [safeSetStatus]);
 
+  // Ref that always points to the latest performSave. Timeouts and closures
+  // call performSaveRef.current() so they never invoke a stale version that
+  // captured an old canAutosave value (e.g., false before dirty was set).
+  const performSaveRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
   // Perform the actual save
   const performSave = useCallback(async () => {
     // Check guards from state machine
@@ -155,6 +160,9 @@ export function useEditorAutosave({
     clearTimeouts();
   }, [stateMachine.canAutosave, isPaused, onSave, clearTimeouts, safeSetStatus, scheduleStatusReset]);
 
+  // Keep ref pointing to the latest performSave
+  performSaveRef.current = performSave;
+
   // Trigger a change (called when content changes)
   const triggerChange = useCallback(() => {
     // Always mark content as dirty, even if autosave is disabled
@@ -185,7 +193,7 @@ export function useEditorAutosave({
       // Set up max wait timeout
       maxWaitTimeoutRef.current = setTimeout(() => {
         debug('Max wait reached, forcing save');
-        performSave();
+        performSaveRef.current();
       }, maxWaitMs);
     }
 
@@ -201,14 +209,15 @@ export function useEditorAutosave({
       ? initialDebounceMs
       : debounceMs;
 
-    // Set new debounce timeout
+    // Set new debounce timeout — uses performSaveRef so the timeout always
+    // calls the latest performSave (with current canAutosave value).
     debounceTimeoutRef.current = setTimeout(() => {
       debug('Debounce complete, triggering save');
-      performSave();
+      performSaveRef.current();
     }, effectiveDebounce);
 
     debug('Change triggered, debounce reset, debounce:', effectiveDebounce, 'ms');
-  }, [enabled, isPaused, stateMachine, performSave, debounceMs, initialDebounceMs, maxWaitMs, safeSetStatus, lastSavedAt]);
+  }, [enabled, isPaused, stateMachine, debounceMs, initialDebounceMs, maxWaitMs, safeSetStatus, lastSavedAt]);
 
   // Pause autosave
   const pause = useCallback(() => {
@@ -224,9 +233,9 @@ export function useEditorAutosave({
 
     // If there are pending changes, restart the timer
     if (hasPendingChangesRef.current && enabled) {
-      debounceTimeoutRef.current = setTimeout(performSave, debounceMs);
+      debounceTimeoutRef.current = setTimeout(() => performSaveRef.current(), debounceMs);
     }
-  }, [enabled, performSave, debounceMs]);
+  }, [enabled, debounceMs]);
 
   // Mark as saved (e.g., after manual save)
   const markSaved = useCallback(() => {
