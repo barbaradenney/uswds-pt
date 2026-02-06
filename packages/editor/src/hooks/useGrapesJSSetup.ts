@@ -24,6 +24,13 @@ import type { EditorInstance } from '../types/grapesjs';
 
 const debug = createDebugLogger('GrapesJSSetup');
 
+/**
+ * Module-level flag to suppress the symbol scope dialog during data loading.
+ * Set to true before calling editor.loadProjectData() and cleared after,
+ * so that symbol:add events fired by loading don't trigger the dialog.
+ */
+let isLoadingProjectData = false;
+
 export interface UseGrapesJSSetupOptions {
   /** State machine for lifecycle management */
   stateMachine: UseEditorStateMachineReturn;
@@ -151,7 +158,12 @@ export function useGrapesJSSetup({
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
         console.log('[GrapesJSSetup] Merged data symbols:', mergedData.symbols?.length);
-        editor.loadProjectData(mergedData);
+        isLoadingProjectData = true;
+        try {
+          editor.loadProjectData(mergedData);
+        } finally {
+          isLoadingProjectData = false;
+        }
         console.log('[GrapesJSSetup] Injection complete');
       }
     } catch (e) {
@@ -279,6 +291,16 @@ export function useGrapesJSSetup({
    * Load project data into editor based on mode
    */
   function loadProjectData(editor: EditorInstance) {
+    // Suppress symbol scope dialog during data loading
+    isLoadingProjectData = true;
+    try {
+      _loadProjectDataInner(editor);
+    } finally {
+      isLoadingProjectData = false;
+    }
+  }
+
+  function _loadProjectDataInner(editor: EditorInstance) {
     // For new prototypes (no slug), load the blank template
     if (!slug) {
       debug('New prototype - loading blank template');
@@ -1399,10 +1421,9 @@ function setupSymbolCreationHandler(
   const handleSymbolAdd = (symbol: any) => {
     if (isPendingSymbolCreation) return;
 
-    // Ignore symbols being loaded from the database (global symbols have the prefix)
-    const symbolId = symbol.getId?.() || symbol.get?.('id') || '';
-    if (symbolId.startsWith(GLOBAL_SYMBOL_PREFIX)) {
-      debug('Ignoring global symbol load event:', symbolId);
+    // Ignore symbol:add events fired during loadProjectData (loading, not user action)
+    if (isLoadingProjectData) {
+      debug('Ignoring symbol event during data loading');
       return;
     }
 
@@ -1411,7 +1432,7 @@ function setupSymbolCreationHandler(
 
     // Extract symbol data
     const symbolData = {
-      id: symbolId || `symbol-${Date.now()}`,
+      id: symbol.getId?.() || symbol.get?.('id') || `symbol-${Date.now()}`,
       label: symbol.get?.('label') || symbol.getName?.() || 'New Symbol',
       icon: symbol.get?.('icon'),
       components: symbol.get?.('components') || [],
