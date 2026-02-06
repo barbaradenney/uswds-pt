@@ -26,7 +26,7 @@ export interface UseEditorAutosaveOptions {
   onSave: () => Promise<unknown>;
   /** Debounce time in ms after last change (default: 5000) */
   debounceMs?: number;
-  /** Shorter debounce for the first save before any save has happened (default: 2000) */
+  /** Shorter debounce for the first save before any save has happened (default: 500) */
   initialDebounceMs?: number;
   /** Maximum wait time before forcing save (default: 30000) */
   maxWaitMs?: number;
@@ -54,7 +54,7 @@ export function useEditorAutosave({
   stateMachine,
   onSave,
   debounceMs = 5000,
-  initialDebounceMs = 2000,
+  initialDebounceMs = 500,
   maxWaitMs = 30000,
 }: UseEditorAutosaveOptions): UseEditorAutosaveReturn {
   const [status, setStatus] = useState<UseEditorAutosaveReturn['status']>('idle');
