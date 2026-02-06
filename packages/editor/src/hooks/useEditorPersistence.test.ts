@@ -39,10 +39,8 @@ vi.mock('../lib/localStorage', () => ({
 }));
 
 // Mock data extractor
-const mockExtractEditorData = vi.fn();
 const mockIsEditorReadyForExtraction = vi.fn();
 vi.mock('../lib/grapesjs/data-extractor', () => ({
-  extractEditorData: (...args: unknown[]) => mockExtractEditorData(...args),
   isEditorReadyForExtraction: (...args: unknown[]) => mockIsEditorReadyForExtraction(...args),
 }));
 
@@ -147,12 +145,6 @@ describe('useEditorPersistence', () => {
       isLoading: false,
     });
 
-    mockExtractEditorData.mockReturnValue({
-      html: '<div>Extracted content</div>',
-      projectData: { pages: [], styles: [], assets: [] },
-      warnings: [],
-    });
-
     mockIsEditorReadyForExtraction.mockReturnValue(true);
   });
 
@@ -219,6 +211,7 @@ describe('useEditorPersistence', () => {
       const newProto = mockPrototype({ slug: 'new-proto-123' });
       const stateMachine = createMockStateMachine();
       const editorRef = { current: createMockEditor() };
+      const justSavedSlugRef = { current: null as string | null };
 
       mockAuthFetch.mockResolvedValue({
         ok: true,
@@ -236,6 +229,7 @@ describe('useEditorPersistence', () => {
           setHtmlContent: vi.fn(),
           setLocalPrototype: vi.fn(),
           localPrototype: null,
+          justSavedSlugRef,
         })
       );
 
@@ -249,7 +243,11 @@ describe('useEditorPersistence', () => {
           method: 'POST',
         })
       );
+      // saveSuccess should be called BEFORE navigate (prevents load useEffect remount)
+      expect(stateMachine.saveSuccess).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith(`/edit/${newProto.slug}`, { replace: true });
+      // justSavedSlugRef should be set to the new slug
+      expect(justSavedSlugRef.current).toBe(newProto.slug);
     });
 
     it('should handle save errors gracefully', async () => {
@@ -457,6 +455,7 @@ describe('useEditorPersistence', () => {
       const stateMachine = createMockStateMachine();
       const editorRef = { current: createMockEditor() };
       const setLocalPrototype = vi.fn();
+      const justSavedSlugRef = { current: null as string | null };
 
       const { result } = renderHook(() =>
         useEditorPersistence({
@@ -469,6 +468,7 @@ describe('useEditorPersistence', () => {
           setHtmlContent: vi.fn(),
           setLocalPrototype,
           localPrototype: null,
+          justSavedSlugRef,
         })
       );
 
@@ -478,7 +478,11 @@ describe('useEditorPersistence', () => {
 
       expect(mockCreateLocalPrototype).toHaveBeenCalled();
       expect(setLocalPrototype).toHaveBeenCalledWith(newLocalProto);
+      // saveSuccess should be called BEFORE navigate
+      expect(stateMachine.saveSuccess).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith(`/edit/${newLocalProto.id}`, { replace: true });
+      // justSavedSlugRef should be set
+      expect(justSavedSlugRef.current).toBe(newLocalProto.id);
     });
   });
 

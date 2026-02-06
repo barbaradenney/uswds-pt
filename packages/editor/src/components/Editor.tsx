@@ -81,6 +81,9 @@ export function Editor() {
   // Pending prototype ref for race condition fix
   const pendingPrototypeRef = useRef<Prototype | null>(null);
 
+  // Guard: set before navigate on first save, prevents load useEffect from remounting
+  const justSavedSlugRef = useRef<string | null>(null);
+
   // Ref for stable onSaveComplete callback (avoids circular dependency with autosave)
   const onSaveCompleteRef = useRef<() => void>(() => {});
 
@@ -97,6 +100,7 @@ export function Editor() {
     localPrototype,
     onNameChange: setName,
     onSaveComplete: () => onSaveCompleteRef.current(),
+    justSavedSlugRef,
   });
 
   // Refs for all save call sites: handleBack, handleSave, handlePreview,
@@ -573,6 +577,11 @@ export function Editor() {
     clearGrapesJSStorage();
 
     if (slug) {
+      // Skip if we just saved and got this slug (prevents remount after first save)
+      if (justSavedSlugRef.current === slug) {
+        justSavedSlugRef.current = null;
+        return;
+      }
       // Skip reload if we already have this prototype loaded.
       // This prevents dependency changes (e.g., currentTeam loading async)
       // from re-firing the effect and wiping unsaved editor content.

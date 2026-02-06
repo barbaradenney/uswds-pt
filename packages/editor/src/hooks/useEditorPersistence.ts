@@ -19,8 +19,7 @@ import {
   updatePrototype as updateLocalPrototype,
   type LocalPrototype,
 } from '../lib/localStorage';
-import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
-import { loadUSWDSResources } from '../lib/grapesjs/resource-loader';
+import { isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
@@ -52,6 +51,8 @@ export interface UseEditorPersistenceOptions {
   localPrototype: LocalPrototype | null;
   /** Callback after successful save */
   onSaveComplete?: () => void;
+  /** Ref set before navigate on first save — prevents load useEffect from remounting */
+  justSavedSlugRef?: React.MutableRefObject<string | null>;
 }
 
 export interface UseEditorPersistenceReturn {
@@ -83,6 +84,7 @@ export function useEditorPersistence({
   setLocalPrototype,
   localPrototype,
   onSaveComplete,
+  justSavedSlugRef,
 }: UseEditorPersistenceOptions): UseEditorPersistenceReturn {
   const navigate = useNavigate();
   const { currentTeam, isLoading: isLoadingTeam, teams } = useOrganization();
@@ -166,26 +168,14 @@ export function useEditorPersistence({
       debug(`Save started (${type})`);
 
       try {
-        // Extract data from editor
-        const { html: currentHtml, projectData: rawGrapesData, warnings } = extractEditorData(
-          editor,
-          htmlContent
-        );
+        // Extract data directly from GrapesJS API (avoids page-cycling disruption)
+        const rawGrapesData = editor.getProjectData();
+        const currentHtml = editor.getHtml() || htmlContent;
 
         // Filter out global symbols - they're stored separately via the API
         // This ensures only local symbols are saved with the prototype
         const grapesData = extractLocalSymbols(rawGrapesData);
         debug('Filtered grapesData - local symbols only');
-
-        // Reload USWDS CSS after extraction — extractPerPageHtml cycles pages which
-        // can disrupt CSS in the active canvas iframe. Fire-and-forget (non-blocking).
-        loadUSWDSResources(editor).catch((e) =>
-          debug('Post-save CSS reload warning:', e)
-        );
-
-        if (warnings.length > 0) {
-          debug('Extraction warnings:', warnings);
-        }
 
         if (isDemoMode) {
           // Save to localStorage
@@ -227,7 +217,6 @@ export function useEditorPersistence({
             const created = createLocalPrototype(name, currentHtml, gjsDataStr);
             setLocalPrototype(created);
             setHtmlContent(currentHtml);
-            navigate(`/edit/${created.id}`, { replace: true });
             const savedPrototype: Prototype = {
               id: created.id,
               slug: created.id,
@@ -243,6 +232,11 @@ export function useEditorPersistence({
             saveSuccess(savedPrototype);
             debug('Demo mode create successful');
             onSaveComplete?.();
+            // Navigate AFTER saveSuccess so the load useEffect guard sees the prototype
+            if (justSavedSlugRef) {
+              justSavedSlugRef.current = created.id;
+            }
+            navigate(`/edit/${created.id}`, { replace: true });
             return savedPrototype;
           }
         } else {
@@ -334,13 +328,16 @@ export function useEditorPersistence({
           const data = result.data!;
           debug('Save successful, slug:', data.slug);
 
-          if (!isUpdate) {
-            navigate(`/edit/${data.slug}`, { replace: true });
-          }
-
           setHtmlContent(currentHtml);
           saveSuccess(data);
           onSaveComplete?.();
+          // Navigate AFTER saveSuccess so the load useEffect guard sees the prototype
+          if (!isUpdate) {
+            if (justSavedSlugRef) {
+              justSavedSlugRef.current = data.slug;
+            }
+            navigate(`/edit/${data.slug}`, { replace: true });
+          }
           return data;
         }
 
@@ -369,6 +366,7 @@ export function useEditorPersistence({
       isLoadingTeam,
       navigate,
       onSaveComplete,
+      justSavedSlugRef,
     ]
   );
 
