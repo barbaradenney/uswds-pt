@@ -24,7 +24,7 @@ import { EditorCanvas } from './editor/EditorCanvas';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
-import { clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
@@ -397,6 +397,11 @@ export function Editor() {
           const editor = editorRef.current;
           if (editor && proto?.grapesData) {
             editor.loadProjectData(proto.grapesData as any);
+            // Ensure USWDS web component resources are loaded so complex
+            // components (usa-header, usa-step-indicator) re-render from
+            // their attributes after loadProjectData rebuilds the DOM.
+            await loadUSWDSResources(editor);
+            editor.refresh();
           }
 
           await fetchVersions();
