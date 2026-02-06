@@ -8,7 +8,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
-import { DEFAULT_CONTENT, COMPONENT_ICONS } from '@uswds-pt/adapter';
+import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import { isExtractingPerPageHtml } from '../lib/grapesjs/data-extractor';
@@ -71,22 +71,14 @@ export interface UseGrapesJSSetupReturn {
 export function useGrapesJSSetup({
   stateMachine,
   editorRef,
-  isDemoMode,
-  slug,
-  pendingPrototype,
-  localPrototype,
-  prototype,
+  // isDemoMode, slug, pendingPrototype, localPrototype, prototype are accepted
+  // for interface compatibility but no longer used in onReady — project data is
+  // now loaded via SDK storage.project config in EditorCanvas.
   onContentChange,
   blocks,
   globalSymbols = [],
   onSymbolCreate,
 }: UseGrapesJSSetupOptions): UseGrapesJSSetupReturn {
-  // Use a ref for prototype so loadProjectData always sees the latest value
-  // without causing onReady to be recreated (which would re-render EditorCanvas
-  // and potentially cause the StudioEditor SDK to reinitialize, wiping content).
-  const prototypeRef = useRef(prototype);
-  prototypeRef.current = prototype;
-
   // Track registered event listeners for cleanup
   const listenersRef = useRef<Array<{ event: string; handler: (...args: unknown[]) => void }>>([]);
 
@@ -211,8 +203,8 @@ export function useGrapesJSSetup({
       registerListener(editor, 'component:update', changeHandler);
       registerListener(editor, 'style:change', changeHandler);
 
-      // Load project data based on mode
-      loadProjectData(editor);
+      // Project data is now loaded via SDK's storage.project config in EditorCanvas,
+      // eliminating the need for manual loadProjectData() calls and timing races.
 
       // Add custom CSS to canvas
       addCardContainerCSS(editor);
@@ -269,102 +261,17 @@ export function useGrapesJSSetup({
     },
     [
       editorRef,
-      isDemoMode,
-      slug,
-      pendingPrototype,
-      localPrototype,
-      // prototype intentionally omitted — accessed via prototypeRef to avoid
-      // recreating onReady after save, which would re-render EditorCanvas and
-      // cause the StudioEditor SDK to reinitialize, wiping the canvas.
+      // isDemoMode, slug, pendingPrototype, localPrototype, globalSymbols
+      // intentionally omitted — project data is now loaded via SDK storage.project
+      // config in EditorCanvas, not in onReady. This prevents recreating onReady
+      // (and thus re-rendering EditorCanvas / reinitializing the SDK) on save.
       onContentChange,
       blocks,
       stateMachine,
       registerListener,
-      globalSymbols,
       onSymbolCreate,
     ]
   );
-
-  /**
-   * Load project data into editor based on mode
-   */
-  function loadProjectData(editor: EditorInstance) {
-    // For new prototypes (no slug), load the blank template
-    if (!slug) {
-      debug('New prototype - loading blank template');
-      const wrapper = editor.DomComponents?.getWrapper();
-      if (wrapper) {
-        const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
-        wrapper.components(blankTemplate);
-      }
-      // Even for new prototypes, merge global symbols if available
-      if (globalSymbols.length > 0) {
-        try {
-          const currentData = editor.getProjectData?.() || {};
-          const mergedData = mergeGlobalSymbols(currentData, globalSymbols);
-          if (mergedData.symbols?.length > 0) {
-            editor.loadProjectData(mergedData);
-            debug('Merged', globalSymbols.length, 'global symbols into new prototype');
-          }
-        } catch (e) {
-          debug('Failed to merge global symbols:', e);
-        }
-      }
-      return;
-    }
-
-    if (isDemoMode && localPrototype?.gjsData) {
-      // Demo mode: load from localStorage
-      try {
-        const projectData = JSON.parse(localPrototype.gjsData);
-        debug('Loading project data from localStorage');
-        editor.loadProjectData(projectData);
-        debug('Loaded project data from localStorage');
-      } catch (e) {
-        debug('Failed to load project data:', e);
-      }
-    } else if (!isDemoMode) {
-      // API mode: check both pendingPrototype and state prototype
-      const prototypeData = pendingPrototype || prototypeRef.current;
-      if (prototypeData?.grapesData) {
-        try {
-          let projectData = prototypeData.grapesData as any;
-          debug('Loading project data from API');
-
-          // Check if grapesData has actual content
-          const firstPageComponents = projectData.pages?.[0]?.frames?.[0]?.component?.components;
-          const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
-
-          if (!hasActualContent) {
-            debug('grapesData is empty, using htmlContent instead');
-            // Don't load empty grapesData - the htmlContent will be parsed from project config
-          } else {
-            // Merge global symbols into project data before loading
-            if (globalSymbols.length > 0) {
-              projectData = mergeGlobalSymbols(projectData, globalSymbols);
-              debug('Merged', globalSymbols.length, 'global symbols into project data');
-            }
-            editor.loadProjectData(projectData);
-            debug('Loaded project data, pages:', projectData.pages?.length);
-          }
-        } catch (e) {
-          debug('Failed to load project data:', e);
-        }
-      } else if (globalSymbols.length > 0) {
-        // No prototype data but we have global symbols - load them
-        try {
-          const currentData = editor.getProjectData?.() || {};
-          const mergedData = mergeGlobalSymbols(currentData, globalSymbols);
-          if (mergedData.symbols?.length > 0) {
-            editor.loadProjectData(mergedData);
-            debug('Loaded', globalSymbols.length, 'global symbols (no prototype data)');
-          }
-        } catch (e) {
-          debug('Failed to load global symbols:', e);
-        }
-      }
-    }
-  }
 
   return {
     onReady,

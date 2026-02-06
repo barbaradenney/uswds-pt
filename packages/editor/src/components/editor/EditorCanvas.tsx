@@ -82,6 +82,8 @@ export interface EditorCanvasProps {
   editorKey: string;
   /** Initial HTML content for the canvas */
   initialContent: string;
+  /** Pre-loaded project data (grapesData) to pass via SDK storage config */
+  projectData?: Record<string, any> | null;
   /** Block definitions for the editor */
   blocks: Array<{
     id: string;
@@ -129,6 +131,7 @@ const AI_COPILOT_CONFIG = {
 export const EditorCanvas = memo(function EditorCanvas({
   editorKey,
   initialContent,
+  projectData,
   blocks,
   onReady,
   onRetry,
@@ -147,6 +150,12 @@ export const EditorCanvas = memo(function EditorCanvas({
             // AI Copilot plugin - only add if API key is configured
             ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
+          storage: {
+            type: 'self' as const,
+            // When projectData is available, SDK loads it directly during init —
+            // no manual loadProjectData needed, no timing races with onReady.
+            ...(projectData ? { project: projectData } : {}),
+          },
           project: {
             type: 'web',
             default: {
