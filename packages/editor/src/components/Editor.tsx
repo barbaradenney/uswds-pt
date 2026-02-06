@@ -218,6 +218,39 @@ export function Editor() {
     stateMachine.reset();
   }, [stateMachine]);
 
+  // === Stable prop wrappers for EditorCanvas ===
+  // EditorCanvas is memo()'d. If ANY prop changes reference, it re-renders and
+  // creates a new inline `options` object, which causes the StudioEditor SDK to
+  // reinitialize with initialContent, wiping the user's work (see pitfall #1).
+  // These ref-based wrappers ensure stable function references across re-renders
+  // so memo() prevents EditorCanvas from re-rendering after saves, state changes, etc.
+  const stableOnReadyRef = useRef<(editor: EditorInstance) => void>(() => {});
+  const stableOnRetryRef = useRef<() => void>(() => {});
+  const stableOnGoHomeRef = useRef<() => void>(() => {});
+
+  // Keep refs up-to-date with latest callback implementations
+  stableOnReadyRef.current = grapesSetup.onReady;
+  stableOnRetryRef.current = handleEditorRetry;
+  stableOnGoHomeRef.current = handleBack;
+
+  // Stable callbacks that never change reference — always delegate to latest via ref
+  const stableOnReady = useCallback((editor: EditorInstance) => stableOnReadyRef.current(editor), []);
+  const stableOnRetry = useCallback(() => stableOnRetryRef.current(), []);
+  const stableOnGoHome = useCallback(() => stableOnGoHomeRef.current(), []);
+
+  // Stable initialContent: only recompute when editorKey changes (editor will remount).
+  // Between key changes, return the same string to prevent memo() from detecting changes.
+  const initialContentCacheRef = useRef({ key: '', content: '' });
+  if (initialContentCacheRef.current.key !== editorKey) {
+    initialContentCacheRef.current = {
+      key: editorKey,
+      content: (isDemoMode
+        ? localPrototype?.htmlContent
+        : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)
+      ) || '',
+    };
+  }
+
   // Handle symbol scope selection from dialog
   const handleSymbolScopeConfirm = useCallback(
     async (scope: SymbolScope, name: string) => {
@@ -543,11 +576,11 @@ export function Editor() {
       <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
         <EditorCanvas
           editorKey={editorKey}
-          initialContent={(isDemoMode ? localPrototype?.htmlContent : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)) || ''}
+          initialContent={initialContentCacheRef.current.content}
           blocks={blocks}
-          onReady={grapesSetup.onReady}
-          onRetry={handleEditorRetry}
-          onGoHome={handleBack}
+          onReady={stableOnReady}
+          onRetry={stableOnRetry}
+          onGoHome={stableOnGoHome}
         />
 
         {/* Version History Sidebar */}
