@@ -126,13 +126,6 @@ export const EditorCanvas = memo(function EditorCanvas({
   onRetry,
   onGoHome,
 }: EditorCanvasProps) {
-  // Always log what GrapesJS receives — helps debug template issues in production
-  console.log('[EditorCanvas] mount:', {
-    editorKey,
-    hasProjectData: !!projectData,
-    initialContentLen: initialContent?.length || 0,
-    initialContentPreview: initialContent?.substring(0, 120) || '(empty)',
-  });
   return (
     <EditorErrorBoundary onRetry={onRetry} onGoHome={onGoHome}>
       <GjsEditor
