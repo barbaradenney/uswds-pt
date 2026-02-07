@@ -38,6 +38,11 @@ import type { EditorInstance } from '../types/grapesjs';
 
 const debug = createDebugLogger('Editor');
 
+// Log STARTER_TEMPLATES at module load — helps verify templates are imported correctly in production
+console.log('[Editor] STARTER_TEMPLATES loaded:', STARTER_TEMPLATES.map(t => ({
+  id: t.id, label: t.label, contentLen: t.content?.length || 0,
+})));
+
 // Debug mode check for window debug helpers
 const DEBUG =
   typeof window !== 'undefined' &&
@@ -216,6 +221,18 @@ export function Editor() {
     } else if (!savedContent) {
       templateContent = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
     }
+
+    // Always log for production debugging
+    console.log('[Editor] initialContent computed:', {
+      editorKey,
+      selectedTemplate,
+      isDemoMode,
+      hasSavedContent: !!savedContent,
+      savedContentLen: savedContent?.length || 0,
+      templateContentLen: templateContent.length,
+      templateContentPreview: templateContent.substring(0, 100),
+      finalContent: (savedContent || templateContent).substring(0, 100),
+    });
 
     initialContentCacheRef.current = {
       key: editorKey,
