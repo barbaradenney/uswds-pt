@@ -117,6 +117,19 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     // Set the navItems property
     header.navItems = navItems;
 
+    // Build secondary links from sec-count/sec1-label/sec1-href attributes
+    const secCount = parseInt(header.getAttribute('sec-count') || '0', 10);
+    const secondaryLinks: Array<{ label: string; href: string }> = [];
+    for (let j = 1; j <= secCount; j++) {
+      secondaryLinks.push({
+        label: header.getAttribute(`sec${j}-label`) || `Link ${j}`,
+        href: header.getAttribute(`sec${j}-href`) || '#',
+      });
+    }
+    if (secondaryLinks.length > 0) {
+      header.secondaryLinks = secondaryLinks;
+    }
+
     // Set other properties
     header.logoText = header.getAttribute('logo-text') || 'Site Name';
     header.logoHref = header.getAttribute('logo-href') || '/';

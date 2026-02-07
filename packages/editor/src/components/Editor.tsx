@@ -25,12 +25,14 @@ import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
 import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
+import { TemplateChooser } from './TemplateChooser';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
   DEFAULT_CONTENT,
   COMPONENT_ICONS,
+  STARTER_TEMPLATES,
 } from '@uswds-pt/adapter';
 import type { EditorInstance } from '../types/grapesjs';
 
@@ -82,6 +84,9 @@ export function Editor() {
   const [showEmbed, setShowEmbed] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
+    slug ? '__existing__' : null
+  );
 
   // Pending prototype ref for race condition fix
   const pendingPrototypeRef = useRef<Prototype | null>(null);
@@ -199,13 +204,21 @@ export function Editor() {
       ? localPrototype?.htmlContent
       : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent);
 
-    // For new prototypes (no saved content), use the blank template so the
-    // initial page matches what new pages get via the page:add handler.
-    const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+    // For new prototypes, use the selected starter template content.
+    // Falls back to the blank-template block for backwards compatibility.
+    let templateContent = '';
+    if (selectedTemplate && selectedTemplate !== '__existing__') {
+      const template = STARTER_TEMPLATES.find(t => t.id === selectedTemplate);
+      templateContent = template?.content
+        ? template.content.replace('__FULL_HTML__', '')
+        : '';
+    } else if (!savedContent) {
+      templateContent = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+    }
 
     initialContentCacheRef.current = {
       key: editorKey,
-      content: savedContent || blankTemplate,
+      content: savedContent || templateContent,
     };
   }
 
@@ -305,6 +318,12 @@ export function Editor() {
     // Reset state machine to allow fresh initialization
     stateMachine.reset();
   }, [stateMachine]);
+
+  // Handle template selection from chooser
+  const handleTemplateSelect = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+    setEditorKey(`new-${templateId}-${Date.now()}`);
+  }, []);
 
   // === Stable prop wrappers for EditorCanvas ===
   // EditorCanvas is memo()'d. If ANY prop changes reference, it re-renders and
@@ -620,17 +639,16 @@ export function Editor() {
       }
       pendingPrototypeRef.current = null;
       loadPrototypeAndRemount(slug);
-    } else if (!isDemoMode && currentTeam) {
-      // Create new prototype in authenticated mode
-      persistence.createNew();
-    } else if (isDemoMode) {
-      // Demo mode: start fresh
+    } else if (!isDemoMode && currentTeam && selectedTemplate) {
+      // New prototype in authenticated mode — skip createNew(), first save handles creation
+      debug('New prototype with template:', selectedTemplate);
+    } else if (isDemoMode && selectedTemplate) {
+      // Demo mode: start fresh with selected template
       setLocalPrototype(null);
       setName('Untitled Prototype');
       setHtmlContent('');
-      setEditorKey(`new-${Date.now()}`);
     }
-  }, [slug, isDemoMode, currentTeam]);
+  }, [slug, isDemoMode, currentTeam, selectedTemplate]);
 
   // Helper to load prototype and then trigger editor remount
   async function loadPrototypeAndRemount(prototypeSlug: string) {
@@ -644,6 +662,11 @@ export function Editor() {
       setEditorKey(`${prototypeSlug}-${Date.now()}`);
       debug('Prototype loaded, triggering editor remount');
     }
+  }
+
+  // Template chooser — show before loading screen when creating a new prototype
+  if (!slug && !selectedTemplate) {
+    return <TemplateChooser onSelect={handleTemplateSelect} onBack={() => navigate('/')} />;
   }
 
   // Derive loading state from state machine

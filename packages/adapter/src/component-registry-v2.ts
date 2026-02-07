@@ -6941,6 +6941,107 @@ function createHeaderNavItemTrait(
 }
 
 /**
+ * Helper function to rebuild header secondary links array from attributes
+ */
+function rebuildHeaderSecondaryLinks(element: HTMLElement, count: number): void {
+  const links: Array<{ label: string; href: string }> = [];
+
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`sec${i}-label`) || `Link ${i}`;
+    const href = element.getAttribute(`sec${i}-href`) || '#';
+    links.push({ label, href });
+  }
+
+  (element as any).secondaryLinks = links;
+
+  if (typeof (element as any).requestUpdate === 'function') {
+    (element as any).requestUpdate();
+  }
+}
+
+/**
+ * Initialize header secondary links with retry logic
+ */
+function initHeaderSecondaryLinks(element: HTMLElement): void {
+  const count = parseInt(element.getAttribute('sec-count') || '0', 10);
+  if (count === 0) return;
+
+  const links: Array<{ label: string; href: string }> = [];
+  for (let i = 1; i <= count; i++) {
+    const label = element.getAttribute(`sec${i}-label`) || `Link ${i}`;
+    const href = element.getAttribute(`sec${i}-href`) || '#';
+    links.push({ label, href });
+  }
+
+  const trySetLinks = (attempt: number = 0): void => {
+    (element as any).secondaryLinks = links;
+
+    if (typeof (element as any).requestUpdate === 'function') {
+      (element as any).requestUpdate();
+    }
+
+    if (!(element as any).secondaryLinks?.length && attempt < 30) {
+      setTimeout(() => trySetLinks(attempt + 1), 100);
+    }
+  };
+
+  trySetLinks();
+
+  setTimeout(() => {
+    if (!(element as any).secondaryLinks?.length) {
+      (element as any).secondaryLinks = links;
+      if (typeof (element as any).requestUpdate === 'function') {
+        (element as any).requestUpdate();
+      }
+    }
+  }, 500);
+}
+
+/**
+ * Helper function to create header secondary link traits
+ */
+function createHeaderSecondaryLinkTrait(
+  index: number,
+  type: 'label' | 'href'
+): UnifiedTrait {
+  const attrName = `sec${index}-${type}`;
+
+  const visibleFn = (component: any) => {
+    try {
+      if (!component) return false;
+      const count = parseInt(component.get?.('attributes')?.['sec-count'] || '0', 10);
+      return index <= count;
+    } catch {
+      return false;
+    }
+  };
+
+  const isLabel = type === 'label';
+  const defaultValue = isLabel ? `Link ${index}` : '#';
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Sec ${index} ${isLabel ? 'Label' : 'URL'}`,
+      type: 'text',
+      default: defaultValue,
+      placeholder: isLabel ? 'Link text' : 'URL',
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        const count = parseInt(element.getAttribute('sec-count') || '0', 10);
+        rebuildHeaderSecondaryLinks(element, count);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
+      },
+    },
+  };
+}
+
+/**
  * USA Header Component
  *
  * Site header with logo, navigation, and optional search.
@@ -7059,12 +7160,13 @@ componentRegistry.register({
         getValue: (element: HTMLElement) => {
           return (element as any).logoText || element.getAttribute('logo-text') || 'Site Name';
         },
-        // Also initialize nav items when logo-text initializes (backup entry point)
+        // Also initialize nav items and secondary links when logo-text initializes (backup entry point)
         onInit: (element: HTMLElement, value: any) => {
           const text = value || 'Site Name';
           (element as any).logoText = text;
-          // Initialize nav items as well
+          // Initialize nav items and secondary links as well
           initHeaderNavItems(element);
+          initHeaderSecondaryLinks(element);
         },
       },
     },
@@ -7294,6 +7396,46 @@ componentRegistry.register({
     'nav6-label': createHeaderNavItemTrait(6, 'label'),
     'nav6-href': createHeaderNavItemTrait(6, 'href'),
     'nav6-current': createHeaderNavItemTrait(6, 'current'),
+
+    // Secondary (utility) link count
+    'sec-count': {
+      definition: {
+        name: 'sec-count',
+        label: 'Secondary Links',
+        type: 'select',
+        default: '0',
+        options: [
+          { id: '0', label: 'None' },
+          { id: '1', label: '1 Link' },
+          { id: '2', label: '2 Links' },
+          { id: '3', label: '3 Links' },
+          { id: '4', label: '4 Links' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const count = parseInt(value || '0', 10);
+          element.setAttribute('sec-count', String(count));
+          rebuildHeaderSecondaryLinks(element, count);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('sec-count') ?? '0';
+        },
+        onInit: (element: HTMLElement, _value: any) => {
+          initHeaderSecondaryLinks(element);
+        },
+      },
+    },
+
+    // Secondary link traits (up to 4)
+    'sec1-label': createHeaderSecondaryLinkTrait(1, 'label'),
+    'sec1-href': createHeaderSecondaryLinkTrait(1, 'href'),
+    'sec2-label': createHeaderSecondaryLinkTrait(2, 'label'),
+    'sec2-href': createHeaderSecondaryLinkTrait(2, 'href'),
+    'sec3-label': createHeaderSecondaryLinkTrait(3, 'label'),
+    'sec3-href': createHeaderSecondaryLinkTrait(3, 'href'),
+    'sec4-label': createHeaderSecondaryLinkTrait(4, 'label'),
+    'sec4-href': createHeaderSecondaryLinkTrait(4, 'href'),
   },
 });
 

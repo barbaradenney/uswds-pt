@@ -455,6 +455,85 @@ export const DEFAULT_CONTENT: Record<string, string> = {
 };
 
 /**
+ * Starter templates for the template chooser (new prototype flow)
+ */
+export interface StarterTemplate {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  content: string;
+}
+
+export const STARTER_TEMPLATES: StarterTemplate[] = [
+  {
+    id: 'signed-in',
+    label: 'Signed In',
+    description: 'Full page with authenticated header, navigation, and user account links',
+    icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v10H5V7z" opacity="0.3"/><circle cx="17" cy="4" r="1.5"/><path d="M7 9h6v1H7zm0 2h10v1H7zm0 2h4v1H7z" opacity="0.5"/></svg>`,
+    content: `__FULL_HTML__<div class="signed-in-template">
+  <usa-banner></usa-banner>
+  <usa-header extended logo-text="Agency Name" logo-href="/" nav-count="3" nav1-label="Home" nav1-href="#" nav1-current nav2-label="Benefits" nav2-href="#" nav3-label="Records" nav3-href="#" sec-count="2" sec1-label="My Account" sec1-href="#" sec2-label="Sign Out" sec2-href="#" show-search show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
+    <div class="grid-row">
+      <div class="grid-col-12"></div>
+    </div>
+  </main>
+  <usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+  },
+  {
+    id: 'signed-out',
+    label: 'Signed Out',
+    description: 'Full page with public header, navigation, and Sign In link',
+    icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v10H5V7z" opacity="0.3"/><path d="M7 9h6v1H7zm0 2h10v1H7zm0 2h4v1H7z" opacity="0.5"/></svg>`,
+    content: `__FULL_HTML__<div class="signed-out-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="5" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#" nav3-label="Services" nav3-href="#" nav4-label="Contact" nav4-href="#" nav5-label="Sign In" nav5-href="#" show-search show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
+    <div class="grid-row">
+      <div class="grid-col-12"></div>
+    </div>
+  </main>
+  <usa-footer variant="medium" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+  },
+  {
+    id: 'form',
+    label: 'Form',
+    description: 'Minimal header with a form content area for collecting information',
+    icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v2H5V7zm0 4h14v2H5v-2zm0 4h8v2H5v-2z" opacity="0.5"/></svg>`,
+    content: `__FULL_HTML__<div class="form-starter-template">
+  <usa-banner></usa-banner>
+  <usa-header logo-text="Agency Name" logo-href="/" nav-count="2" nav1-label="Home" nav1-href="#" nav2-label="Help" nav2-href="#" show-skip-link="true"></usa-header>
+  <main id="main-content" class="grid-container" style="padding: 2rem 0;">
+    <div style="max-width: 40rem;">
+      <h1>Form Title</h1>
+      <p class="usa-intro">Brief instructions for completing this form.</p>
+      <form style="margin-top: 2rem;">
+        <fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0 0 2rem;">
+          <legend class="usa-legend usa-legend--large">Section Title</legend>
+        </fieldset>
+        <usa-button text="Submit" variant="default"></usa-button>
+      </form>
+    </div>
+  </main>
+  <usa-footer variant="slim" agency-name="Agency Name" agency-url="#"></usa-footer>
+  <usa-identifier domain="agency.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>
+</div>`,
+  },
+  {
+    id: 'blank',
+    label: 'Blank',
+    description: 'Completely empty canvas to build from scratch',
+    icon: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.5"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.5" opacity="0.4"/></svg>`,
+    content: '',
+  },
+];
+
+/**
  * Category inference from module path
  */
 export const PATH_TO_CATEGORY: Record<string, string> = {
@@ -490,7 +569,7 @@ export const USWDS_VERSION = '3.8.1';
  * USWDS-WC Bundle version
  * The bundle package includes all components with Lit bundled in
  */
-export const USWDS_WC_BUNDLE_VERSION = '2.5.13';
+export const USWDS_WC_BUNDLE_VERSION = '2.5.14';
 
 /**
  * USWDS-WC package names for loading
