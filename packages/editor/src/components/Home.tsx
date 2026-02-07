@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPrototypes, deletePrototype, createPrototype, type LocalPrototype } from '../lib/localStorage';
 import { formatDate } from '../lib/date';
+import { inferTemplateLabel } from '../lib/template-utils';
 
 /**
  * Home page for demo mode (when no API is configured)
@@ -126,6 +127,11 @@ export function Home() {
                 </div>
               </div>
               <div className="prototype-card-meta">
+                {inferTemplateLabel(prototype.htmlContent) && (
+                  <span className="prototype-card-template">
+                    {inferTemplateLabel(prototype.htmlContent)}
+                  </span>
+                )}
                 Updated {formatDate(prototype.updatedAt)}
               </div>
             </div>

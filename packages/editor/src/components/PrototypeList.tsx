@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
 import { formatDate } from '../lib/date';
+import { inferTemplateLabel } from '../lib/template-utils';
 import { useOrganization } from '../hooks/useOrganization';
 import { useInvitations } from '../hooks/useInvitations';
 import { TeamSwitcher } from './TeamSwitcher';
@@ -297,6 +298,11 @@ export function PrototypeList() {
                 </p>
               )}
               <div className="prototype-card-meta">
+                {inferTemplateLabel(prototype.htmlContent) && (
+                  <span className="prototype-card-template">
+                    {inferTemplateLabel(prototype.htmlContent)}
+                  </span>
+                )}
                 Updated {formatDate(prototype.updatedAt)}
               </div>
             </div>

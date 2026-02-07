@@ -244,6 +244,21 @@ body {
 .prototype-card-meta {
   color: var(--color-base-light);
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prototype-card-template {
+  display: inline-block;
+  background: #e6e6e6;
+  color: #565c65;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* Login Page */
