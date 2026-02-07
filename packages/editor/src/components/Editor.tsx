@@ -209,6 +209,7 @@ export function Editor() {
     let templateContent = '';
     if (selectedTemplate && selectedTemplate !== '__existing__') {
       const template = STARTER_TEMPLATES.find(t => t.id === selectedTemplate);
+      debug('Template lookup:', selectedTemplate, '→ found:', !!template, 'contentLen:', template?.content?.length || 0);
       templateContent = template?.content
         ? template.content.replace('__FULL_HTML__', '')
         : '';

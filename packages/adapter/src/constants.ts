@@ -471,7 +471,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     label: 'Signed In',
     description: 'Full page with authenticated header, navigation, and user account links',
     icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v10H5V7z" opacity="0.3"/><circle cx="17" cy="4" r="1.5"/><path d="M7 9h6v1H7zm0 2h10v1H7zm0 2h4v1H7z" opacity="0.5"/></svg>`,
-    content: `__FULL_HTML__<div class="signed-in-template">
+    content: `__FULL_HTML__<div class="signed-in-template" data-template="signed-in">
   <usa-banner></usa-banner>
   <usa-header extended logo-text="Agency Name" logo-href="/" nav-count="3" nav1-label="Home" nav1-href="#" nav1-current nav2-label="Benefits" nav2-href="#" nav3-label="Records" nav3-href="#" sec-count="2" sec1-label="My Account" sec1-href="#" sec2-label="Sign Out" sec2-href="#" show-search show-skip-link="true"></usa-header>
   <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
@@ -488,7 +488,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     label: 'Signed Out',
     description: 'Full page with public header, navigation, and Sign In link',
     icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v10H5V7z" opacity="0.3"/><path d="M7 9h6v1H7zm0 2h10v1H7zm0 2h4v1H7z" opacity="0.5"/></svg>`,
-    content: `__FULL_HTML__<div class="signed-out-template">
+    content: `__FULL_HTML__<div class="signed-out-template" data-template="signed-out">
   <usa-banner></usa-banner>
   <usa-header logo-text="Agency Name" logo-href="/" nav-count="5" nav1-label="Home" nav1-href="#" nav1-current nav2-label="About" nav2-href="#" nav3-label="Services" nav3-href="#" nav4-label="Contact" nav4-href="#" nav5-label="Sign In" nav5-href="#" show-search show-skip-link="true"></usa-header>
   <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
@@ -505,7 +505,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     label: 'Form',
     description: 'Minimal header with a form content area for collecting information',
     icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><path d="M5 7h14v2H5V7zm0 4h14v2H5v-2zm0 4h8v2H5v-2z" opacity="0.5"/></svg>`,
-    content: `__FULL_HTML__<div class="form-starter-template">
+    content: `__FULL_HTML__<div class="form-starter-template" data-template="form">
   <usa-banner></usa-banner>
   <usa-header logo-text="Agency Name" logo-href="/" nav-count="2" nav1-label="Home" nav1-href="#" nav2-label="Help" nav2-href="#" show-skip-link="true"></usa-header>
   <main id="main-content" class="grid-container" style="padding: 2rem 0;">
