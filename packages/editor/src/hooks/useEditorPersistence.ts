@@ -19,7 +19,7 @@ import {
   updatePrototype as updateLocalPrototype,
   type LocalPrototype,
 } from '../lib/localStorage';
-import { isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
+import { isEditorReadyForExtraction, extractPerPageHtml } from '../lib/grapesjs/data-extractor';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
@@ -168,9 +168,19 @@ export function useEditorPersistence({
       debug(`Save started (${type})`);
 
       try {
-        // Extract data directly from GrapesJS API (avoids page-cycling disruption)
+        // Extract data from GrapesJS API
         const rawGrapesData = editor.getProjectData();
         const currentHtml = editor.getHtml() || htmlContent;
+
+        // For multi-page prototypes, extract per-page HTML so Preview can
+        // render pages reliably without reconstructing from the component tree.
+        // The isExtractingPerPageHtml flag suppresses page:select side effects
+        // (resource loading, canvas refresh) during the brief page cycling.
+        try {
+          extractPerPageHtml(editor, rawGrapesData);
+        } catch (err) {
+          debug('Per-page HTML extraction failed (non-critical):', err);
+        }
 
         // Filter out global symbols - they're stored separately via the API
         // This ensures only local symbols are saved with the prototype

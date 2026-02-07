@@ -281,7 +281,7 @@ function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): 
  *
  * The original page selection is restored in the finally block.
  */
-function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectData): void {
+export function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectData): void {
   const pages = editor.Pages?.getAll?.();
   if (!pages || pages.length <= 1) return;
 

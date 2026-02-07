@@ -205,27 +205,43 @@ export function Preview() {
 
   // Build multi-page HTML with page containers
   // Must be defined before any early returns to satisfy React hooks rules
+  // NOTE: Do NOT include currentPageId in deps — we toggle visibility via direct
+  // DOM manipulation below to avoid replacing the entire DOM (which destroys
+  // web component upgrades and initialization state).
   const multiPageHtml = useMemo(() => {
     if (!isMultiPage || pages.length === 0) return '';
 
-    return pages.map(page => {
+    return pages.map((page, index) => {
       const cleanedPageHtml = cleanExport(page.html);
-      const isVisible = page.id === currentPageId;
+      // First page visible by default; others hidden until navigation
+      const isVisible = index === 0;
       return `<div data-page-id="${page.id}" data-page-name="${page.name}" style="display: ${isVisible ? 'block' : 'none'};">${cleanedPageHtml}</div>`;
     }).join('\n');
-  }, [isMultiPage, pages, currentPageId]);
+  }, [isMultiPage, pages]);
 
-  // Handle page link clicks to prevent HashRouter interference
-  // Use a ref for the handler so we can access current pages state
-  const pagesRef = useRef<PageData[]>([]);
-  pagesRef.current = pages;
+  // Toggle page visibility via direct DOM manipulation (preserves web component state)
+  useEffect(() => {
+    if (!contentRef.current || !currentPageId || !isMultiPage) return;
+    contentRef.current.querySelectorAll('[data-page-id]').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      if (el.getAttribute('data-page-id') === currentPageId) {
+        htmlEl.style.display = 'block';
+      } else {
+        htmlEl.style.display = 'none';
+      }
+    });
+  }, [currentPageId, isMultiPage]);
 
   // Attach global click handler at document level during capture phase
   // This runs before HashRouter can intercept the click
+  // Matches any element with href starting with #page- (not just <a> tags)
+  // because usa-button custom elements also have href attributes
   useEffect(() => {
     const handlePageLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const link = target.closest('a[href^="#page-"]') as HTMLAnchorElement | null;
+      // Match any element (or ancestor) with #page- href — covers both
+      // inner <a> tags rendered by web components AND the outer custom elements
+      const link = target.closest('[href^="#page-"]') as HTMLElement | null;
 
       if (link) {
         e.preventDefault();
@@ -235,23 +251,7 @@ export function Preview() {
         const href = link.getAttribute('href');
         if (href) {
           const pageId = href.replace('#page-', '');
-
-          // For multi-page: show/hide page containers
-          if (pagesRef.current.length > 1) {
-            setCurrentPageId(pageId);
-          } else {
-            // For single page with page links: try to scroll to element or show alert
-            const pageContainer = document.querySelector(`[data-page-id="${pageId}"]`);
-            if (pageContainer) {
-              // If we have the container, show it
-              document.querySelectorAll('[data-page-id]').forEach(el => {
-                (el as HTMLElement).style.display = 'none';
-              });
-              (pageContainer as HTMLElement).style.display = 'block';
-            }
-            // Update state regardless
-            setCurrentPageId(pageId);
-          }
+          setCurrentPageId(pageId);
         }
         return false;
       }
@@ -267,6 +267,12 @@ export function Preview() {
 
   // Track which pages have been initialized
   const initializedPagesRef = useRef<Set<string>>(new Set());
+
+  // When the multi-page HTML changes (pages array updates), the DOM is replaced
+  // via dangerouslySetInnerHTML, so we need to re-initialize all pages
+  useEffect(() => {
+    initializedPagesRef.current.clear();
+  }, [multiPageHtml]);
 
   // Initialize USWDS components after content is rendered
   useEffect(() => {

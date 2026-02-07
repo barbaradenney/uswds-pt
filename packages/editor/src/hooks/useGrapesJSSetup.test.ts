@@ -29,6 +29,7 @@ vi.mock('../lib/grapesjs/resource-loader', () => ({
 // Mock data extractor
 vi.mock('../lib/grapesjs/data-extractor', () => ({
   isExtractingPerPageHtml: () => false,
+  extractPerPageHtml: vi.fn(),
 }));
 
 // Mock canvas helpers
