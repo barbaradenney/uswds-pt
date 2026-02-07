@@ -9,7 +9,7 @@
  * - Error display
  */
 
-import { memo, useState, useEffect, useCallback, type ChangeEvent } from 'react';
+import { memo, useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 
@@ -86,10 +86,16 @@ export const EditorHeader = memo(function EditorHeader({
 }: EditorHeaderProps) {
   const connectionStatus = useConnectionStatus();
 
-  // Show "Draft backed up" briefly after each local snapshot
+  // Show "Draft backed up" briefly after each local snapshot.
+  // Minimum 30s gap between badge displays to avoid constant flicker
+  // (snapshots fire every 3s, so without the gap the badge is nearly always visible).
   const [showDraftBadge, setShowDraftBadge] = useState(false);
+  const lastBadgeTimeRef = useRef(0);
   useEffect(() => {
     if (!lastSnapshotAt) return;
+    const now = Date.now();
+    if (now - lastBadgeTimeRef.current < 30_000) return;
+    lastBadgeTimeRef.current = now;
     setShowDraftBadge(true);
     const timeout = setTimeout(() => setShowDraftBadge(false), 2000);
     return () => clearTimeout(timeout);

@@ -211,7 +211,6 @@ describe('useEditorPersistence', () => {
       const newProto = mockPrototype({ slug: 'new-proto-123' });
       const stateMachine = createMockStateMachine();
       const editorRef = { current: createMockEditor() };
-      const justSavedSlugRef = { current: null as string | null };
       const onFirstSaveSlug = vi.fn();
       const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
@@ -232,7 +231,6 @@ describe('useEditorPersistence', () => {
           setLocalPrototype: vi.fn(),
           localPrototype: null,
           onFirstSaveSlug,
-          justSavedSlugRef,
         })
       );
 
@@ -459,7 +457,6 @@ describe('useEditorPersistence', () => {
       const stateMachine = createMockStateMachine();
       const editorRef = { current: createMockEditor() };
       const setLocalPrototype = vi.fn();
-      const justSavedSlugRef = { current: null as string | null };
       const onFirstSaveSlug = vi.fn();
       const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
@@ -475,7 +472,6 @@ describe('useEditorPersistence', () => {
           setLocalPrototype,
           localPrototype: null,
           onFirstSaveSlug,
-          justSavedSlugRef,
         })
       );
 

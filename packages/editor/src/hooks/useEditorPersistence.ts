@@ -53,8 +53,6 @@ export interface UseEditorPersistenceOptions {
   onSaveComplete?: () => void;
   /** Called when a new prototype gets its slug on first save (for URL update without remount) */
   onFirstSaveSlug?: (slug: string) => void;
-  /** Ref set before navigate on first save — prevents load useEffect from remounting */
-  justSavedSlugRef?: React.MutableRefObject<string | null>;
 }
 
 export interface UseEditorPersistenceReturn {
@@ -89,7 +87,6 @@ export function useEditorPersistence({
   localPrototype,
   onSaveComplete,
   onFirstSaveSlug,
-  justSavedSlugRef,
 }: UseEditorPersistenceOptions): UseEditorPersistenceReturn {
   const navigate = useNavigate();
   const { currentTeam, isLoading: isLoadingTeam, teams } = useOrganization();
@@ -389,7 +386,6 @@ export function useEditorPersistence({
       navigate,
       onSaveComplete,
       onFirstSaveSlug,
-      justSavedSlugRef,
     ]
   );
 

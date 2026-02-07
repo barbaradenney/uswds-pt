@@ -251,6 +251,10 @@ export function useEditorAutosave({
 
     // If there are pending changes, restart the timer
     if (hasPendingChangesRef.current && enabled) {
+      // Clear any existing timeout to prevent leaks on rapid resume() calls
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
       debounceTimeoutRef.current = setTimeout(() => performSaveRef.current(), debounceMs);
     }
   }, [enabled, debounceMs]);
