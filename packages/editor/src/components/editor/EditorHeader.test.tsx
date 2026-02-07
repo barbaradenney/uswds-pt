@@ -20,6 +20,7 @@ const defaultProps: EditorHeaderProps = {
   showHistoryButton: true,
   showAutosaveIndicator: true,
   autosaveStatus: 'idle',
+  lastSavedAt: null,
   isSaving: false,
   isSaveDisabled: false,
   error: null,
@@ -122,5 +123,16 @@ describe('EditorHeader', () => {
   it('disables save button when isSaveDisabled is true', () => {
     render(<EditorHeader {...defaultProps} isSaveDisabled={true} />);
     expect(screen.getByText('Loading...')).toBeDisabled();
+  });
+
+  it('shows "Saved just now" when idle with recent lastSavedAt', () => {
+    render(
+      <EditorHeader
+        {...defaultProps}
+        autosaveStatus="idle"
+        lastSavedAt={new Date()}
+      />
+    );
+    expect(screen.getByText('Saved just now')).toBeInTheDocument();
   });
 });

@@ -9,7 +9,7 @@
  * - Error display
  */
 
-import { memo, useCallback, type ChangeEvent } from 'react';
+import { memo, useState, useEffect, useCallback, type ChangeEvent } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 
@@ -40,6 +40,8 @@ export interface EditorHeaderProps {
   showAutosaveIndicator: boolean;
   /** Autosave status */
   autosaveStatus: UseEditorAutosaveReturn['status'];
+  /** Timestamp of last successful save */
+  lastSavedAt: Date | null;
   /** Whether save is in progress */
   isSaving: boolean;
   /** Whether save button should be disabled */
@@ -48,6 +50,17 @@ export interface EditorHeaderProps {
   error: string | null;
   /** Whether to show connection status (default: true when not in demo mode) */
   showConnectionStatus?: boolean;
+  /** Timestamp of last local draft backup to IndexedDB */
+  lastSnapshotAt?: Date | null;
+}
+
+function formatLastSaved(date: Date): string {
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diffSec < 10) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 export const EditorHeader = memo(function EditorHeader({
@@ -64,12 +77,23 @@ export const EditorHeader = memo(function EditorHeader({
   showHistoryButton,
   showAutosaveIndicator,
   autosaveStatus,
+  lastSavedAt,
   isSaving,
   isSaveDisabled,
   error,
   showConnectionStatus = false,
+  lastSnapshotAt = null,
 }: EditorHeaderProps) {
   const connectionStatus = useConnectionStatus();
+
+  // Show "Draft backed up" briefly after each local snapshot
+  const [showDraftBadge, setShowDraftBadge] = useState(false);
+  useEffect(() => {
+    if (!lastSnapshotAt) return;
+    setShowDraftBadge(true);
+    const timeout = setTimeout(() => setShowDraftBadge(false), 2000);
+    return () => clearTimeout(timeout);
+  }, [lastSnapshotAt]);
 
   const handleNameChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => onNameChange(e.target.value),
@@ -167,6 +191,18 @@ export const EditorHeader = memo(function EditorHeader({
             History
           </button>
         )}
+        {showDraftBadge && (
+          <span
+            style={{
+              fontSize: '0.75rem',
+              color: '#71767a',
+              opacity: 0.8,
+              transition: 'opacity 0.3s',
+            }}
+          >
+            Draft backed up
+          </span>
+        )}
         {showAutosaveIndicator && (
           <div className={`autosave-indicator ${autosaveStatus}`}>
             <span className="autosave-dot" />
@@ -174,7 +210,7 @@ export const EditorHeader = memo(function EditorHeader({
               {autosaveStatus === 'saving' && 'Saving...'}
               {autosaveStatus === 'saved' && 'Saved'}
               {autosaveStatus === 'error' && 'Save failed'}
-              {autosaveStatus === 'idle' && 'Autosave on'}
+              {autosaveStatus === 'idle' && (lastSavedAt ? `Saved ${formatLastSaved(lastSavedAt)}` : 'Autosave on')}
               {autosaveStatus === 'pending' && 'Unsaved changes'}
             </span>
           </div>

@@ -17,11 +17,13 @@ import { useEditorPersistence } from '../hooks/useEditorPersistence';
 import { useEditorAutosave } from '../hooks/useEditorAutosave';
 import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols, mergeGlobalSymbols } from '../hooks/useGlobalSymbols';
+import { useCrashRecovery } from '../hooks/useCrashRecovery';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
+import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
@@ -122,6 +124,17 @@ export function Editor() {
     maxWaitMs: 30000,
   });
 
+  // Crash recovery hook
+  const crashRecovery = useCrashRecovery({
+    editorRef,
+    stateMachine,
+    slug,
+    isDemoMode,
+    localPrototype,
+    prototypeName: name,
+    editorKey,
+  });
+
   // Version history hook
   const {
     versions,
@@ -136,6 +149,7 @@ export function Editor() {
   onSaveCompleteRef.current = () => {
     autosave.markSaved();
     fetchVersions();
+    crashRecovery.clearRecoveryData();
   };
 
   // Generate blocks
@@ -225,6 +239,17 @@ export function Editor() {
     projectDataCacheRef.current = { key: editorKey, data: grapesData };
   }
 
+  // Stable combined onContentChange — calls both autosave and crash recovery.
+  // Uses a ref so GrapesJS event handlers (registered once in onReady) always
+  // call the latest versions without needing to be re-registered.
+  const stableCrashRecoveryOnChange = useRef(crashRecovery.onContentChange);
+  stableCrashRecoveryOnChange.current = crashRecovery.onContentChange;
+
+  const combinedOnContentChange = useCallback(() => {
+    autosave.triggerChange();
+    stableCrashRecoveryOnChange.current();
+  }, [autosave.triggerChange]);
+
   // Callback for when a symbol is being created in GrapesJS
   // Dialog-first: receives serialized data and the selected component ref
   const handleSymbolCreate = useCallback(
@@ -247,7 +272,7 @@ export function Editor() {
     localPrototype,
     prototype: stateMachine.state.prototype,
     projectData: projectDataCacheRef.current.data,
-    onContentChange: autosave.triggerChange,
+    onContentChange: combinedOnContentChange,
     blocks,
     globalSymbols: globalSymbols.getGrapesJSSymbols(),
     onSymbolCreate: handleSymbolCreate,
@@ -490,6 +515,7 @@ export function Editor() {
         // 6. Refresh UI
         await fetchVersions();
         autosave.markSaved();
+        crashRecovery.clearRecoveryData();
         return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Restore failed';
@@ -501,6 +527,19 @@ export function Editor() {
     },
     [restoreVersion, slug, stateMachine, fetchVersions, autosave, editorRef]
   );
+
+  // Keyboard shortcut: Cmd+S / Ctrl+S to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveCallRef.current('manual');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Warn users before leaving with unsaved changes
   useEffect(() => {
@@ -530,6 +569,21 @@ export function Editor() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Auto-retry save when network reconnects with dirty changes
+  useEffect(() => {
+    const handleOnline = () => {
+      if (saveDirtyRef.current && saveCanSaveRef.current) {
+        debug('Network reconnected with unsaved changes — saving');
+        saveCallRef.current('autosave').catch((err) => {
+          debug('Reconnect save failed:', err instanceof Error ? err.message : String(err));
+        });
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
   }, []);
 
   // Save on component unmount (catches React Router in-app navigation).
@@ -623,11 +677,22 @@ export function Editor() {
         showHistoryButton={!isDemoMode && !!slug}
         showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
         autosaveStatus={autosave.status}
+        lastSavedAt={autosave.lastSavedAt}
         isSaving={persistence.isSaving}
         isSaveDisabled={persistence.isSaving || (!isDemoMode && !stateMachine.state.prototype && isLoadingTeam)}
         error={stateMachine.state.error}
         showConnectionStatus={!isDemoMode}
+        lastSnapshotAt={crashRecovery.lastSnapshotAt}
       />
+
+      {/* Recovery Banner */}
+      {crashRecovery.recoveryAvailable && crashRecovery.recoveryTimestamp && (
+        <RecoveryBanner
+          timestamp={crashRecovery.recoveryTimestamp}
+          onRestore={crashRecovery.restoreRecovery}
+          onDismiss={crashRecovery.dismissRecovery}
+        />
+      )}
 
       {/* Main Editor */}
       <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
@@ -640,6 +705,34 @@ export function Editor() {
           onRetry={stableOnRetry}
           onGoHome={stableOnGoHome}
         />
+
+        {/* Saving overlay */}
+        {persistence.isSaving && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            zIndex: 10,
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '24px 32px',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            }}>
+              <div className="loading-spinner" />
+              <span style={{ fontSize: '14px', color: '#1b1b1b' }}>Saving prototype...</span>
+            </div>
+          </div>
+        )}
 
         {/* Version History Sidebar */}
         {showVersionHistory && !isDemoMode && slug && (
