@@ -64,6 +64,8 @@ export interface UseEditorPersistenceReturn {
   createNew: () => Promise<string | null>;
   /** Whether a save operation is in progress */
   isSaving: boolean;
+  /** Whether a manual save is in progress (for overlay UI) */
+  isManualSaving: boolean;
   /** Whether any operation is in progress */
   isOperating: boolean;
   /** Whether we're currently online */
@@ -94,6 +96,8 @@ export function useEditorPersistence({
 
   // Track if a save is in progress (prevents concurrent saves)
   const isSavingRef = useRef(false);
+  // Track what type of save is in progress (for UI: overlay only on manual)
+  const saveTypeRef = useRef<'manual' | 'autosave' | null>(null);
 
   // Ref that always points to the latest stateMachine. The save callback reads
   // canSave / saveStart / etc. via this ref so it never uses a stale closure value
@@ -162,6 +166,7 @@ export function useEditorPersistence({
 
       // Acquire save lock
       isSavingRef.current = true;
+      saveTypeRef.current = type;
 
       // Start save
       saveStart(type);
@@ -360,6 +365,7 @@ export function useEditorPersistence({
       } finally {
         // Release save lock
         isSavingRef.current = false;
+        saveTypeRef.current = null;
       }
     },
     [
@@ -539,6 +545,7 @@ export function useEditorPersistence({
     load,
     createNew,
     isSaving: stateMachine.state.status === 'saving' || isSavingRef.current,
+    isManualSaving: (stateMachine.state.status === 'saving' || isSavingRef.current) && saveTypeRef.current === 'manual',
     isOperating: stateMachine.isBusy,
     isOnline: online,
     lastSaveRetries,

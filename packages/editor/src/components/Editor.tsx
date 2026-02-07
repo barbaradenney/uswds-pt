@@ -706,8 +706,8 @@ export function Editor() {
           onGoHome={stableOnGoHome}
         />
 
-        {/* Saving overlay */}
-        {persistence.isSaving && (
+        {/* Saving overlay — manual saves only (autosaves use the non-invasive header indicator) */}
+        {persistence.isManualSaving && (
           <div style={{
             position: 'absolute',
             inset: 0,
