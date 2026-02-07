@@ -231,11 +231,8 @@ export function useGrapesJSSetup({
         }
       }
 
-      // Add custom CSS to canvas
-      addCardContainerCSS(editor);
-      addFieldsetSpacingCSS(editor);
-      addButtonGroupCSS(editor);
-      addTypographyCSS(editor);
+      // Custom CSS (addCardContainerCSS, etc.) is injected in the
+      // tryLoadResources retry loop below, after the canvas document is ready.
 
       // Set up spacing trait for all components
       setupSpacingTrait(editor, registerListener);
@@ -267,11 +264,28 @@ export function useGrapesJSSetup({
       // Clean up existing checkboxes/radios with IDs (causes duplicate ID issues)
       cleanupTriggerComponentIds(editor);
 
-      // Load USWDS resources
+      // Load USWDS resources into canvas iframe.
+      // The canvas:frame:load event may have already fired before onReady,
+      // so we also poll for the canvas document as a fallback.
       registerListener(editor, 'canvas:frame:load', () => loadUSWDSResources(editor));
       registerListener(editor, 'canvas:frame:load', () => syncPageLinkHrefs(editor));
       registerListener(editor, 'page:select', () => syncPageLinkHrefs(editor));
-      loadUSWDSResources(editor);
+
+      // Try immediately, then retry with increasing delays if canvas isn't ready
+      const tryLoadResources = (attempt: number) => {
+        const doc = editor.Canvas?.getDocument();
+        if (doc) {
+          loadUSWDSResources(editor);
+          addCardContainerCSS(editor);
+          addFieldsetSpacingCSS(editor);
+          addButtonGroupCSS(editor);
+          addTypographyCSS(editor);
+        } else if (attempt < 10) {
+          debug(`Canvas document not ready, retrying (attempt ${attempt + 1})...`);
+          setTimeout(() => tryLoadResources(attempt + 1), 200);
+        }
+      };
+      tryLoadResources(0);
 
       // Expose debug helpers
       exposeDebugHelpers(editor);

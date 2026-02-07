@@ -107,58 +107,68 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
   const doc = canvas.getDocument();
   if (!doc) return;
 
-  // Check if resources are already loaded AND functional in this document
-  const existingLink = doc.querySelector('link[href*="uswds"]') as HTMLLinkElement;
-  if (existingLink && existingLink.sheet) {
+  // Check CSS and JS independently — canvas.styles may have loaded CSS
+  // already, but we still need to inject the JS module script.
+  const existingCssLink = doc.querySelector('link[href*="uswds"]') as HTMLLinkElement;
+  const cssLoaded = existingCssLink && existingCssLink.sheet;
+  const existingScript = doc.querySelector('script[src*="uswds-wc"]');
+  const jsLoaded = !!existingScript;
+
+  if (cssLoaded && jsLoaded) {
     debug('USWDS resources already loaded in this canvas');
     return;
   }
 
-  // If link exists but stylesheet not loaded, remove stale links
-  if (existingLink && !existingLink.sheet) {
+  // If CSS link exists but stylesheet not loaded, remove stale links
+  if (existingCssLink && !existingCssLink.sheet) {
     debug('Removing stale USWDS link tags');
     doc.querySelectorAll('link[href*="uswds"]').forEach((el: Element) => el.remove());
-    doc.querySelectorAll('script[src*="uswds"]').forEach((el: Element) => el.remove());
   }
 
-  debug('Loading USWDS resources into canvas iframe');
+  debug('Loading USWDS resources into canvas iframe', { cssLoaded, jsLoaded });
 
   try {
-    // 1. Load CSS files in parallel
-    const uswdsCss = doc.createElement('link');
-    uswdsCss.rel = 'stylesheet';
-    uswdsCss.href = CDN_URLS.uswdsCss;
+    // 1. Load CSS files (skip if already loaded, e.g., via canvas.styles config)
+    if (!cssLoaded) {
+      const uswdsCss = doc.createElement('link');
+      uswdsCss.rel = 'stylesheet';
+      uswdsCss.href = CDN_URLS.uswdsCss;
 
-    const uswdsWcCss = doc.createElement('link');
-    uswdsWcCss.rel = 'stylesheet';
-    uswdsWcCss.href = CDN_URLS.uswdsWcCss;
+      const uswdsWcCss = doc.createElement('link');
+      uswdsWcCss.rel = 'stylesheet';
+      uswdsWcCss.href = CDN_URLS.uswdsWcCss;
 
-    doc.head.appendChild(uswdsCss);
-    doc.head.appendChild(uswdsWcCss);
+      doc.head.appendChild(uswdsCss);
+      doc.head.appendChild(uswdsWcCss);
 
-    await Promise.all([
-      waitForLoad(uswdsCss, 'USWDS CSS', signal),
-      waitForLoad(uswdsWcCss, 'USWDS-WC CSS', signal),
-    ]);
+      await Promise.all([
+        waitForLoad(uswdsCss, 'USWDS CSS', signal),
+        waitForLoad(uswdsWcCss, 'USWDS-WC CSS', signal),
+      ]);
 
-    // Check for abort after CSS load
-    if (signal?.aborted) {
-      debug('loadUSWDSResources aborted after CSS load');
-      return;
+      if (signal?.aborted) {
+        debug('loadUSWDSResources aborted after CSS load');
+        return;
+      }
+    } else {
+      debug('CSS already loaded (via canvas.styles), skipping CSS injection');
     }
 
-    // 2. Load USWDS-WC bundle JS
-    const uswdsWcScript = doc.createElement('script');
-    uswdsWcScript.type = 'module';
-    uswdsWcScript.src = CDN_URLS.uswdsWcJs;
-    doc.head.appendChild(uswdsWcScript);
+    // 2. Load USWDS-WC bundle JS (module script)
+    if (!jsLoaded) {
+      const uswdsWcScript = doc.createElement('script');
+      uswdsWcScript.type = 'module';
+      uswdsWcScript.src = CDN_URLS.uswdsWcJs;
+      doc.head.appendChild(uswdsWcScript);
 
-    await waitForLoad(uswdsWcScript, 'USWDS-WC JS', signal);
+      await waitForLoad(uswdsWcScript, 'USWDS-WC JS', signal);
 
-    // Check for abort after JS load
-    if (signal?.aborted) {
-      debug('loadUSWDSResources aborted after JS load');
-      return;
+      if (signal?.aborted) {
+        debug('loadUSWDSResources aborted after JS load');
+        return;
+      }
+    } else {
+      debug('JS already loaded, skipping JS injection');
     }
 
     // Note: USWDS JavaScript (uswds.min.js) is NOT loaded here because:

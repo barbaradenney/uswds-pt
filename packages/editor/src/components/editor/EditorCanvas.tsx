@@ -8,8 +8,11 @@
 import { memo } from 'react';
 import grapesjs from 'grapesjs';
 import GjsEditor from '@grapesjs/react';
+import 'grapesjs/dist/css/grapes.min.css';
 import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
+import { pagesManagerPlugin } from '../../lib/grapesjs/plugins/pages-manager';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
+import { CDN_URLS } from '@uswds-pt/adapter';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
 import { createDebugLogger } from '@uswds-pt/shared';
@@ -128,14 +131,17 @@ export const EditorCanvas = memo(function EditorCanvas({
       <GjsEditor
         key={editorKey}
         grapesjs={grapesjs}
-        grapesjsCss="https://unpkg.com/grapesjs@0.22.14/dist/css/grapes.min.css"
         onReady={onReady}
         options={{
           height: '100%',
           width: '100%',
           storageManager: false,
+          canvas: {
+            styles: [CDN_URLS.uswdsCss, CDN_URLS.uswdsWcCss],
+          },
           plugins: [
             uswdsComponentsPlugin,
+            pagesManagerPlugin,
             ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
           projectData: projectData || {

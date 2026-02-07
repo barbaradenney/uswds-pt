@@ -178,12 +178,17 @@ export function Editor() {
   // Between key changes, return the same string to prevent memo() from detecting changes.
   const initialContentCacheRef = useRef({ key: '', content: '' });
   if (initialContentCacheRef.current.key !== editorKey) {
+    const savedContent = isDemoMode
+      ? localPrototype?.htmlContent
+      : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent);
+
+    // For new prototypes (no saved content), use the blank template so the
+    // initial page matches what new pages get via the page:add handler.
+    const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+
     initialContentCacheRef.current = {
       key: editorKey,
-      content: (isDemoMode
-        ? localPrototype?.htmlContent
-        : (pendingPrototypeRef.current?.htmlContent || stateMachine.state.prototype?.htmlContent)
-      ) || '',
+      content: savedContent || blankTemplate,
     };
   }
 
@@ -195,27 +200,17 @@ export function Editor() {
   if (projectDataCacheRef.current.key !== editorKey) {
     let grapesData: Record<string, any> | null = null;
 
-    if (isDemoMode) {
-      if (localPrototype?.gjsData) {
-        try {
-          grapesData = JSON.parse(localPrototype.gjsData);
-        } catch {
-          // Invalid JSON, fall through to null
-        }
-      }
-    } else {
-      const protoData = pendingPrototypeRef.current || stateMachine.state.prototype;
-      if (protoData?.grapesData) {
-        grapesData = protoData.grapesData as Record<string, any>;
-      }
-    }
-
-    // Only use grapesData if it has actual content
-    if (grapesData) {
-      const firstPageComponents = (grapesData as any).pages?.[0]?.frames?.[0]?.component?.components;
-      const hasActualContent = Array.isArray(firstPageComponents) && firstPageComponents.length > 0;
-      if (!hasActualContent) {
-        grapesData = null;
+    // Use pendingPrototypeRef (set synchronously in loadPrototypeAndRemount)
+    // as the primary source — it's always current regardless of React state timing.
+    // Fall back to localPrototype (demo) or stateMachine prototype (API mode).
+    const protoData = pendingPrototypeRef.current || stateMachine.state.prototype;
+    if (protoData?.grapesData) {
+      grapesData = protoData.grapesData as Record<string, any>;
+    } else if (isDemoMode && localPrototype?.gjsData) {
+      try {
+        grapesData = JSON.parse(localPrototype.gjsData);
+      } catch {
+        // Invalid JSON, fall through to null
       }
     }
 
@@ -566,6 +561,11 @@ export function Editor() {
       if (stateMachine.state.prototype?.slug === slug) {
         return;
       }
+      // In demo mode, also guard via localPrototype (covers the window between
+      // saveSuccess dispatch and React committing the state update).
+      if (isDemoMode && localPrototype?.id === slug) {
+        return;
+      }
       pendingPrototypeRef.current = null;
       loadPrototypeAndRemount(slug);
     } else if (!isDemoMode && currentTeam) {
@@ -624,7 +624,7 @@ export function Editor() {
         showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
         autosaveStatus={autosave.status}
         isSaving={persistence.isSaving}
-        isSaveDisabled={persistence.isSaving || (!stateMachine.state.prototype && isLoadingTeam)}
+        isSaveDisabled={persistence.isSaving || (!isDemoMode && !stateMachine.state.prototype && isLoadingTeam)}
         error={stateMachine.state.error}
         showConnectionStatus={!isDemoMode}
       />
