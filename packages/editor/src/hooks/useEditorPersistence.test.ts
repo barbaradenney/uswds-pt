@@ -212,6 +212,8 @@ describe('useEditorPersistence', () => {
       const stateMachine = createMockStateMachine();
       const editorRef = { current: createMockEditor() };
       const justSavedSlugRef = { current: null as string | null };
+      const onFirstSaveSlug = vi.fn();
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
       mockAuthFetch.mockResolvedValue({
         ok: true,
@@ -229,6 +231,7 @@ describe('useEditorPersistence', () => {
           setHtmlContent: vi.fn(),
           setLocalPrototype: vi.fn(),
           localPrototype: null,
+          onFirstSaveSlug,
           justSavedSlugRef,
         })
       );
@@ -243,11 +246,12 @@ describe('useEditorPersistence', () => {
           method: 'POST',
         })
       );
-      // saveSuccess should be called BEFORE navigate (prevents load useEffect remount)
+      // saveSuccess should be called, URL updated via replaceState (not navigate)
       expect(stateMachine.saveSuccess).toHaveBeenCalled();
-      expect(mockNavigate).toHaveBeenCalledWith(`/edit/${newProto.slug}`, { replace: true });
-      // justSavedSlugRef should be set to the new slug
-      expect(justSavedSlugRef.current).toBe(newProto.slug);
+      expect(onFirstSaveSlug).toHaveBeenCalledWith(newProto.slug);
+      expect(replaceStateSpy).toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+      replaceStateSpy.mockRestore();
     });
 
     it('should handle save errors gracefully', async () => {
@@ -456,6 +460,8 @@ describe('useEditorPersistence', () => {
       const editorRef = { current: createMockEditor() };
       const setLocalPrototype = vi.fn();
       const justSavedSlugRef = { current: null as string | null };
+      const onFirstSaveSlug = vi.fn();
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
       const { result } = renderHook(() =>
         useEditorPersistence({
@@ -468,6 +474,7 @@ describe('useEditorPersistence', () => {
           setHtmlContent: vi.fn(),
           setLocalPrototype,
           localPrototype: null,
+          onFirstSaveSlug,
           justSavedSlugRef,
         })
       );
@@ -478,11 +485,12 @@ describe('useEditorPersistence', () => {
 
       expect(mockCreateLocalPrototype).toHaveBeenCalled();
       expect(setLocalPrototype).toHaveBeenCalledWith(newLocalProto);
-      // saveSuccess should be called BEFORE navigate
+      // saveSuccess should be called, URL updated via replaceState (not navigate)
       expect(stateMachine.saveSuccess).toHaveBeenCalled();
-      expect(mockNavigate).toHaveBeenCalledWith(`/edit/${newLocalProto.id}`, { replace: true });
-      // justSavedSlugRef should be set
-      expect(justSavedSlugRef.current).toBe(newLocalProto.id);
+      expect(onFirstSaveSlug).toHaveBeenCalledWith(newLocalProto.id);
+      expect(replaceStateSpy).toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+      replaceStateSpy.mockRestore();
     });
   });
 

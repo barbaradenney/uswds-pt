@@ -43,9 +43,15 @@ const DEBUG =
     localStorage.getItem('uswds_pt_debug') === 'true');
 
 export function Editor() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: routeSlug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const editorRef = useRef<EditorInstance | null>(null);
+
+  // After first save, the prototype gets a slug but we don't navigate (to avoid
+  // remounting the editor). Derive an effective slug from the route param OR
+  // the prototype's slug so downstream hooks see the slug without a route change.
+  const [savedSlug, setSavedSlug] = useState<string | undefined>(undefined);
+  const slug = routeSlug || savedSlug;
 
   // Check if we're in demo mode (no API URL configured)
   const isDemoMode = !import.meta.env.VITE_API_URL;
@@ -99,6 +105,7 @@ export function Editor() {
     localPrototype,
     onNameChange: setName,
     onSaveComplete: () => onSaveCompleteRef.current(),
+    onFirstSaveSlug: setSavedSlug,
     justSavedSlugRef,
   });
 

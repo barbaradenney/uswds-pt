@@ -51,6 +51,8 @@ export interface UseEditorPersistenceOptions {
   localPrototype: LocalPrototype | null;
   /** Callback after successful save */
   onSaveComplete?: () => void;
+  /** Called when a new prototype gets its slug on first save (for URL update without remount) */
+  onFirstSaveSlug?: (slug: string) => void;
   /** Ref set before navigate on first save — prevents load useEffect from remounting */
   justSavedSlugRef?: React.MutableRefObject<string | null>;
 }
@@ -86,6 +88,7 @@ export function useEditorPersistence({
   setLocalPrototype,
   localPrototype,
   onSaveComplete,
+  onFirstSaveSlug,
   justSavedSlugRef,
 }: UseEditorPersistenceOptions): UseEditorPersistenceReturn {
   const navigate = useNavigate();
@@ -247,11 +250,13 @@ export function useEditorPersistence({
             saveSuccess(savedPrototype);
             debug('Demo mode create successful');
             onSaveComplete?.();
-            // Navigate AFTER saveSuccess so the load useEffect guard sees the prototype
-            if (justSavedSlugRef) {
-              justSavedSlugRef.current = created.id;
-            }
-            navigate(`/edit/${created.id}`, { replace: true });
+            // Notify parent of new slug — updates local state without route change
+            onFirstSaveSlug?.(created.id);
+            // Update URL without React Router navigate to prevent Editor remount.
+            // navigate() changes the matched route (/new → /edit/:slug), which
+            // can cause the Editor to re-render and wipe the canvas.
+            const basePath = import.meta.env.BASE_URL || '/';
+            window.history.replaceState(null, '', `${basePath}#/edit/${created.id}`);
             return savedPrototype;
           }
         } else {
@@ -346,12 +351,13 @@ export function useEditorPersistence({
           setHtmlContent(currentHtml);
           saveSuccess(data);
           onSaveComplete?.();
-          // Navigate AFTER saveSuccess so the load useEffect guard sees the prototype
+          // On first save, update URL without React Router navigate to prevent
+          // Editor remount. navigate() changes the matched route (/new → /edit/:slug),
+          // which can cause the Editor to re-render and wipe the canvas.
           if (!isUpdate) {
-            if (justSavedSlugRef) {
-              justSavedSlugRef.current = data.slug;
-            }
-            navigate(`/edit/${data.slug}`, { replace: true });
+            onFirstSaveSlug?.(data.slug);
+            const basePath = import.meta.env.BASE_URL || '/';
+            window.history.replaceState(null, '', `${basePath}#/edit/${data.slug}`);
           }
           return data;
         }
@@ -382,6 +388,7 @@ export function useEditorPersistence({
       isLoadingTeam,
       navigate,
       onSaveComplete,
+      onFirstSaveSlug,
       justSavedSlugRef,
     ]
   );
