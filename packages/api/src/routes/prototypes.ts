@@ -732,8 +732,10 @@ export async function prototypeRoutes(app: FastifyInstance) {
 
         return reply.status(201).send(duplicate);
       } catch (error) {
-        console.error('Failed to duplicate prototype:', error);
-        return reply.status(500).send({ message: 'Failed to duplicate prototype' });
+        if (error instanceof Error && error.message.includes('duplicate key')) {
+          return reply.status(409).send({ message: 'A prototype with this name already exists' });
+        }
+        throw error;
       }
     }
   );

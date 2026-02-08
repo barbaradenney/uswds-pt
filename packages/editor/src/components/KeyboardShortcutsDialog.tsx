@@ -29,6 +29,20 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  // Keep onClose in a ref so the stable click handler always calls the latest version
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Stable function identity — safe to pass to addEventListener/removeEventListener
+  const stableClickOutside = useRef<(e: MouseEvent) => void>();
+  if (!stableClickOutside.current) {
+    stableClickOutside.current = (e: MouseEvent) => {
+      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
+        onCloseRef.current();
+      }
+    };
+  }
+
   // Store the previously focused element and focus the dialog on open
   useEffect(() => {
     if (isOpen) {
@@ -73,26 +87,30 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
   }, [onClose]);
 
   // Close on click outside
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!isOpen) return;
-    let active = true;
-    const handleClick = (e: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
-        onClose();
+    const handler = stableClickOutside.current!;
+    if (!isOpen) {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
-    };
+      document.removeEventListener('mousedown', handler);
+      return;
+    }
     // Delay to prevent the opening click from immediately closing
-    const timer = setTimeout(() => {
-      if (active) {
-        document.addEventListener('mousedown', handleClick);
-      }
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      document.addEventListener('mousedown', handler);
     }, 0);
     return () => {
-      active = false;
-      clearTimeout(timer);
-      document.removeEventListener('mousedown', handleClick);
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      document.removeEventListener('mousedown', handler);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

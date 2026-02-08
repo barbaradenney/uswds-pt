@@ -566,10 +566,10 @@ function setupPageEventHandlers(
         debug('Page switch warning:', err);
       }
     } finally {
-      if (!signal.aborted) {
-        stateMachine.pageSwitchComplete();
-        debug('Page switch lock released');
-      }
+      // Always release the page-switch lock so the state machine doesn't get stuck.
+      // Even if the signal was aborted, the new page:select handler will start its own flow.
+      stateMachine.pageSwitchComplete();
+      debug('Page switch lock released');
     }
   });
 
@@ -678,12 +678,12 @@ function setupPageLinkTrait(
     if (!component) return;
 
     const pages = editor.Pages?.getAll?.() || [];
-    const currentPage = editor.Pages?.getSelected?.();
+    const currentPage = editor.Pages?.getSelected?.() || null;
 
     const pageOptions = [
       { id: '', label: '-- Select a page --' },
       ...pages
-        .filter((page: any) => page !== currentPage)
+        .filter((page: any) => !currentPage || page !== currentPage)
         .map((page: any) => ({
           id: page.getId?.() || page.id,
           label: page.get?.('name') || page.getName?.() || `Page ${page.getId?.() || page.id}`,
@@ -734,7 +734,9 @@ function syncPageLinkHrefs(editor: EditorInstance): void {
       const findInChildren = (comp: any): any => {
         if (comp.getEl?.() === el) return comp;
         const children = comp.components?.() || [];
-        for (const child of children.models || children) {
+        const childArray = children.models || children;
+        if (!childArray || !childArray.length) return null;
+        for (const child of childArray) {
           const found = findInChildren(child);
           if (found) return found;
         }
@@ -1162,7 +1164,7 @@ function cleanupTriggerComponentIds(editor: EditorInstance): void {
       const hasId = attrs.id;
 
       if (hasConditional && hasId) {
-        comp.removeAttributes(['id']);
+        comp.removeAttributes?.(['id']);
         const el = comp.getEl?.();
         if (el) {
           el.removeAttribute('id');

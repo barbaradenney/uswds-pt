@@ -50,14 +50,23 @@ export function blockSearchPlugin(editor: EditorInstance): void {
     blocksContainer.parentElement?.insertBefore(wrapper, blocksContainer);
     blocksContainer.parentElement?.insertBefore(noResults, blocksContainer.nextSibling);
 
+    // Cache block elements (invalidated when blocks change)
+    let cachedBlockElements: HTMLElement[] | null = null;
+    const getBlockElements = (): HTMLElement[] => {
+      if (!cachedBlockElements) {
+        cachedBlockElements = Array.from(blocksContainer.querySelectorAll(`.${PFX}block`)) as HTMLElement[];
+      }
+      return cachedBlockElements;
+    };
+    editor.on('block', () => { cachedBlockElements = null; });
+
     // Filter function — single DOM-based pass (no selector injection)
     const filterBlocks = (query: string) => {
       const normalizedQuery = query.toLowerCase().trim();
-      const blockElements = blocksContainer.querySelectorAll(`.${PFX}block`);
+      const blockElements = getBlockElements();
       let visibleCount = 0;
 
-      blockElements.forEach((el: Element) => {
-        const htmlEl = el as HTMLElement;
+      blockElements.forEach((htmlEl: HTMLElement) => {
         const title = (htmlEl.getAttribute('title') || htmlEl.textContent || '').toLowerCase();
         const visible = !normalizedQuery || title.includes(normalizedQuery);
         htmlEl.style.display = visible ? '' : 'none';

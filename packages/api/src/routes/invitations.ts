@@ -130,7 +130,7 @@ export async function invitationRoutes(app: FastifyInstance) {
         .where(eq(teams.id, teamId))
         .limit(1);
 
-      return {
+      const response: Record<string, unknown> = {
         id: invitation.id,
         email: invitation.email,
         role: invitation.role,
@@ -138,10 +138,14 @@ export async function invitationRoutes(app: FastifyInstance) {
         teamName: team?.name,
         expiresAt: invitation.expiresAt,
         status: invitation.status,
-        // In a real app, you'd send an email with this token
-        // For now, we return it so it can be used manually
-        inviteUrl: `/invite/${invitation.token}`,
       };
+
+      // Only expose invite URL in development (token should be emailed in production)
+      if (process.env.NODE_ENV !== 'production') {
+        response.inviteUrl = `/invite/${invitation.token}`;
+      }
+
+      return reply.status(201).send(response);
     }
   );
 
@@ -228,13 +232,9 @@ export async function invitationRoutes(app: FastifyInstance) {
         .where(eq(invitations.token, token))
         .limit(1);
 
-      if (!invitation) {
-        return reply.status(404).send({ message: 'Invitation not found' });
-      }
-
-      // Verify invitation is for this user
-      if (normalizeEmail(invitation.email) !== normalizeEmail(user.email)) {
-        return reply.status(403).send({ message: 'This invitation is for a different email address' });
+      // Use a single error message for not-found and wrong-email to prevent token enumeration
+      if (!invitation || normalizeEmail(invitation.email) !== normalizeEmail(user.email)) {
+        return reply.status(404).send({ message: 'Invitation not found or not valid for this account' });
       }
 
       // Check if invitation is still valid

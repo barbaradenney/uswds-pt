@@ -2996,7 +2996,7 @@ componentRegistry.register({
           element.setAttribute('count', String(count));
         },
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
-          const targetCount = Math.max(1, Math.min(10, parseInt(value) || 3));
+          const targetCount = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
 
           // Find existing checkboxes or radios
           const checkboxes = element.querySelectorAll('usa-checkbox');
@@ -3149,7 +3149,7 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
       for (const mutation of mutations) {
         if (mutation.type === 'childList') {
           // The web component re-rendered, re-apply our changes
-          const currentCount = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          const currentCount = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
           // Use setTimeout to let mutation finish first
           setTimeout(() => applyButtonGroupChanges(element, currentCount), 10);
           break;
@@ -3199,8 +3199,8 @@ function applyButtonGroupChanges(element: HTMLElement, count: number): void {
             if (variant && variant !== 'default') {
               existingAnchor.classList.add(`usa-button--${variant}`);
             }
-          } else if (existingButton) {
-            // Convert button to anchor
+          } else {
+            // Convert button to anchor (or create new if neither exists)
             const anchor = document.createElement('a');
             anchor.setAttribute('href', href);
             anchor.className = 'usa-button';
@@ -3208,7 +3208,11 @@ function applyButtonGroupChanges(element: HTMLElement, count: number): void {
               anchor.classList.add(`usa-button--${variant}`);
             }
             anchor.textContent = text;
-            existingButton.replaceWith(anchor);
+            if (existingButton) {
+              existingButton.replaceWith(anchor);
+            } else {
+              li.appendChild(anchor);
+            }
           }
         } else {
           // Need a button
@@ -3344,7 +3348,7 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
             }
           }
 
-          const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          const count = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
           rebuildButtonGroupButtons(element, count);
         },
         getValue: (element: HTMLElement) => {
@@ -3383,7 +3387,7 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
               component.addAttributes({ [attrName]: '', [`btn${index}-href`]: '' });
             }
           }
-          const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+          const count = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
           rebuildButtonGroupButtons(element, count);
         },
         getValue: (element: HTMLElement) => {
@@ -3410,7 +3414,7 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
         } else {
           element.removeAttribute(attrName);
         }
-        const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+        const count = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
         rebuildButtonGroupButtons(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -3458,7 +3462,7 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant'): Un
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('btn-count') || '2') || 2;
+        const count = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
         rebuildButtonGroupButtons(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -3500,12 +3504,12 @@ componentRegistry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(4, parseInt(value) || 2));
+          const count = Math.max(1, Math.min(4, parseInt(value, 10) || 2));
           element.setAttribute('btn-count', String(count));
           setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(4, parseInt(value) || 2));
+          const count = Math.max(1, Math.min(4, parseInt(value, 10) || 2));
           element.setAttribute('btn-count', String(count));
           rebuildButtonGroupButtons(element, count);
         },
@@ -3731,7 +3735,7 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href'): Unifi
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildBreadcrumbItems(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -3763,12 +3767,12 @@ componentRegistry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildBreadcrumbItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           rebuildBreadcrumbItems(element, count);
         },
@@ -3832,7 +3836,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const page = parseInt(value) || 1;
+          const page = parseInt(value, 10) || 1;
           element.setAttribute('current-page', String(page));
           (element as any).currentPage = page;
         },
@@ -3860,7 +3864,7 @@ componentRegistry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const pages = parseInt(value) || 5;
+          const pages = parseInt(value, 10) || 5;
           element.setAttribute('total-pages', String(pages));
           (element as any).totalPages = pages;
         },
@@ -3940,7 +3944,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
           } else {
             element.removeAttribute(attrName);
           }
-          const count = parseInt(element.getAttribute('count') || '4') || 4;
+          const count = parseInt(element.getAttribute('count') || '4', 10) || 4;
           rebuildSideNavItems(element, count);
         },
         getValue: (element: HTMLElement) => {
@@ -3966,7 +3970,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('count') || '4') || 4;
+        const count = parseInt(element.getAttribute('count') || '4', 10) || 4;
         rebuildSideNavItems(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -4005,17 +4009,17 @@ componentRegistry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(8, parseInt(value) || 4));
+          const count = Math.max(1, Math.min(8, parseInt(value, 10) || 4));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildSideNavItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(8, parseInt(value) || 4));
+          const count = Math.max(1, Math.min(8, parseInt(value, 10) || 4));
           element.setAttribute('count', String(count));
           rebuildSideNavItems(element, count);
         },
         getValue: (element: HTMLElement) => {
-          return parseInt(element.getAttribute('count') || '4') || 4;
+          return parseInt(element.getAttribute('count') || '4', 10) || 4;
         },
       },
     },
@@ -4530,7 +4534,7 @@ function rebuildTable(element: HTMLElement): void {
     `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`
   ).join('')}</tbody>`;
 
-  element.innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
+  element.innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${escapeHtml(className)}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
 }
 
 // Helper to create a header trait
@@ -5104,7 +5108,7 @@ function createListItemTrait(index: number): UnifiedTrait {
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildListItems(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -5140,7 +5144,7 @@ componentRegistry.register({
           }
           // Rebuild items after type change
           setTimeout(() => {
-            const count = parseInt(element.getAttribute('count') || '3') || 3;
+            const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
             rebuildListItems(element, count);
           }, 100);
         },
@@ -5172,12 +5176,12 @@ componentRegistry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(10, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildListItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(10, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           rebuildListItems(element, count);
         },
@@ -5275,7 +5279,7 @@ function createCollectionItemTrait(index: number, type: 'title' | 'description' 
     handler: {
       onChange: (element: HTMLElement, value: any) => {
         element.setAttribute(attrName, value || '');
-        const count = parseInt(element.getAttribute('count') || '3') || 3;
+        const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildCollectionItems(element, count);
       },
       getValue: (element: HTMLElement) => {
@@ -5306,12 +5310,12 @@ componentRegistry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildCollectionItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           rebuildCollectionItems(element, count);
         },

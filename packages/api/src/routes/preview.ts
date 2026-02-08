@@ -42,7 +42,9 @@ export async function previewRoutes(app: FastifyInstance) {
       return {
         name: prototype.name,
         htmlContent: prototype.htmlContent,
-        gjsData: prototype.grapesData ? JSON.stringify(prototype.grapesData) : undefined,
+        gjsData: prototype.grapesData && typeof prototype.grapesData === 'object' && Object.keys(prototype.grapesData as object).length > 0
+          ? JSON.stringify(prototype.grapesData)
+          : undefined,
       };
     }
   );

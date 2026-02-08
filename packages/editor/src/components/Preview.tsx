@@ -57,9 +57,9 @@ function extractPagesFromGjsData(gjsDataString: string | undefined): PageData[] 
 function buildHtmlFromComponent(component: any): string {
   if (!component) return '';
 
-  // Handle text nodes — output content as plain text, no wrapping tag
+  // Handle text nodes — output content as escaped plain text, no wrapping tag
   if (component.type === 'textnode') {
-    return component.content || '';
+    return escapeHtml(component.content || '');
   }
 
   const tagName = component.tagName || 'div';
@@ -100,7 +100,7 @@ function buildHtmlFromComponent(component: any): string {
   // Build children HTML
   const childrenHtml = components.map((c: any) => buildHtmlFromComponent(c)).join('');
 
-  return `<${tagName}${attrString}>${content}${childrenHtml}</${tagName}>`;
+  return `<${tagName}${attrString}>${escapeHtml(content)}${childrenHtml}</${tagName}>`;
 }
 
 export function Preview() {

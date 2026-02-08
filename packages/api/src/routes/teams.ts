@@ -90,7 +90,7 @@ export async function teamRoutes(app: FastifyInstance) {
       const organizationId = request.userOrganizationId;
 
       if (!organizationId) {
-        return reply.status(400).send({ error: 'Organization not found' });
+        return reply.status(400).send({ message: 'Organization not found' });
       }
 
       const teamSlug = slug || generateSlug(name);
@@ -332,6 +332,10 @@ export async function teamRoutes(app: FastifyInstance) {
         .where(eq(teams.id, teamId))
         .limit(1);
 
+      if (!team) {
+        return reply.status(404).send({ message: 'Team not found' });
+      }
+
       const [targetUser] = await db
         .select({ organizationId: users.organizationId })
         .from(users)
@@ -342,7 +346,7 @@ export async function teamRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'User not found' });
       }
 
-      if (targetUser.organizationId !== team?.organizationId) {
+      if (targetUser.organizationId !== team.organizationId) {
         return reply.status(400).send({ message: 'User must be in the same organization' });
       }
 

@@ -266,10 +266,13 @@ export function Editor() {
   const stableCrashRecoveryOnChange = useRef(crashRecovery.onContentChange);
   stableCrashRecoveryOnChange.current = crashRecovery.onContentChange;
 
+  const stableAutosaveTrigger = useRef(autosave.triggerChange);
+  stableAutosaveTrigger.current = autosave.triggerChange;
+
   const combinedOnContentChange = useCallback(() => {
-    autosave.triggerChange();
+    stableAutosaveTrigger.current();
     stableCrashRecoveryOnChange.current();
-  }, [autosave.triggerChange]);
+  }, []);
 
   // Callback for when a symbol is being created in GrapesJS
   // Dialog-first: receives serialized data and the selected component ref
