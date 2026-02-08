@@ -39,6 +39,10 @@ export const API_ENDPOINTS = {
   // Prototype Versions
   PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${slug}/versions`,
   PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${slug}/versions/${version}/restore`,
+  PROTOTYPE_VERSION_COMPARE: (slug: string, v1: number, v2: number | 'current') =>
+    `/api/prototypes/${slug}/versions/${v1}/compare/${v2}`,
+  PROTOTYPE_VERSION_LABEL: (slug: string, version: number) =>
+    `/api/prototypes/${slug}/versions/${version}`,
 
   // Global Symbols
   TEAM_SYMBOLS: (teamId: string) => `/api/teams/${teamId}/symbols`,
@@ -130,6 +134,13 @@ export function apiPost<T>(endpoint: string, body?: unknown, defaultError?: stri
  */
 export function apiPut<T>(endpoint: string, body?: unknown, defaultError?: string): Promise<ApiResult<T>> {
   return apiRequest<T>(endpoint, { method: 'PUT', body, defaultError });
+}
+
+/**
+ * Helper for PATCH requests
+ */
+export function apiPatch<T>(endpoint: string, body?: unknown, defaultError?: string): Promise<ApiResult<T>> {
+  return apiRequest<T>(endpoint, { method: 'PATCH', body, defaultError });
 }
 
 /**

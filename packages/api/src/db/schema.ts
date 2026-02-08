@@ -213,6 +213,7 @@ export const prototypes = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
     isPublic: boolean('is_public').default(false).notNull(),
     version: integer('version').notNull().default(1),
+    contentChecksum: varchar('content_checksum', { length: 64 }),
   },
   (table) => ({
     slugIdx: index('prototypes_slug_idx').on(table.slug),
@@ -246,6 +247,8 @@ export const prototypeVersions = pgTable(
     versionNumber: integer('version_number').notNull(),
     htmlContent: text('html_content'),
     grapesData: jsonb('grapes_data'),
+    label: varchar('label', { length: 255 }),
+    contentChecksum: varchar('content_checksum', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
   },

@@ -132,6 +132,7 @@ export interface Prototype {
   updatedAt: Date;
   isPublic: boolean;
   version?: number;
+  contentChecksum?: string;
 }
 
 export interface PrototypeVersion {
@@ -140,6 +141,8 @@ export interface PrototypeVersion {
   versionNumber: number;
   htmlContent: string;
   grapesData: GrapesProjectData;
+  label?: string;
+  contentChecksum?: string;
   createdAt: Date;
   createdBy?: string;
 }

@@ -4,11 +4,13 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPatch } from '../lib/api';
 
 export interface PrototypeVersion {
   id: string;
   versionNumber: number;
+  label?: string | null;
+  contentChecksum?: string | null;
   createdAt: string;
 }
 
@@ -22,6 +24,7 @@ interface VersionHistoryState {
 interface UseVersionHistoryReturn extends VersionHistoryState {
   fetchVersions: () => Promise<void>;
   restoreVersion: (versionNumber: number) => Promise<boolean>;
+  updateLabel: (versionNumber: number, label: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -78,6 +81,30 @@ export function useVersionHistory(slug: string | null): UseVersionHistoryReturn 
     return result.success;
   }, [slug]);
 
+  const updateLabel = useCallback(async (versionNumber: number, label: string): Promise<boolean> => {
+    if (!slug) return false;
+
+    const result = await apiPatch<PrototypeVersion>(
+      API_ENDPOINTS.PROTOTYPE_VERSION_LABEL(slug, versionNumber),
+      { label },
+      'Failed to update version label'
+    );
+
+    if (result.success) {
+      // Update local state with the new label
+      setState(prev => ({
+        ...prev,
+        versions: prev.versions.map(v =>
+          v.versionNumber === versionNumber
+            ? { ...v, label: label || null }
+            : v
+        ),
+      }));
+    }
+
+    return result.success;
+  }, [slug]);
+
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
@@ -100,6 +127,7 @@ export function useVersionHistory(slug: string | null): UseVersionHistoryReturn 
     ...state,
     fetchVersions,
     restoreVersion,
+    updateLabel,
     clearError,
   };
 }

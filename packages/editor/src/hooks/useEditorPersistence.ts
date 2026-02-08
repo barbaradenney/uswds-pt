@@ -9,7 +9,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, computeContentChecksum } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
 import { useOrganization } from './useOrganization';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
@@ -357,6 +357,28 @@ export function useEditorPersistence({
           setLastSaveRetries(0);
           const data = result.data!;
           debug('Save successful, slug:', data.slug);
+
+          // Validate save receipt: compare local checksum with server checksum.
+          // Note: the server normalizes grapesData (ensures pages/styles/assets arrays)
+          // before hashing. GrapesJS always includes these, so mismatches are rare.
+          if (data.contentChecksum) {
+            computeContentChecksum(currentHtml, grapesData)
+              .then((localChecksum) => {
+                if (localChecksum !== data.contentChecksum) {
+                  debug(
+                    'CHECKSUM MISMATCH — local:',
+                    localChecksum.slice(0, 8),
+                    'server:',
+                    data.contentChecksum?.slice(0, 8)
+                  );
+                } else {
+                  debug('Save receipt validated — checksums match');
+                }
+              })
+              .catch(() => {
+                // Non-critical: don't block save flow
+              });
+          }
 
           setHtmlContent(currentHtml);
           saveSuccess(data);

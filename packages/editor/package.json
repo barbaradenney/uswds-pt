@@ -21,6 +21,7 @@
     "@silexlabs/grapesjs-ai-copilot": "^0.0.33",
     "@uswds-pt/adapter": "workspace:*",
     "@uswds-pt/shared": "workspace:*",
+    "diff": "^8.0.3",
     "grapesjs": "^0.22.5",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

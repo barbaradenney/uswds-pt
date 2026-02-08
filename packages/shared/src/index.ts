@@ -11,3 +11,4 @@ export * from './types/api.js';
 // Utilities
 export * from './debug.js';
 export * from './sanitize.js';
+export * from './checksum.js';

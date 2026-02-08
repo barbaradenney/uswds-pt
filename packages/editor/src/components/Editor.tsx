@@ -155,6 +155,7 @@ export function Editor() {
     error: versionError,
     fetchVersions,
     restoreVersion,
+    updateLabel,
   } = useVersionHistory(!isDemoMode && slug ? slug : null);
 
   // Update the stable callback ref after autosave is defined
@@ -813,11 +814,13 @@ export function Editor() {
         {/* Version History Sidebar */}
         {showVersionHistory && !isDemoMode && slug && (
           <VersionHistoryPanel
+            slug={slug}
             versions={versions}
             isLoading={versionsLoading}
             isRestoring={isRestoring}
             error={versionError}
             onRestore={handleVersionRestore}
+            onUpdateLabel={updateLabel}
             onRefresh={fetchVersions}
             onClose={() => setShowVersionHistory(false)}
           />
