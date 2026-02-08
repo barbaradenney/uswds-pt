@@ -280,6 +280,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['name', 'teamId'],
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             description: { type: 'string', maxLength: 1000 },
@@ -293,6 +294,9 @@ export async function prototypeRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { description, htmlContent, grapesData, teamId } = request.body;
       const name = request.body.name.trim();
+      if (!name) {
+        return reply.status(400).send({ message: 'Name cannot be empty' });
+      }
       const userId = getAuthUser(request).id;
 
       // Verify user is a member of the team with at least member role
@@ -341,6 +345,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             description: { type: 'string', maxLength: 1000 },
@@ -354,6 +359,9 @@ export async function prototypeRoutes(app: FastifyInstance) {
       const { slug } = request.params;
       const { description, htmlContent, grapesData } = request.body;
       const name = request.body.name?.trim();
+      if (name !== undefined && !name) {
+        return reply.status(400).send({ message: 'Name cannot be empty' });
+      }
       const userId = getAuthUser(request).id;
 
       // Get current prototype
@@ -391,38 +399,58 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
       }
 
-      // Get the last version number
-      const [lastVersion] = await db
-        .select({ versionNumber: prototypeVersions.versionNumber })
-        .from(prototypeVersions)
-        .where(eq(prototypeVersions.prototypeId, current.id))
-        .orderBy(desc(prototypeVersions.versionNumber))
-        .limit(1);
+      // Wrap version snapshot + update in a transaction with version check
+      // to prevent TOCTOU race conditions between concurrent saves
+      let updated;
+      try {
+        updated = await db.transaction(async (tx) => {
+          // Get the last version number
+          const [lastVersion] = await tx
+            .select({ versionNumber: prototypeVersions.versionNumber })
+            .from(prototypeVersions)
+            .where(eq(prototypeVersions.prototypeId, current.id))
+            .orderBy(desc(prototypeVersions.versionNumber))
+            .limit(1);
 
-      const newVersionNumber = (lastVersion?.versionNumber || 0) + 1;
+          const newVersionNumber = (lastVersion?.versionNumber || 0) + 1;
 
-      // Create version snapshot of current state
-      await db.insert(prototypeVersions).values({
-        prototypeId: current.id,
-        versionNumber: newVersionNumber,
-        htmlContent: current.htmlContent,
-        grapesData: current.grapesData,
-        createdBy: userId,
-      });
+          // Create version snapshot of current state
+          await tx.insert(prototypeVersions).values({
+            prototypeId: current.id,
+            versionNumber: newVersionNumber,
+            htmlContent: current.htmlContent,
+            grapesData: current.grapesData,
+            createdBy: userId,
+          });
 
-      // Update prototype (normalize grapesData if provided, increment version)
-      const [updated] = await db
-        .update(prototypes)
-        .set({
-          name: name ?? current.name,
-          description: description ?? current.description,
-          htmlContent: htmlContent ?? current.htmlContent,
-          grapesData: grapesData ? normalizeGrapesData(grapesData) : current.grapesData,
-          updatedAt: new Date(),
-          version: current.version + 1,
-        })
-        .where(eq(prototypes.id, current.id))
-        .returning();
+          // Update prototype with version in WHERE to prevent race conditions
+          const [result] = await tx
+            .update(prototypes)
+            .set({
+              name: name ?? current.name,
+              description: description ?? current.description,
+              htmlContent: htmlContent ?? current.htmlContent,
+              grapesData: grapesData ? normalizeGrapesData(grapesData) : current.grapesData,
+              updatedAt: new Date(),
+              version: current.version + 1,
+            })
+            .where(and(eq(prototypes.id, current.id), eq(prototypes.version, current.version)))
+            .returning();
+
+          if (!result) {
+            throw new Error('CONCURRENT_MODIFICATION');
+          }
+
+          return result;
+        });
+      } catch (err: any) {
+        if (err?.message === 'CONCURRENT_MODIFICATION') {
+          return reply.status(409).send({
+            message: 'This prototype was modified concurrently. Please reload and try again.',
+          });
+        }
+        throw err;
+      }
 
       return updated;
     }
@@ -573,13 +601,14 @@ export async function prototypeRoutes(app: FastifyInstance) {
         createdBy: userId,
       });
 
-      // Restore the version
+      // Restore the version (also increment version for concurrency tracking)
       const [updated] = await db
         .update(prototypes)
         .set({
           htmlContent: versionData.htmlContent || '',
           grapesData: versionData.grapesData || {},
           updatedAt: new Date(),
+          version: prototype.version + 1,
         })
         .where(eq(prototypes.id, prototype.id))
         .returning();

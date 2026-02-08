@@ -1,18 +1,18 @@
 /**
  * Keyboard Shortcuts Dialog
  *
- * Modal showing all available keyboard shortcuts.
+ * Accessible modal showing all available keyboard shortcuts.
  * Triggered by the ? key or the help button in the editor header.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 interface KeyboardShortcutsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const isMac = typeof navigator !== 'undefined' && navigator.platform.includes('Mac');
+const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
 const mod = isMac ? '⌘' : 'Ctrl';
 
 const shortcuts = [
@@ -29,18 +29,50 @@ const shortcuts = [
 
 export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Close on Escape
+  // Store the previously focused element and focus the dialog on open
   useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      requestAnimationFrame(() => {
+        dialogRef.current?.focus();
+      });
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Handle keydown: Escape to close, Tab focus trap
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+
+    // Focus trap: keep Tab/Shift+Tab within the dialog
+    if (e.key === 'Tab') {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    }
+  }, [onClose]);
 
   // Close on click outside
   useEffect(() => {
@@ -76,6 +108,11 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
     >
       <div
         ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-dialog-title"
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
         style={{
           background: 'white',
           borderRadius: '8px',
@@ -83,12 +120,14 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
           maxWidth: '420px',
           width: '100%',
           boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+          outline: 'none',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Keyboard Shortcuts</h2>
+          <h2 id="shortcuts-dialog-title" style={{ margin: 0, fontSize: '1.25rem' }}>Keyboard Shortcuts</h2>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             style={{
               background: 'none',
               border: 'none',

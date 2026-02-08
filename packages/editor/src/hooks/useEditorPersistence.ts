@@ -302,9 +302,14 @@ export function useEditorPersistence({
           // Use retry logic for API call
           const result = await withRetry<Prototype>(
             async () => {
+              const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+              // Send If-Match for optimistic concurrency on updates
+              if (isUpdate && state.prototype?.version) {
+                headers['If-Match'] = String(state.prototype.version);
+              }
               const response = await authFetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(body),
               });
 

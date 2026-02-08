@@ -679,11 +679,14 @@ function generateInitScript(): string {
         rows.push(row);
       }
 
-      var captionHtml = caption ? '<caption>' + caption + '</caption>' : '';
-      var theadHtml = '<thead><tr>' + headers.map(function(h) { return '<th scope="col">' + h + '</th>'; }).join('') + '</tr></thead>';
+      // Escape HTML in user-provided content to prevent XSS
+      function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+      var captionHtml = caption ? '<caption>' + esc(caption) + '</caption>' : '';
+      var theadHtml = '<thead><tr>' + headers.map(function(h) { return '<th scope="col">' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
       var tbodyHtml = '<tbody>' + rows.map(function(row) {
         return '<tr>' + row.map(function(cell, ci) {
-          return ci === 0 ? '<th scope="row">' + cell + '</th>' : '<td>' + cell + '</td>';
+          return ci === 0 ? '<th scope="row">' + esc(cell) + '</th>' : '<td>' + esc(cell) + '</td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody>';
 
@@ -800,7 +803,7 @@ export function generateFullDocument(
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
 
   return `<!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${escapeHtml(lang)}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -960,7 +963,7 @@ ${indentContent(cleanedHtml, 4)}
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
 
   return `<!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${escapeHtml(lang)}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

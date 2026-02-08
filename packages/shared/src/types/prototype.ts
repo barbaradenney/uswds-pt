@@ -131,6 +131,7 @@ export interface Prototype {
   createdAt: Date;
   updatedAt: Date;
   isPublic: boolean;
+  version?: number;
 }
 
 export interface PrototypeVersion {

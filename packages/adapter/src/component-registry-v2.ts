@@ -4490,6 +4490,11 @@ componentRegistry.register({
  */
 
 // Helper to rebuild table HTML from attributes
+// Escape HTML special characters for safe innerHTML insertion
+function escapeTableHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function rebuildTable(element: HTMLElement): void {
   const colCount = parseInt(element.getAttribute('col-count') || '3', 10);
   const rowCount = parseInt(element.getAttribute('row-count') || '3', 10);
@@ -4523,11 +4528,11 @@ function rebuildTable(element: HTMLElement): void {
     rows.push(row);
   }
 
-  // Render table HTML
-  const captionHtml = caption ? `<caption>${caption}</caption>` : '';
-  const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>`;
+  // Render table HTML (escape user content to prevent XSS)
+  const captionHtml = caption ? `<caption>${escapeTableHtml(caption)}</caption>` : '';
+  const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${escapeTableHtml(h)}</th>`).join('')}</tr></thead>`;
   const tbodyHtml = `<tbody>${rows.map(row =>
-    `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${cell}</th>` : `<td>${cell}</td>`).join('')}</tr>`
+    `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${escapeTableHtml(cell)}</th>` : `<td>${escapeTableHtml(cell)}</td>`).join('')}</tr>`
   ).join('')}</tbody>`;
 
   element.innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
@@ -8212,9 +8217,9 @@ componentRegistry.register({
   droppable: false,
 
   traits: {
-    title: {
+    'nav-title': {
       definition: {
-        name: 'title',
+        name: 'nav-title',
         label: 'Title',
         type: 'text',
         default: 'On this page',
@@ -8222,14 +8227,14 @@ componentRegistry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'On this page';
-          element.setAttribute('title', text);
-          (element as any).title = text;
+          element.setAttribute('nav-title', text);
+          (element as any).navTitle = text;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).title || element.getAttribute('title') || 'On this page';
+          return (element as any).navTitle || element.getAttribute('nav-title') || 'On this page';
         },
       },
     },
@@ -8367,6 +8372,55 @@ componentRegistry.register({
         getValue: (element: HTMLElement) => element.getAttribute('lang3-value') || 'fr',
       },
     },
+
+    'lang4-label': {
+      definition: {
+        name: 'lang4-label', label: 'Language 4 Label', type: 'text', default: '中文',
+        visible: (component: any) => {
+          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 4; } catch { return false; }
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-label', value || '中文'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang4-label') || '中文',
+      },
+    },
+    'lang4-value': {
+      definition: {
+        name: 'lang4-value', label: 'Language 4 Value', type: 'text', default: 'zh',
+        visible: (component: any) => {
+          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 4; } catch { return false; }
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-value', value || 'zh'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang4-value') || 'zh',
+      },
+    },
+    'lang5-label': {
+      definition: {
+        name: 'lang5-label', label: 'Language 5 Label', type: 'text', default: 'العربية',
+        visible: (component: any) => {
+          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 5; } catch { return false; }
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-label', value || 'العربية'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang5-label') || 'العربية',
+      },
+    },
+    'lang5-value': {
+      definition: {
+        name: 'lang5-value', label: 'Language 5 Value', type: 'text', default: 'ar',
+        visible: (component: any) => {
+          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 5; } catch { return false; }
+        },
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-value', value || 'ar'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang5-value') || 'ar',
+      },
+    },
   },
 });
 
@@ -8406,20 +8460,38 @@ componentRegistry.register({
       definition: {
         name: 'maxlength',
         label: 'Max Characters',
-        type: 'text',
-        default: '200',
+        type: 'number',
+        default: 200,
       },
       handler: {
         onChange: (element: HTMLElement, value: any) => {
-          const maxlen = value || '200';
-          element.setAttribute('maxlength', maxlen);
+          const maxlen = parseInt(value, 10) || 200;
+          element.setAttribute('maxlength', String(maxlen));
           (element as any).maxlength = maxlen;
           if (typeof (element as any).requestUpdate === 'function') {
             (element as any).requestUpdate();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).maxlength || element.getAttribute('maxlength') || '200';
+          return parseInt(element.getAttribute('maxlength') || '200', 10);
+        },
+      },
+    },
+
+    name: {
+      definition: {
+        name: 'name',
+        label: 'Field Name',
+        type: 'text',
+        default: '',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('name', value || '');
+          (element as any).name = value || '';
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('name') || '';
         },
       },
     },

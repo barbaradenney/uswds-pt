@@ -23,6 +23,7 @@ export function blockSearchPlugin(editor: EditorInstance): void {
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Search components...';
+    input.setAttribute('aria-label', 'Search components');
     input.className = `${PFX}block-search__input`;
     input.style.cssText = `
       width: 100%;
@@ -36,58 +37,55 @@ export function blockSearchPlugin(editor: EditorInstance): void {
       box-sizing: border-box;
     `.replace(/\n\s*/g, '');
 
+    // No-results message (hidden by default)
+    const noResults = document.createElement('div');
+    noResults.className = `${PFX}block-search__no-results`;
+    noResults.textContent = 'No matching components';
+    noResults.style.cssText = 'padding: 12px 8px; color: rgba(255,255,255,0.5); font-size: 12px; text-align: center; display: none;';
+
     wrapper.appendChild(input);
 
     // Insert before the blocks content
     blocksContainer.parentElement?.insertBefore(wrapper, blocksContainer);
+    blocksContainer.parentElement?.insertBefore(noResults, blocksContainer.nextSibling);
 
-    // Filter function
+    // Filter function — single DOM-based pass (no selector injection)
     const filterBlocks = (query: string) => {
       const normalizedQuery = query.toLowerCase().trim();
-      const blocks = editor.Blocks.getAll();
-
-      blocks.forEach((block: any) => {
-        const label = (block.get('label') || '').toLowerCase();
-        const id = (block.get('id') || '').toLowerCase();
-        const category = (block.get('category')?.id || block.get('category') || '').toLowerCase();
-        const matches = !normalizedQuery ||
-          label.includes(normalizedQuery) ||
-          id.includes(normalizedQuery) ||
-          category.includes(normalizedQuery);
-
-        // Toggle visibility via the block element in DOM
-        const blockEl = blocksContainer.querySelector(`[data-gjs-type="${block.get('id')}"], .${PFX}block[title*="${block.get('label')}"]`) as HTMLElement;
-        if (blockEl) {
-          blockEl.style.display = matches ? '' : 'none';
-        }
-      });
-
-      // Also filter by direct DOM query as fallback — GrapesJS block elements have title attributes
       const blockElements = blocksContainer.querySelectorAll(`.${PFX}block`);
+      let visibleCount = 0;
+
       blockElements.forEach((el: Element) => {
         const htmlEl = el as HTMLElement;
         const title = (htmlEl.getAttribute('title') || htmlEl.textContent || '').toLowerCase();
-        if (!normalizedQuery) {
-          htmlEl.style.display = '';
-        } else if (!title.includes(normalizedQuery)) {
-          htmlEl.style.display = 'none';
-        } else {
-          htmlEl.style.display = '';
-        }
+        const visible = !normalizedQuery || title.includes(normalizedQuery);
+        htmlEl.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
       });
+
+      // Show/hide no-results message
+      noResults.style.display = (normalizedQuery && visibleCount === 0) ? '' : 'none';
     };
 
     // Event listeners
-    input.addEventListener('input', () => {
-      filterBlocks(input.value);
-    });
-
-    input.addEventListener('keydown', (e: KeyboardEvent) => {
+    const handleInput = () => filterBlocks(input.value);
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         input.value = '';
         filterBlocks('');
         input.blur();
       }
+    };
+
+    input.addEventListener('input', handleInput);
+    input.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup on editor destroy
+    editor.on('destroy', () => {
+      input.removeEventListener('input', handleInput);
+      input.removeEventListener('keydown', handleKeyDown);
+      wrapper.remove();
+      noResults.remove();
     });
   });
 }

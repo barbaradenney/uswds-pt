@@ -45,6 +45,8 @@ async function main() {
             },
           },
         },
+    // Trust proxy headers when behind a reverse proxy (Render, etc.)
+    ...(isProduction && { trustProxy: true }),
   });
 
   // Register CORS - allow frontend URLs
@@ -88,8 +90,8 @@ async function main() {
   await app.register(symbolRoutes, { prefix: '/api/teams' });
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
 
-  // Health check endpoint with database status
-  app.get('/api/health', async () => {
+  // Health check endpoint with database status (exempt from rate limiting)
+  app.get('/api/health', { config: { rateLimit: false } } as any, async () => {
     const dbHealth = await checkDatabaseHealth(db, sql);
 
     return {

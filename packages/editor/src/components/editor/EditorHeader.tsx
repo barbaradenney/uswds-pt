@@ -13,6 +13,9 @@ import { memo, useState, useEffect, useCallback, useRef, type ChangeEvent } from
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 
+const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
+const mod = isMac ? '⌘' : 'Ctrl';
+
 export interface EditorHeaderProps {
   /** Prototype name */
   name: string;
@@ -153,7 +156,8 @@ export const EditorHeader = memo(function EditorHeader({
               className="btn btn-secondary"
               onClick={onUndo}
               disabled={!canUndo}
-              title={`Undo (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Z)`}
+              aria-label="Undo"
+              title={`Undo (${mod}+Z)`}
               style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
             >
               ↩
@@ -162,7 +166,8 @@ export const EditorHeader = memo(function EditorHeader({
               className="btn btn-secondary"
               onClick={onRedo}
               disabled={!canRedo}
-              title={`Redo (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Shift+Z)`}
+              aria-label="Redo"
+              title={`Redo (${mod}+Shift+Z)`}
               style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
             >
               ↪

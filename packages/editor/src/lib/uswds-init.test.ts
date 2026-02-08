@@ -5,7 +5,7 @@
  * so initializeUSWDSComponents hits the timeout/catch path then proceeds
  * with DOM manipulation, which is what we actually want to test.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { initializeUSWDSComponents } from './uswds-init';
 
 // Reduce the 5s timeout to make tests fast
@@ -255,5 +255,44 @@ describe('initializeUSWDSComponents', () => {
 
     const button = document.querySelector('usa-button') as any;
     expect(button.getAttribute('href')).toBe('https://example.com');
+  });
+
+  // --- usa-table ---
+  it('initializes usa-table from attributes', async () => {
+    document.body.innerHTML = `
+      <usa-table
+        caption="Test Table"
+        col-count="2"
+        row-count="2"
+        header1="Name"
+        header2="Age"
+        row1-col1="Alice"
+        row1-col2="30"
+        row2-col1="Bob"
+        row2-col2="25"
+        striped
+      ></usa-table>
+    `;
+
+    await initWithTimeout();
+
+    const table = document.querySelector('usa-table') as HTMLElement;
+    const innerTable = table.querySelector('table');
+    expect(innerTable).toBeTruthy();
+    expect(innerTable!.classList.contains('usa-table')).toBe(true);
+    expect(innerTable!.classList.contains('usa-table--striped')).toBe(true);
+
+    const caption = table.querySelector('caption');
+    expect(caption?.textContent).toBe('Test Table');
+
+    const headerCells = table.querySelectorAll('thead th');
+    expect(headerCells.length).toBe(2);
+    expect(headerCells[0].textContent).toBe('Name');
+    expect(headerCells[1].textContent).toBe('Age');
+
+    const bodyRows = table.querySelectorAll('tbody tr');
+    expect(bodyRows.length).toBe(2);
+    expect(bodyRows[0].querySelector('th')?.textContent).toBe('Alice');
+    expect(bodyRows[0].querySelector('td')?.textContent).toBe('30');
   });
 });

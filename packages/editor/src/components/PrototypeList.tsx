@@ -276,6 +276,7 @@ export function PrototypeList() {
           <input
             type="text"
             placeholder="Search prototypes..."
+            aria-label="Search prototypes"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -288,6 +289,7 @@ export function PrototypeList() {
           />
           <select
             value={sortBy}
+            aria-label="Sort prototypes"
             onChange={(e) => setSortBy(e.target.value as SortOption)}
             style={{
               padding: '8px 12px',
@@ -346,11 +348,16 @@ export function PrototypeList() {
         </div>
       ) : (
         <div className="prototype-grid">
-          {visiblePrototypes.map((prototype) => (
+          {visiblePrototypes.map((prototype) => {
+            const templateLabel = inferTemplateLabel(prototype.htmlContent);
+            return (
             <div
               key={prototype.id}
               className="prototype-card"
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/edit/${prototype.slug}`)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/edit/${prototype.slug}`); } }}
             >
               <div
                 style={{
@@ -396,15 +403,16 @@ export function PrototypeList() {
                 </p>
               )}
               <div className="prototype-card-meta">
-                {inferTemplateLabel(prototype.htmlContent) && (
+                {templateLabel && (
                   <span className="prototype-card-template">
-                    {inferTemplateLabel(prototype.htmlContent)}
+                    {templateLabel}
                   </span>
                 )}
                 Updated {formatDate(prototype.updatedAt)}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -415,7 +423,7 @@ export function PrototypeList() {
             className="btn btn-secondary"
             onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
           >
-            Load More ({filteredPrototypes.length - visibleCount} remaining)
+            Load More ({Math.max(0, filteredPrototypes.length - visibleCount)} remaining)
           </button>
         </div>
       )}

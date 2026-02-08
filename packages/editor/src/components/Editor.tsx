@@ -595,7 +595,7 @@ export function Editor() {
       if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const target = e.target as HTMLElement;
         const tagName = target.tagName.toLowerCase();
-        if (tagName !== 'input' && tagName !== 'textarea' && !target.isContentEditable) {
+        if (tagName !== 'input' && tagName !== 'textarea' && tagName !== 'select' && !target.isContentEditable) {
           setShowShortcuts(true);
         }
       }
@@ -734,7 +734,7 @@ export function Editor() {
         onExport={handleExport}
         onEmbed={() => setShowEmbed(true)}
         onSave={handleSave}
-        onToggleHistory={() => setShowVersionHistory(!showVersionHistory)}
+        onToggleHistory={() => setShowVersionHistory(prev => !prev)}
         showVersionHistory={showVersionHistory}
         showEmbedButton={!!(slug || localPrototype)}
         showHistoryButton={!isDemoMode && !!slug}
