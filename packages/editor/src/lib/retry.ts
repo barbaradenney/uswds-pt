@@ -164,6 +164,14 @@ export async function withRetry<T>(
       };
     } catch (error) {
       lastError = error;
+
+      // Respect explicit noRetry flag from caller
+      if ((error as any)?.noRetry) {
+        lastErrorType = 'permanent';
+        debug(`${operationName} error marked as non-retriable`);
+        break;
+      }
+
       lastErrorType = classifyError(error);
 
       debug(`${operationName} failed (attempt ${attempt}):`, error, 'type:', lastErrorType);

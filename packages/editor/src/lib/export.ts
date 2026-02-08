@@ -680,7 +680,7 @@ function generateInitScript(): string {
       }
 
       // Escape HTML in user-provided content to prevent XSS
-      function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
       var captionHtml = caption ? '<caption>' + esc(caption) + '</caption>' : '';
       var theadHtml = '<thead><tr>' + headers.map(function(h) { return '<th scope="col">' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
@@ -824,7 +824,7 @@ ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </html>`;
 }
 
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('Export');
 
@@ -1011,17 +1011,7 @@ export function openMultiPagePreviewInNewTab(
   }
 }
 
-/**
- * Escape HTML special characters
- */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+// escapeHtml is imported from @uswds-pt/shared
 
 /**
  * Indent content by a number of spaces

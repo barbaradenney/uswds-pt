@@ -257,6 +257,52 @@ describe('initializeUSWDSComponents', () => {
     expect(button.getAttribute('href')).toBe('https://example.com');
   });
 
+  // --- usa-table XSS prevention ---
+  it('escapes HTML in usa-table content', async () => {
+    document.body.innerHTML = `
+      <usa-table
+        caption="<script>alert(1)</script>"
+        col-count="1"
+        row-count="1"
+        header1="<img onerror=alert(1) src=x>"
+        row1-col1="<b>bold</b>"
+      ></usa-table>
+    `;
+
+    await initWithTimeout();
+
+    const table = document.querySelector('usa-table') as HTMLElement;
+    const html = table.innerHTML;
+    // Should not contain raw HTML tags
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<b>');
+    // Should contain escaped versions
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('&lt;img');
+  });
+
+  it('escapes attribute-breaking XSS vectors in usa-table', async () => {
+    document.body.innerHTML = `
+      <usa-table
+        col-count="1"
+        row-count="1"
+        header1='test&quot; onmouseover=&quot;alert(1)'
+        row1-col1="normal cell"
+      ></usa-table>
+    `;
+
+    await initWithTimeout();
+
+    const table = document.querySelector('usa-table') as HTMLElement;
+    // Header content with quotes should be safely rendered as text, not as an attribute
+    const headerCell = table.querySelector('thead th');
+    expect(headerCell?.textContent).toBe('test" onmouseover="alert(1)');
+    expect(headerCell?.getAttribute('onmouseover')).toBeNull();
+    // No unexpected elements should be created from injected content
+    expect(table.querySelectorAll('thead th').length).toBe(1);
+  });
+
   // --- usa-table ---
   it('initializes usa-table from attributes', async () => {
     document.body.innerHTML = `

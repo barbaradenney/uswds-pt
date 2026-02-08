@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
 import { formatDate } from '../lib/date';
@@ -354,10 +354,6 @@ export function PrototypeList() {
             <div
               key={prototype.id}
               className="prototype-card"
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/edit/${prototype.slug}`)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/edit/${prototype.slug}`); } }}
             >
               <div
                 style={{
@@ -366,7 +362,11 @@ export function PrototypeList() {
                   alignItems: 'flex-start',
                 }}
               >
-                <h3 className="prototype-card-title">{prototype.name}</h3>
+                <h3 className="prototype-card-title">
+                  <Link to={`/edit/${prototype.slug}`}>
+                    {prototype.name}
+                  </Link>
+                </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <button
                     className="btn"

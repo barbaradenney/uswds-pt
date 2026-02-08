@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getPrototypes, deletePrototype, createPrototype, type LocalPrototype } from '../lib/localStorage';
 import { formatDate } from '../lib/date';
 import { inferTemplateLabel } from '../lib/template-utils';
@@ -39,10 +39,6 @@ export function Home() {
   function handleNewPrototype() {
     // Navigate to /new which will create a fresh editor
     navigate('/new');
-  }
-
-  function handleEditPrototype(id: string) {
-    navigate(`/edit/${id}`);
   }
 
   return (
@@ -87,11 +83,12 @@ export function Home() {
         </div>
       ) : (
         <div className="prototype-grid">
-          {prototypes.map((prototype) => (
+          {prototypes.map((prototype) => {
+            const templateLabel = inferTemplateLabel(prototype.htmlContent);
+            return (
             <div
               key={prototype.id}
               className="prototype-card"
-              onClick={() => handleEditPrototype(prototype.id)}
             >
               <div
                 style={{
@@ -100,7 +97,11 @@ export function Home() {
                   alignItems: 'flex-start',
                 }}
               >
-                <h3 className="prototype-card-title">{prototype.name}</h3>
+                <h3 className="prototype-card-title">
+                  <Link to={`/edit/${prototype.id}`}>
+                    {prototype.name}
+                  </Link>
+                </h3>
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <button
                     className="btn"
@@ -127,15 +128,16 @@ export function Home() {
                 </div>
               </div>
               <div className="prototype-card-meta">
-                {inferTemplateLabel(prototype.htmlContent) && (
+                {templateLabel && (
                   <span className="prototype-card-template">
-                    {inferTemplateLabel(prototype.htmlContent)}
+                    {templateLabel}
                   </span>
                 )}
                 Updated {formatDate(prototype.updatedAt)}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

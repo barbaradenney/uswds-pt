@@ -315,6 +315,14 @@ export function useEditorPersistence({
 
               if (!response.ok) {
                 const errorText = await response.text().catch(() => 'Unknown error');
+
+                // Handle 409 Conflict with a user-friendly message
+                if (response.status === 409) {
+                  const error = new Error('This prototype was modified in another session. Please reload to get the latest version.');
+                  (error as any).noRetry = true;
+                  throw error;
+                }
+
                 const errorType = classifyError(null, response);
 
                 // Don't retry client errors (4xx except 429)

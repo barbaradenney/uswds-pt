@@ -229,6 +229,7 @@ body {
   padding: var(--spacing-lg);
   transition: box-shadow 0.2s;
   cursor: pointer;
+  position: relative;
 }
 
 .prototype-card:hover {
@@ -239,6 +240,24 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: var(--spacing-sm);
+}
+
+/* Stretched link: card title link covers the full card surface */
+.prototype-card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prototype-card-title a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Keep action buttons above the stretched link */
+.prototype-card .btn {
+  position: relative;
+  z-index: 1;
 }
 
 .prototype-card-meta {

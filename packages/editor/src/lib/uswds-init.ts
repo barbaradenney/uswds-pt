@@ -6,7 +6,7 @@
  * programmatically to trigger proper rendering.
  */
 
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('USWDSInit');
 
@@ -328,10 +328,10 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
       rows.push(row);
     }
 
-    const captionHtml = caption ? `<caption>${caption}</caption>` : '';
-    const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>`;
+    const captionHtml = caption ? `<caption>${escapeHtml(caption)}</caption>` : '';
+    const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
     const tbodyHtml = `<tbody>${rows.map(row =>
-      `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${cell}</th>` : `<td>${cell}</td>`).join('')}</tr>`
+      `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`
     ).join('')}</tbody>`;
 
     (table as HTMLElement).innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;

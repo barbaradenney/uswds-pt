@@ -6,14 +6,12 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
+import { mod } from '../lib/platform';
 
 interface KeyboardShortcutsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
-const mod = isMac ? '⌘' : 'Ctrl';
 
 const shortcuts = [
   { keys: `${mod}+S`, description: 'Save' },

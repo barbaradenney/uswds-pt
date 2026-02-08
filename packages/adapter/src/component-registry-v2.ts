@@ -7,7 +7,7 @@
  */
 
 import type { GrapesTrait } from './types.js';
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
 
 // Import shared utilities from modular components
 import {
@@ -4490,11 +4490,6 @@ componentRegistry.register({
  */
 
 // Helper to rebuild table HTML from attributes
-// Escape HTML special characters for safe innerHTML insertion
-function escapeTableHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 function rebuildTable(element: HTMLElement): void {
   const colCount = parseInt(element.getAttribute('col-count') || '3', 10);
   const rowCount = parseInt(element.getAttribute('row-count') || '3', 10);
@@ -4529,10 +4524,10 @@ function rebuildTable(element: HTMLElement): void {
   }
 
   // Render table HTML (escape user content to prevent XSS)
-  const captionHtml = caption ? `<caption>${escapeTableHtml(caption)}</caption>` : '';
-  const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${escapeTableHtml(h)}</th>`).join('')}</tr></thead>`;
+  const captionHtml = caption ? `<caption>${escapeHtml(caption)}</caption>` : '';
+  const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
   const tbodyHtml = `<tbody>${rows.map(row =>
-    `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${escapeTableHtml(cell)}</th>` : `<td>${escapeTableHtml(cell)}</td>`).join('')}</tr>`
+    `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`
   ).join('')}</tbody>`;
 
   element.innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;

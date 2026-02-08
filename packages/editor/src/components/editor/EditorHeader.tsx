@@ -12,9 +12,7 @@
 import { memo, useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
-
-const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
-const mod = isMac ? '⌘' : 'Ctrl';
+import { mod } from '../../lib/platform';
 
 export interface EditorHeaderProps {
   /** Prototype name */
@@ -268,6 +266,7 @@ export const EditorHeader = memo(function EditorHeader({
           <button
             className="btn btn-secondary"
             onClick={onShowShortcuts}
+            aria-label="Keyboard shortcuts"
             title="Keyboard Shortcuts (?)"
             style={{ padding: '4px 10px', fontSize: '0.875rem', minWidth: 'auto' }}
           >

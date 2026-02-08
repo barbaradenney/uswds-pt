@@ -585,33 +585,50 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'Version not found' });
       }
 
-      // Create a new version with current state before restoring
-      const [lastVersion] = await db
-        .select({ versionNumber: prototypeVersions.versionNumber })
-        .from(prototypeVersions)
-        .where(eq(prototypeVersions.prototypeId, prototype.id))
-        .orderBy(desc(prototypeVersions.versionNumber))
-        .limit(1);
+      // Wrap in transaction with version check to prevent race conditions
+      let updated;
+      try {
+        updated = await db.transaction(async (tx) => {
+          const [lastVersion] = await tx
+            .select({ versionNumber: prototypeVersions.versionNumber })
+            .from(prototypeVersions)
+            .where(eq(prototypeVersions.prototypeId, prototype.id))
+            .orderBy(desc(prototypeVersions.versionNumber))
+            .limit(1);
 
-      await db.insert(prototypeVersions).values({
-        prototypeId: prototype.id,
-        versionNumber: (lastVersion?.versionNumber || 0) + 1,
-        htmlContent: prototype.htmlContent,
-        grapesData: prototype.grapesData,
-        createdBy: userId,
-      });
+          await tx.insert(prototypeVersions).values({
+            prototypeId: prototype.id,
+            versionNumber: (lastVersion?.versionNumber || 0) + 1,
+            htmlContent: prototype.htmlContent,
+            grapesData: prototype.grapesData,
+            createdBy: userId,
+          });
 
-      // Restore the version (also increment version for concurrency tracking)
-      const [updated] = await db
-        .update(prototypes)
-        .set({
-          htmlContent: versionData.htmlContent || '',
-          grapesData: versionData.grapesData || {},
-          updatedAt: new Date(),
-          version: prototype.version + 1,
-        })
-        .where(eq(prototypes.id, prototype.id))
-        .returning();
+          const [result] = await tx
+            .update(prototypes)
+            .set({
+              htmlContent: versionData.htmlContent || '',
+              grapesData: versionData.grapesData || {},
+              updatedAt: new Date(),
+              version: prototype.version + 1,
+            })
+            .where(and(eq(prototypes.id, prototype.id), eq(prototypes.version, prototype.version)))
+            .returning();
+
+          if (!result) {
+            throw new Error('CONCURRENT_MODIFICATION');
+          }
+
+          return result;
+        });
+      } catch (err: any) {
+        if (err?.message === 'CONCURRENT_MODIFICATION') {
+          return reply.status(409).send({
+            message: 'This version was modified concurrently. Please reload and try again.',
+          });
+        }
+        throw err;
+      }
 
       return updated;
     }
