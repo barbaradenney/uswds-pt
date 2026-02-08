@@ -4,7 +4,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, desc, and, or } from 'drizzle-orm';
+import { eq, desc, and, or, count } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
@@ -45,6 +45,29 @@ function normalizeGrapesData(data: Record<string, unknown> | undefined): Record<
   return normalized;
 }
 
+// Max serialized size for grapesData (5MB)
+const MAX_GRAPES_DATA_SIZE = 5 * 1024 * 1024;
+
+/**
+ * Validate grapesData shape and size
+ */
+function validateGrapesData(data: Record<string, unknown> | undefined): string | null {
+  if (!data) return null;
+
+  // Check serialized size
+  const serialized = JSON.stringify(data);
+  if (serialized.length > MAX_GRAPES_DATA_SIZE) {
+    return `grapesData exceeds maximum size of ${MAX_GRAPES_DATA_SIZE / (1024 * 1024)}MB`;
+  }
+
+  // Validate expected shape: pages should be an array if present
+  if ('pages' in data && !Array.isArray(data.pages)) {
+    return 'grapesData.pages must be an array';
+  }
+
+  return null;
+}
+
 interface PrototypeParams {
   slug: string;
 }
@@ -55,7 +78,12 @@ interface VersionParams extends PrototypeParams {
 
 interface ListQuery {
   teamId?: string;
+  page?: string;
+  limit?: string;
 }
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 /**
  * Check if user is a member of the specified team and get their role
@@ -141,6 +169,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
       const userId = getAuthUser(request).id;
       const { teamId } = request.query;
 
+      // Parse pagination params
+      const page = Math.max(1, parseInt(request.query.page || '1', 10) || 1);
+      const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(request.query.limit || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE));
+      const offset = (page - 1) * limit;
+
       if (teamId) {
         // Verify user is a member of the team
         const membership = await getTeamMembership(userId, teamId);
@@ -148,14 +181,24 @@ export async function prototypeRoutes(app: FastifyInstance) {
           return reply.status(403).send({ message: 'Not a member of this team' });
         }
 
-        // Get team prototypes
+        const whereClause = eq(prototypes.teamId, teamId);
+
+        // Get total count
+        const [{ total }] = await db
+          .select({ total: count() })
+          .from(prototypes)
+          .where(whereClause);
+
+        // Get paginated team prototypes
         const items = await db
           .select()
           .from(prototypes)
-          .where(eq(prototypes.teamId, teamId))
-          .orderBy(desc(prototypes.updatedAt));
+          .where(whereClause)
+          .orderBy(desc(prototypes.updatedAt))
+          .limit(limit)
+          .offset(offset);
 
-        return { prototypes: items };
+        return { prototypes: items, total: Number(total), page, limit };
       }
 
       // No teamId - return user's legacy prototypes (those without a team)
@@ -167,29 +210,29 @@ export async function prototypeRoutes(app: FastifyInstance) {
 
       const teamIds = userMemberships.map(m => m.teamId);
 
-      let items;
-      if (teamIds.length > 0) {
-        // Get prototypes from user's teams or created by user (legacy)
-        items = await db
-          .select()
-          .from(prototypes)
-          .where(
-            or(
-              eq(prototypes.createdBy, userId),
-              ...teamIds.map(tid => eq(prototypes.teamId, tid))
-            )
+      const whereClause = teamIds.length > 0
+        ? or(
+            eq(prototypes.createdBy, userId),
+            ...teamIds.map(tid => eq(prototypes.teamId, tid))
           )
-          .orderBy(desc(prototypes.updatedAt));
-      } else {
-        // User has no teams, just get their own prototypes
-        items = await db
-          .select()
-          .from(prototypes)
-          .where(eq(prototypes.createdBy, userId))
-          .orderBy(desc(prototypes.updatedAt));
-      }
+        : eq(prototypes.createdBy, userId);
 
-      return { prototypes: items };
+      // Get total count
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(prototypes)
+        .where(whereClause);
+
+      // Get paginated items
+      const items = await db
+        .select()
+        .from(prototypes)
+        .where(whereClause)
+        .orderBy(desc(prototypes.updatedAt))
+        .limit(limit)
+        .offset(offset);
+
+      return { prototypes: items, total: Number(total), page, limit };
     }
   );
 
@@ -239,8 +282,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
           required: ['name', 'teamId'],
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string' },
-            htmlContent: { type: 'string' },
+            description: { type: 'string', maxLength: 1000 },
+            htmlContent: { type: 'string', maxLength: 2_097_152 }, // 2MB
             grapesData: { type: 'object' },
             teamId: { type: 'string', format: 'uuid' },
           },
@@ -248,7 +291,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { name, description, htmlContent, grapesData, teamId } = request.body;
+      const { description, htmlContent, grapesData, teamId } = request.body;
+      const name = request.body.name.trim();
       const userId = getAuthUser(request).id;
 
       // Verify user is a member of the team with at least member role
@@ -259,6 +303,12 @@ export async function prototypeRoutes(app: FastifyInstance) {
 
       if (!hasPermission(membership.role as Role, ROLES.TEAM_MEMBER)) {
         return reply.status(403).send({ message: 'Viewers cannot create prototypes' });
+      }
+
+      // Validate grapesData size and shape
+      const grapesError = validateGrapesData(grapesData);
+      if (grapesError) {
+        return reply.status(400).send({ message: grapesError });
       }
 
       const slug = nanoid(10);
@@ -293,8 +343,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
           type: 'object',
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string' },
-            htmlContent: { type: 'string' },
+            description: { type: 'string', maxLength: 1000 },
+            htmlContent: { type: 'string', maxLength: 2_097_152 }, // 2MB
             grapesData: { type: 'object' },
           },
         },
@@ -302,7 +352,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { slug } = request.params;
-      const { name, description, htmlContent, grapesData } = request.body;
+      const { description, htmlContent, grapesData } = request.body;
+      const name = request.body.name?.trim();
       const userId = getAuthUser(request).id;
 
       // Get current prototype
@@ -319,6 +370,25 @@ export async function prototypeRoutes(app: FastifyInstance) {
       // Check edit permission
       if (!(await canEditPrototype(userId, current))) {
         return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      // Validate grapesData size and shape
+      const grapesError = validateGrapesData(grapesData);
+      if (grapesError) {
+        return reply.status(400).send({ message: grapesError });
+      }
+
+      // Optimistic concurrency check via If-Match header
+      const ifMatch = request.headers['if-match'];
+      if (ifMatch) {
+        const expectedVersion = parseInt(ifMatch, 10);
+        if (!isNaN(expectedVersion) && current.version !== expectedVersion) {
+          return reply.status(409).send({
+            message: 'This prototype was modified by another session',
+            serverVersion: current.version,
+            yourVersion: expectedVersion,
+          });
+        }
       }
 
       // Get the last version number
@@ -340,7 +410,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         createdBy: userId,
       });
 
-      // Update prototype (normalize grapesData if provided)
+      // Update prototype (normalize grapesData if provided, increment version)
       const [updated] = await db
         .update(prototypes)
         .set({
@@ -349,6 +419,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
           htmlContent: htmlContent ?? current.htmlContent,
           grapesData: grapesData ? normalizeGrapesData(grapesData) : current.grapesData,
           updatedAt: new Date(),
+          version: current.version + 1,
         })
         .where(eq(prototypes.id, current.id))
         .returning();

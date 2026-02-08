@@ -52,6 +52,16 @@ export interface EditorHeaderProps {
   showConnectionStatus?: boolean;
   /** Timestamp of last local draft backup to IndexedDB */
   lastSnapshotAt?: Date | null;
+  /** Callback for undo */
+  onUndo?: () => void;
+  /** Callback for redo */
+  onRedo?: () => void;
+  /** Whether undo is available */
+  canUndo?: boolean;
+  /** Whether redo is available */
+  canRedo?: boolean;
+  /** Callback to show keyboard shortcuts dialog */
+  onShowShortcuts?: () => void;
 }
 
 function formatLastSaved(date: Date): string {
@@ -83,6 +93,11 @@ export const EditorHeader = memo(function EditorHeader({
   error,
   showConnectionStatus = false,
   lastSnapshotAt = null,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onShowShortcuts,
 }: EditorHeaderProps) {
   const connectionStatus = useConnectionStatus();
 
@@ -131,6 +146,29 @@ export const EditorHeader = memo(function EditorHeader({
             borderRadius: '4px',
           }}
         />
+        {/* Undo/Redo */}
+        {onUndo && (
+          <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={onUndo}
+              disabled={!canUndo}
+              title={`Undo (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Z)`}
+              style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
+            >
+              ↩
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={onRedo}
+              disabled={!canRedo}
+              title={`Redo (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Shift+Z)`}
+              style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
+            >
+              ↪
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="editor-header-right">
@@ -220,6 +258,16 @@ export const EditorHeader = memo(function EditorHeader({
               {autosaveStatus === 'pending' && 'Unsaved changes'}
             </span>
           </div>
+        )}
+        {onShowShortcuts && (
+          <button
+            className="btn btn-secondary"
+            onClick={onShowShortcuts}
+            title="Keyboard Shortcuts (?)"
+            style={{ padding: '4px 10px', fontSize: '0.875rem', minWidth: 'auto' }}
+          >
+            ?
+          </button>
         )}
         <button
           className="btn btn-primary"

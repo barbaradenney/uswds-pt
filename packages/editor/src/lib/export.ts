@@ -648,6 +648,48 @@ function generateInitScript(): string {
       }
     });
 
+    // Initialize usa-table components from attributes
+    document.querySelectorAll('usa-table').forEach(table => {
+      var colCount = parseInt(table.getAttribute('col-count') || '3', 10);
+      var rowCount = parseInt(table.getAttribute('row-count') || '3', 10);
+      var caption = table.getAttribute('caption') || '';
+      var isStriped = table.hasAttribute('striped');
+      var isBorderless = table.hasAttribute('borderless');
+      var isCompact = table.hasAttribute('compact');
+      var stacked = table.getAttribute('stacked') || 'none';
+
+      var className = 'usa-table';
+      if (isStriped) className += ' usa-table--striped';
+      if (isBorderless) className += ' usa-table--borderless';
+      if (isCompact) className += ' usa-table--compact';
+      if (stacked === 'header') className += ' usa-table--stacked-header';
+      else if (stacked === 'default') className += ' usa-table--stacked';
+
+      var headers = [];
+      for (var c = 1; c <= colCount; c++) {
+        headers.push(table.getAttribute('header' + c) || 'Column ' + c);
+      }
+
+      var rows = [];
+      for (var r = 1; r <= rowCount; r++) {
+        var row = [];
+        for (var c2 = 1; c2 <= colCount; c2++) {
+          row.push(table.getAttribute('row' + r + '-col' + c2) || '');
+        }
+        rows.push(row);
+      }
+
+      var captionHtml = caption ? '<caption>' + caption + '</caption>' : '';
+      var theadHtml = '<thead><tr>' + headers.map(function(h) { return '<th scope="col">' + h + '</th>'; }).join('') + '</tr></thead>';
+      var tbodyHtml = '<tbody>' + rows.map(function(row) {
+        return '<tr>' + row.map(function(cell, ci) {
+          return ci === 0 ? '<th scope="row">' + cell + '</th>' : '<td>' + cell + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody>';
+
+      table.innerHTML = '<div class="usa-table-container--scrollable" tabindex="0"><table class="' + className + '">' + captionHtml + theadHtml + tbodyHtml + '</table></div>';
+    });
+
     // Initialize usa-button-group button text and links from attributes
     // Need to wait for web component to render, then apply our values
     function initButtonGroup(buttonGroup) {

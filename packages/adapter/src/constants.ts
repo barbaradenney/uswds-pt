@@ -114,6 +114,10 @@ export const COMPONENT_ICONS: Record<string, string> = {
   'usa-process-list': `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="5" r="3"/><path d="M10 4h12v2H10z"/><circle cx="6" cy="12" r="3"/><path d="M10 11h12v2H10z"/><circle cx="6" cy="19" r="3"/><path d="M10 18h12v2H10z"/></svg>`,
   'usa-prose': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 4h14v2H3zm0 4h18v2H3zm0 4h10v2H3z"/></svg>`,
   'usa-identifier': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 16.54V9.09l7 3.5v7.45l-7-3.5zm9 3.5v-7.45l7-3.5v7.45l-7 3.5z"/></svg>`,
+  'usa-in-page-navigation': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h8v2H3zm0 4h6v2H3zm0 4h8v2H3zm0 4h6v2H3z"/><path d="M14 3h7v18h-7V3zm2 2v14h3V5h-3z" opacity="0.5"/></svg>`,
+  'usa-language-selector': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`,
+  'usa-character-count': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v10H3V5zm2 2v6h14V7H5z"/><path d="M14 17h7v2h-7z" opacity="0.6"/></svg>`,
+  'usa-memorable-date': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/><path d="M7 10h3v2H7zm0 4h3v2H7zm5-4h3v2h-3zm5 0h2v2h-2z" opacity="0.6"/></svg>`,
 
   // Templates
   'blank-template': `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2z"/><rect x="5" y="7" width="14" height="10" fill="none" stroke="currentColor" stroke-dasharray="2,2" opacity="0.5"/></svg>`,
@@ -205,6 +209,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
     </div>
   </div>
 </div>`,
+  'usa-table': '__FULL_HTML__<usa-table caption="Sample Table" striped col-count="3" row-count="3" header1="Name" header2="Role" header3="Status" row1-col1="Jane" row1-col2="Admin" row1-col3="Active" row2-col1="Bob" row2-col2="Editor" row2-col3="Active" row3-col1="Carol" row3-col2="Viewer" row3-col3="Pending"></usa-table>',
   'usa-tag': '__FULL_HTML__<usa-tag text="Tag"></usa-tag>',
   'usa-list': '__FULL_HTML__<usa-list count="3" item1="First item" item2="Second item" item3="Third item"></usa-list>',
   'usa-collection': '__FULL_HTML__<usa-collection count="3" item1-title="First Article" item1-description="A brief description of the first article." item2-title="Second Article" item2-description="A brief description of the second article." item3-title="Third Article" item3-description="A brief description of the third article."></usa-collection>',
@@ -224,6 +229,10 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-process-list': '__FULL_HTML__<usa-process-list item-count="3" item1-heading="Step 1" item1-content="Description for step 1" item2-heading="Step 2" item2-content="Description for step 2" item3-heading="Step 3" item3-content="Description for step 3"></usa-process-list>',
   'usa-prose': '__FULL_HTML__<usa-prose>Enter your prose content here. This component applies USWDS typography styles to the text within.</usa-prose>',
   'usa-identifier': '__FULL_HTML__<usa-identifier domain="example.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>',
+  'usa-in-page-navigation': '__FULL_HTML__<usa-in-page-navigation heading-level="h2" title="On this page"></usa-in-page-navigation>',
+  'usa-language-selector': '__FULL_HTML__<usa-language-selector variant="default" lang-count="3" lang1-label="English" lang1-value="en" lang2-label="Español" lang2-value="es" lang3-label="Français" lang3-value="fr"></usa-language-selector>',
+  'usa-character-count': '__FULL_HTML__<usa-character-count label="Message" maxlength="200"></usa-character-count>',
+  'usa-memorable-date': '__FULL_HTML__<usa-memorable-date legend="Date of birth" hint="For example: January 19 2000"></usa-memorable-date>',
 
   // Templates - Full page layouts
   'blank-template': `__FULL_HTML__<div class="blank-template">

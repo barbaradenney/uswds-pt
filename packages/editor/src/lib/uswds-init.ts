@@ -297,6 +297,46 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     }
   });
 
+  // Initialize usa-table components from attributes
+  container.querySelectorAll('usa-table').forEach((table: Element) => {
+    const colCount = parseInt(table.getAttribute('col-count') || '3', 10);
+    const rowCount = parseInt(table.getAttribute('row-count') || '3', 10);
+    const caption = table.getAttribute('caption') || '';
+    const isStriped = table.hasAttribute('striped');
+    const isBorderless = table.hasAttribute('borderless');
+    const isCompact = table.hasAttribute('compact');
+    const stacked = table.getAttribute('stacked') || 'none';
+
+    let className = 'usa-table';
+    if (isStriped) className += ' usa-table--striped';
+    if (isBorderless) className += ' usa-table--borderless';
+    if (isCompact) className += ' usa-table--compact';
+    if (stacked === 'header') className += ' usa-table--stacked-header';
+    else if (stacked === 'default') className += ' usa-table--stacked';
+
+    const headers: string[] = [];
+    for (let c = 1; c <= colCount; c++) {
+      headers.push(table.getAttribute(`header${c}`) || `Column ${c}`);
+    }
+
+    const rows: string[][] = [];
+    for (let r = 1; r <= rowCount; r++) {
+      const row: string[] = [];
+      for (let c = 1; c <= colCount; c++) {
+        row.push(table.getAttribute(`row${r}-col${c}`) || '');
+      }
+      rows.push(row);
+    }
+
+    const captionHtml = caption ? `<caption>${caption}</caption>` : '';
+    const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>`;
+    const tbodyHtml = `<tbody>${rows.map(row =>
+      `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${cell}</th>` : `<td>${cell}</td>`).join('')}</tr>`
+    ).join('')}</tbody>`;
+
+    (table as HTMLElement).innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
+  });
+
   // Initialize usa-button-group button text and links from attributes
   // Need to wait for web component to render, then apply our values
   const initButtonGroup = (buttonGroup: Element) => {

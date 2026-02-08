@@ -4483,6 +4483,337 @@ componentRegistry.register({
 });
 
 /**
+ * USA Table Component
+ *
+ * Data table with USWDS styling. Supports striped, borderless, compact, and stacked variants.
+ * Uses attribute-based header/row data (same pattern as usa-list).
+ */
+
+// Helper to rebuild table HTML from attributes
+function rebuildTable(element: HTMLElement): void {
+  const colCount = parseInt(element.getAttribute('col-count') || '3', 10);
+  const rowCount = parseInt(element.getAttribute('row-count') || '3', 10);
+  const caption = element.getAttribute('caption') || '';
+  const striped = element.hasAttribute('striped');
+  const borderless = element.hasAttribute('borderless');
+  const compact = element.hasAttribute('compact');
+  const stacked = element.getAttribute('stacked') || 'none';
+
+  // Build class list
+  let className = 'usa-table';
+  if (striped) className += ' usa-table--striped';
+  if (borderless) className += ' usa-table--borderless';
+  if (compact) className += ' usa-table--compact';
+  if (stacked === 'header') className += ' usa-table--stacked-header';
+  else if (stacked === 'default') className += ' usa-table--stacked';
+
+  // Build header cells
+  const headers: string[] = [];
+  for (let c = 1; c <= colCount; c++) {
+    headers.push(element.getAttribute(`header${c}`) || `Column ${c}`);
+  }
+
+  // Build data rows
+  const rows: string[][] = [];
+  for (let r = 1; r <= rowCount; r++) {
+    const row: string[] = [];
+    for (let c = 1; c <= colCount; c++) {
+      row.push(element.getAttribute(`row${r}-col${c}`) || '');
+    }
+    rows.push(row);
+  }
+
+  // Render table HTML
+  const captionHtml = caption ? `<caption>${caption}</caption>` : '';
+  const theadHtml = `<thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>`;
+  const tbodyHtml = `<tbody>${rows.map(row =>
+    `<tr>${row.map((cell, ci) => ci === 0 ? `<th scope="row">${cell}</th>` : `<td>${cell}</td>`).join('')}</tr>`
+  ).join('')}</tbody>`;
+
+  element.innerHTML = `<div class="usa-table-container--scrollable" tabindex="0"><table class="${className}">${captionHtml}${theadHtml}${tbodyHtml}</table></div>`;
+}
+
+// Helper to create a header trait
+function createTableHeaderTrait(colIndex: number): UnifiedTrait {
+  const attrName = `header${colIndex}`;
+  const defaultValue = `Column ${colIndex}`;
+
+  const visibleFn = (component: any) => {
+    try {
+      if (!component) return true;
+      const count = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
+      return colIndex <= count;
+    } catch {
+      return true;
+    }
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Header ${colIndex}`,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        rebuildTable(element);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
+      },
+    },
+  };
+}
+
+// Helper to create a cell trait
+function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait {
+  const attrName = `row${rowIndex}-col${colIndex}`;
+  const defaultValue = '';
+
+  const visibleFn = (component: any) => {
+    try {
+      if (!component) return true;
+      const colCount = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
+      const rowCount = parseInt(component.get?.('attributes')?.['row-count'] || '3', 10);
+      return rowIndex <= rowCount && colIndex <= colCount;
+    } catch {
+      return true;
+    }
+  };
+
+  return {
+    definition: {
+      name: attrName,
+      label: `Row ${rowIndex}, Col ${colIndex}`,
+      type: 'text',
+      default: defaultValue,
+      visible: visibleFn,
+    },
+    handler: {
+      onChange: (element: HTMLElement, value: any) => {
+        element.setAttribute(attrName, value || '');
+        rebuildTable(element);
+      },
+      getValue: (element: HTMLElement) => {
+        return element.getAttribute(attrName) ?? defaultValue;
+      },
+    },
+  };
+}
+
+componentRegistry.register({
+  tagName: 'usa-table',
+  droppable: false,
+
+  traits: {
+    // Caption
+    caption: {
+      definition: {
+        name: 'caption',
+        label: 'Caption',
+        type: 'text',
+        default: 'Table caption',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('caption', value || '');
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('caption') || '';
+        },
+      },
+    },
+
+    // Striped rows
+    striped: {
+      definition: {
+        name: 'striped',
+        label: 'Striped Rows',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (coerceBoolean(value)) {
+            element.setAttribute('striped', '');
+          } else {
+            element.removeAttribute('striped');
+          }
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.hasAttribute('striped');
+        },
+      },
+    },
+
+    // Borderless
+    borderless: {
+      definition: {
+        name: 'borderless',
+        label: 'Borderless',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (coerceBoolean(value)) {
+            element.setAttribute('borderless', '');
+          } else {
+            element.removeAttribute('borderless');
+          }
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.hasAttribute('borderless');
+        },
+      },
+    },
+
+    // Compact
+    compact: {
+      definition: {
+        name: 'compact',
+        label: 'Compact',
+        type: 'checkbox',
+        default: false,
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          if (coerceBoolean(value)) {
+            element.setAttribute('compact', '');
+          } else {
+            element.removeAttribute('compact');
+          }
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.hasAttribute('compact');
+        },
+      },
+    },
+
+    // Stacked variant
+    stacked: {
+      definition: {
+        name: 'stacked',
+        label: 'Stacked (Mobile)',
+        type: 'select',
+        default: 'none',
+        options: [
+          { id: 'none', label: 'None' },
+          { id: 'header', label: 'Stacked Header' },
+          { id: 'default', label: 'Stacked' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('stacked', value || 'none');
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('stacked') || 'none';
+        },
+      },
+    },
+
+    // Column count
+    'col-count': {
+      definition: {
+        name: 'col-count',
+        label: 'Columns',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2' },
+          { id: '3', label: '3' },
+          { id: '4', label: '4' },
+          { id: '5', label: '5' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('col-count', value || '3');
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('col-count') || '3';
+        },
+      },
+    },
+
+    // Row count
+    'row-count': {
+      definition: {
+        name: 'row-count',
+        label: 'Rows',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2' },
+          { id: '3', label: '3' },
+          { id: '4', label: '4' },
+          { id: '5', label: '5' },
+          { id: '6', label: '6' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('row-count', value || '3');
+          rebuildTable(element);
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('row-count') || '3';
+        },
+      },
+    },
+
+    // Header traits (up to 5 columns)
+    header1: createTableHeaderTrait(1),
+    header2: createTableHeaderTrait(2),
+    header3: createTableHeaderTrait(3),
+    header4: createTableHeaderTrait(4),
+    header5: createTableHeaderTrait(5),
+
+    // Row data traits (up to 6 rows x 5 cols)
+    'row1-col1': createTableCellTrait(1, 1),
+    'row1-col2': createTableCellTrait(1, 2),
+    'row1-col3': createTableCellTrait(1, 3),
+    'row1-col4': createTableCellTrait(1, 4),
+    'row1-col5': createTableCellTrait(1, 5),
+    'row2-col1': createTableCellTrait(2, 1),
+    'row2-col2': createTableCellTrait(2, 2),
+    'row2-col3': createTableCellTrait(2, 3),
+    'row2-col4': createTableCellTrait(2, 4),
+    'row2-col5': createTableCellTrait(2, 5),
+    'row3-col1': createTableCellTrait(3, 1),
+    'row3-col2': createTableCellTrait(3, 2),
+    'row3-col3': createTableCellTrait(3, 3),
+    'row3-col4': createTableCellTrait(3, 4),
+    'row3-col5': createTableCellTrait(3, 5),
+    'row4-col1': createTableCellTrait(4, 1),
+    'row4-col2': createTableCellTrait(4, 2),
+    'row4-col3': createTableCellTrait(4, 3),
+    'row4-col4': createTableCellTrait(4, 4),
+    'row4-col5': createTableCellTrait(4, 5),
+    'row5-col1': createTableCellTrait(5, 1),
+    'row5-col2': createTableCellTrait(5, 2),
+    'row5-col3': createTableCellTrait(5, 3),
+    'row5-col4': createTableCellTrait(5, 4),
+    'row5-col5': createTableCellTrait(5, 5),
+    'row6-col1': createTableCellTrait(6, 1),
+    'row6-col2': createTableCellTrait(6, 2),
+    'row6-col3': createTableCellTrait(6, 3),
+    'row6-col4': createTableCellTrait(6, 4),
+    'row6-col5': createTableCellTrait(6, 5),
+  },
+});
+
+/**
  * USA Icon Component
  *
  * USWDS icons for visual communication.
@@ -7868,6 +8199,307 @@ componentRegistry.register({
     'section4-link3-href': createFooterSectionLinkTrait(4, 3, 'href'),
     'section4-link4-label': createFooterSectionLinkTrait(4, 4, 'label'),
     'section4-link4-href': createFooterSectionLinkTrait(4, 4, 'href'),
+  },
+});
+
+/**
+ * USA In-Page Navigation Component
+ *
+ * Sidebar table of contents that links to headings on the page.
+ */
+componentRegistry.register({
+  tagName: 'usa-in-page-navigation',
+  droppable: false,
+
+  traits: {
+    title: {
+      definition: {
+        name: 'title',
+        label: 'Title',
+        type: 'text',
+        default: 'On this page',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'On this page';
+          element.setAttribute('title', text);
+          (element as any).title = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).title || element.getAttribute('title') || 'On this page';
+        },
+      },
+    },
+
+    'heading-level': {
+      definition: {
+        name: 'heading-level',
+        label: 'Heading Level',
+        type: 'select',
+        default: 'h2',
+        options: [
+          { id: 'h2', label: 'H2' },
+          { id: 'h3', label: 'H3' },
+          { id: 'h4', label: 'H4' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const level = value || 'h2';
+          element.setAttribute('heading-level', level);
+          (element as any).headingLevel = level;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).headingLevel || element.getAttribute('heading-level') || 'h2';
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Language Selector Component
+ *
+ * Allows users to switch between languages.
+ */
+componentRegistry.register({
+  tagName: 'usa-language-selector',
+  droppable: false,
+
+  traits: {
+    variant: {
+      definition: {
+        name: 'variant',
+        label: 'Variant',
+        type: 'select',
+        default: 'default',
+        options: [
+          { id: 'default', label: 'Default' },
+          { id: 'unstyled', label: 'Unstyled' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const variant = value || 'default';
+          element.setAttribute('variant', variant);
+          (element as any).variant = variant;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).variant || element.getAttribute('variant') || 'default';
+        },
+      },
+    },
+
+    'lang-count': {
+      definition: {
+        name: 'lang-count',
+        label: 'Number of Languages',
+        type: 'select',
+        default: '3',
+        options: [
+          { id: '2', label: '2' },
+          { id: '3', label: '3' },
+          { id: '4', label: '4' },
+          { id: '5', label: '5' },
+        ],
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('lang-count', value || '3');
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return element.getAttribute('lang-count') || '3';
+        },
+      },
+    },
+
+    'lang1-label': {
+      definition: { name: 'lang1-label', label: 'Language 1 Label', type: 'text', default: 'English' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-label', value || 'English'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang1-label') || 'English',
+      },
+    },
+    'lang1-value': {
+      definition: { name: 'lang1-value', label: 'Language 1 Value', type: 'text', default: 'en' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-value', value || 'en'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang1-value') || 'en',
+      },
+    },
+    'lang2-label': {
+      definition: { name: 'lang2-label', label: 'Language 2 Label', type: 'text', default: 'Español' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-label', value || 'Español'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang2-label') || 'Español',
+      },
+    },
+    'lang2-value': {
+      definition: { name: 'lang2-value', label: 'Language 2 Value', type: 'text', default: 'es' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-value', value || 'es'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang2-value') || 'es',
+      },
+    },
+    'lang3-label': {
+      definition: { name: 'lang3-label', label: 'Language 3 Label', type: 'text', default: 'Français' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-label', value || 'Français'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang3-label') || 'Français',
+      },
+    },
+    'lang3-value': {
+      definition: { name: 'lang3-value', label: 'Language 3 Value', type: 'text', default: 'fr' },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-value', value || 'fr'); },
+        getValue: (element: HTMLElement) => element.getAttribute('lang3-value') || 'fr',
+      },
+    },
+  },
+});
+
+/**
+ * USA Character Count Component
+ *
+ * Text input or textarea with a character count indicator.
+ */
+componentRegistry.register({
+  tagName: 'usa-character-count',
+  droppable: false,
+
+  traits: {
+    label: {
+      definition: {
+        name: 'label',
+        label: 'Label',
+        type: 'text',
+        default: 'Message',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Message';
+          element.setAttribute('label', text);
+          (element as any).label = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).label || element.getAttribute('label') || 'Message';
+        },
+      },
+    },
+
+    maxlength: {
+      definition: {
+        name: 'maxlength',
+        label: 'Max Characters',
+        type: 'text',
+        default: '200',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const maxlen = value || '200';
+          element.setAttribute('maxlength', maxlen);
+          (element as any).maxlength = maxlen;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).maxlength || element.getAttribute('maxlength') || '200';
+        },
+      },
+    },
+
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: '',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          element.setAttribute('hint', value || '');
+          (element as any).hint = value || '';
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).hint || element.getAttribute('hint') || '';
+        },
+      },
+    },
+  },
+});
+
+/**
+ * USA Memorable Date Component
+ *
+ * A date input pattern using separate month, day, and year fields.
+ */
+componentRegistry.register({
+  tagName: 'usa-memorable-date',
+  droppable: false,
+
+  traits: {
+    legend: {
+      definition: {
+        name: 'legend',
+        label: 'Legend',
+        type: 'text',
+        default: 'Date of birth',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || 'Date of birth';
+          element.setAttribute('legend', text);
+          (element as any).legend = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).legend || element.getAttribute('legend') || 'Date of birth';
+        },
+      },
+    },
+
+    hint: {
+      definition: {
+        name: 'hint',
+        label: 'Hint Text',
+        type: 'text',
+        default: 'For example: January 19 2000',
+      },
+      handler: {
+        onChange: (element: HTMLElement, value: any) => {
+          const text = value || '';
+          element.setAttribute('hint', text);
+          (element as any).hint = text;
+          if (typeof (element as any).requestUpdate === 'function') {
+            (element as any).requestUpdate();
+          }
+        },
+        getValue: (element: HTMLElement) => {
+          return (element as any).hint || element.getAttribute('hint') || '';
+        },
+      },
+    },
   },
 });
 

@@ -26,6 +26,7 @@ import { EditorCanvas } from './editor/EditorCanvas';
 import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
+import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
@@ -87,6 +88,9 @@ export function Editor() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
     slug ? '__existing__' : null
   );
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   // Pending prototype ref for race condition fix
   const pendingPrototypeRef = useRef<Prototype | null>(null);
@@ -551,12 +555,49 @@ export function Editor() {
     [restoreVersion, slug, stateMachine, fetchVersions, autosave, editorRef]
   );
 
-  // Keyboard shortcut: Cmd+S / Ctrl+S to save
+  // Undo/redo handlers
+  const handleUndo = useCallback(() => {
+    editorRef.current?.UndoManager?.undo();
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    editorRef.current?.UndoManager?.redo();
+  }, []);
+
+  // Track undo/redo availability when editor content changes
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const updateUndoState = () => {
+      setCanUndo(!!editor.UndoManager?.hasUndo());
+      setCanRedo(!!editor.UndoManager?.hasRedo());
+    };
+
+    // Update immediately
+    updateUndoState();
+
+    // Listen for undo manager changes
+    editor.on('change:changesCount', updateUndoState);
+    return () => {
+      editor.off('change:changesCount', updateUndoState);
+    };
+  }, [editorKey]);
+
+  // Keyboard shortcut: Cmd+S / Ctrl+S to save, ? for shortcuts dialog
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         saveCallRef.current('manual');
+      }
+      // Show shortcuts dialog on ? key (not in input/textarea)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        const tagName = target.tagName.toLowerCase();
+        if (tagName !== 'input' && tagName !== 'textarea' && !target.isContentEditable) {
+          setShowShortcuts(true);
+        }
       }
     };
 
@@ -705,6 +746,11 @@ export function Editor() {
         error={stateMachine.state.error}
         showConnectionStatus={!isDemoMode}
         lastSnapshotAt={crashRecovery.lastSnapshotAt}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onShowShortcuts={() => setShowShortcuts(true)}
       />
 
       {/* Recovery Banner */}
@@ -799,6 +845,12 @@ export function Editor() {
         isDemoMode={isDemoMode}
         hasTeam={!!currentTeam}
       />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }
@@ -809,8 +861,8 @@ function getCategoryForComponent(tagName: string): string {
     'Basics': ['heading', 'text'],
     'Containers': ['form-container', 'section-container', 'fieldset'],
     'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
-    'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider'],
-    'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link'],
+    'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider', 'usa-character-count', 'usa-memorable-date'],
+    'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link', 'usa-in-page-navigation', 'usa-language-selector'],
     'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
     'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
     'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],

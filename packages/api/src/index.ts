@@ -6,6 +6,7 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { prototypeRoutes } from './routes/prototypes.js';
@@ -61,6 +62,12 @@ async function main() {
   await app.register(cors, {
     origin: allowedOrigins,
     credentials: true,
+  });
+
+  // Register global rate limiting: 100 requests per minute per IP
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
   });
 
   // Register auth plugin

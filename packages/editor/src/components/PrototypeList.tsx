@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
@@ -10,12 +10,19 @@ import { TeamSwitcher } from './TeamSwitcher';
 import { InvitationBannerList } from './InvitationBanner';
 import { CreateTeamModal } from './CreateTeamModal';
 
+type SortOption = 'updated' | 'name-asc' | 'name-desc' | 'oldest';
+
+const PAGE_SIZE = 20;
+
 export function PrototypeList() {
   const [prototypes, setPrototypes] = useState<Prototype[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptingToken, setAcceptingToken] = useState<string | null>(null);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('updated');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -129,6 +136,46 @@ export function PrototypeList() {
     return false;
   }
 
+  // Filter and sort prototypes
+  const filteredPrototypes = useMemo(() => {
+    let result = prototypes;
+
+    // Search filter (case-insensitive)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'oldest':
+          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        case 'updated':
+        default:
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+    });
+
+    return result;
+  }, [prototypes, searchQuery, sortBy]);
+
+  // Paginated slice
+  const visiblePrototypes = filteredPrototypes.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredPrototypes.length;
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, sortBy]);
+
   return (
     <div className="prototype-list-container">
       {/* Pending Invitations */}
@@ -223,6 +270,41 @@ export function PrototypeList() {
         </div>
       )}
 
+      {/* Search and Sort Controls */}
+      {!isLoading && prototypes.length > 0 && (
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search prototypes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: '1px solid var(--color-base-lighter, #dfe1e2)',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+            }}
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            style={{
+              padding: '8px 12px',
+              border: '1px solid var(--color-base-lighter, #dfe1e2)',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              background: 'white',
+            }}
+          >
+            <option value="updated">Last Modified</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="oldest">Oldest</option>
+          </select>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="loading-screen" style={{ height: '300px' }}>
           <div className="loading-spinner" />
@@ -246,9 +328,25 @@ export function PrototypeList() {
             Create Prototype
           </button>
         </div>
+      ) : filteredPrototypes.length === 0 ? (
+        <div
+          className="card"
+          style={{ textAlign: 'center', padding: '48px 24px' }}
+        >
+          <h2 style={{ marginBottom: '8px' }}>No matching prototypes</h2>
+          <p style={{ color: 'var(--color-base-light)', marginBottom: '24px' }}>
+            Try a different search term
+          </p>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setSearchQuery('')}
+          >
+            Clear Search
+          </button>
+        </div>
       ) : (
         <div className="prototype-grid">
-          {prototypes.map((prototype) => (
+          {visiblePrototypes.map((prototype) => (
             <div
               key={prototype.id}
               className="prototype-card"
@@ -307,6 +405,18 @@ export function PrototypeList() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load More */}
+      {hasMore && (
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+          >
+            Load More ({filteredPrototypes.length - visibleCount} remaining)
+          </button>
         </div>
       )}
 

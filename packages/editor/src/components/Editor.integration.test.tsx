@@ -625,6 +625,108 @@ describe('Editor Integration', () => {
   });
 
   // ============================================================================
+  // Template Round-Trip Tests
+  // ============================================================================
+
+  describe('template round-trip', () => {
+    it('should create prototype with signed-in template containing data-template', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+
+      // Simulate creating a new prototype from the signed-in template
+      const templateProto = mockPrototype({
+        htmlContent: `<div class="signed-in-template" data-template="signed-in">
+  <usa-banner></usa-banner>
+  <usa-header extended logo-text="Agency Name"></usa-header>
+  <main id="main-content"></main>
+  <usa-footer variant="medium"></usa-footer>
+</div>`,
+      });
+
+      act(() => {
+        result.current.loadPrototype('new-proto');
+        result.current.prototypeLoaded(templateProto);
+        result.current.editorReady();
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      // The prototype should contain the data-template marker
+      expect(result.current.state.prototype?.htmlContent).toContain('data-template="signed-in"');
+    });
+
+    it('should create prototype with blank template containing blank-template marker', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+
+      const blankProto = mockPrototype({
+        htmlContent: '<div class="blank-template" data-template="blank"></div>',
+      });
+
+      act(() => {
+        result.current.loadPrototype('blank-proto');
+        result.current.prototypeLoaded(blankProto);
+        result.current.editorReady();
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype?.htmlContent).toContain('data-template="blank"');
+      expect(result.current.state.prototype?.htmlContent).toContain('blank-template');
+    });
+
+    it('should have null grapesData pages when no projectData is set for new prototypes', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+
+      // New prototype with no grapesData (only htmlContent from template)
+      const newProto = mockPrototype({
+        grapesData: null as any,
+      });
+
+      act(() => {
+        result.current.loadPrototype('new-proto');
+        result.current.prototypeLoaded(newProto);
+        result.current.editorReady();
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype?.grapesData).toBeNull();
+    });
+
+    it('should preserve template marker through save cycle', () => {
+      const { result } = renderHook(() => useEditorStateMachine());
+
+      const templateProto = mockPrototype({
+        htmlContent: '<div data-template="form"><form><usa-text-input label="Name"></usa-text-input></form></div>',
+      });
+
+      // Load
+      act(() => {
+        result.current.loadPrototype('form-proto');
+        result.current.prototypeLoaded(templateProto);
+        result.current.editorReady();
+      });
+
+      // Modify + Save
+      act(() => {
+        result.current.contentChanged();
+        result.current.saveStart('manual');
+      });
+
+      // Save success returns the updated prototype (server preserves htmlContent)
+      const savedProto = mockPrototype({
+        ...templateProto,
+        htmlContent: '<div data-template="form"><form><usa-text-input label="Full Name"></usa-text-input></form></div>',
+        updatedAt: new Date(),
+      });
+
+      act(() => {
+        result.current.saveSuccess(savedProto);
+      });
+
+      expect(result.current.state.status).toBe('ready');
+      expect(result.current.state.prototype?.htmlContent).toContain('data-template="form"');
+      expect(result.current.state.dirty).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Edge Cases
   // ============================================================================
 

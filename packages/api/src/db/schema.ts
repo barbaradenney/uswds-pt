@@ -212,6 +212,7 @@ export const prototypes = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
     isPublic: boolean('is_public').default(false).notNull(),
+    version: integer('version').notNull().default(1),
   },
   (table) => ({
     slugIdx: index('prototypes_slug_idx').on(table.slug),

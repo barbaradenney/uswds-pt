@@ -11,6 +11,7 @@ import GjsEditor from '@grapesjs/react';
 import 'grapesjs/dist/css/grapes.min.css';
 import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
 import { pagesManagerPlugin } from '../../lib/grapesjs/plugins/pages-manager';
+import { blockSearchPlugin } from '../../lib/grapesjs/plugins/block-search';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import { CDN_URLS } from '@uswds-pt/adapter';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
@@ -142,6 +143,7 @@ export const EditorCanvas = memo(function EditorCanvas({
           plugins: [
             uswdsComponentsPlugin,
             pagesManagerPlugin,
+            blockSearchPlugin,
             ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
           projectData: projectData || {
