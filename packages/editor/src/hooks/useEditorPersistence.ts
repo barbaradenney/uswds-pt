@@ -175,25 +175,7 @@ export function useEditorPersistence({
       try {
         // Extract data from GrapesJS API
         const rawGrapesData = editor.getProjectData();
-        const rawHtml = editor.getHtml();
-        const currentHtml = rawHtml || htmlContent;
-
-        // Diagnostic: trace what we're saving
-        console.warn('[TEMPLATE-DEBUG] Save extraction:', {
-          type,
-          rawHtmlLen: rawHtml?.length || 0,
-          rawHtmlFirst200: rawHtml?.substring(0, 200) || '(empty)',
-          rawHtmlHasDataTemplate: rawHtml?.includes('data-template') || false,
-          rawHtmlHasBlankTemplate: rawHtml?.includes('blank-template') || false,
-          htmlContentFallbackLen: htmlContent?.length || 0,
-          currentHtmlLen: currentHtml?.length || 0,
-          currentHtmlFirst200: currentHtml?.substring(0, 200) || '(empty)',
-          currentHtmlHasDataTemplate: currentHtml?.includes('data-template') || false,
-          grapesDataPages: rawGrapesData?.pages?.length || 0,
-          grapesDataPage0Components: rawGrapesData?.pages?.[0]?.frames?.[0]?.component?.components?.length || 'N/A',
-          isUpdate: !!(state.prototype?.slug || slug),
-          slug: state.prototype?.slug || slug || '(new)',
-        });
+        const currentHtml = editor.getHtml() || htmlContent;
 
         // For multi-page prototypes, extract per-page HTML so Preview can
         // render pages reliably without reconstructing from the component tree.

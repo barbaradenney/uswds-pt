@@ -217,23 +217,9 @@ export function Editor() {
       templateContent = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
     }
 
-    const finalContent = savedContent || templateContent;
-    console.warn('[TEMPLATE-DEBUG] initialContentCacheRef recomputed:', {
-      editorKey,
-      selectedTemplate,
-      isDemoMode,
-      hasSavedContent: !!savedContent,
-      savedContentLen: savedContent?.length || 0,
-      savedContentFirst100: savedContent?.substring(0, 100) || '(none)',
-      templateContentLen: templateContent.length,
-      templateContentFirst100: templateContent.substring(0, 100) || '(none)',
-      finalContentLen: finalContent.length,
-      finalContentFirst100: finalContent.substring(0, 100) || '(none)',
-      hasDataTemplate: finalContent.includes('data-template'),
-    });
     initialContentCacheRef.current = {
       key: editorKey,
-      content: finalContent,
+      content: savedContent || templateContent,
     };
   }
 
@@ -267,13 +253,6 @@ export function Editor() {
       }
     }
 
-    console.warn('[TEMPLATE-DEBUG] projectDataCacheRef recomputed:', {
-      editorKey,
-      hasGrapesData: !!grapesData,
-      grapesDataPages: grapesData?.pages?.length || 0,
-      hasPendingPrototype: !!pendingPrototypeRef.current,
-      hasStateMachinePrototype: !!stateMachine.state.prototype,
-    });
     projectDataCacheRef.current = { key: editorKey, data: grapesData };
   }
 
@@ -343,7 +322,6 @@ export function Editor() {
 
   // Handle template selection from chooser
   const handleTemplateSelect = useCallback((templateId: string) => {
-    console.warn('[TEMPLATE-DEBUG] handleTemplateSelect called with:', templateId);
     setSelectedTemplate(templateId);
     setEditorKey(`new-${templateId}-${Date.now()}`);
   }, []);
