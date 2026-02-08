@@ -75,10 +75,11 @@ export async function teamRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['name'],
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             slug: { type: 'string', minLength: 1, maxLength: 100 },
-            description: { type: 'string' },
+            description: { type: 'string', maxLength: 5000 },
           },
         },
       },
@@ -196,9 +197,10 @@ export async function teamRoutes(app: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string' },
+            description: { type: 'string', maxLength: 5000 },
           },
         },
       },

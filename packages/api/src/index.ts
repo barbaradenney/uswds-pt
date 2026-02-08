@@ -32,6 +32,12 @@ declare module 'fastify' {
 async function main() {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Fail fast if JWT_SECRET is not set in production
+  if (isProduction && !process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable must be set in production');
+    process.exit(1);
+  }
+
   const app = Fastify({
     logger: isProduction
       ? { level: process.env.LOG_LEVEL || 'info' }
@@ -47,6 +53,8 @@ async function main() {
         },
     // Trust proxy headers when behind a reverse proxy (Render, etc.)
     ...(isProduction && { trustProxy: true }),
+    // Allow large payloads for htmlContent (2MB) + grapesData (5MB)
+    bodyLimit: 8 * 1024 * 1024, // 8MB
   });
 
   // Register CORS - allow frontend URLs
@@ -91,7 +99,7 @@ async function main() {
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
 
   // Health check endpoint with database status (exempt from rate limiting)
-  app.get('/api/health', { config: { rateLimit: false } } as any, async () => {
+  app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async () => {
     const dbHealth = await checkDatabaseHealth(db, sql);
 
     return {

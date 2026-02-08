@@ -232,7 +232,9 @@ export function wrapError(error: unknown): ApiError {
       return new BadRequestError('Referenced record does not exist');
     }
 
-    return new InternalError(error.message);
+    // Do not leak internal error details to the client.
+    // The original message is already logged server-side by the error handler.
+    return new InternalError('An unexpected error occurred');
   }
 
   return new InternalError('An unexpected error occurred');

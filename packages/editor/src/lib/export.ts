@@ -3,6 +3,16 @@
  * Clean HTML output for developer handoff
  */
 
+import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('Export');
+
+// Used in generateInitScript and preview functions
+const DEBUG =
+  typeof window !== 'undefined' &&
+  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
+    localStorage.getItem('uswds_pt_debug') === 'true');
+
 export interface CleanOptions {
   removeGrapesAttributes?: boolean;
   removeEmptyAttributes?: boolean;
@@ -824,16 +834,6 @@ ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </html>`;
 }
 
-import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
-
-const debug = createDebugLogger('Export');
-
-// Used in generateInitScript and preview functions
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
 /**
  * Open a preview of the HTML content in a new browser tab
  */
@@ -898,7 +898,9 @@ function generatePageNavigationScript(): string {
     }
 
     // Get initial page from URL hash or show first page
-    const hashPageId = window.location.hash.replace('#page-', '');
+    var rawPageId = window.location.hash.replace('#page-', '');
+    // Sanitize page ID to prevent CSS selector injection
+    var hashPageId = /^[\\w-]+$/.test(rawPageId) ? rawPageId : '';
     const firstPageId = pages[0].getAttribute('data-page-id');
     const initialPageId = hashPageId && document.querySelector('[data-page-id="' + hashPageId + '"]')
       ? hashPageId
@@ -1010,8 +1012,6 @@ export function openMultiPagePreviewInNewTab(
     }, 1000);
   }
 }
-
-// escapeHtml is imported from @uswds-pt/shared
 
 /**
  * Indent content by a number of spaces

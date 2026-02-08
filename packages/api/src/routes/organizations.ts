@@ -45,78 +45,103 @@ export async function organizationRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'User not found' });
       }
 
-      let orgId = user.organizationId;
+      // Wrap entire setup in a transaction to prevent duplicate creation on concurrent requests
+      let result;
+      try {
+        result = await db.transaction(async (tx) => {
+        // Re-read user inside transaction for consistency
+        const [freshUser] = await tx
+          .select({ organizationId: users.organizationId, email: users.email })
+          .from(users)
+          .where(eq(users.id, authUser.id))
+          .limit(1);
 
-      // If user doesn't have an organization, create one
-      if (!orgId) {
-        const orgSlug = `org-${authUser.id.substring(0, 8)}`;
-        const [org] = await db
-          .insert(organizations)
+        if (!freshUser) {
+          throw { statusCode: 404, message: 'User not found' };
+        }
+
+        let orgId = freshUser.organizationId;
+
+        // If user doesn't have an organization, create one
+        if (!orgId) {
+          const orgSlug = `org-${authUser.id.substring(0, 8)}`;
+          const emailPrefix = freshUser.email.split('@')[0].replace(/[<>"'&]/g, '');
+          const [newOrg] = await tx
+            .insert(organizations)
+            .values({
+              name: `${emailPrefix}'s Organization`,
+              slug: orgSlug,
+              description: 'Personal organization',
+            })
+            .returning();
+
+          orgId = newOrg.id;
+
+          // Update user with organization
+          await tx
+            .update(users)
+            .set({ organizationId: newOrg.id })
+            .where(eq(users.id, authUser.id));
+        }
+
+        // Check if user already has teams in this org
+        const existingTeams = await tx
+          .select({ id: teams.id })
+          .from(teams)
+          .innerJoin(teamMemberships, eq(teams.id, teamMemberships.teamId))
+          .where(eq(teamMemberships.userId, authUser.id))
+          .limit(1);
+
+        if (existingTeams.length > 0) {
+          throw { statusCode: 400, message: 'User already has a team' };
+        }
+
+        // Create the team
+        const teamSlug = teamName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .substring(0, 100);
+
+        const [team] = await tx
+          .insert(teams)
           .values({
-            name: `${user.email.split('@')[0]}'s Organization`,
-            slug: orgSlug,
-            description: 'Personal organization',
+            organizationId: orgId,
+            name: teamName,
+            slug: teamSlug || 'general',
           })
           .returning();
 
-        orgId = org.id;
-
-        // Update user with organization
-        await db
-          .update(users)
-          .set({ organizationId: org.id })
-          .where(eq(users.id, authUser.id));
-      }
-
-      // Check if user already has teams in this org
-      const existingTeams = await db
-        .select({ id: teams.id })
-        .from(teams)
-        .innerJoin(teamMemberships, eq(teams.id, teamMemberships.teamId))
-        .where(eq(teamMemberships.userId, authUser.id))
-        .limit(1);
-
-      if (existingTeams.length > 0) {
-        return reply.status(400).send({ message: 'User already has a team' });
-      }
-
-      // Create the team
-      const teamSlug = teamName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .substring(0, 100);
-
-      const [team] = await db
-        .insert(teams)
-        .values({
-          organizationId: orgId,
-          name: teamName,
-          slug: teamSlug || 'general',
-        })
-        .returning();
-
-      // Add user as org_admin
-      await db.insert(teamMemberships).values({
-        teamId: team.id,
-        userId: authUser.id,
-        role: ROLES.ORG_ADMIN,
-      });
-
-      // Get the organization for the response
-      const [org] = await db
-        .select()
-        .from(organizations)
-        .where(eq(organizations.id, orgId))
-        .limit(1);
-
-      return {
-        organization: org,
-        team: {
-          ...team,
+        // Add user as org_admin
+        await tx.insert(teamMemberships).values({
+          teamId: team.id,
+          userId: authUser.id,
           role: ROLES.ORG_ADMIN,
-        },
-      };
+        });
+
+        // Get the organization for the response
+        const [org] = await tx
+          .select()
+          .from(organizations)
+          .where(eq(organizations.id, orgId))
+          .limit(1);
+
+        return {
+          organization: org,
+          team: {
+            ...team,
+            role: ROLES.ORG_ADMIN,
+          },
+        };
+        });
+      } catch (err: any) {
+        if (err?.statusCode) {
+          return reply.status(err.statusCode).send({ message: err.message });
+        }
+        throw err;
+      }
+
+      return result;
     }
   );
 
@@ -169,10 +194,11 @@ export async function organizationRoutes(app: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
-            description: { type: 'string' },
-            logoUrl: { type: 'string', maxLength: 500 },
+            description: { type: 'string', maxLength: 5000 },
+            logoUrl: { type: 'string', maxLength: 500, pattern: '^https?://' },
           },
         },
       },

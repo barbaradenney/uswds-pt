@@ -221,11 +221,12 @@ describe('wrapError', () => {
     expect(wrapped).toBe(original);
   });
 
-  it('should wrap regular Error as InternalError', () => {
+  it('should wrap regular Error as InternalError with generic message', () => {
     const error = new Error('Something went wrong');
     const wrapped = wrapError(error);
     expect(wrapped).toBeInstanceOf(InternalError);
-    expect(wrapped.message).toBe('Something went wrong');
+    // Internal error details are not leaked to the client
+    expect(wrapped.message).toBe('An unexpected error occurred');
   });
 
   it('should detect connection errors', () => {

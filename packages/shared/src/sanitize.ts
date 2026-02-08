@@ -8,7 +8,8 @@
  * (ampersand first to avoid double-encoding).
  */
 export function escapeHtml(str: string): string {
-  return str
+  if (str == null) return '';
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

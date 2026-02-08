@@ -138,6 +138,7 @@ export const EditorHeader = memo(function EditorHeader({
           value={name}
           onChange={handleNameChange}
           placeholder="Prototype name"
+          aria-label="Prototype name"
           style={{
             border: 'none',
             background: 'transparent',

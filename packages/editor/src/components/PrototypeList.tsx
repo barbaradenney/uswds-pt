@@ -227,13 +227,14 @@ export function PrototypeList() {
         <div className="login-error" style={{ marginBottom: '16px' }}>
           {error || orgError}
           <button
-            onClick={() => setError(null)}
+            onClick={() => { setError(null); if (orgError) { window.location.reload(); } }}
             style={{
               marginLeft: '8px',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
             }}
+            aria-label="Dismiss error"
           >
             ×
           </button>

@@ -1,27 +1,12 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { cleanExport } from '../lib/export';
+import { cleanExport, generateFullDocument, generateMultiPageDocument } from '../lib/export';
+import type { PageData } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
-import { initializeUSWDSComponents } from '../lib/uswds-init';
-
-// CDN URLs for USWDS resources
-const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.13';
-
-const PREVIEW_CDN_URLS = {
-  uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
-  uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
-};
+import { escapeHtml } from '@uswds-pt/shared';
 
 // Check if we're in demo mode
 const isDemoMode = !import.meta.env.VITE_API_URL;
-
-interface PageData {
-  id: string;
-  name: string;
-  html: string;
-}
 
 interface PreviewData {
   name: string;
@@ -87,11 +72,11 @@ function buildHtmlFromComponent(component: any): string {
     return components.map((c: any) => buildHtmlFromComponent(c)).join('');
   }
 
-  // Build attribute string
+  // Build attribute string — escape all HTML special characters
   const attrParts: string[] = [];
   for (const [key, value] of Object.entries(attributes)) {
     if (value !== undefined && value !== null && value !== '') {
-      attrParts.push(`${key}="${String(value).replace(/"/g, '&quot;')}"`);
+      attrParts.push(`${key}="${escapeHtml(String(value))}"`);
     }
   }
 
@@ -100,7 +85,7 @@ function buildHtmlFromComponent(component: any): string {
   if (classes.length > 0) {
     const classNames = classes.map((c: any) => typeof c === 'string' ? c : c.name).join(' ');
     if (classNames) {
-      attrParts.push(`class="${classNames}"`);
+      attrParts.push(`class="${escapeHtml(classNames)}"`);
     }
   }
 
@@ -123,51 +108,6 @@ export function Preview() {
   const [data, setData] = useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stylesLoaded, setStylesLoaded] = useState(false);
-  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Inject stylesheets into document head
-  useEffect(() => {
-    const head = document.head;
-    const existingLinks = head.querySelectorAll('link[data-uswds-preview]');
-
-    // Only add if not already present
-    if (existingLinks.length === 0) {
-      // Add USWDS CSS
-      const uswdsCssLink = document.createElement('link');
-      uswdsCssLink.rel = 'stylesheet';
-      uswdsCssLink.href = PREVIEW_CDN_URLS.uswdsCss;
-      uswdsCssLink.setAttribute('data-uswds-preview', 'true');
-      head.appendChild(uswdsCssLink);
-
-      // Add USWDS Web Components CSS
-      const wcCssLink = document.createElement('link');
-      wcCssLink.rel = 'stylesheet';
-      wcCssLink.href = PREVIEW_CDN_URLS.uswdsWcCss;
-      wcCssLink.setAttribute('data-uswds-preview', 'true');
-      head.appendChild(wcCssLink);
-
-      // Add USWDS Web Components JS
-      const wcScript = document.createElement('script');
-      wcScript.type = 'module';
-      wcScript.src = PREVIEW_CDN_URLS.uswdsWcJs;
-      wcScript.setAttribute('data-uswds-preview', 'true');
-      head.appendChild(wcScript);
-
-      // Wait for CSS to load
-      uswdsCssLink.onload = () => setStylesLoaded(true);
-      uswdsCssLink.onerror = () => setStylesLoaded(true); // Continue even if CSS fails
-    } else {
-      setStylesLoaded(true);
-    }
-
-    return () => {
-      // Cleanup on unmount
-      const links = head.querySelectorAll('[data-uswds-preview]');
-      links.forEach(link => link.remove());
-    };
-  }, []);
 
   useEffect(() => {
     if (slug) {
@@ -190,120 +130,24 @@ export function Preview() {
   // Determine if we have multi-page content
   const isMultiPage = pages.length > 1;
 
-  // Set initial page when pages are loaded
-  useEffect(() => {
-    if (pages.length > 0 && !currentPageId) {
-      setCurrentPageId(pages[0].id);
-    }
-  }, [pages, currentPageId]);
-
   // Clean the HTML content - memoized to avoid recalculating on every render
   const cleanedHtml = useMemo(() => {
     if (!data?.htmlContent) return '';
     return cleanExport(data.htmlContent);
   }, [data?.htmlContent]);
 
-  // Build multi-page HTML with page containers
-  // Must be defined before any early returns to satisfy React hooks rules
-  // NOTE: Do NOT include currentPageId in deps — we toggle visibility via direct
-  // DOM manipulation below to avoid replacing the entire DOM (which destroys
-  // web component upgrades and initialization state).
-  const multiPageHtml = useMemo(() => {
-    if (!isMultiPage || pages.length === 0) return '';
-
-    return pages.map((page, index) => {
-      const cleanedPageHtml = cleanExport(page.html);
-      // First page visible by default; others hidden until navigation
-      const isVisible = index === 0;
-      return `<div data-page-id="${page.id}" data-page-name="${page.name}" style="display: ${isVisible ? 'block' : 'none'};">${cleanedPageHtml}</div>`;
-    }).join('\n');
-  }, [isMultiPage, pages]);
-
-  // Toggle page visibility via direct DOM manipulation (preserves web component state)
-  useEffect(() => {
-    if (!contentRef.current || !currentPageId || !isMultiPage) return;
-    contentRef.current.querySelectorAll('[data-page-id]').forEach((el) => {
-      const htmlEl = el as HTMLElement;
-      if (el.getAttribute('data-page-id') === currentPageId) {
-        htmlEl.style.display = 'block';
-      } else {
-        htmlEl.style.display = 'none';
-      }
-    });
-  }, [currentPageId, isMultiPage]);
-
-  // Attach global click handler at document level during capture phase
-  // This runs before HashRouter can intercept the click
-  // Matches any element with href starting with #page- (not just <a> tags)
-  // because usa-button custom elements also have href attributes
-  useEffect(() => {
-    const handlePageLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      // Match any element (or ancestor) with #page- href — covers both
-      // inner <a> tags rendered by web components AND the outer custom elements
-      const link = target.closest('[href^="#page-"]') as HTMLElement | null;
-
-      if (link) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
-        const href = link.getAttribute('href');
-        if (href) {
-          const pageId = href.replace('#page-', '');
-          setCurrentPageId(pageId);
-        }
-        return false;
-      }
-    };
-
-    // Attach to document during capture phase to intercept before HashRouter
-    document.addEventListener('click', handlePageLinkClick, true);
-
-    return () => {
-      document.removeEventListener('click', handlePageLinkClick, true);
-    };
-  }, []); // Empty deps - handler uses refs for current state
-
-  // Track which pages have been initialized
-  const initializedPagesRef = useRef<Set<string>>(new Set());
-
-  // When the multi-page HTML changes (pages array updates), the DOM is replaced
-  // via dangerouslySetInnerHTML, so we need to re-initialize all pages
-  useEffect(() => {
-    initializedPagesRef.current.clear();
-  }, [multiPageHtml]);
-
-  // Initialize USWDS components after content is rendered
-  useEffect(() => {
-    if (!contentRef.current || !stylesLoaded) return;
-
-    const hasContent = isMultiPage ? pages.length > 0 : !!cleanedHtml;
-    if (!hasContent) return;
-
-    // For multi-page, initialize the current page if not already done
-    if (isMultiPage && currentPageId) {
-      if (initializedPagesRef.current.has(currentPageId)) return;
-
-      const timer = setTimeout(() => {
-        const pageContainer = contentRef.current?.querySelector(`[data-page-id="${currentPageId}"]`);
-        if (pageContainer) {
-          initializeUSWDSComponents(pageContainer as HTMLElement);
-          initializedPagesRef.current.add(currentPageId);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
+  // Build a complete HTML document for the sandboxed iframe.
+  // Uses generateFullDocument / generateMultiPageDocument from export.ts,
+  // which include USWDS CDN resources, init scripts, and page navigation.
+  const previewDoc = useMemo(() => {
+    if (isMultiPage && pages.length > 0) {
+      return generateMultiPageDocument(pages, { title: data?.name });
     }
-
-    // For single page, initialize once
-    if (!isMultiPage && !initializedPagesRef.current.has('single')) {
-      const timer = setTimeout(() => {
-        initializeUSWDSComponents(contentRef.current!);
-        initializedPagesRef.current.add('single');
-      }, 300);
-      return () => clearTimeout(timer);
+    if (cleanedHtml) {
+      return generateFullDocument(cleanedHtml, { title: data?.name });
     }
-  }, [stylesLoaded, cleanedHtml, isMultiPage, currentPageId, pages.length]);
+    return '';
+  }, [cleanedHtml, isMultiPage, pages, data?.name]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
@@ -335,8 +179,15 @@ export function Preview() {
         throw new Error('Failed to load preview');
       }
 
-      const result: PreviewData = await response.json();
-      setData(result);
+      const result = await response.json();
+
+      // Validate response shape before using
+      if (!result || typeof result.htmlContent !== 'string') {
+        setError('Invalid prototype data');
+        return;
+      }
+
+      setData(result as PreviewData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load preview');
     } finally {
@@ -415,23 +266,8 @@ export function Preview() {
     );
   }
 
-  if (!data) {
+  if (!data || !previewDoc) {
     return null;
-  }
-
-  // Wait for both data and styles before rendering
-  if (!stylesLoaded) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        fontFamily: 'system-ui, sans-serif',
-      }}>
-        <p style={{ color: '#71767a' }}>Loading styles...</p>
-      </div>
-    );
   }
 
   const copyButtonStyle: React.CSSProperties = {
@@ -450,12 +286,21 @@ export function Preview() {
     zIndex: 1000,
   };
 
-  // Render the prototype content (styles are injected via useEffect into document head)
+  // Render preview content in a sandboxed iframe to isolate it from
+  // the parent application context (prevents stored XSS from accessing
+  // cookies/localStorage). allow-scripts is needed for web component JS.
   return (
     <>
-      <div
-        ref={contentRef}
-        dangerouslySetInnerHTML={{ __html: isMultiPage && multiPageHtml ? multiPageHtml : cleanedHtml }}
+      <iframe
+        sandbox="allow-scripts"
+        srcDoc={previewDoc}
+        title={`Preview: ${data.name || 'Prototype'}`}
+        style={{
+          width: '100%',
+          height: '100vh',
+          border: 'none',
+          display: 'block',
+        }}
       />
       <button
         style={copyButtonStyle}

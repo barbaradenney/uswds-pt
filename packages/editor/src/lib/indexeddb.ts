@@ -116,7 +116,10 @@ export async function putSnapshot(snapshot: RecoverySnapshot): Promise<void> {
       };
     });
   } catch (err) {
+    // Re-throw so callers know the snapshot was NOT saved.
+    // Callers should catch this and avoid treating it as success.
     debug('putSnapshot error (non-fatal):', err);
+    throw err;
   }
 }
 

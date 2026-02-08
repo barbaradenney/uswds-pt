@@ -11,11 +11,6 @@ import { db, users, type User } from '../db/index.js';
 import { BCRYPT_SALT_ROUNDS, DEFAULT_JWT_SECRET } from '../constants.js';
 import { normalizeEmail } from '../lib/email.js';
 
-// JWT payload type
-interface _JWTPayload {
-  id: string;
-  email: string;
-}
 
 async function authPluginImpl(app: FastifyInstance) {
   // Register JWT plugin

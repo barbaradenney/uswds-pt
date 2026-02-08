@@ -100,38 +100,42 @@ async function setupNewUserOrganization(userId: string, email: string) {
     return;
   }
 
-  // Create a personal organization for the user
-  const [org] = await db
-    .insert(organizations)
-    .values({
-      name: `${email.split('@')[0]}'s Organization`,
-      slug: `org-${userId.substring(0, 8)}`,
-      description: 'Personal organization',
-    })
-    .returning({ id: organizations.id });
+  // Wrap all writes in a transaction to prevent partial state on crash
+  const emailPrefix = email.split('@')[0].replace(/[<>"'&]/g, '');
+  await db.transaction(async (tx) => {
+    // Create a personal organization for the user
+    const [org] = await tx
+      .insert(organizations)
+      .values({
+        name: `${emailPrefix}'s Organization`,
+        slug: `org-${userId.substring(0, 8)}`,
+        description: 'Personal organization',
+      })
+      .returning({ id: organizations.id });
 
-  // Update user with organization
-  await db
-    .update(users)
-    .set({ organizationId: org.id })
-    .where(eq(users.id, userId));
+    // Update user with organization
+    await tx
+      .update(users)
+      .set({ organizationId: org.id })
+      .where(eq(users.id, userId));
 
-  // Create a default team
-  const [team] = await db
-    .insert(teams)
-    .values({
-      organizationId: org.id,
-      name: 'General',
-      slug: 'general',
-      description: 'Default team',
-    })
-    .returning({ id: teams.id });
+    // Create a default team
+    const [team] = await tx
+      .insert(teams)
+      .values({
+        organizationId: org.id,
+        name: 'General',
+        slug: 'general',
+        description: 'Default team',
+      })
+      .returning({ id: teams.id });
 
-  // Add user as org_admin
-  await db.insert(teamMemberships).values({
-    teamId: team.id,
-    userId: userId,
-    role: ROLES.ORG_ADMIN,
+    // Add user as org_admin
+    await tx.insert(teamMemberships).values({
+      teamId: team.id,
+      userId: userId,
+      role: ROLES.ORG_ADMIN,
+    });
   });
 }
 
@@ -245,10 +249,10 @@ export async function authRoutes(app: FastifyInstance) {
       // Get user with org and team data
       const userData = await getUserWithOrgAndTeams(user.id);
 
-      return {
+      return reply.status(201).send({
         token,
         user: userData,
-      };
+      });
     }
   );
 

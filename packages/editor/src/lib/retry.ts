@@ -231,12 +231,22 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       return;
     }
 
-    const timeout = setTimeout(resolve, ms);
+    const timeout = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
 
-    signal?.addEventListener('abort', () => {
+    const onAbort = () => {
       clearTimeout(timeout);
+      cleanup();
       reject(new Error('Aborted'));
-    });
+    };
+
+    const cleanup = () => {
+      signal?.removeEventListener('abort', onAbort);
+    };
+
+    signal?.addEventListener('abort', onAbort);
   });
 }
 

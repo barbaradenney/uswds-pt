@@ -174,7 +174,6 @@ export async function invitationRoutes(app: FastifyInstance) {
           id: invitations.id,
           email: invitations.email,
           role: invitations.role,
-          token: invitations.token,
           expiresAt: invitations.expiresAt,
           createdAt: invitations.createdAt,
           teamId: invitations.teamId,
@@ -264,37 +263,45 @@ export async function invitationRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: 'Team not found' });
       }
 
-      // Update user's organization if they don't have one
-      if (!user.organizationId) {
-        await db
-          .update(users)
-          .set({ organizationId: team.organizationId })
-          .where(eq(users.id, user.id));
-      } else if (user.organizationId !== team.organizationId) {
+      // Cross-org check (cannot be inside transaction — needs early return)
+      if (user.organizationId && user.organizationId !== team.organizationId) {
         return reply.status(400).send({
           message: 'You already belong to a different organization. Contact support to transfer.',
         });
       }
 
-      // Create team membership
-      const [membership] = await db
-        .insert(teamMemberships)
-        .values({
-          teamId: invitation.teamId,
-          userId: user.id,
-          role: invitation.role,
-          invitedBy: invitation.invitedBy,
-        })
-        .returning();
+      // Wrap all writes in a transaction to prevent partial state on crash
+      const membership = await db.transaction(async (tx) => {
+        // Update user's organization if they don't have one
+        if (!user.organizationId) {
+          await tx
+            .update(users)
+            .set({ organizationId: team.organizationId })
+            .where(eq(users.id, user.id));
+        }
 
-      // Mark invitation as accepted
-      await db
-        .update(invitations)
-        .set({
-          status: INVITATION_STATUS.ACCEPTED,
-          acceptedAt: new Date(),
-        })
-        .where(eq(invitations.id, invitation.id));
+        // Create team membership
+        const [created] = await tx
+          .insert(teamMemberships)
+          .values({
+            teamId: invitation.teamId,
+            userId: user.id,
+            role: invitation.role,
+            invitedBy: invitation.invitedBy,
+          })
+          .returning();
+
+        // Mark invitation as accepted
+        await tx
+          .update(invitations)
+          .set({
+            status: INVITATION_STATUS.ACCEPTED,
+            acceptedAt: new Date(),
+          })
+          .where(eq(invitations.id, invitation.id));
+
+        return created;
+      });
 
       return {
         message: 'Invitation accepted',

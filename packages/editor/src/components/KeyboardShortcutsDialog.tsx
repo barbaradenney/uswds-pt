@@ -75,6 +75,7 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
   // Close on click outside
   useEffect(() => {
     if (!isOpen) return;
+    let active = true;
     const handleClick = (e: MouseEvent) => {
       if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
         onClose();
@@ -82,9 +83,12 @@ export function KeyboardShortcutsDialog({ isOpen, onClose }: KeyboardShortcutsDi
     };
     // Delay to prevent the opening click from immediately closing
     const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClick);
+      if (active) {
+        document.addEventListener('mousedown', handleClick);
+      }
     }, 0);
     return () => {
+      active = false;
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClick);
     };

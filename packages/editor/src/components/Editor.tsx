@@ -564,10 +564,12 @@ export function Editor() {
     editorRef.current?.UndoManager?.redo();
   }, []);
 
-  // Track undo/redo availability when editor content changes
+  // Track undo/redo availability when editor content changes.
+  // Only re-run when the editor becomes ready (not on every status transition).
+  const isEditorReady = stateMachine.state.status === 'ready';
   useEffect(() => {
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor || !isEditorReady) return;
 
     const updateUndoState = () => {
       setCanUndo(!!editor.UndoManager?.hasUndo());
@@ -582,7 +584,7 @@ export function Editor() {
     return () => {
       editor.off('change:changesCount', updateUndoState);
     };
-  }, [editorKey]);
+  }, [editorKey, isEditorReady]);
 
   // Keyboard shortcut: Cmd+S / Ctrl+S to save, ? for shortcuts dialog
   useEffect(() => {
@@ -690,6 +692,9 @@ export function Editor() {
       setName('Untitled Prototype');
       setHtmlContent('');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes stateMachine.state.prototype,
+  // localPrototype, and loadPrototypeAndRemount to prevent re-firing the load on every save.
+  // Guards inside the effect check stale state to prevent unnecessary reloads.
   }, [slug, isDemoMode, currentTeam, selectedTemplate]);
 
   // Helper to load prototype and then trigger editor remount

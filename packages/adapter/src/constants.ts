@@ -229,7 +229,7 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'usa-process-list': '__FULL_HTML__<usa-process-list item-count="3" item1-heading="Step 1" item1-content="Description for step 1" item2-heading="Step 2" item2-content="Description for step 2" item3-heading="Step 3" item3-content="Description for step 3"></usa-process-list>',
   'usa-prose': '__FULL_HTML__<usa-prose>Enter your prose content here. This component applies USWDS typography styles to the text within.</usa-prose>',
   'usa-identifier': '__FULL_HTML__<usa-identifier domain="example.gov" parent-agency="Department of Example" parent-agency-href="#"></usa-identifier>',
-  'usa-in-page-navigation': '__FULL_HTML__<usa-in-page-navigation heading-level="h2" title="On this page"></usa-in-page-navigation>',
+  'usa-in-page-navigation': '__FULL_HTML__<usa-in-page-navigation heading-level="h2" nav-title="On this page"></usa-in-page-navigation>',
   'usa-language-selector': '__FULL_HTML__<usa-language-selector variant="default" lang-count="3" lang1-label="English" lang1-value="en" lang2-label="Español" lang2-value="es" lang3-label="Français" lang3-value="fr"></usa-language-selector>',
   'usa-character-count': '__FULL_HTML__<usa-character-count label="Message" maxlength="200"></usa-character-count>',
   'usa-memorable-date': '__FULL_HTML__<usa-memorable-date legend="Date of birth" hint="For example: January 19 2000"></usa-memorable-date>',

@@ -904,10 +904,10 @@ function ensureComponentId(component: any, allIds: Set<string>, editor?: EditorI
     baseId = 'element';
   }
 
-  // Ensure uniqueness
+  // Ensure uniqueness (bounded to prevent infinite loop)
   let finalId = baseId;
   let counter = 1;
-  while (allIds.has(finalId)) {
+  while (allIds.has(finalId) && counter <= 10000) {
     finalId = `${baseId}-${counter}`;
     counter++;
   }

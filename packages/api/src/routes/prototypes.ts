@@ -49,14 +49,16 @@ function normalizeGrapesData(data: Record<string, unknown> | undefined): Record<
 const MAX_GRAPES_DATA_SIZE = 5 * 1024 * 1024;
 
 /**
- * Validate grapesData shape and size
+ * Validate grapesData shape and size.
+ * Uses Fastify's bodyLimit for primary byte-size enforcement;
+ * this is a secondary check using Buffer.byteLength for accuracy.
  */
 function validateGrapesData(data: Record<string, unknown> | undefined): string | null {
   if (!data) return null;
 
-  // Check serialized size
-  const serialized = JSON.stringify(data);
-  if (serialized.length > MAX_GRAPES_DATA_SIZE) {
+  // Check serialized byte size (accurate for multi-byte chars)
+  const byteSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+  if (byteSize > MAX_GRAPES_DATA_SIZE) {
     return `grapesData exceeds maximum size of ${MAX_GRAPES_DATA_SIZE / (1024 * 1024)}MB`;
   }
 
@@ -330,7 +332,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         })
         .returning();
 
-      return prototype;
+      return reply.status(201).send(prototype);
     }
   );
 
@@ -364,7 +366,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
       }
       const userId = getAuthUser(request).id;
 
-      // Get current prototype
+      // Get current prototype (for auth check + optimistic concurrency pre-check)
       const [current] = await db
         .select()
         .from(prototypes)
@@ -386,7 +388,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(400).send({ message: grapesError });
       }
 
-      // Optimistic concurrency check via If-Match header
+      // Optimistic concurrency check via If-Match header (early rejection)
       const ifMatch = request.headers['if-match'];
       if (ifMatch) {
         const expectedVersion = parseInt(ifMatch, 10);
@@ -399,27 +401,39 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
       }
 
-      // Wrap version snapshot + update in a transaction with version check
-      // to prevent TOCTOU race conditions between concurrent saves
+      // Wrap everything in a transaction to prevent TOCTOU races.
+      // Re-read the prototype inside the transaction so the version snapshot
+      // captures the actual current state, not a potentially stale read.
       let updated;
       try {
         updated = await db.transaction(async (tx) => {
+          // Re-read inside transaction to get fresh state for snapshot
+          const [fresh] = await tx
+            .select()
+            .from(prototypes)
+            .where(eq(prototypes.id, current.id))
+            .limit(1);
+
+          if (!fresh) {
+            throw new Error('CONCURRENT_MODIFICATION');
+          }
+
           // Get the last version number
           const [lastVersion] = await tx
             .select({ versionNumber: prototypeVersions.versionNumber })
             .from(prototypeVersions)
-            .where(eq(prototypeVersions.prototypeId, current.id))
+            .where(eq(prototypeVersions.prototypeId, fresh.id))
             .orderBy(desc(prototypeVersions.versionNumber))
             .limit(1);
 
           const newVersionNumber = (lastVersion?.versionNumber || 0) + 1;
 
-          // Create version snapshot of current state
+          // Create version snapshot of current state (uses fresh read)
           await tx.insert(prototypeVersions).values({
-            prototypeId: current.id,
+            prototypeId: fresh.id,
             versionNumber: newVersionNumber,
-            htmlContent: current.htmlContent,
-            grapesData: current.grapesData,
+            htmlContent: fresh.htmlContent,
+            grapesData: fresh.grapesData,
             createdBy: userId,
           });
 
@@ -427,14 +441,14 @@ export async function prototypeRoutes(app: FastifyInstance) {
           const [result] = await tx
             .update(prototypes)
             .set({
-              name: name ?? current.name,
-              description: description ?? current.description,
-              htmlContent: htmlContent ?? current.htmlContent,
-              grapesData: grapesData ? normalizeGrapesData(grapesData) : current.grapesData,
+              name: name ?? fresh.name,
+              description: description ?? fresh.description,
+              htmlContent: htmlContent ?? fresh.htmlContent,
+              grapesData: grapesData ? normalizeGrapesData(grapesData) : fresh.grapesData,
               updatedAt: new Date(),
-              version: current.version + 1,
+              version: fresh.version + 1,
             })
-            .where(and(eq(prototypes.id, current.id), eq(prototypes.version, current.version)))
+            .where(and(eq(prototypes.id, fresh.id), eq(prototypes.version, fresh.version)))
             .returning();
 
           if (!result) {
@@ -495,7 +509,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
    * GET /api/prototypes/:slug/versions
    * Get version history for a prototype
    */
-  app.get<{ Params: PrototypeParams }>(
+  app.get<{ Params: PrototypeParams; Querystring: { page?: string; limit?: string } }>(
     '/:slug/versions',
     {
       preHandler: [app.authenticate],
@@ -503,6 +517,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { slug } = request.params;
       const userId = getAuthUser(request).id;
+
+      // Parse pagination params
+      const page = Math.max(1, parseInt(request.query.page || '1', 10) || 1);
+      const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(request.query.limit || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE));
+      const offset = (page - 1) * limit;
 
       // Get prototype
       const [prototype] = await db
@@ -520,7 +539,15 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(403).send({ message: 'Access denied' });
       }
 
-      // Get versions
+      const whereClause = eq(prototypeVersions.prototypeId, prototype.id);
+
+      // Get total count
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(prototypeVersions)
+        .where(whereClause);
+
+      // Get paginated versions
       const versions = await db
         .select({
           id: prototypeVersions.id,
@@ -528,10 +555,12 @@ export async function prototypeRoutes(app: FastifyInstance) {
           createdAt: prototypeVersions.createdAt,
         })
         .from(prototypeVersions)
-        .where(eq(prototypeVersions.prototypeId, prototype.id))
-        .orderBy(desc(prototypeVersions.versionNumber));
+        .where(whereClause)
+        .orderBy(desc(prototypeVersions.versionNumber))
+        .limit(limit)
+        .offset(offset);
 
-      return { versions };
+      return { versions, total: Number(total), page, limit };
     }
   );
 
@@ -589,18 +618,29 @@ export async function prototypeRoutes(app: FastifyInstance) {
       let updated;
       try {
         updated = await db.transaction(async (tx) => {
+          // Re-read prototype inside transaction to avoid TOCTOU
+          const [fresh] = await tx
+            .select()
+            .from(prototypes)
+            .where(eq(prototypes.id, prototype.id))
+            .limit(1);
+
+          if (!fresh) {
+            throw new Error('CONCURRENT_MODIFICATION');
+          }
+
           const [lastVersion] = await tx
             .select({ versionNumber: prototypeVersions.versionNumber })
             .from(prototypeVersions)
-            .where(eq(prototypeVersions.prototypeId, prototype.id))
+            .where(eq(prototypeVersions.prototypeId, fresh.id))
             .orderBy(desc(prototypeVersions.versionNumber))
             .limit(1);
 
           await tx.insert(prototypeVersions).values({
-            prototypeId: prototype.id,
+            prototypeId: fresh.id,
             versionNumber: (lastVersion?.versionNumber || 0) + 1,
-            htmlContent: prototype.htmlContent,
-            grapesData: prototype.grapesData,
+            htmlContent: fresh.htmlContent,
+            grapesData: fresh.grapesData,
             createdBy: userId,
           });
 
@@ -610,9 +650,9 @@ export async function prototypeRoutes(app: FastifyInstance) {
               htmlContent: versionData.htmlContent || '',
               grapesData: versionData.grapesData || {},
               updatedAt: new Date(),
-              version: prototype.version + 1,
+              version: fresh.version + 1,
             })
-            .where(and(eq(prototypes.id, prototype.id), eq(prototypes.version, prototype.version)))
+            .where(and(eq(prototypes.id, fresh.id), eq(prototypes.version, fresh.version)))
             .returning();
 
           if (!result) {
@@ -690,7 +730,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
           })
           .returning();
 
-        return duplicate;
+        return reply.status(201).send(duplicate);
       } catch (error) {
         console.error('Failed to duplicate prototype:', error);
         return reply.status(500).send({ message: 'Failed to duplicate prototype' });

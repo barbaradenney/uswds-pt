@@ -304,7 +304,7 @@ export function useEditorPersistence({
             async () => {
               const headers: Record<string, string> = { 'Content-Type': 'application/json' };
               // Send If-Match for optimistic concurrency on updates
-              if (isUpdate && state.prototype?.version) {
+              if (isUpdate && state.prototype?.version != null) {
                 headers['If-Match'] = String(state.prototype.version);
               }
               const response = await authFetch(url, {

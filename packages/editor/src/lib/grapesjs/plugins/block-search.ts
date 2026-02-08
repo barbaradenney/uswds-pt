@@ -12,7 +12,8 @@ const PFX = 'gjs-';
 export function blockSearchPlugin(editor: EditorInstance): void {
   // Defer until editor is fully loaded
   editor.on('load', () => {
-    const blocksContainer = document.querySelector(`.${PFX}blocks-cs`) as HTMLElement;
+    const editorEl = editor.getContainer();
+    const blocksContainer = (editorEl || document).querySelector(`.${PFX}blocks-cs`) as HTMLElement;
     if (!blocksContainer) return;
 
     // Create search input

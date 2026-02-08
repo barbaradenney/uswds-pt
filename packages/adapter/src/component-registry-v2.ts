@@ -4491,8 +4491,8 @@ componentRegistry.register({
 
 // Helper to rebuild table HTML from attributes
 function rebuildTable(element: HTMLElement): void {
-  const colCount = parseInt(element.getAttribute('col-count') || '3', 10);
-  const rowCount = parseInt(element.getAttribute('row-count') || '3', 10);
+  const colCount = Math.min(10, Math.max(1, parseInt(element.getAttribute('col-count') || '3', 10)));
+  const rowCount = Math.min(20, Math.max(1, parseInt(element.getAttribute('row-count') || '3', 10)));
   const caption = element.getAttribute('caption') || '';
   const striped = element.hasAttribute('striped');
   const borderless = element.hasAttribute('borderless');
@@ -8328,42 +8328,42 @@ componentRegistry.register({
     'lang1-label': {
       definition: { name: 'lang1-label', label: 'Language 1 Label', type: 'text', default: 'English' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-label', value || 'English'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-label', value || 'English'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-label') || 'English',
       },
     },
     'lang1-value': {
       definition: { name: 'lang1-value', label: 'Language 1 Value', type: 'text', default: 'en' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-value', value || 'en'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-value', value || 'en'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-value') || 'en',
       },
     },
     'lang2-label': {
       definition: { name: 'lang2-label', label: 'Language 2 Label', type: 'text', default: 'Español' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-label', value || 'Español'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-label', value || 'Español'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-label') || 'Español',
       },
     },
     'lang2-value': {
       definition: { name: 'lang2-value', label: 'Language 2 Value', type: 'text', default: 'es' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-value', value || 'es'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-value', value || 'es'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-value') || 'es',
       },
     },
     'lang3-label': {
       definition: { name: 'lang3-label', label: 'Language 3 Label', type: 'text', default: 'Français' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-label', value || 'Français'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-label', value || 'Français'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-label') || 'Français',
       },
     },
     'lang3-value': {
       definition: { name: 'lang3-value', label: 'Language 3 Value', type: 'text', default: 'fr' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-value', value || 'fr'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-value', value || 'fr'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-value') || 'fr',
       },
     },
@@ -8376,7 +8376,7 @@ componentRegistry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-label', value || '中文'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-label', value || '中文'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-label') || '中文',
       },
     },
@@ -8388,7 +8388,7 @@ componentRegistry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-value', value || 'zh'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-value', value || 'zh'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-value') || 'zh',
       },
     },
@@ -8400,7 +8400,7 @@ componentRegistry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-label', value || 'العربية'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-label', value || 'العربية'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-label') || 'العربية',
       },
     },
@@ -8412,7 +8412,7 @@ componentRegistry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-value', value || 'ar'); },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-value', value || 'ar'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-value') || 'ar',
       },
     },
