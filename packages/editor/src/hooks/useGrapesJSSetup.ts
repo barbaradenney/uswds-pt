@@ -225,10 +225,13 @@ export function useGrapesJSSetup({
       if (projectDataRef.current) {
         try {
           debug('Safety-net: loading project data via loadProjectData');
+          console.warn('[TEMPLATE-DEBUG] onReady — safety-net loadProjectData called, pages:', projectDataRef.current?.pages?.length || 0);
           editor.loadProjectData(projectDataRef.current);
         } catch (e) {
           debug('Safety-net loadProjectData failed (non-fatal):', e);
         }
+      } else {
+        console.warn('[TEMPLATE-DEBUG] onReady — NO projectData for safety-net (new prototype with initialContent)');
       }
 
       // Custom CSS (addCardContainerCSS, etc.) is injected in the
@@ -293,6 +296,29 @@ export function useGrapesJSSetup({
       // Set up symbol creation interception
       if (onSymbolCreate) {
         setupSymbolCreationHandler(editor, registerListener, onSymbolCreate);
+      }
+
+      // Diagnostic: trace what the editor has after init
+      try {
+        const wrapper = editor.DomComponents?.getWrapper?.();
+        const components = wrapper?.components?.();
+        const componentCount = components?.length || 0;
+        const topLevelTags = components?.map((c: any) => c.get?.('tagName') || c.get?.('type') || 'unknown') || [];
+        const editorHtml = editor.getHtml?.() || '';
+        const pages = editor.Pages?.getAll?.() || [];
+        console.warn('[TEMPLATE-DEBUG] onReady — editor state after init:', {
+          componentCount,
+          topLevelTags,
+          editorHtmlLen: editorHtml.length,
+          editorHtmlFirst200: editorHtml.substring(0, 200),
+          editorHtmlHasDataTemplate: editorHtml.includes('data-template'),
+          editorHtmlHasBlankTemplate: editorHtml.includes('blank-template'),
+          pageCount: pages.length,
+          hadProjectData: !!projectDataRef.current,
+          projectDataPages: projectDataRef.current?.pages?.length || 0,
+        });
+      } catch (e) {
+        console.warn('[TEMPLATE-DEBUG] onReady — diagnostic error:', e);
       }
 
       // Mark editor as ready in state machine
@@ -566,6 +592,7 @@ function setupPageEventHandlers(
     const pageId = page?.getId?.() || page?.id;
     const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
     debug('Page added:', pageId, '-', pageName);
+    console.warn('[TEMPLATE-DEBUG] page:add fired:', { pageId, pageName });
 
     if (pageId) {
       pagesNeedingTemplate.add(pageId);
@@ -582,6 +609,7 @@ function setupPageEventHandlers(
 
     if (pageId && pagesNeedingTemplate.has(pageId)) {
       pagesNeedingTemplate.delete(pageId);
+      console.warn('[TEMPLATE-DEBUG] page:select — injecting blank-template for NEW page:', pageId);
 
       // Wait for frame to be ready before adding template
       await waitForFrameReady(editor, 200);
