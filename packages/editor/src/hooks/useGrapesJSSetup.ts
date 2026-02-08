@@ -250,7 +250,7 @@ export function useGrapesJSSetup({
       registerClearCommand(editor);
 
       // Set up page event handlers
-      setupPageEventHandlers(editor, registerListener, stateMachine);
+      const pageHandlers = setupPageEventHandlers(editor, registerListener, stateMachine);
 
       // Set up interactive component handlers
       setupAllInteractiveHandlers(editor, (event, handler) => registerListener(editor, event, handler));
@@ -323,6 +323,12 @@ export function useGrapesJSSetup({
 
       // Mark editor as ready in state machine
       stateMachine.editorReady();
+
+      // Enable template injection for user-added pages.
+      // Deferred so all initial page:add events (fired by GrapesJS during init)
+      // complete first — the initial page already has content from
+      // initialContent/projectData and must not be overwritten.
+      setTimeout(() => pageHandlers.markInitialized(), 0);
     },
     [
       editorRef,
@@ -509,9 +515,14 @@ function setupPageEventHandlers(
   editor: EditorInstance,
   registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void,
   stateMachine: UseEditorStateMachineReturn
-): void {
+): { markInitialized: () => void } {
   // Track pages that need template
   const pagesNeedingTemplate = new Set<string>();
+
+  // Don't mark pages for template during initial editor setup.
+  // The initial page already has content from initialContent/projectData
+  // and should not be overwritten with blank-template.
+  let isInitialized = false;
 
   // Track pending operations to prevent race conditions
   let pendingPageSwitch: AbortController | null = null;
@@ -592,11 +603,15 @@ function setupPageEventHandlers(
     const pageId = page?.getId?.() || page?.id;
     const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
     debug('Page added:', pageId, '-', pageName);
-    console.warn('[TEMPLATE-DEBUG] page:add fired:', { pageId, pageName });
+    console.warn('[TEMPLATE-DEBUG] page:add fired:', { pageId, pageName, isInitialized });
 
-    if (pageId) {
+    // Only mark for template AFTER initial editor setup completes.
+    // The initial page(s) already have content from initialContent/projectData.
+    if (pageId && isInitialized) {
       pagesNeedingTemplate.add(pageId);
       debug('Marked page for template:', pageId);
+    } else {
+      debug('Skipping template mark for initial page:', pageId);
     }
   });
 
@@ -673,6 +688,13 @@ function setupPageEventHandlers(
     const pageId = page?.getId?.() || page?.id;
     debug('Page removed:', pageId);
   });
+
+  return {
+    markInitialized: () => {
+      isInitialized = true;
+      debug('Page event handlers: init complete, template injection enabled');
+    },
+  };
 }
 
 /**
