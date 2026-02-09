@@ -12,7 +12,7 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "db:migrate": "pnpm --filter @uswds-pt/api db:migrate",
     "db:push": "pnpm --filter @uswds-pt/api db:push",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
