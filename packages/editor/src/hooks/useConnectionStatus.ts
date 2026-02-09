@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { subscribeToOnlineStatus, isOnline, getOnlineStatus } from '../lib/retry';
+import { subscribeToOnlineStatus, isOnline } from '../lib/retry';
 
 export interface ConnectionStatus {
   /** Whether the browser is online */

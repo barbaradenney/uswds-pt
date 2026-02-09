@@ -60,7 +60,6 @@ export function registerGridComponents(Components: ComponentsAPI): void {
         editable: true,
       },
       // Preserve grid-col-* classes from the parsed element
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       init(this: any) {
         const el = this.getEl?.();
         if (el?.classList) {

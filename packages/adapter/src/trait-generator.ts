@@ -4,7 +4,7 @@
  */
 
 import type { CEMAttribute, ParsedComponent } from '@uswds-pt/shared';
-import type { GrapesTrait, GrapesTraitOption } from './types.js';
+import type { GrapesTrait } from './types.js';
 
 /**
  * Generate traits for a component
@@ -217,7 +217,7 @@ export function groupTraitsByCategory(traits: GrapesTrait[]): Record<string, Gra
 /**
  * Get trait type based on attribute name conventions
  */
-export function inferTraitType(attrName: string, typeText: string): string {
+export function inferTraitType(attrName: string, _typeText: string): string {
   // URL/href attributes
   if (attrName === 'href' || attrName === 'src' || attrName.endsWith('-url')) {
     return 'text'; // Could be 'link' if GrapesJS supports it

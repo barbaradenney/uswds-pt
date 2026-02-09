@@ -43,7 +43,7 @@ function rebuildAccordionItems(element: HTMLElement, count: number): void {
 function createAccordionSectionTrait(
   sectionNum: number,
   traitType: 'title' | 'content' | 'expanded',
-  maxSections: number = 8
+  _maxSections: number = 8
 ): UnifiedTrait {
   const attrName = `section${sectionNum}-${traitType}`;
 

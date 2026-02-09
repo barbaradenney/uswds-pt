@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Role, Organization } from '@uswds-pt/shared';
+import type { Role } from '@uswds-pt/shared';
 import { useTeamMembers } from '../hooks/useTeamMembers';
 import { useOrganization } from '../hooks/useOrganization';
 import { InviteModal } from './InviteModal';

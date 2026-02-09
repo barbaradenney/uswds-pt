@@ -452,7 +452,7 @@ registry.register({
         getValue: (element: HTMLElement) => {
           return element.getAttribute('options-preset') ?? 'manual';
         },
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, _value: any) => {
           // Wait for the web component to render its internal <select>
           const initOptions = () => {
             rebuildSelectOptionsFromSource(element);

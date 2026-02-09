@@ -60,7 +60,7 @@ registry.register({
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }
-            } catch (e) {
+            } catch (_e) {
               // Ignore errors during attribute sync
             }
           }

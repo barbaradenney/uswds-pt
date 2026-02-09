@@ -437,7 +437,7 @@ export function Editor() {
       setPendingSymbolData(null);
       pendingSymbolComponentRef.current = null;
     },
-    [pendingSymbolData, globalSymbols, editorRef]
+    [pendingSymbolData, globalSymbols]
   );
 
   /**

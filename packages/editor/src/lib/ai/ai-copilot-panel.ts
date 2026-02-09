@@ -187,7 +187,7 @@ function loadPanelPosition(panel: HTMLElement): void {
       panel.style.left = `${pos.left}px`;
       panel.style.top = `${pos.top}px`;
       panel.style.right = 'auto';
-    } catch (e) {
+    } catch (_e) {
       // Ignore invalid saved position
     }
   }

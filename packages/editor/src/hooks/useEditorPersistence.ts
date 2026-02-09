@@ -22,7 +22,6 @@ import {
 import { isEditorReadyForExtraction, extractPerPageHtml } from '../lib/grapesjs/data-extractor';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
-import { validateAndPrepareForSave, validatePrototype, isPrototypeUsable } from '../lib/prototype-validation';
 import type { EditorInstance } from '../types/grapesjs';
 import { extractLocalSymbols } from './useGlobalSymbols';
 
@@ -416,7 +415,6 @@ export function useEditorPersistence({
       currentTeam,
       teams,
       isLoadingTeam,
-      navigate,
       onSaveComplete,
       onFirstSaveSlug,
     ]

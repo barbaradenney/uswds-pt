@@ -2,7 +2,7 @@
  * Tests for useEditorStateMachine hook
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import {
   useEditorStateMachine,
@@ -14,8 +14,6 @@ import {
   canModifyContent,
   isLoading,
   isBusy,
-  type EditorState,
-  type EditorAction,
 } from './useEditorStateMachine';
 import { mockPrototype } from '../test/fixtures/prototypes';
 

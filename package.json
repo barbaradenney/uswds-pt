@@ -23,7 +23,9 @@
   },
   "lint-staged": {
     "packages/editor/src/**/*.{ts,tsx}": "eslint --config packages/editor/eslint.config.js --no-warn-ignored",
-    "packages/api/src/**/*.ts": "eslint --config packages/api/eslint.config.js --no-warn-ignored"
+    "packages/api/src/**/*.ts": "eslint --config packages/api/eslint.config.js --no-warn-ignored",
+    "packages/adapter/src/**/*.ts": "eslint --config packages/adapter/eslint.config.js --no-warn-ignored",
+    "packages/shared/src/**/*.ts": "eslint --config packages/shared/eslint.config.js --no-warn-ignored"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {

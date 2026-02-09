@@ -2,8 +2,8 @@
  * Tests for retry utility
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withRetry, classifyError, type ErrorType } from './retry';
+import { describe, it, expect, vi } from 'vitest';
+import { withRetry, classifyError } from './retry';
 
 describe('retry utility', () => {
   describe('classifyError', () => {

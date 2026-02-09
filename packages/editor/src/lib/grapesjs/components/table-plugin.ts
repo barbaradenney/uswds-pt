@@ -85,7 +85,6 @@ export function uswdsTablePlugin(editor: EditorInstance): void {
         classes: ['usa-table'],
         traits: tableTraits,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       init(this: any) {
         // Apply USWDS class on init
         this.addClass('usa-table');
@@ -99,7 +98,6 @@ export function uswdsTablePlugin(editor: EditorInstance): void {
       /**
        * Update table classes based on trait values
        */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updateTableClasses(this: any) {
         const attrs = this.getAttributes();
         const classes = ['usa-table'];
@@ -131,7 +129,7 @@ export function uswdsTablePlugin(editor: EditorInstance): void {
 /**
  * Table component model interface
  */
-interface TableComponentModel {
+interface _TableComponentModel {
   addClass(className: string): void;
   setClass(classes: string[]): void;
   getAttributes(): Record<string, unknown>;

@@ -1017,7 +1017,7 @@ function rebuildListItems(element: HTMLElement, count: number): void {
   const listTag = type === 'ordered' ? 'ol' : 'ul';
 
   // Find the list element
-  let list = element.querySelector(listTag);
+  const list = element.querySelector(listTag);
   if (!list) {
     // Try to trigger initial render
     if (typeof (element as any).requestUpdate === 'function') {
@@ -1055,7 +1055,7 @@ function rebuildListItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a list item trait
-function createListItemTrait(index: number): UnifiedTrait {
+function _createListItemTrait(index: number): UnifiedTrait {
   const attrName = `item${index}`;
   const defaultValue = `List item ${index}`;
 
@@ -1208,7 +1208,7 @@ function rebuildCollectionItems(element: HTMLElement, count: number): void {
 }
 
 // Helper to create a collection item trait
-function createCollectionItemTrait(index: number, type: 'title' | 'description' | 'href' | 'date'): UnifiedTrait {
+function _createCollectionItemTrait(index: number, type: 'title' | 'description' | 'href' | 'date'): UnifiedTrait {
   const attrName = `item${index}-${type}`;
   const isTitle = type === 'title';
   const isDescription = type === 'description';

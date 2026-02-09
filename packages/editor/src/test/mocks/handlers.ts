@@ -12,7 +12,7 @@ import {
 } from '../fixtures/prototypes';
 
 // Store for simulating state across requests
-let prototypesStore: Map<string, ReturnType<typeof mockPrototype>> = new Map();
+const prototypesStore: Map<string, ReturnType<typeof mockPrototype>> = new Map();
 
 // Initialize with some default data
 function initializeStore() {

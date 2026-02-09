@@ -185,5 +185,4 @@ export function isGrapesEditor(obj: unknown): obj is GrapesEditor {
  * For type-safe code, use the `GrapesEditor` interface directly when the
  * full interface is needed, or use `isGrapesEditor()` type guard.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EditorInstance = any;

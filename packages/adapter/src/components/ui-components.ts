@@ -39,7 +39,7 @@ const buttonGroupApplying = new WeakSet<HTMLElement>();
 // Uses DOM methods instead of innerHTML to preserve event listeners
 function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
   // Find the ul container (button group renders as ul > li > button)
-  let ul = element.querySelector('ul.usa-button-group');
+  const ul = element.querySelector('ul.usa-button-group');
 
   // If no ul exists yet, the component may need to render first
   if (!ul) {

@@ -5,7 +5,7 @@
  * and provide offline support with automatic sync when back online.
  */
 
-import { subscribeToOnlineStatus, isOnline, getOnlineStatus } from './retry';
+import { subscribeToOnlineStatus, isOnline } from './retry';
 import { createDebugLogger } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('SaveQueue');

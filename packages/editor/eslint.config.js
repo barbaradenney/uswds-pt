@@ -25,6 +25,8 @@ export default [
         // TypeScript DOM types
         RequestInfo: 'readonly',
         RequestInit: 'readonly',
+        EventListener: 'readonly',
+        AddEventListenerOptions: 'readonly',
       },
     },
     plugins: {
@@ -66,7 +68,7 @@ export default [
   },
   // Test files configuration
   {
-    files: ['src/**/*.test.{ts,tsx}'],
+    files: ['src/**/*.test.{ts,tsx}', 'src/test/**/*.ts'],
     languageOptions: {
       globals: {
         // Vitest globals

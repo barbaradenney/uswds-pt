@@ -21,7 +21,7 @@ export function generateBlocks(components: ParsedComponent[]): GrapesBlock[] {
 export function generateBlock(component: ParsedComponent): GrapesBlock {
   const icon = getComponentIcon(component.tagName);
   const content = getBlockContent(component);
-  const keywords = generateKeywords(component);
+  const _keywords = generateKeywords(component);
 
   return {
     id: component.tagName,

@@ -336,7 +336,7 @@ registry.register({
 
           // Determine which type we're working with
           const isCheckbox = checkboxes.length > 0;
-          const isRadio = radios.length > 0;
+          const _isRadio = radios.length > 0;
           const existingItems = isCheckbox ? checkboxes : radios;
           const tagName = isCheckbox ? 'usa-checkbox' : 'usa-radio';
 

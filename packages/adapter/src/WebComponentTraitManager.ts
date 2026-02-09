@@ -6,7 +6,7 @@
  * and prevents sync loops.
  */
 
-import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals, type TraitHandler as RegistryTraitHandler } from './component-registry-v2.js';
+import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals } from './component-registry-v2.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('WebComponentTraitManager');
@@ -180,7 +180,7 @@ export class WebComponentTraitManager {
       if (typeof cleanup === 'function') {
         try {
           cleanup();
-        } catch (e) {
+        } catch (_e) {
           // Ignore errors during cleanup
         }
       }
@@ -517,11 +517,11 @@ export class WebComponentTraitManager {
     debug('Destroying WebComponentTraitManager');
 
     // Clean up all active listeners (observers, etc.)
-    this.activeListeners.forEach((cleanup, key) => {
+    this.activeListeners.forEach((cleanup, _key) => {
       if (typeof cleanup === 'function') {
         try {
           cleanup();
-        } catch (e) {
+        } catch (_e) {
           // Ignore errors during cleanup
         }
       }

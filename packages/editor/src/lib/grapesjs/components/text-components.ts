@@ -63,7 +63,6 @@ export function registerTextComponents(Components: ComponentsAPI): void {
           },
         ],
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       init(this: any) {
         // Set initial heading level based on actual tagName
         const tagName = this.get('tagName')?.toLowerCase() || 'h2';
@@ -78,7 +77,6 @@ export function registerTextComponents(Components: ComponentsAPI): void {
        * Uses GrapesJS's built-in view.render() to update the DOM element,
        * preserving content and attributes while changing the tag.
        */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleHeadingLevelChange(this: any) {
         const newLevel = this.get('heading-level') as string | undefined;
         if (!newLevel || !/^h[1-6]$/.test(newLevel)) {
