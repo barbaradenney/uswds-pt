@@ -11,12 +11,19 @@
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:migrate": "pnpm --filter @uswds-pt/api db:migrate",
-    "db:push": "pnpm --filter @uswds-pt/api db:push"
+    "db:push": "pnpm --filter @uswds-pt/api db:push",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "turbo": "^2.3.0",
     "typescript": "^5.3.0"
+  },
+  "lint-staged": {
+    "packages/editor/src/**/*.{ts,tsx}": "eslint --config packages/editor/eslint.config.js --no-warn-ignored",
+    "packages/api/src/**/*.ts": "eslint --config packages/api/eslint.config.js --no-warn-ignored"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {

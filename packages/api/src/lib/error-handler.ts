@@ -1,7 +1,7 @@
 /**
  * Error Handler Plugin
  *
- * Fastify plugin for consistent error handling across all routes.
+ * Fastify plugin for consistent error handling across all API routes.
  * Provides:
  * - Structured error responses
  * - Error logging with context
