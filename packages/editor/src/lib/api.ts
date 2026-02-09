@@ -34,28 +34,35 @@ export const API_ENDPOINTS = {
 
   // Prototypes
   PROTOTYPES: '/api/prototypes',
-  PROTOTYPE: (slug: string) => `/api/prototypes/${slug}`,
+  PROTOTYPE: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}`,
 
   // Prototype Versions
-  PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${slug}/versions`,
-  PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${slug}/versions/${version}/restore`,
+  PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/versions`,
+  PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${encodeURIComponent(slug)}/versions/${version}/restore`,
   PROTOTYPE_VERSION_COMPARE: (slug: string, v1: number, v2: number | 'current') =>
-    `/api/prototypes/${slug}/versions/${v1}/compare/${v2}`,
+    `/api/prototypes/${encodeURIComponent(slug)}/versions/${v1}/compare/${v2}`,
   PROTOTYPE_VERSION_LABEL: (slug: string, version: number) =>
-    `/api/prototypes/${slug}/versions/${version}`,
+    `/api/prototypes/${encodeURIComponent(slug)}/versions/${version}`,
 
   // Branches
-  PROTOTYPE_BRANCHES: (slug: string) => `/api/prototypes/${slug}/branches`,
+  PROTOTYPE_BRANCHES: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/branches`,
   PROTOTYPE_BRANCH_SWITCH: (slug: string, branchSlug: string) =>
-    `/api/prototypes/${slug}/branches/${branchSlug}/switch`,
+    `/api/prototypes/${encodeURIComponent(slug)}/branches/${encodeURIComponent(branchSlug)}/switch`,
   PROTOTYPE_BRANCH_SWITCH_MAIN: (slug: string) =>
-    `/api/prototypes/${slug}/branches/switch-main`,
+    `/api/prototypes/${encodeURIComponent(slug)}/branches/switch-main`,
   PROTOTYPE_BRANCH_DELETE: (slug: string, branchSlug: string) =>
-    `/api/prototypes/${slug}/branches/${branchSlug}`,
+    `/api/prototypes/${encodeURIComponent(slug)}/branches/${encodeURIComponent(branchSlug)}`,
 
   // Global Symbols
-  TEAM_SYMBOLS: (teamId: string) => `/api/teams/${teamId}/symbols`,
-  TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${teamId}/symbols/${symbolId}`,
+  TEAM_SYMBOLS: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols`,
+  TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols/${encodeURIComponent(symbolId)}`,
+
+  // GitHub Integration
+  GITHUB_REPOS: '/api/github/repos',
+  GITHUB_CONNECTION: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github`,
+  GITHUB_CONNECT: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/connect`,
+  GITHUB_PUSH: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/push`,
+  GITHUB_DISCONNECT: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/disconnect`,
 } as const;
 
 /**

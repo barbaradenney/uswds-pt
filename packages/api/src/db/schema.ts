@@ -130,12 +130,18 @@ export const invitations = pgTable(
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).unique().notNull(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  passwordHash: varchar('password_hash', { length: 255 }),
   name: varchar('name', { length: 255 }),
   organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   isActive: boolean('is_active').default(true).notNull(),
+  // GitHub OAuth fields
+  githubId: integer('github_id').unique(),
+  githubUsername: varchar('github_username', { length: 255 }),
+  githubAccessToken: text('github_access_token'),
+  githubTokenExpiresAt: timestamp('github_token_expires_at', { withTimezone: true }),
+  avatarUrl: varchar('avatar_url', { length: 500 }),
 });
 
 // ============================================================================
@@ -363,6 +369,40 @@ export const symbolsRelations = relations(symbols, ({ one }) => ({
 }));
 
 /**
+ * GitHub repo connections table
+ * Links a prototype to a GitHub repository for push-on-save
+ */
+export const githubRepoConnections = pgTable(
+  'github_repo_connections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    prototypeId: uuid('prototype_id')
+      .references(() => prototypes.id, { onDelete: 'cascade' })
+      .unique()
+      .notNull(),
+    repoOwner: varchar('repo_owner', { length: 255 }).notNull(),
+    repoName: varchar('repo_name', { length: 255 }).notNull(),
+    defaultBranch: varchar('default_branch', { length: 100 }).notNull().default('main'),
+    filePath: varchar('file_path', { length: 500 }).notNull().default('prototype.html'),
+    lastPushedAt: timestamp('last_pushed_at', { withTimezone: true }),
+    lastPushedVersion: integer('last_pushed_version'),
+    lastPushedCommitSha: varchar('last_pushed_commit_sha', { length: 40 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    prototypeIdx: index('github_connections_prototype_idx').on(table.prototypeId),
+  })
+);
+
+export const githubRepoConnectionsRelations = relations(githubRepoConnections, ({ one }) => ({
+  prototype: one(prototypes, {
+    fields: [githubRepoConnections.prototypeId],
+    references: [prototypes.id],
+  }),
+}));
+
+/**
  * Audit logs table (for future use)
  */
 export const auditLogs = pgTable(
@@ -412,6 +452,9 @@ export type NewPrototypeVersion = typeof prototypeVersions.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type GitHubRepoConnection = typeof githubRepoConnections.$inferSelect;
+export type NewGitHubRepoConnection = typeof githubRepoConnections.$inferInsert;
 
 export type Symbol = typeof symbols.$inferSelect;
 export type NewSymbol = typeof symbols.$inferInsert;

@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
-import { authFetch } from '../hooks/useAuth';
+import { authFetch, useAuth } from '../hooks/useAuth';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
@@ -19,6 +19,7 @@ import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols, mergeGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { useCrashRecovery } from '../hooks/useCrashRecovery';
 import { useBranches } from '../hooks/useBranches';
+import { BranchPromptToast } from './BranchPromptToast';
 import { CreateBranchDialog } from './CreateBranchDialog';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
@@ -28,6 +29,7 @@ import { EditorCanvas } from './editor/EditorCanvas';
 import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
+import { GitHubConnectDialog } from './GitHubConnectDialog';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
 import { type LocalPrototype } from '../lib/localStorage';
@@ -142,6 +144,14 @@ export function Editor() {
     maxWaitMs: 30000,
   });
 
+  // Stable refs for autosave.pause/resume — prevents handleSwitchBranch/
+  // handleSwitchToMain from recreating on every autosave state change, which
+  // would defeat EditorHeader's memo().
+  const autosavePauseRef = useRef(autosave.pause);
+  const autosaveResumeRef = useRef(autosave.resume);
+  autosavePauseRef.current = autosave.pause;
+  autosaveResumeRef.current = autosave.resume;
+
   // Crash recovery hook
   const crashRecovery = useCrashRecovery({
     editorRef,
@@ -156,6 +166,44 @@ export function Editor() {
   // Branches hook
   const branchesHook = useBranches(!isDemoMode && slug ? slug : null);
   const [showCreateBranch, setShowCreateBranch] = useState(false);
+  const [showBranchPrompt, setShowBranchPrompt] = useState(false);
+  const branchPromptShownRef = useRef(false);
+  // Pending branch name — set when user enters a branch name in TemplateChooser.
+  // After first save (onFirstSaveSlug), we auto-create the branch.
+  const [pendingBranchName, setPendingBranchName] = useState<string | null>(null);
+
+  // GitHub integration state
+  const { user } = useAuth();
+  const hasGitHubLinked = !!user?.hasGitHubLinked;
+  const [showGitHub, setShowGitHub] = useState(false);
+  const [gitHubRepo, setGitHubRepo] = useState<{ owner: string; name: string; branch?: string; filePath?: string } | null>(null);
+
+  // Fetch GitHub connection status when slug changes
+  useEffect(() => {
+    if (!slug || isDemoMode || !hasGitHubLinked) {
+      setGitHubRepo(null);
+      return;
+    }
+    const controller = new AbortController();
+    authFetch(`/api/prototypes/${encodeURIComponent(slug)}/github`, { signal: controller.signal })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.connected) {
+          setGitHubRepo({
+            owner: data.repoOwner,
+            name: data.repoName,
+            branch: data.defaultBranch,
+            filePath: data.filePath,
+          });
+        } else {
+          setGitHubRepo(null);
+        }
+      })
+      .catch((err) => {
+        if (err?.name !== 'AbortError') setGitHubRepo(null);
+      });
+    return () => controller.abort();
+  }, [slug, isDemoMode, hasGitHubLinked]);
 
   // Version history hook
   const {
@@ -334,6 +382,42 @@ export function Editor() {
   });
 
   /**
+   * After first save of a new prototype, if the user specified a branch name
+   * in TemplateChooser, auto-create the branch. The savedSlug is set by
+   * onFirstSaveSlug in useEditorPersistence, which fires once after the first
+   * successful API save of a new prototype.
+   */
+  useEffect(() => {
+    if (!savedSlug) return;
+
+    // If user specified a branch name in TemplateChooser, auto-create it
+    if (pendingBranchName) {
+      const branchName = pendingBranchName;
+      setPendingBranchName(null);
+
+      debug('Auto-creating branch after first save:', branchName);
+      branchesHook.createBranch(branchName).then(async (branch) => {
+        if (branch) {
+          debug('Branch auto-created:', branch.slug);
+          await handleSwitchBranch(branch.slug);
+        } else {
+          debug('Branch auto-creation failed for:', branchName);
+        }
+      }).catch((err) => {
+        debug('Branch auto-creation error:', err);
+      });
+      return; // Don't show the prompt if they already set up a branch
+    }
+
+    // Otherwise, show the branch prompt toast (once per session, not in demo)
+    if (!isDemoMode && !branchPromptShownRef.current) {
+      branchPromptShownRef.current = true;
+      setShowBranchPrompt(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs once when savedSlug first appears
+  }, [savedSlug]);
+
+  /**
    * Navigates back to the prototype list. Saves first if there are unsaved
    * changes (dirty + canSave). Uses refs instead of state closures so the
    * check always reads the latest dirty/canSave values, matching the
@@ -371,11 +455,12 @@ export function Editor() {
 
   /**
    * Called when the user picks a starter template from TemplateChooser.
-   * Sets the selected template and generates a new editorKey to force a
-   * fresh GrapesJS mount with that template's initial content.
+   * Sets the selected template (and optional branch name) and generates a new
+   * editorKey to force a fresh GrapesJS mount with that template's initial content.
    */
-  const handleTemplateSelect = useCallback((templateId: string) => {
+  const handleTemplateSelect = useCallback((templateId: string, branchName?: string) => {
     setSelectedTemplate(templateId);
+    setPendingBranchName(branchName || null);
     setEditorKey(`new-${templateId}-${Date.now()}`);
   }, []);
 
@@ -687,19 +772,27 @@ export function Editor() {
    * to swap content, and reloads the editor in-place with the branch content.
    */
   const handleSwitchBranch = useCallback(async (branchSlug: string) => {
-    // Auto-save if dirty before switching
-    if (saveDirtyRef.current && saveCanSaveRef.current) {
-      debug('Saving before branch switch...');
-      const saved = await saveCallRef.current('autosave');
-      if (!saved) {
-        debug('Save failed, aborting branch switch');
-        return;
+    // Pause autosave to prevent it from firing with a stale version number
+    // while the branch switch is in progress (would cause 409 Conflict).
+    // Uses refs instead of direct `autosave` object to keep this callback stable.
+    autosavePauseRef.current();
+    try {
+      // Auto-save if dirty before switching
+      if (saveDirtyRef.current && saveCanSaveRef.current) {
+        debug('Saving before branch switch...');
+        const saved = await saveCallRef.current('autosave');
+        if (!saved) {
+          debug('Save failed, aborting branch switch');
+          return;
+        }
       }
-    }
 
-    const success = await branchSwitchRef.current(branchSlug);
-    if (success) {
-      await reloadEditorAfterSwitch();
+      const success = await branchSwitchRef.current(branchSlug);
+      if (success) {
+        await reloadEditorAfterSwitch();
+      }
+    } finally {
+      autosaveResumeRef.current();
     }
   }, [reloadEditorAfterSwitch]);
 
@@ -707,18 +800,25 @@ export function Editor() {
    * Handles switching back to main. Same auto-save + reload pattern.
    */
   const handleSwitchToMain = useCallback(async () => {
-    if (saveDirtyRef.current && saveCanSaveRef.current) {
-      debug('Saving before switching to main...');
-      const saved = await saveCallRef.current('autosave');
-      if (!saved) {
-        debug('Save failed, aborting switch to main');
-        return;
+    // Pause autosave to prevent it from firing with a stale version number
+    // while the branch switch is in progress (would cause 409 Conflict).
+    autosavePauseRef.current();
+    try {
+      if (saveDirtyRef.current && saveCanSaveRef.current) {
+        debug('Saving before switching to main...');
+        const saved = await saveCallRef.current('autosave');
+        if (!saved) {
+          debug('Save failed, aborting switch to main');
+          return;
+        }
       }
-    }
 
-    const success = await branchSwitchToMainRef.current();
-    if (success) {
-      await reloadEditorAfterSwitch();
+      const success = await branchSwitchToMainRef.current();
+      if (success) {
+        await reloadEditorAfterSwitch();
+      }
+    } finally {
+      autosaveResumeRef.current();
     }
   }, [reloadEditorAfterSwitch]);
 
@@ -926,7 +1026,7 @@ export function Editor() {
 
   // Template chooser — show before loading screen when creating a new prototype
   if (!slug && !selectedTemplate) {
-    return <TemplateChooser onSelect={handleTemplateSelect} onBack={() => navigate('/')} />;
+    return <TemplateChooser onSelect={handleTemplateSelect} onBack={() => navigate('/')} hideBranchOption={isDemoMode} />;
   }
 
   // Derive loading state from state machine
@@ -976,6 +1076,9 @@ export function Editor() {
         onSwitchBranch={handleSwitchBranch}
         onSwitchToMain={handleSwitchToMain}
         onCreateBranch={() => setShowCreateBranch(true)}
+        showGitHubButton={!isDemoMode && !!slug && hasGitHubLinked}
+        onGitHub={() => setShowGitHub(true)}
+        gitHubRepo={gitHubRepo}
       />
 
       {/* Recovery Banner */}
@@ -1088,6 +1191,43 @@ export function Editor() {
         onClose={() => setShowCreateBranch(false)}
         onCreate={handleCreateBranch}
       />
+
+      {/* Branch Prompt Toast — shown once after first save of a new prototype */}
+      {showBranchPrompt && (
+        <BranchPromptToast
+          onCreateBranch={() => {
+            setShowBranchPrompt(false);
+            setShowCreateBranch(true);
+          }}
+          onDismiss={() => setShowBranchPrompt(false)}
+        />
+      )}
+
+      {/* GitHub Connect Dialog */}
+      {slug && (
+        <GitHubConnectDialog
+          isOpen={showGitHub}
+          onClose={() => {
+            setShowGitHub(false);
+            // Refresh connection state after closing dialog
+            if (slug && !isDemoMode && hasGitHubLinked) {
+              authFetch(`/api/prototypes/${slug}/github`)
+                .then((res) => res.ok ? res.json() : null)
+                .then((data) => {
+                  if (data?.connected) {
+                    setGitHubRepo({ owner: data.repoOwner, name: data.repoName, branch: data.defaultBranch, filePath: data.filePath });
+                  } else {
+                    setGitHubRepo(null);
+                  }
+                })
+                .catch((err) => {
+                  debug('GitHub connection refresh failed:', err instanceof Error ? err.message : String(err));
+                });
+            }
+          }}
+          slug={slug}
+        />
+      )}
     </div>
   );
 }

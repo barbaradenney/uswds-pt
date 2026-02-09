@@ -111,6 +111,9 @@ export interface User {
  * User with organization and team membership details
  */
 export interface UserWithOrgAndTeams extends Omit<User, 'updatedAt'> {
+  avatarUrl?: string | null;
+  githubUsername?: string | null;
+  hasGitHubLinked?: boolean;
   organization?: {
     id: string;
     name: string;

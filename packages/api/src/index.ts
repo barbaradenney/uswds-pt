@@ -15,6 +15,8 @@ import { organizationRoutes } from './routes/organizations.js';
 import { teamRoutes } from './routes/teams.js';
 import { invitationRoutes } from './routes/invitations.js';
 import { symbolRoutes } from './routes/symbols.js';
+import { githubAuthRoutes } from './routes/github-auth.js';
+import { githubRoutes, githubPrototypeRoutes } from './routes/github.js';
 import { errorHandler, checkDatabaseHealth } from './lib/error-handler.js';
 import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
@@ -35,6 +37,21 @@ async function main() {
   // Fail fast if JWT_SECRET is not set in production
   if (isProduction && !process.env.JWT_SECRET) {
     console.error('FATAL: JWT_SECRET environment variable must be set in production');
+    process.exit(1);
+  }
+
+  // Validate GitHub OAuth configuration: if any GitHub env var is set, all must be set
+  const githubVars = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'GITHUB_CALLBACK_URL'] as const;
+  const setGithubVars = githubVars.filter((v) => process.env[v]);
+  if (setGithubVars.length > 0 && setGithubVars.length < githubVars.length) {
+    const missing = githubVars.filter((v) => !process.env[v]);
+    console.error(`FATAL: Partial GitHub OAuth config — missing: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  // ENCRYPTION_KEY is required when GitHub OAuth is configured (used for token encryption)
+  if (setGithubVars.length > 0 && !process.env.ENCRYPTION_KEY) {
+    console.error('FATAL: ENCRYPTION_KEY must be set when GitHub OAuth is configured');
     process.exit(1);
   }
 
@@ -65,7 +82,7 @@ async function main() {
 
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://localhost:5173', // Vite dev server
+    ...(!isProduction ? ['http://localhost:5173'] : []), // Vite dev server (dev only)
     ...additionalOrigins,
   ].filter(Boolean);
 
@@ -97,6 +114,9 @@ async function main() {
   await app.register(teamRoutes, { prefix: '/api/teams' });
   await app.register(symbolRoutes, { prefix: '/api/teams' });
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
+  await app.register(githubAuthRoutes, { prefix: '/api/auth' });
+  await app.register(githubRoutes, { prefix: '/api/github' });
+  await app.register(githubPrototypeRoutes, { prefix: '/api/prototypes' });
 
   // Health check endpoint with database status (exempt from rate limiting)
   app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async () => {

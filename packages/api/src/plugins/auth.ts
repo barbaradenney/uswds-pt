@@ -58,7 +58,7 @@ export async function createUser(
   email: string,
   password: string,
   name?: string
-): Promise<Omit<User, 'passwordHash'>> {
+): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'>> {
   const passwordHash = await hashPassword(password);
 
   const [user] = await db
@@ -76,6 +76,10 @@ export async function createUser(
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       isActive: users.isActive,
+      githubId: users.githubId,
+      githubUsername: users.githubUsername,
+      githubTokenExpiresAt: users.githubTokenExpiresAt,
+      avatarUrl: users.avatarUrl,
     });
 
   return user;
@@ -84,9 +88,22 @@ export async function createUser(
 /**
  * Find a user by email
  */
-export async function findUserByEmail(email: string): Promise<User | null> {
+export async function findUserByEmail(email: string): Promise<Omit<User, 'githubAccessToken'> | null> {
   const [user] = await db
-    .select()
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      passwordHash: users.passwordHash,
+      organizationId: users.organizationId,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      isActive: users.isActive,
+      githubId: users.githubId,
+      githubUsername: users.githubUsername,
+      githubTokenExpiresAt: users.githubTokenExpiresAt,
+      avatarUrl: users.avatarUrl,
+    })
     .from(users)
     .where(eq(users.email, normalizeEmail(email)))
     .limit(1);
@@ -99,7 +116,7 @@ export async function findUserByEmail(email: string): Promise<User | null> {
  */
 export async function findUserById(
   id: string
-): Promise<Omit<User, 'passwordHash'> | null> {
+): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
   const [user] = await db
     .select({
       id: users.id,
@@ -109,10 +126,115 @@ export async function findUserById(
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       isActive: users.isActive,
+      githubId: users.githubId,
+      githubUsername: users.githubUsername,
+      githubTokenExpiresAt: users.githubTokenExpiresAt,
+      avatarUrl: users.avatarUrl,
     })
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
 
   return user || null;
+}
+
+/**
+ * Find a user by GitHub ID
+ */
+export async function findUserByGithubId(githubId: number): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      organizationId: users.organizationId,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      isActive: users.isActive,
+      githubId: users.githubId,
+      githubUsername: users.githubUsername,
+      githubTokenExpiresAt: users.githubTokenExpiresAt,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.githubId, githubId))
+    .limit(1);
+
+  return user || null;
+}
+
+/**
+ * Create a new user via OAuth (no password)
+ */
+export async function createOAuthUser(
+  email: string,
+  name: string | undefined,
+  githubId: number,
+  githubUsername: string,
+  githubAccessToken: string,
+  avatarUrl?: string,
+): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'>> {
+  const [user] = await db
+    .insert(users)
+    .values({
+      email: normalizeEmail(email),
+      name,
+      githubId,
+      githubUsername,
+      githubAccessToken,
+      avatarUrl,
+    })
+    .returning({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      organizationId: users.organizationId,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      isActive: users.isActive,
+      githubId: users.githubId,
+      githubUsername: users.githubUsername,
+      githubTokenExpiresAt: users.githubTokenExpiresAt,
+      avatarUrl: users.avatarUrl,
+    });
+
+  return user;
+}
+
+/**
+ * Link GitHub account to an existing user
+ */
+export async function linkGithubToUser(
+  userId: string,
+  githubId: number,
+  githubUsername: string,
+  githubAccessToken: string,
+  avatarUrl?: string,
+): Promise<void> {
+  await db
+    .update(users)
+    .set({
+      githubId,
+      githubUsername,
+      githubAccessToken,
+      avatarUrl,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Update stored GitHub access token for a user
+ */
+export async function updateGithubToken(
+  userId: string,
+  githubAccessToken: string,
+): Promise<void> {
+  await db
+    .update(users)
+    .set({
+      githubAccessToken,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
 }

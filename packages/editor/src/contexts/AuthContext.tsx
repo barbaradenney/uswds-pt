@@ -22,6 +22,7 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -155,6 +156,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  /**
+   * Login with an existing JWT token (used by OAuth callback).
+   * Stores the token, fetches user data from /api/auth/me, and updates state.
+   */
+  const loginWithToken = useCallback(async (token: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem(TOKEN_KEY);
+        throw new Error('Failed to fetch user data');
+      }
+
+      const user = await response.json() as UserWithOrgAndTeams;
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+      setState({
+        user,
+        token,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+    } catch (err) {
+      localStorage.removeItem(TOKEN_KEY);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+      throw new Error(errorMessage);
+    }
+  }, []);
+
   const register = useCallback(async (email: string, password: string, name?: string) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -250,6 +292,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextValue = {
     ...state,
     login,
+    loginWithToken,
     register,
     logout,
     clearError,

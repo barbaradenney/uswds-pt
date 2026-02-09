@@ -26,7 +26,7 @@ import { normalizeEmail } from '../lib/email.js';
 /**
  * Get user with organization and team memberships
  */
-async function getUserWithOrgAndTeams(userId: string) {
+export async function getUserWithOrgAndTeams(userId: string) {
   // Get user with organization
   const [user] = await db
     .select({
@@ -36,6 +36,8 @@ async function getUserWithOrgAndTeams(userId: string) {
       organizationId: users.organizationId,
       createdAt: users.createdAt,
       isActive: users.isActive,
+      avatarUrl: users.avatarUrl,
+      githubUsername: users.githubUsername,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -73,6 +75,7 @@ async function getUserWithOrgAndTeams(userId: string) {
 
   return {
     ...user,
+    hasGitHubLinked: !!user.githubUsername,
     organization,
     teamMemberships: memberships,
   };
@@ -81,7 +84,7 @@ async function getUserWithOrgAndTeams(userId: string) {
 /**
  * Setup new user with default organization and team
  */
-async function setupNewUserOrganization(userId: string, email: string) {
+export async function setupNewUserOrganization(userId: string, email: string) {
   // Check for pending invitations
   const pendingInvitations = await db
     .select()
@@ -161,6 +164,7 @@ export async function authRoutes(app: FastifyInstance) {
             email: { type: 'string', format: 'email' },
             password: { type: 'string', minLength: 8 },
           },
+          additionalProperties: false,
         },
       },
     },
@@ -178,7 +182,10 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(401).send({ message: 'Account is disabled' });
       }
 
-      // Verify password
+      // Verify password (OAuth-only users have no passwordHash)
+      if (!user.passwordHash) {
+        return reply.status(401).send({ message: 'This account uses GitHub sign-in' });
+      }
       const isValid = await verifyPassword(password, user.passwordHash);
       if (!isValid) {
         return reply.status(401).send({ message: 'Invalid email or password' });
@@ -222,6 +229,7 @@ export async function authRoutes(app: FastifyInstance) {
             password: { type: 'string', minLength: 8 },
             name: { type: 'string' },
           },
+          additionalProperties: false,
         },
       },
     },

@@ -11,6 +11,7 @@ const Preview = lazy(() => import('./components/Preview').then(m => ({ default: 
 const Embed = lazy(() => import('./components/Embed').then(m => ({ default: m.Embed })));
 const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
 const TeamSettingsPage = lazy(() => import('./components/TeamSettingsPage').then(m => ({ default: m.TeamSettingsPage })));
+const AuthCallback = lazy(() => import('./components/AuthCallback').then(m => ({ default: m.AuthCallback })));
 
 // Loading fallback component
 function LoadingFallback() {
@@ -60,6 +61,7 @@ function App() {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           {/* Preview and embed routes are public - no auth required */}
           <Route path="/preview/:slug" element={<Preview />} />
           <Route path="/embed/:slug" element={<Embed />} />

@@ -9,9 +9,11 @@ import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
-import { prototypes, prototypeVersions, prototypeBranches, teamMemberships } from '../db/schema.js';
+import { prototypes, prototypeVersions, prototypeBranches, teamMemberships, users, githubRepoConnections } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
+import { pushToGitHub, createGitHubBranch } from '../lib/github-push.js';
+import { isValidBranchSlug } from './github.js';
 
 /**
  * Normalize GrapesJS project data to ensure consistent structure
@@ -172,6 +174,82 @@ async function canDeletePrototype(userId: string, prototype: { teamId: string | 
  * (mainHtmlContent, mainGrapesData, mainContentChecksum) which can be large
  * and are never needed by clients.
  */
+
+/**
+ * Fire-and-forget auto-push to GitHub after a successful save.
+ * Checks if the prototype has a github_repo_connections row, and if so,
+ * pushes the HTML to the connected repo. Errors are logged but do not
+ * block the save response.
+ */
+async function autoGitHubPush(
+  request: import('fastify').FastifyRequest,
+  updated: { id: string; htmlContent: string; version: number; name: string; activeBranchId: string | null },
+): Promise<void> {
+  const userId = getAuthUser(request).id;
+
+  // Check for a connection
+  const [connection] = await db
+    .select()
+    .from(githubRepoConnections)
+    .where(eq(githubRepoConnections.prototypeId, updated.id))
+    .limit(1);
+
+  if (!connection) return;
+
+  // Get user's token
+  const [user] = await db
+    .select({ githubAccessToken: users.githubAccessToken })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user?.githubAccessToken) return;
+
+  // Determine branch
+  let gitBranch = connection.defaultBranch;
+  if (updated.activeBranchId) {
+    const [branch] = await db
+      .select({ slug: prototypeBranches.slug })
+      .from(prototypeBranches)
+      .where(eq(prototypeBranches.id, updated.activeBranchId))
+      .limit(1);
+
+    if (branch && isValidBranchSlug(branch.slug)) {
+      gitBranch = `uswds-pt/${branch.slug}`;
+      try {
+        await createGitHubBranch({
+          encryptedAccessToken: user.githubAccessToken,
+          owner: connection.repoOwner,
+          repo: connection.repoName,
+          branchName: gitBranch,
+          fromBranch: connection.defaultBranch,
+        });
+      } catch {
+        // Branch may already exist
+      }
+    }
+  }
+
+  const result = await pushToGitHub({
+    encryptedAccessToken: user.githubAccessToken,
+    owner: connection.repoOwner,
+    repo: connection.repoName,
+    branch: gitBranch,
+    filePath: connection.filePath,
+    content: updated.htmlContent,
+    commitMessage: `Update ${updated.name} (v${updated.version})`,
+  });
+
+  await db
+    .update(githubRepoConnections)
+    .set({
+      lastPushedAt: new Date(),
+      lastPushedVersion: updated.version,
+      lastPushedCommitSha: result.commitSha,
+      updatedAt: new Date(),
+    })
+    .where(eq(githubRepoConnections.id, connection.id));
+}
 
 export async function prototypeRoutes(app: FastifyInstance) {
   /**
@@ -526,6 +604,12 @@ export async function prototypeRoutes(app: FastifyInstance) {
 
       // Omit internal stash columns from response
       const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicUpdated } = updated;
+
+      // Auto-push to GitHub if a connection exists (fire-and-forget)
+      autoGitHubPush(request, updated).catch((err) => {
+        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
+      });
+
       return publicUpdated;
     }
   );
