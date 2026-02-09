@@ -15,7 +15,6 @@ import {
   ApiError,
   isApiError,
   wrapError,
-  InternalError,
   DatabaseError,
   ServiceUnavailableError,
 } from './errors.js';
@@ -63,7 +62,15 @@ async function errorHandlerPlugin(
    */
   app.setErrorHandler((error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
     // Convert to ApiError if needed
-    const apiError = isApiError(error) ? error : wrapError(error);
+    // Preserve Fastify's statusCode for validation/schema errors (they have statusCode but aren't ApiErrors)
+    let apiError: ApiError;
+    if (isApiError(error)) {
+      apiError = error;
+    } else if ('statusCode' in error && typeof error.statusCode === 'number' && error.statusCode >= 400 && error.statusCode < 500) {
+      apiError = new ApiError(error.message, error.statusCode, 'VALIDATION_ERROR');
+    } else {
+      apiError = wrapError(error);
+    }
 
     // Log errors
     const shouldLog = logAllErrors || apiError.statusCode >= 500;
@@ -285,7 +292,7 @@ export async function checkDatabaseHealth(
   const start = Date.now();
 
   try {
-    const result = await Promise.race([
+    await Promise.race([
       db.execute(sql.raw('SELECT 1')),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Health check timeout')), timeoutMs)

@@ -214,6 +214,13 @@ export const prototypes = pgTable(
     isPublic: boolean('is_public').default(false).notNull(),
     version: integer('version').notNull().default(1),
     contentChecksum: varchar('content_checksum', { length: 64 }),
+    // No .references() here — Drizzle can't express the circular FK between
+    // prototypes and prototype_branches at the table-definition level. The FK
+    // constraint is created via the SQL migration (add-branching.ts) instead.
+    activeBranchId: uuid('active_branch_id'),
+    mainHtmlContent: text('main_html_content'),
+    mainGrapesData: jsonb('main_grapes_data'),
+    mainContentChecksum: varchar('main_content_checksum', { length: 64 }),
   },
   (table) => ({
     slugIdx: index('prototypes_slug_idx').on(table.slug),
@@ -232,7 +239,42 @@ export const prototypesRelations = relations(prototypes, ({ one, many }) => ({
     references: [users.id],
   }),
   versions: many(prototypeVersions),
+  branches: many(prototypeBranches),
+  activeBranch: one(prototypeBranches, {
+    fields: [prototypes.activeBranchId],
+    references: [prototypeBranches.id],
+  }),
 }));
+
+/**
+ * Prototype branches table
+ * Stores saved state of non-active branches.
+ * The active branch's content lives in the prototypes table directly.
+ */
+export const prototypeBranches = pgTable(
+  'prototype_branches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    prototypeId: uuid('prototype_id')
+      .references(() => prototypes.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull(),
+    description: text('description'),
+    htmlContent: text('html_content').notNull().default(''),
+    grapesData: jsonb('grapes_data').notNull().default({}),
+    contentChecksum: varchar('content_checksum', { length: 64 }),
+    forkedFromVersion: integer('forked_from_version'),
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+  },
+  (table) => ({
+    prototypeIdx: index('branches_prototype_idx').on(table.prototypeId),
+    uniqueSlug: unique('branches_prototype_slug_unique').on(table.prototypeId, table.slug),
+  })
+);
 
 /**
  * Prototype versions table
@@ -249,14 +291,27 @@ export const prototypeVersions = pgTable(
     grapesData: jsonb('grapes_data'),
     label: varchar('label', { length: 255 }),
     contentChecksum: varchar('content_checksum', { length: 64 }),
+    branchId: uuid('branch_id').references(() => prototypeBranches.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid('created_by').references(() => users.id),
   },
   (table) => ({
     prototypeIdx: index('versions_prototype_idx').on(table.prototypeId),
     uniqueVersion: unique('versions_unique').on(table.prototypeId, table.versionNumber),
+    branchIdx: index('versions_branch_idx').on(table.branchId),
   })
 );
+
+export const prototypeBranchesRelations = relations(prototypeBranches, ({ one }) => ({
+  prototype: one(prototypes, {
+    fields: [prototypeBranches.prototypeId],
+    references: [prototypes.id],
+  }),
+  creator: one(users, {
+    fields: [prototypeBranches.createdBy],
+    references: [users.id],
+  }),
+}));
 
 export const prototypeVersionsRelations = relations(prototypeVersions, ({ one }) => ({
   prototype: one(prototypes, {
@@ -266,6 +321,10 @@ export const prototypeVersionsRelations = relations(prototypeVersions, ({ one })
   creator: one(users, {
     fields: [prototypeVersions.createdBy],
     references: [users.id],
+  }),
+  branch: one(prototypeBranches, {
+    fields: [prototypeVersions.branchId],
+    references: [prototypeBranches.id],
   }),
 }));
 
@@ -344,6 +403,9 @@ export type NewUser = typeof users.$inferInsert;
 
 export type Prototype = typeof prototypes.$inferSelect;
 export type NewPrototype = typeof prototypes.$inferInsert;
+
+export type PrototypeBranch = typeof prototypeBranches.$inferSelect;
+export type NewPrototypeBranch = typeof prototypeBranches.$inferInsert;
 
 export type PrototypeVersion = typeof prototypeVersions.$inferSelect;
 export type NewPrototypeVersion = typeof prototypeVersions.$inferInsert;

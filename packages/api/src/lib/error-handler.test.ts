@@ -154,7 +154,7 @@ describe('Error detection patterns', () => {
 
     // These should all be retried
     for (const msg of connectionErrors) {
-      const error = new Error(msg);
+      const _error = new Error(msg);
       // Simplified check - in real implementation this is internal to withDatabaseRetry
       const isRetryable = [
         'connection',

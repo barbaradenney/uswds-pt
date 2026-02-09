@@ -20,7 +20,7 @@ export {
   generateComponentLoaderScript,
   CONDITIONAL_FIELDS_SCRIPT,
   STARTER_TEMPLATES,
-} from './constants.js';
+} from './constants/index.js';
 export { WebComponentTraitManager } from './WebComponentTraitManager.js';
 
 // Unified component registry exports:
@@ -42,7 +42,7 @@ export type {
   ComponentRegistryOptions,
 } from './types.js';
 export type { ComponentConfig, TraitHandler } from './WebComponentTraitManager.js';
-export type { StarterTemplate } from './constants.js';
+export type { StarterTemplate } from './constants/index.js';
 export type {
   UnifiedTrait,
   ComponentRegistration,

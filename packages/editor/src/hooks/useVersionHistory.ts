@@ -11,6 +11,8 @@ export interface PrototypeVersion {
   versionNumber: number;
   label?: string | null;
   contentChecksum?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   createdAt: string;
 }
 
@@ -21,28 +23,52 @@ interface VersionHistoryState {
   error: string | null;
 }
 
+export type BranchFilter = 'current' | 'all' | 'main' | string; // string = specific branchId
+
 interface UseVersionHistoryReturn extends VersionHistoryState {
   fetchVersions: () => Promise<void>;
   restoreVersion: (versionNumber: number) => Promise<boolean>;
   updateLabel: (versionNumber: number, label: string) => Promise<boolean>;
   clearError: () => void;
+  branchFilter: BranchFilter;
+  setBranchFilter: (filter: BranchFilter) => void;
 }
 
-export function useVersionHistory(slug: string | null): UseVersionHistoryReturn {
+export function useVersionHistory(
+  slug: string | null,
+  activeBranchId?: string | null,
+): UseVersionHistoryReturn {
   const [state, setState] = useState<VersionHistoryState>({
     versions: [],
     isLoading: false,
     isRestoring: false,
     error: null,
   });
+  const [branchFilter, setBranchFilter] = useState<BranchFilter>('current');
 
   const fetchVersions = useCallback(async () => {
     if (!slug) return;
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
+    // Build query string for branch filtering
+    let endpoint = API_ENDPOINTS.PROTOTYPE_VERSIONS(slug);
+    if (branchFilter === 'current') {
+      // "current" means filter by the active branch (or main if no branch)
+      if (activeBranchId) {
+        endpoint += `?branchId=${encodeURIComponent(activeBranchId)}`;
+      } else {
+        endpoint += '?branch=main';
+      }
+    } else if (branchFilter === 'main') {
+      endpoint += '?branch=main';
+    } else if (branchFilter !== 'all') {
+      // Specific branchId
+      endpoint += `?branchId=${encodeURIComponent(branchFilter)}`;
+    }
+
     const result = await apiGet<{ versions: PrototypeVersion[] }>(
-      API_ENDPOINTS.PROTOTYPE_VERSIONS(slug)
+      endpoint
     );
 
     if (result.success && result.data) {
@@ -59,7 +85,7 @@ export function useVersionHistory(slug: string | null): UseVersionHistoryReturn 
         error: result.error || 'Failed to load versions',
       }));
     }
-  }, [slug]);
+  }, [slug, branchFilter, activeBranchId]);
 
   const restoreVersion = useCallback(async (versionNumber: number): Promise<boolean> => {
     if (!slug) return false;
@@ -129,5 +155,7 @@ export function useVersionHistory(slug: string | null): UseVersionHistoryReturn 
     restoreVersion,
     updateLabel,
     clearError,
+    branchFilter,
+    setBranchFilter,
   };
 }

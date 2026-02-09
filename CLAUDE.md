@@ -62,11 +62,11 @@ pnpm --filter @uswds-pt/api db:studio  # Open Drizzle Studio
 
 ### Key Concepts
 
-**Component Registration**: The adapter's `component-registry-v2.ts` defines all USWDS web components with their GrapesJS block definitions and trait configurations. Components use Light DOM (no Shadow DOM), making GrapesJS integration straightforward.
+**Component Registration**: The adapter's `component-registry-v2.ts` contains the `ComponentRegistry` class and wiring. Individual component registrations are split across focused files in `packages/adapter/src/components/` (form-components.ts, data-components.ts, feedback-components.ts, layout-components.ts, navigation-components.ts, etc.) with a barrel `index.ts`. Components use Light DOM (no Shadow DOM), making GrapesJS integration straightforward.
 
 **Trait System**: Properties are edited via GrapesJS traits. `WebComponentTraitManager.ts` handles syncing between DOM attributes and the editor. Some components (usa-header, usa-footer) require JavaScript initialization after render.
 
-**Export**: `packages/editor/src/lib/export.ts` cleans GrapesJS artifacts (data-gjs-* attributes, generated IDs) and can generate full HTML documents with USWDS CDN imports.
+**Export**: `packages/editor/src/lib/export/` contains export utilities split across focused files (clean.ts, document.ts, init-script.ts) with a barrel `index.ts`. These clean GrapesJS artifacts (data-gjs-* attributes, generated IDs) and can generate full HTML documents with USWDS CDN imports.
 
 ### Database Schema (Drizzle ORM)
 
@@ -166,9 +166,9 @@ Uses Vitest. Tests colocated with source files or in `__tests__/` directories. T
 
 ## USWDS Web Components
 
-The tool uses these CDN versions (defined in adapter constants and export.ts):
+The tool uses these CDN versions (defined in adapter constants and export utilities). Adapter constants are split across `packages/adapter/src/constants/` (categories.ts, icons.ts, templates.ts, cdn.ts, scripts.ts) with a barrel `index.ts`. CDN versions:
 - USWDS CSS: 3.8.1
-- USWDS Web Components Bundle: 2.5.12
+- USWDS Web Components Bundle: 2.5.15
 
 Components render Light DOM content, so standard DOM manipulation works. Complex components (usa-header, usa-footer) need property initialization after the custom element is defined.
 

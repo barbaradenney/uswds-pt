@@ -4,12 +4,12 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, desc, and, or, count } from 'drizzle-orm';
+import { eq, desc, and, or, count, isNull } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
-import { prototypes, prototypeVersions, teamMemberships } from '../db/schema.js';
+import { prototypes, prototypeVersions, prototypeBranches, teamMemberships } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
 
@@ -77,6 +77,10 @@ interface PrototypeParams {
 
 interface VersionParams extends PrototypeParams {
   version: string;
+}
+
+interface BranchParams extends PrototypeParams {
+  branchSlug: string;
 }
 
 interface CompareParams extends PrototypeParams {
@@ -162,6 +166,12 @@ async function canDeletePrototype(userId: string, prototype: { teamId: string | 
 
   return hasPermission(membership.role as Role, ROLES.TEAM_ADMIN);
 }
+
+/**
+ * Public prototype fields — excludes internal main-stash columns
+ * (mainHtmlContent, mainGrapesData, mainContentChecksum) which can be large
+ * and are never needed by clients.
+ */
 
 export async function prototypeRoutes(app: FastifyInstance) {
   /**
@@ -272,7 +282,20 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(403).send({ message: 'Access denied' });
       }
 
-      return prototype;
+      // Include active branch name if on a branch
+      let activeBranchName: string | null = null;
+      if (prototype.activeBranchId) {
+        const [branch] = await db
+          .select({ name: prototypeBranches.name })
+          .from(prototypeBranches)
+          .where(eq(prototypeBranches.id, prototype.activeBranchId))
+          .limit(1);
+        activeBranchName = branch?.name || null;
+      }
+
+      // Omit internal stash columns from response
+      const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicPrototype } = prototype;
+      return { ...publicPrototype, activeBranchName };
     }
   );
 
@@ -447,12 +470,14 @@ export async function prototypeRoutes(app: FastifyInstance) {
           const newVersionNumber = (lastVersion?.versionNumber || 0) + 1;
 
           // Create version snapshot of current state (uses fresh read)
+          // Tag with current branch if on a branch
           await tx.insert(prototypeVersions).values({
             prototypeId: fresh.id,
             versionNumber: newVersionNumber,
             htmlContent: fresh.htmlContent,
             grapesData: fresh.grapesData,
             contentChecksum: fresh.contentChecksum,
+            branchId: fresh.activeBranchId,
             createdBy: userId,
           });
 
@@ -475,6 +500,19 @@ export async function prototypeRoutes(app: FastifyInstance) {
             throw new Error('CONCURRENT_MODIFICATION');
           }
 
+          // Sync branch row content after save (if on a branch)
+          if (fresh.activeBranchId) {
+            await tx
+              .update(prototypeBranches)
+              .set({
+                htmlContent: newHtml,
+                grapesData: newGrapesData,
+                contentChecksum,
+                updatedAt: new Date(),
+              })
+              .where(eq(prototypeBranches.id, fresh.activeBranchId));
+          }
+
           return result;
         });
       } catch (err: any) {
@@ -486,7 +524,9 @@ export async function prototypeRoutes(app: FastifyInstance) {
         throw err;
       }
 
-      return updated;
+      // Omit internal stash columns from response
+      const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicUpdated } = updated;
+      return publicUpdated;
     }
   );
 
@@ -529,7 +569,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
    * GET /api/prototypes/:slug/versions
    * Get version history for a prototype
    */
-  app.get<{ Params: PrototypeParams; Querystring: { page?: string; limit?: string } }>(
+  app.get<{ Params: PrototypeParams; Querystring: { page?: string; limit?: string; branch?: string; branchId?: string } }>(
     '/:slug/versions',
     {
       preHandler: [app.authenticate],
@@ -559,7 +599,25 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(403).send({ message: 'Access denied' });
       }
 
-      const whereClause = eq(prototypeVersions.prototypeId, prototype.id);
+      // Build where clause with optional branch filter
+      const { branch, branchId } = request.query;
+      const conditions = [eq(prototypeVersions.prototypeId, prototype.id)];
+
+      if (branch === 'main') {
+        conditions.push(isNull(prototypeVersions.branchId));
+      } else if (branchId) {
+        // Validate UUID format to prevent Postgres errors surfacing as 500
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(branchId)) {
+          return reply.status(400).send({ message: 'Invalid branchId format' });
+        }
+        conditions.push(eq(prototypeVersions.branchId, branchId));
+      }
+      // branch === 'all' or no filter → return all versions
+
+      // conditions always has at least the prototypeId match
+      const whereClause = conditions.length === 1
+        ? conditions[0]
+        : and(...conditions);
 
       // Get total count
       const [{ total }] = await db
@@ -567,16 +625,19 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .from(prototypeVersions)
         .where(whereClause);
 
-      // Get paginated versions
+      // Get paginated versions with optional branch name
       const versions = await db
         .select({
           id: prototypeVersions.id,
           versionNumber: prototypeVersions.versionNumber,
           label: prototypeVersions.label,
           contentChecksum: prototypeVersions.contentChecksum,
+          branchId: prototypeVersions.branchId,
+          branchName: prototypeBranches.name,
           createdAt: prototypeVersions.createdAt,
         })
         .from(prototypeVersions)
+        .leftJoin(prototypeBranches, eq(prototypeVersions.branchId, prototypeBranches.id))
         .where(whereClause)
         .orderBy(desc(prototypeVersions.versionNumber))
         .limit(limit)
@@ -669,6 +730,7 @@ export async function prototypeRoutes(app: FastifyInstance) {
             htmlContent: fresh.htmlContent,
             grapesData: fresh.grapesData,
             contentChecksum: fresh.contentChecksum,
+            branchId: fresh.activeBranchId,
             createdBy: userId,
           });
 
@@ -699,7 +761,9 @@ export async function prototypeRoutes(app: FastifyInstance) {
         throw err;
       }
 
-      return updated;
+      // Omit internal stash columns from response
+      const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicUpdated } = updated;
+      return publicUpdated;
     }
   );
 
@@ -911,14 +975,19 @@ export async function prototypeRoutes(app: FastifyInstance) {
         const newName = `Copy of ${original.name}`;
 
         // Create the duplicate - ensure grapesData has a default value
+        const dupHtml = original.htmlContent || '';
+        const dupGrapesData = original.grapesData || {};
+        const contentChecksum = await computeContentChecksum(dupHtml, dupGrapesData);
+
         const [duplicate] = await db
           .insert(prototypes)
           .values({
             slug: newSlug,
             name: newName,
             description: original.description,
-            htmlContent: original.htmlContent || '',
-            grapesData: original.grapesData || {},
+            htmlContent: dupHtml,
+            grapesData: dupGrapesData,
+            contentChecksum,
             teamId: original.teamId,
             createdBy: userId,
           })
@@ -931,6 +1000,431 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
         throw error;
       }
+    }
+  );
+
+  // ===========================================================================
+  // Branch Endpoints
+  // ===========================================================================
+
+  /**
+   * GET /api/prototypes/:slug/branches
+   * List branches for a prototype
+   */
+  app.get<{ Params: PrototypeParams }>(
+    '/:slug/branches',
+    {
+      preHandler: [app.authenticate],
+    },
+    async (request, reply) => {
+      const { slug } = request.params;
+      const userId = getAuthUser(request).id;
+
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      if (!(await canAccessPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      const branches = await db
+        .select({
+          id: prototypeBranches.id,
+          prototypeId: prototypeBranches.prototypeId,
+          name: prototypeBranches.name,
+          slug: prototypeBranches.slug,
+          description: prototypeBranches.description,
+          forkedFromVersion: prototypeBranches.forkedFromVersion,
+          isActive: prototypeBranches.isActive,
+          createdAt: prototypeBranches.createdAt,
+          updatedAt: prototypeBranches.updatedAt,
+        })
+        .from(prototypeBranches)
+        .where(
+          and(
+            eq(prototypeBranches.prototypeId, prototype.id),
+            eq(prototypeBranches.isActive, true)
+          )
+        )
+        .orderBy(desc(prototypeBranches.createdAt));
+
+      return {
+        branches,
+        activeBranchId: prototype.activeBranchId,
+      };
+    }
+  );
+
+  /**
+   * POST /api/prototypes/:slug/branches
+   * Create a new branch (snapshots current content into the branch row)
+   */
+  app.post<{ Params: PrototypeParams; Body: { name: string; description?: string } }>(
+    '/:slug/branches',
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['name'],
+          additionalProperties: false,
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 100 },
+            description: { type: 'string', maxLength: 500 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { slug } = request.params;
+      const branchName = request.body.name.trim();
+      const { description } = request.body;
+      const userId = getAuthUser(request).id;
+
+      if (!branchName) {
+        return reply.status(400).send({ message: 'Branch name cannot be empty' });
+      }
+
+      if (branchName.toLowerCase() === 'main') {
+        return reply.status(400).send({ message: '"main" is reserved and cannot be used as a branch name' });
+      }
+
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      // Generate branch slug from name
+      const branchSlug = branchName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 100);
+
+      if (!branchSlug) {
+        return reply.status(400).send({ message: 'Branch name must contain alphanumeric characters' });
+      }
+
+      try {
+        const [branch] = await db
+          .insert(prototypeBranches)
+          .values({
+            prototypeId: prototype.id,
+            name: branchName,
+            slug: branchSlug,
+            description: description || null,
+            htmlContent: prototype.htmlContent,
+            grapesData: prototype.grapesData,
+            contentChecksum: prototype.contentChecksum,
+            forkedFromVersion: prototype.version,
+            createdBy: userId,
+          })
+          .returning();
+
+        // Omit large content fields from response — client doesn't need them
+        const { htmlContent: _h, grapesData: _g, ...publicBranch } = branch;
+        return reply.status(201).send(publicBranch);
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('branches_prototype_slug_unique')) {
+          return reply.status(409).send({ message: `A branch named "${branchName}" already exists` });
+        }
+        throw error;
+      }
+    }
+  );
+
+  /**
+   * POST /api/prototypes/:slug/branches/:branchSlug/switch
+   * Switch to a branch (swap content between prototypes table and branch row)
+   */
+  app.post<{ Params: BranchParams }>(
+    '/:slug/branches/:branchSlug/switch',
+    {
+      preHandler: [app.authenticate],
+    },
+    async (request, reply) => {
+      const { slug, branchSlug } = request.params;
+      const userId = getAuthUser(request).id;
+
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      // Find target branch (preliminary check outside transaction for early 404)
+      const [targetBranch] = await db
+        .select()
+        .from(prototypeBranches)
+        .where(
+          and(
+            eq(prototypeBranches.prototypeId, prototype.id),
+            eq(prototypeBranches.slug, branchSlug),
+            eq(prototypeBranches.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!targetBranch) {
+        return reply.status(404).send({ message: 'Branch not found' });
+      }
+
+      // Already on this branch
+      if (prototype.activeBranchId === targetBranch.id) {
+        return reply.status(400).send({ message: 'Already on this branch' });
+      }
+
+      try {
+        const updated = await db.transaction(async (tx) => {
+          // Re-read prototype inside transaction to avoid TOCTOU
+          const [fresh] = await tx
+            .select()
+            .from(prototypes)
+            .where(eq(prototypes.id, prototype.id))
+            .limit(1);
+
+          if (!fresh) throw new Error('CONCURRENT_MODIFICATION');
+
+          // Re-read target branch inside transaction to avoid stale content
+          const [freshBranch] = await tx
+            .select()
+            .from(prototypeBranches)
+            .where(
+              and(
+                eq(prototypeBranches.id, targetBranch.id),
+                eq(prototypeBranches.isActive, true)
+              )
+            )
+            .limit(1);
+
+          if (!freshBranch) throw new Error('CONCURRENT_MODIFICATION');
+
+          // 1. Stash current content → source
+          if (fresh.activeBranchId) {
+            // Currently on a branch → save back to that branch row
+            await tx
+              .update(prototypeBranches)
+              .set({
+                htmlContent: fresh.htmlContent,
+                grapesData: fresh.grapesData,
+                contentChecksum: fresh.contentChecksum,
+                updatedAt: new Date(),
+              })
+              .where(eq(prototypeBranches.id, fresh.activeBranchId));
+          } else {
+            // Currently on main → stash into mainHtmlContent/mainGrapesData/mainContentChecksum
+            await tx
+              .update(prototypes)
+              .set({
+                mainHtmlContent: fresh.htmlContent,
+                mainGrapesData: fresh.grapesData,
+                mainContentChecksum: fresh.contentChecksum,
+              })
+              .where(eq(prototypes.id, fresh.id));
+          }
+
+          // 2. Load target branch content → prototypes table (uses freshBranch, not stale outer read)
+          const [result] = await tx
+            .update(prototypes)
+            .set({
+              htmlContent: freshBranch.htmlContent,
+              grapesData: freshBranch.grapesData,
+              contentChecksum: freshBranch.contentChecksum,
+              activeBranchId: freshBranch.id,
+              version: fresh.version + 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(prototypes.id, fresh.id))
+            .returning();
+
+          return result;
+        });
+
+        // Omit internal stash columns, include branch name in response
+        const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicUpdated } = updated;
+        return { ...publicUpdated, activeBranchName: targetBranch.name };
+      } catch (err: any) {
+        if (err?.message === 'CONCURRENT_MODIFICATION') {
+          return reply.status(409).send({ message: 'Concurrent modification detected' });
+        }
+        throw err;
+      }
+    }
+  );
+
+  /**
+   * POST /api/prototypes/:slug/branches/switch-main
+   * Switch back to main branch
+   */
+  app.post<{ Params: PrototypeParams }>(
+    '/:slug/branches/switch-main',
+    {
+      preHandler: [app.authenticate],
+    },
+    async (request, reply) => {
+      const { slug } = request.params;
+      const userId = getAuthUser(request).id;
+
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      if (!prototype.activeBranchId) {
+        return reply.status(400).send({ message: 'Already on main' });
+      }
+
+      try {
+        const updated = await db.transaction(async (tx) => {
+          const [fresh] = await tx
+            .select()
+            .from(prototypes)
+            .where(eq(prototypes.id, prototype.id))
+            .limit(1);
+
+          if (!fresh) throw new Error('CONCURRENT_MODIFICATION');
+
+          // 1. Save current branch content back to branch row
+          if (fresh.activeBranchId) {
+            await tx
+              .update(prototypeBranches)
+              .set({
+                htmlContent: fresh.htmlContent,
+                grapesData: fresh.grapesData,
+                contentChecksum: fresh.contentChecksum,
+                updatedAt: new Date(),
+              })
+              .where(eq(prototypeBranches.id, fresh.activeBranchId));
+          }
+
+          // 2. Restore main content + checksum from stash
+          // Safety guard: if stash is empty but we have real content, refuse to overwrite
+          if (!fresh.mainHtmlContent && !fresh.mainGrapesData && fresh.htmlContent) {
+            throw new Error('EMPTY_MAIN_STASH');
+          }
+          const mainHtml = fresh.mainHtmlContent ?? '';
+          const mainData = fresh.mainGrapesData ?? {};
+
+          const [result] = await tx
+            .update(prototypes)
+            .set({
+              htmlContent: mainHtml,
+              grapesData: mainData,
+              contentChecksum: fresh.mainContentChecksum ?? null,
+              activeBranchId: null,
+              mainHtmlContent: null,
+              mainGrapesData: null,
+              mainContentChecksum: null,
+              version: fresh.version + 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(prototypes.id, fresh.id))
+            .returning();
+
+          return result;
+        });
+
+        const { mainHtmlContent: _, mainGrapesData: _g, mainContentChecksum: _c, ...publicUpdated } = updated;
+        return { ...publicUpdated, activeBranchName: null };
+      } catch (err: any) {
+        if (err?.message === 'CONCURRENT_MODIFICATION') {
+          return reply.status(409).send({ message: 'Concurrent modification detected' });
+        }
+        if (err?.message === 'EMPTY_MAIN_STASH') {
+          return reply.status(409).send({ message: 'Cannot switch to main: stash is empty. Content may be corrupted.' });
+        }
+        throw err;
+      }
+    }
+  );
+
+  /**
+   * DELETE /api/prototypes/:slug/branches/:branchSlug
+   * Soft-delete a branch (set isActive=false)
+   */
+  app.delete<{ Params: BranchParams }>(
+    '/:slug/branches/:branchSlug',
+    {
+      preHandler: [app.authenticate],
+    },
+    async (request, reply) => {
+      const { slug, branchSlug } = request.params;
+      const userId = getAuthUser(request).id;
+
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      const [branch] = await db
+        .select()
+        .from(prototypeBranches)
+        .where(
+          and(
+            eq(prototypeBranches.prototypeId, prototype.id),
+            eq(prototypeBranches.slug, branchSlug),
+            eq(prototypeBranches.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!branch) {
+        return reply.status(404).send({ message: 'Branch not found' });
+      }
+
+      // Cannot delete the currently active branch
+      if (prototype.activeBranchId === branch.id) {
+        return reply.status(400).send({ message: 'Cannot delete the active branch. Switch to another branch first.' });
+      }
+
+      await db
+        .update(prototypeBranches)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(prototypeBranches.id, branch.id));
+
+      return { success: true };
     }
   );
 }

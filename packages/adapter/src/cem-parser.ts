@@ -8,7 +8,7 @@ import type {
   CEMDeclaration,
   ParsedComponent,
 } from '@uswds-pt/shared';
-import { PATH_TO_CATEGORY } from './constants.js';
+import { PATH_TO_CATEGORY } from './constants/index.js';
 
 /**
  * Parse a Custom Elements Manifest and extract all component definitions

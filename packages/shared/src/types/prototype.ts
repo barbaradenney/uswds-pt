@@ -133,6 +133,8 @@ export interface Prototype {
   isPublic: boolean;
   version?: number;
   contentChecksum?: string;
+  activeBranchId?: string | null;
+  activeBranchName?: string | null;
 }
 
 export interface PrototypeVersion {
@@ -143,8 +145,25 @@ export interface PrototypeVersion {
   grapesData: GrapesProjectData;
   label?: string;
   contentChecksum?: string;
+  branchId?: string | null;
+  branchName?: string | null;
   createdAt: Date;
   createdBy?: string;
+}
+
+/**
+ * Prototype branch — a named variant of a prototype's content
+ */
+export interface PrototypeBranch {
+  id: string;
+  prototypeId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  forkedFromVersion?: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**

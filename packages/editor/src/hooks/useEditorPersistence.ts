@@ -393,8 +393,6 @@ export function useEditorPersistence({
           }
           return data;
         }
-
-        return null;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save';
         debug('Save error:', err);

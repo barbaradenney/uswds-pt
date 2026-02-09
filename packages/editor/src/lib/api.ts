@@ -44,6 +44,15 @@ export const API_ENDPOINTS = {
   PROTOTYPE_VERSION_LABEL: (slug: string, version: number) =>
     `/api/prototypes/${slug}/versions/${version}`,
 
+  // Branches
+  PROTOTYPE_BRANCHES: (slug: string) => `/api/prototypes/${slug}/branches`,
+  PROTOTYPE_BRANCH_SWITCH: (slug: string, branchSlug: string) =>
+    `/api/prototypes/${slug}/branches/${branchSlug}/switch`,
+  PROTOTYPE_BRANCH_SWITCH_MAIN: (slug: string) =>
+    `/api/prototypes/${slug}/branches/switch-main`,
+  PROTOTYPE_BRANCH_DELETE: (slug: string, branchSlug: string) =>
+    `/api/prototypes/${slug}/branches/${branchSlug}`,
+
   // Global Symbols
   TEAM_SYMBOLS: (teamId: string) => `/api/teams/${teamId}/symbols`,
   TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${teamId}/symbols/${symbolId}`,

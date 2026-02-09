@@ -5,7 +5,7 @@
 
 import type { ParsedComponent } from '@uswds-pt/shared';
 import type { GrapesBlock, GrapesBlockContent } from './types.js';
-import { COMPONENT_ICONS, DEFAULT_CONTENT, BLOCK_CATEGORIES } from './constants.js';
+import { COMPONENT_ICONS, DEFAULT_CONTENT, BLOCK_CATEGORIES } from './constants/index.js';
 import { formatLabel, generateKeywords } from './cem-parser.js';
 
 /**

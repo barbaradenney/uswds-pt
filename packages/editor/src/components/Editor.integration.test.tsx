@@ -6,14 +6,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
 import { useEditorAutosave } from '../hooks/useEditorAutosave';
 import { extractEditorData, isEditorReadyForExtraction } from '../lib/grapesjs/data-extractor';
 import { createMockEditor, setMockEditorContent } from '../test/mocks/grapesjs';
 import { mockPrototype } from '../test/fixtures/prototypes';
-import { server, resetMockStore, useHandlers } from '../test/mocks/server';
-import { http, HttpResponse } from 'msw';
+import { resetMockStore } from '../test/mocks/server';
 
 describe('Editor Integration', () => {
   beforeEach(() => {

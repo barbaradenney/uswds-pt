@@ -18,6 +18,8 @@ import { useEditorAutosave } from '../hooks/useEditorAutosave';
 import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols, mergeGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { useCrashRecovery } from '../hooks/useCrashRecovery';
+import { useBranches } from '../hooks/useBranches';
+import { CreateBranchDialog } from './CreateBranchDialog';
 import { ExportModal } from './ExportModal';
 import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
@@ -28,7 +30,7 @@ import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
-import { type LocalPrototype, getPrototypes } from '../lib/localStorage';
+import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
   DEFAULT_CONTENT,
@@ -124,7 +126,11 @@ export function Editor() {
   saveCanSaveRef.current = stateMachine.canSave;
   saveCallRef.current = persistence.save;
 
-  // Stable callback for autosave — avoids recreating performSave every render
+  /**
+   * Stable autosave callback that delegates to the latest persistence.save via ref.
+   * Avoids recreating the function on every render, preventing useEditorAutosave
+   * from resetting its debounce timer.
+   */
   const stableAutosaveOnSave = useCallback(() => saveCallRef.current('autosave'), []);
 
   // Autosave hook - enabled when we have a prototype (new or existing)
@@ -147,6 +153,10 @@ export function Editor() {
     editorKey,
   });
 
+  // Branches hook
+  const branchesHook = useBranches(!isDemoMode && slug ? slug : null);
+  const [showCreateBranch, setShowCreateBranch] = useState(false);
+
   // Version history hook
   const {
     versions,
@@ -156,9 +166,19 @@ export function Editor() {
     fetchVersions,
     restoreVersion,
     updateLabel,
-  } = useVersionHistory(!isDemoMode && slug ? slug : null);
+    branchFilter,
+    setBranchFilter,
+  } = useVersionHistory(
+    !isDemoMode && slug ? slug : null,
+    branchesHook.activeBranchId,
+  );
 
-  // Update the stable callback ref after autosave is defined
+  /**
+   * Post-save cleanup callback, updated every render so the ref always has the
+   * latest closures. Resets the autosave timer, refreshes version history, and
+   * clears the IndexedDB crash-recovery snapshot. Called by useEditorPersistence
+   * after a successful API save.
+   */
   onSaveCompleteRef.current = () => {
     autosave.markSaved();
     fetchVersions();
@@ -270,13 +290,23 @@ export function Editor() {
   const stableAutosaveTrigger = useRef(autosave.triggerChange);
   stableAutosaveTrigger.current = autosave.triggerChange;
 
+  /**
+   * Unified content-change handler passed to GrapesJS via useGrapesJSSetup.
+   * Triggers both the autosave debounce timer and the crash-recovery IndexedDB
+   * snapshot. Uses refs so the single function registered in onReady always
+   * delegates to the latest hook instances without re-registration.
+   */
   const combinedOnContentChange = useCallback(() => {
     stableAutosaveTrigger.current();
     stableCrashRecoveryOnChange.current();
   }, []);
 
-  // Callback for when a symbol is being created in GrapesJS
-  // Dialog-first: receives serialized data and the selected component ref
+  /**
+   * Intercepts GrapesJS symbol creation to show a scope-selection dialog first.
+   * Stashes the serialized symbol data and the live component reference, then
+   * opens SymbolScopeDialog. The actual creation (local or global via API)
+   * happens in handleSymbolScopeConfirm after the user chooses a scope.
+   */
   const handleSymbolCreate = useCallback(
     (symbolData: GrapesJSSymbol, selectedComponent: any) => {
       debug('Symbol creation requested:', symbolData);
@@ -303,9 +333,12 @@ export function Editor() {
     onSymbolCreate: handleSymbolCreate,
   });
 
-  // Handle back navigation - save before leaving if there are unsaved changes.
-  // Uses refs (saveDirtyRef, saveCanSaveRef, saveCallRef) so we always read the
-  // latest dirty/canSave values — same pattern as the working unmount handler.
+  /**
+   * Navigates back to the prototype list. Saves first if there are unsaved
+   * changes (dirty + canSave). Uses refs instead of state closures so the
+   * check always reads the latest dirty/canSave values, matching the
+   * pattern used by the unmount and visibility-change handlers.
+   */
   const handleBack = useCallback(async () => {
     if (saveDirtyRef.current && saveCanSaveRef.current) {
       debug('Saving before navigation...');
@@ -314,12 +347,20 @@ export function Editor() {
     navigate('/');
   }, [navigate]);
 
-  // Handle save — uses ref so it always calls the latest persistence.save
+  /**
+   * Triggers a manual save -- extracts HTML + grapesData via persistence.save,
+   * sends to API with optimistic concurrency (version/If-Match), and updates
+   * the state machine. Called by Cmd+S / Ctrl+S shortcut and the Save button.
+   */
   const handleSave = useCallback(async () => {
     await saveCallRef.current('manual');
   }, []);
 
-  // Handle editor error retry - forces remount of the editor
+  /**
+   * Forces a complete GrapesJS editor remount after an initialization error.
+   * Generates a new editorKey (causing React to unmount/remount EditorCanvas)
+   * and resets the state machine so the fresh editor can re-initialize cleanly.
+   */
   const handleEditorRetry = useCallback(() => {
     debug('Retrying editor after error...');
     // Change the key to force a complete remount
@@ -328,7 +369,11 @@ export function Editor() {
     stateMachine.reset();
   }, [stateMachine]);
 
-  // Handle template selection from chooser
+  /**
+   * Called when the user picks a starter template from TemplateChooser.
+   * Sets the selected template and generates a new editorKey to force a
+   * fresh GrapesJS mount with that template's initial content.
+   */
   const handleTemplateSelect = useCallback((templateId: string) => {
     setSelectedTemplate(templateId);
     setEditorKey(`new-${templateId}-${Date.now()}`);
@@ -354,14 +399,17 @@ export function Editor() {
   const stableOnRetry = useCallback(() => stableOnRetryRef.current(), []);
   const stableOnGoHome = useCallback(() => stableOnGoHomeRef.current(), []);
 
-  // Handle symbol scope selection from dialog
+  /**
+   * Completes symbol creation after the user selects a scope (local or global)
+   * in the SymbolScopeDialog. For global scope, persists the symbol via the
+   * useGlobalSymbols API hook. Local symbols are not supported in GrapesJS core
+   * and are silently skipped. Resets pending symbol state on completion.
+   */
   const handleSymbolScopeConfirm = useCallback(
     async (scope: SymbolScope, name: string) => {
       if (!pendingSymbolData) return;
 
       const selectedComponent = pendingSymbolComponentRef.current;
-      const editor = editorRef.current;
-
       // Guard: only local symbols need the live component reference
       if (scope === 'local' && !selectedComponent?.getEl?.()) {
         debug('Selected component no longer exists, aborting local symbol creation');
@@ -392,7 +440,13 @@ export function Editor() {
     [pendingSymbolData, globalSymbols, editorRef]
   );
 
-  // Handle export
+  /**
+   * Extracts HTML from GrapesJS and opens the ExportModal. For single-page
+   * prototypes, captures the current page HTML. For multi-page prototypes,
+   * iterates all pages (temporarily selecting each to extract its HTML),
+   * restores the original page selection, and passes the full PageData array
+   * to the modal for download/copy.
+   */
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) {
@@ -440,7 +494,13 @@ export function Editor() {
     setShowExport(true);
   }, []);
 
-  // Handle preview - saves first then opens preview route (survives refresh)
+  /**
+   * Opens a live preview of the prototype in a new browser tab. Saves the
+   * current editor state first to ensure the preview reflects the latest
+   * content. Prefers the hash-based preview route (/preview/:slug) which
+   * survives tab refresh. Falls back to a blob URL for unsaved prototypes
+   * that have no slug yet. Handles both single-page and multi-page previews.
+   */
   const handlePreview = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -506,10 +566,14 @@ export function Editor() {
     openMultiPagePreviewInNewTab(pageDataList, name || 'Prototype Preview');
   }, [name, slug, localPrototype?.id]);
 
-  // Handle version restore — uses Path 2 (in-place reload)
-  // Uses RESTORE_VERSION_START → RESTORE_VERSION_COMPLETE state machine flow
-  // instead of persistence.load() which would use LOAD_PROTOTYPE → PROTOTYPE_LOADED
-  // and get stuck in initializing_editor (onReady never fires without remount).
+  /**
+   * Restores a specific version from history using in-place reload (Path 2).
+   * Pauses autosave, calls the restore API, fetches the updated prototype,
+   * and loads it directly into the existing GrapesJS editor via loadProjectData
+   * (no remount needed). Uses the RESTORE_VERSION state machine flow instead of
+   * persistence.load(), which would enter initializing_editor and stall because
+   * onReady never fires without a component remount.
+   */
   const handleVersionRestore = useCallback(
     async (versionNumber: number): Promise<boolean> => {
       autosave.pause();
@@ -556,8 +620,117 @@ export function Editor() {
         autosave.resume();
       }
     },
-    [restoreVersion, slug, stateMachine, fetchVersions, autosave, editorRef]
+    [restoreVersion, slug, stateMachine, fetchVersions, autosave, crashRecovery, editorRef]
   );
+
+  // Refs for branch-switch callbacks — keeps references stable so EditorHeader's
+  // memo() is not defeated by unstable hook objects (branchesHook, autosave, crashRecovery).
+  const branchSwitchRef = useRef(branchesHook.switchBranch);
+  const branchSwitchToMainRef = useRef(branchesHook.switchToMain);
+  const autosaveMarkSavedRef = useRef(autosave.markSaved);
+  const crashRecoveryClearRef = useRef(crashRecovery.clearRecoveryData);
+  const fetchVersionsRef = useRef(fetchVersions);
+  const stateMachineSaveSuccessRef = useRef(stateMachine.saveSuccess);
+  const persistenceLoadRef = useRef(persistence.load);
+  branchSwitchRef.current = branchesHook.switchBranch;
+  branchSwitchToMainRef.current = branchesHook.switchToMain;
+  autosaveMarkSavedRef.current = autosave.markSaved;
+  crashRecoveryClearRef.current = crashRecovery.clearRecoveryData;
+  fetchVersionsRef.current = fetchVersions;
+  stateMachineSaveSuccessRef.current = stateMachine.saveSuccess;
+  persistenceLoadRef.current = persistence.load;
+
+  /**
+   * Reloads editor content in-place after a branch switch. Fetches the updated
+   * prototype from the API and loads it into the existing GrapesJS instance
+   * without remounting. Uses saveSuccess to update state.prototype — semantically
+   * this is a "content reload", not a save, but saveSuccess correctly sets the
+   * prototype reference and clears dirty state.
+   *
+   * If the in-place reload fails (network error, non-200), falls back to a full
+   * editor remount via persistence.load + setEditorKey. This is slower but
+   * guarantees the editor shows the correct branch content after a server-side
+   * switch has already committed.
+   */
+  const reloadEditorAfterSwitch = useCallback(async () => {
+    if (!slug) return;
+    try {
+      const response = await authFetch(`/api/prototypes/${slug}`);
+      if (!response.ok) {
+        throw new Error(`Failed to reload prototype: ${response.status}`);
+      }
+      const proto: Prototype = await response.json();
+      const editor = editorRef.current;
+      if (editor && proto.grapesData) {
+        editor.loadProjectData(proto.grapesData as any);
+        await loadUSWDSResources(editor);
+        editor.refresh();
+      }
+      stateMachineSaveSuccessRef.current(proto);
+      autosaveMarkSavedRef.current();
+      crashRecoveryClearRef.current();
+      fetchVersionsRef.current();
+    } catch (err) {
+      // In-place reload failed — the server-side switch already committed,
+      // so fall back to a full editor remount to load the correct content.
+      debug('In-place reload failed after branch switch, forcing remount:', err);
+      const loadedPrototype = await persistenceLoadRef.current(slug);
+      if (loadedPrototype) {
+        pendingPrototypeRef.current = loadedPrototype;
+        setEditorKey(`${slug}-${Date.now()}`);
+      }
+    }
+  }, [slug]);
+
+  /**
+   * Handles switching to a branch. Auto-saves if dirty, then calls the API
+   * to swap content, and reloads the editor in-place with the branch content.
+   */
+  const handleSwitchBranch = useCallback(async (branchSlug: string) => {
+    // Auto-save if dirty before switching
+    if (saveDirtyRef.current && saveCanSaveRef.current) {
+      debug('Saving before branch switch...');
+      const saved = await saveCallRef.current('autosave');
+      if (!saved) {
+        debug('Save failed, aborting branch switch');
+        return;
+      }
+    }
+
+    const success = await branchSwitchRef.current(branchSlug);
+    if (success) {
+      await reloadEditorAfterSwitch();
+    }
+  }, [reloadEditorAfterSwitch]);
+
+  /**
+   * Handles switching back to main. Same auto-save + reload pattern.
+   */
+  const handleSwitchToMain = useCallback(async () => {
+    if (saveDirtyRef.current && saveCanSaveRef.current) {
+      debug('Saving before switching to main...');
+      const saved = await saveCallRef.current('autosave');
+      if (!saved) {
+        debug('Save failed, aborting switch to main');
+        return;
+      }
+    }
+
+    const success = await branchSwitchToMainRef.current();
+    if (success) {
+      await reloadEditorAfterSwitch();
+    }
+  }, [reloadEditorAfterSwitch]);
+
+  /**
+   * Handles creating a new branch via the CreateBranchDialog.
+   */
+  const branchCreateRef = useRef(branchesHook.createBranch);
+  branchCreateRef.current = branchesHook.createBranch;
+  const handleCreateBranch = useCallback(async (name: string, description?: string): Promise<boolean> => {
+    const branch = await branchCreateRef.current(name, description);
+    return !!branch;
+  }, []);
 
   // Undo/redo handlers
   const handleUndo = useCallback(() => {
@@ -568,8 +741,12 @@ export function Editor() {
     editorRef.current?.UndoManager?.redo();
   }, []);
 
-  // Track undo/redo availability when editor content changes.
-  // Only re-run when the editor becomes ready (not on every status transition).
+  /**
+   * Subscribes to GrapesJS UndoManager changes to keep the canUndo/canRedo
+   * button states in sync. Re-runs only when editorKey changes (new mount)
+   * or when the editor transitions to "ready" status, not on every state
+   * machine transition. Cleans up the event listener on unmount or re-run.
+   */
   const isEditorReady = stateMachine.state.status === 'ready';
   useEffect(() => {
     const editor = editorRef.current;
@@ -590,7 +767,11 @@ export function Editor() {
     };
   }, [editorKey, isEditorReady]);
 
-  // Keyboard shortcut: Cmd+S / Ctrl+S to save, ? for shortcuts dialog
+  /**
+   * Registers global keyboard shortcuts: Cmd+S / Ctrl+S triggers manual save,
+   * and "?" opens the keyboard shortcuts dialog (ignored when focus is in
+   * input/textarea/select or contentEditable elements). Cleaned up on unmount.
+   */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -611,7 +792,11 @@ export function Editor() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Warn users before leaving with unsaved changes
+  /**
+   * Shows the browser's native "unsaved changes" confirmation dialog when the
+   * user attempts to close/refresh the tab while dirty. Re-subscribes whenever
+   * dirty state changes so the handler always reads the current value.
+   */
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (stateMachine.state.dirty) {
@@ -626,7 +811,12 @@ export function Editor() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [stateMachine.state.dirty]);
 
-  // Save when the tab becomes hidden (browser back, tab switch, minimize).
+  /**
+   * Fires an autosave when the tab loses visibility (browser back, tab switch,
+   * or minimize). Uses refs for dirty/canSave to avoid stale closures, and
+   * fire-and-forget .catch() so the save completes even if the component
+   * is about to unmount.
+   */
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && saveDirtyRef.current && saveCanSaveRef.current) {
@@ -641,7 +831,11 @@ export function Editor() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Auto-retry save when network reconnects with dirty changes
+  /**
+   * Listens for the browser "online" event and automatically retries saving
+   * if there are dirty unsaved changes. Covers the case where the user edited
+   * while offline and the autosave failed silently.
+   */
   useEffect(() => {
     const handleOnline = () => {
       if (saveDirtyRef.current && saveCanSaveRef.current) {
@@ -656,8 +850,11 @@ export function Editor() {
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  // Save on component unmount (catches React Router in-app navigation).
-  // Fire-and-forget: the fetch continues even after unmount.
+  /**
+   * Last-resort save on component unmount. Catches in-app navigation via
+   * React Router where beforeunload does not fire. The fetch is fire-and-forget
+   * so it continues even after the component tree is torn down.
+   */
   useEffect(() => {
     return () => {
       if (saveDirtyRef.current && saveCanSaveRef.current) {
@@ -669,7 +866,15 @@ export function Editor() {
     };
   }, []);
 
-  // Load prototype on mount or slug change
+  /**
+   * Loads the prototype on mount or when the URL slug changes. Clears stale
+   * GrapesJS localStorage first. Guards against redundant reloads when the
+   * prototype is already loaded (prevents async dependency changes like
+   * currentTeam from wiping the editor). For new prototypes, defers creation
+   * to the first save. In demo mode, resets state for a fresh canvas.
+   * @remarks Intentionally omits stateMachine.state.prototype and localPrototype
+   * from the dependency array to avoid re-firing on every save cycle.
+   */
   useEffect(() => {
     clearGrapesJSStorage();
 
@@ -696,12 +901,16 @@ export function Editor() {
       setName('Untitled Prototype');
       setHtmlContent('');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes stateMachine.state.prototype,
-  // localPrototype, and loadPrototypeAndRemount to prevent re-firing the load on every save.
-  // Guards inside the effect check stale state to prevent unnecessary reloads.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes stateMachine.state.prototype, localPrototype, loadPrototypeAndRemount to prevent re-firing on every save
   }, [slug, isDemoMode, currentTeam, selectedTemplate]);
 
-  // Helper to load prototype and then trigger editor remount
+  /**
+   * Fetches a prototype from the API via persistence.load, stashes it in
+   * pendingPrototypeRef (synchronously available before React state commits),
+   * and generates a new editorKey to force a full GrapesJS remount. The
+   * pendingPrototypeRef is read by the initialContent and projectData caches
+   * during the next render so the editor initializes with the loaded data.
+   */
   async function loadPrototypeAndRemount(prototypeSlug: string) {
     const loadedPrototype = await persistence.load(prototypeSlug);
     if (loadedPrototype) {
@@ -760,6 +969,13 @@ export function Editor() {
         canUndo={canUndo}
         canRedo={canRedo}
         onShowShortcuts={() => setShowShortcuts(true)}
+        showBranchSelector={!isDemoMode && !!slug}
+        branches={branchesHook.branches}
+        activeBranchId={branchesHook.activeBranchId}
+        isSwitchingBranch={branchesHook.isSwitching}
+        onSwitchBranch={handleSwitchBranch}
+        onSwitchToMain={handleSwitchToMain}
+        onCreateBranch={() => setShowCreateBranch(true)}
       />
 
       {/* Recovery Banner */}
@@ -823,6 +1039,9 @@ export function Editor() {
             onUpdateLabel={updateLabel}
             onRefresh={fetchVersions}
             onClose={() => setShowVersionHistory(false)}
+            branchFilter={branchFilter}
+            onBranchFilterChange={setBranchFilter}
+            branches={branchesHook.branches}
           />
         )}
       </div>
@@ -862,11 +1081,22 @@ export function Editor() {
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
+
+      {/* Create Branch Dialog */}
+      <CreateBranchDialog
+        isOpen={showCreateBranch}
+        onClose={() => setShowCreateBranch(false)}
+        onCreate={handleCreateBranch}
+      />
     </div>
   );
 }
 
-// Helper function for component categories
+/**
+ * Maps a component tag name (e.g., "usa-button") to its block-panel category
+ * (e.g., "Actions"). Falls back to "Components" for any unrecognized tag.
+ * Used by the blocks useMemo to organize the drag-and-drop panel.
+ */
 function getCategoryForComponent(tagName: string): string {
   const categoryMap: Record<string, string[]> = {
     'Basics': ['heading', 'text'],

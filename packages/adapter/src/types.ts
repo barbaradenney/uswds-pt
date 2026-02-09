@@ -2,6 +2,46 @@
  * GrapesJS-specific types for the adapter
  */
 
+/**
+ * Minimal GrapesJS component model interface for the adapter.
+ *
+ * This covers the Backbone model methods used by trait handlers and
+ * visibility callbacks. It intentionally does NOT try to replicate
+ * the full GrapesJS Component API -- only the subset we actually use.
+ */
+export interface GrapesComponentModel {
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
+  getId(): string;
+  getEl(): HTMLElement | null;
+  addAttributes(attrs: Record<string, unknown>): void;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  off(event: string, handler: (...args: unknown[]) => void): void;
+  previous(key: string): unknown;
+}
+
+/**
+ * Minimal GrapesJS trait model interface (Backbone model).
+ *
+ * Represents an individual trait within GrapesJS's internal trait collection.
+ * Used by WebComponentTraitManager when iterating over a component's traits
+ * to attach change listeners.
+ */
+export interface GrapesTraitModel {
+  get(key: string): unknown;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+}
+
+/**
+ * GrapesJS trait collection -- an iterable of trait models.
+ *
+ * GrapesJS stores traits as a Backbone Collection. We only need
+ * the forEach method for our trait listener setup.
+ */
+export interface GrapesTraitCollection {
+  forEach(fn: (trait: GrapesTraitModel) => void): void;
+}
+
 export interface GrapesBlock {
   id: string;
   label: string;
@@ -38,7 +78,7 @@ export interface GrapesTrait {
   /**
    * Conditional visibility - function receives component model, returns boolean
    */
-  visible?: boolean | ((component: any) => boolean);
+  visible?: boolean | ((component: GrapesComponentModel) => boolean);
 }
 
 export interface GrapesTraitOption {

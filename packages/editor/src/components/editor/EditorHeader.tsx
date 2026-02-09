@@ -10,6 +10,7 @@
  */
 
 import { memo, useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
+import type { PrototypeBranch } from '@uswds-pt/shared';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 import { mod } from '../../lib/platform';
@@ -63,6 +64,20 @@ export interface EditorHeaderProps {
   canRedo?: boolean;
   /** Callback to show keyboard shortcuts dialog */
   onShowShortcuts?: () => void;
+  /** Whether to show branch selector */
+  showBranchSelector?: boolean;
+  /** Available branches */
+  branches?: PrototypeBranch[];
+  /** Currently active branch ID (null = main) */
+  activeBranchId?: string | null;
+  /** Whether branch switch is in progress */
+  isSwitchingBranch?: boolean;
+  /** Callback when user selects a branch */
+  onSwitchBranch?: (branchSlug: string) => void;
+  /** Callback when user selects main */
+  onSwitchToMain?: () => void;
+  /** Callback to create a new branch */
+  onCreateBranch?: () => void;
 }
 
 function formatLastSaved(date: Date): string {
@@ -99,6 +114,13 @@ export const EditorHeader = memo(function EditorHeader({
   canUndo = false,
   canRedo = false,
   onShowShortcuts,
+  showBranchSelector = false,
+  branches = [],
+  activeBranchId = null,
+  isSwitchingBranch = false,
+  onSwitchBranch,
+  onSwitchToMain,
+  onCreateBranch,
 }: EditorHeaderProps) {
   const connectionStatus = useConnectionStatus();
 
@@ -148,6 +170,49 @@ export const EditorHeader = memo(function EditorHeader({
             borderRadius: '4px',
           }}
         />
+        {/* Branch selector */}
+        {showBranchSelector && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+            <select
+              value={activeBranchId || '__main__'}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '__main__') {
+                  onSwitchToMain?.();
+                } else {
+                  const branch = branches.find(b => b.id === val);
+                  if (branch) onSwitchBranch?.(branch.slug);
+                }
+              }}
+              disabled={isSwitchingBranch}
+              aria-label="Select branch"
+              style={{
+                padding: '4px 8px',
+                fontSize: '0.8125rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                backgroundColor: activeBranchId ? '#e7f2ff' : '#fff',
+                cursor: isSwitchingBranch ? 'wait' : 'pointer',
+                maxWidth: '160px',
+              }}
+            >
+              <option value="__main__">main</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            <button
+              className="btn btn-secondary"
+              onClick={onCreateBranch}
+              disabled={isSwitchingBranch}
+              aria-label="Create branch"
+              title="Create new branch"
+              style={{ padding: '4px 8px', fontSize: '0.8125rem', minWidth: 'auto' }}
+            >
+              +
+            </button>
+          </div>
+        )}
         {/* Undo/Redo */}
         {onUndo && (
           <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>

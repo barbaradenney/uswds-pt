@@ -1,7 +1,7 @@
 /**
  * Component Registry Modules
  *
- * Re-exports shared utilities for component definitions.
+ * Re-exports shared utilities and registration functions for component definitions.
  */
 
 export {
@@ -24,3 +24,23 @@ export {
   // Debug logger
   debug,
 } from './shared-utils.js';
+
+// Helper modules
+export { SELECT_PRESETS, parseCustomOptions, renderSelectOptions, rebuildSelectOptionsFromSource, createSelectOptionTrait } from './select-helpers.js';
+export { updateButtonInnerElement, createPageLinkTraits } from './page-link-traits.js';
+export { createFormHintTrait, createRadioHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
+
+// Component registration functions
+export { registerFormComponents } from './form-components.js';
+export { registerFormInputComponents } from './form-input-components.js';
+export { registerButtonComponents } from './button-components.js';
+export { registerTextInputComponents } from './text-input-components.js';
+export { registerSelectionComponents } from './selection-components.js';
+export { registerDateTimeComponents } from './date-time-components.js';
+export { registerFileRangeComponents } from './file-range-components.js';
+export { registerStructureComponents } from './structure-components.js';
+export { registerUIComponents } from './ui-components.js';
+export { registerDataComponents } from './data-components.js';
+export { registerFeedbackComponents } from './feedback-components.js';
+export { registerLayoutComponents } from './layout-components.js';
+export { registerNavigationComponents } from './navigation-components.js';
