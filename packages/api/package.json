@@ -22,7 +22,7 @@
   "dependencies": {
     "@fastify/cors": "^9.0.0",
     "@fastify/jwt": "^8.0.0",
-    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/rate-limit": "9",
     "@types/bcrypt": "^5.0.0",
     "@uswds-pt/shared": "workspace:*",
     "bcrypt": "^5.1.0",
