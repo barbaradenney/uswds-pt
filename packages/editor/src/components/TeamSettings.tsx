@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Role } from '@uswds-pt/shared';
 import { useTeamMembers } from '../hooks/useTeamMembers';
 import { useOrganization } from '../hooks/useOrganization';
+import { useAuth } from '../hooks/useAuth';
 import { InviteModal } from './InviteModal';
+import { OrgGitHubSettings } from './OrgGitHubSettings';
 import { getRoleBadge } from '../lib/roles';
 import { formatDate } from '../lib/date';
+import { apiGet, API_ENDPOINTS } from '../lib/api';
 
 interface TeamSettingsProps {
   teamId: string;
@@ -22,9 +25,12 @@ export function TeamSettings({
 }: TeamSettingsProps) {
   const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showGitHubSettings, setShowGitHubSettings] = useState(false);
+  const [gitHubConnectedRepo, setGitHubConnectedRepo] = useState<string | null>(null);
   const [isEditingOrgName, setIsEditingOrgName] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
   const [isSavingOrg, setIsSavingOrg] = useState(false);
+  const wasGitHubSettingsOpen = useRef(false);
   const {
     members,
     invitations,
@@ -38,6 +44,33 @@ export function TeamSettings({
   } = useTeamMembers(teamId);
 
   const { organization, updateOrganization } = useOrganization();
+  const { user } = useAuth();
+  const hasGitHubLinked = !!user?.hasGitHubLinked;
+
+  // Fetch org-level GitHub connection status
+  const fetchGitHubConnection = useCallback(async () => {
+    if (!organization?.id) {
+      setGitHubConnectedRepo(null);
+      return;
+    }
+    const result = await apiGet<{ connected: boolean; repoOwner?: string; repoName?: string }>(
+      API_ENDPOINTS.GITHUB_ORG_CONNECTION(organization.id)
+    );
+    if (result.success && result.data?.connected) {
+      setGitHubConnectedRepo(`${result.data.repoOwner}/${result.data.repoName}`);
+    } else {
+      setGitHubConnectedRepo(null);
+    }
+  }, [organization?.id]);
+
+  // Refetch when modal closes (to pick up connect/disconnect changes)
+  useEffect(() => {
+    const wasOpen = wasGitHubSettingsOpen.current;
+    wasGitHubSettingsOpen.current = showGitHubSettings;
+    if (!showGitHubSettings && (wasOpen || !gitHubConnectedRepo)) {
+      fetchGitHubConnection();
+    }
+  }, [showGitHubSettings, fetchGitHubConnection, gitHubConnectedRepo]);
 
   const canManageMembers = userRole === 'org_admin' || userRole === 'team_admin';
   const isOrgAdmin = userRole === 'org_admin';
@@ -278,12 +311,61 @@ export function TeamSettings({
         </div>
       )}
 
+      {/* GitHub Integration Section - org_admin only */}
+      {isOrgAdmin && organization && (
+        <div className="team-settings-section">
+          <h2>GitHub Integration</h2>
+          <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
+            Connect a GitHub repository to automatically push prototype HTML to your
+            team's codebase on every save. Developers can review changes, open pull
+            requests, and merge production-ready USWDS markup directly into their project.
+          </p>
+          {gitHubConnectedRepo ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-success-darker, #4d8055)',
+                backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+                padding: '6px 10px',
+                borderRadius: '4px',
+              }}>
+                Connected to {gitHubConnectedRepo}
+              </span>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowGitHubSettings(true)}
+                style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+              >
+                Manage
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowGitHubSettings(true)}
+            >
+              Connect Repository
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Invite Modal */}
       {showInviteModal && (
         <InviteModal
           availableRoles={getAvailableRoles()}
           onInvite={handleInvite}
           onClose={() => setShowInviteModal(false)}
+        />
+      )}
+
+      {/* GitHub Settings Modal */}
+      {organization && (
+        <OrgGitHubSettings
+          isOpen={showGitHubSettings}
+          onClose={() => setShowGitHubSettings(false)}
+          orgId={organization.id}
+          hasGitHubLinked={hasGitHubLinked}
         />
       )}
     </div>
