@@ -8,6 +8,13 @@
       "when": 1768182221461,
       "tag": "0000_loose_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770705450321,
+      "tag": "0002_add-github-org-connections",
+      "breakpoints": true
     }
   ]
 }
