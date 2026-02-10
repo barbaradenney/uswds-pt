@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum, toBranchSlug } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
-import { prototypes, prototypeVersions, teamMemberships, users, githubOrgConnections, teams } from '../db/schema.js';
+import { prototypes, prototypeVersions, teamMemberships, users, githubTeamConnections } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
 import { pushToGitHub, createGitHubBranch } from '../lib/github-push.js';
@@ -166,7 +166,7 @@ async function canDeletePrototype(userId: string, prototype: { teamId: string | 
 
 /**
  * Fire-and-forget auto-push to GitHub after a successful save.
- * Looks up org-level GitHub connection via team -> org -> githubOrgConnections.
+ * Looks up team-level GitHub connection directly via teamId.
  * Errors are logged but do not block the save response.
  */
 async function autoGitHubPush(
@@ -177,20 +177,11 @@ async function autoGitHubPush(
 
   const userId = getAuthUser(request).id;
 
-  // Look up team to get organizationId
-  const [team] = await db
-    .select({ organizationId: teams.organizationId })
-    .from(teams)
-    .where(eq(teams.id, updated.teamId))
-    .limit(1);
-
-  if (!team) return;
-
-  // Look up org-level GitHub connection
+  // Look up team-level GitHub connection directly
   const [connection] = await db
     .select()
-    .from(githubOrgConnections)
-    .where(eq(githubOrgConnections.organizationId, team.organizationId))
+    .from(githubTeamConnections)
+    .where(eq(githubTeamConnections.teamId, updated.teamId))
     .limit(1);
 
   if (!connection) return;

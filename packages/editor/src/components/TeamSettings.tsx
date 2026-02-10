@@ -5,7 +5,7 @@ import { useTeamMembers } from '../hooks/useTeamMembers';
 import { useOrganization } from '../hooks/useOrganization';
 import { useAuth } from '../hooks/useAuth';
 import { InviteModal } from './InviteModal';
-import { OrgGitHubSettings } from './OrgGitHubSettings';
+import { TeamGitHubSettings } from './TeamGitHubSettings';
 import { getRoleBadge } from '../lib/roles';
 import { formatDate } from '../lib/date';
 import { apiGet, API_ENDPOINTS } from '../lib/api';
@@ -47,21 +47,21 @@ export function TeamSettings({
   const { user } = useAuth();
   const hasGitHubLinked = !!user?.hasGitHubLinked;
 
-  // Fetch org-level GitHub connection status
+  // Fetch team-level GitHub connection status
   const fetchGitHubConnection = useCallback(async () => {
-    if (!organization?.id) {
+    if (!teamId) {
       setGitHubConnectedRepo(null);
       return;
     }
     const result = await apiGet<{ connected: boolean; repoOwner?: string; repoName?: string }>(
-      API_ENDPOINTS.GITHUB_ORG_CONNECTION(organization.id)
+      API_ENDPOINTS.GITHUB_TEAM_CONNECTION(teamId)
     );
     if (result.success && result.data?.connected) {
       setGitHubConnectedRepo(`${result.data.repoOwner}/${result.data.repoName}`);
     } else {
       setGitHubConnectedRepo(null);
     }
-  }, [organization?.id]);
+  }, [teamId]);
 
   // Refetch when modal closes (to pick up connect/disconnect changes)
   useEffect(() => {
@@ -311,8 +311,8 @@ export function TeamSettings({
         </div>
       )}
 
-      {/* GitHub Integration Section - org_admin only */}
-      {isOrgAdmin && organization && (
+      {/* GitHub Integration Section - team_admin and org_admin */}
+      {canManageMembers && (
         <div className="team-settings-section">
           <h2>GitHub Integration <span style={{ fontWeight: 400, fontSize: '0.875rem', color: 'var(--color-base-light, #71767a)' }}>(optional)</span></h2>
           <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
@@ -361,14 +361,12 @@ export function TeamSettings({
       )}
 
       {/* GitHub Settings Modal */}
-      {organization && (
-        <OrgGitHubSettings
-          isOpen={showGitHubSettings}
-          onClose={() => setShowGitHubSettings(false)}
-          orgId={organization.id}
-          hasGitHubLinked={hasGitHubLinked}
-        />
-      )}
+      <TeamGitHubSettings
+        isOpen={showGitHubSettings}
+        onClose={() => setShowGitHubSettings(false)}
+        teamId={teamId}
+        hasGitHubLinked={hasGitHubLinked}
+      />
     </div>
   );
 }

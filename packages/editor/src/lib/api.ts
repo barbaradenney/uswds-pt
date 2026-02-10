@@ -55,11 +55,11 @@ export const API_ENDPOINTS = {
   TEAM_SYMBOLS: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols`,
   TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols/${encodeURIComponent(symbolId)}`,
 
-  // GitHub Integration (org-level)
+  // GitHub Integration (team-level)
   GITHUB_REPOS: '/api/github/repos',
-  GITHUB_ORG_CONNECTION: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github`,
-  GITHUB_ORG_CONNECT: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github/connect`,
-  GITHUB_ORG_DISCONNECT: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github/disconnect`,
+  GITHUB_TEAM_CONNECTION: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github`,
+  GITHUB_TEAM_CONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/connect`,
+  GITHUB_TEAM_DISCONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/disconnect`,
 } as const;
 
 /**

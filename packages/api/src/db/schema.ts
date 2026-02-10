@@ -148,13 +148,9 @@ export const users = pgTable('users', {
 // Relations
 // ============================================================================
 
-export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+export const organizationsRelations = relations(organizations, ({ many }) => ({
   teams: many(teams),
   users: many(users),
-  githubConnection: one(githubOrgConnections, {
-    fields: [organizations.id],
-    references: [githubOrgConnections.organizationId],
-  }),
 }));
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
@@ -166,6 +162,10 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
   invitations: many(invitations),
   prototypes: many(prototypes),
   symbols: many(symbols),
+  githubConnection: one(githubTeamConnections, {
+    fields: [teams.id],
+    references: [githubTeamConnections.teamId],
+  }),
 }));
 
 export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
@@ -319,15 +319,15 @@ export const symbolsRelations = relations(symbols, ({ one }) => ({
 }));
 
 /**
- * GitHub org connections table
- * Links an organization to a GitHub repository for push-on-save (all prototypes)
+ * GitHub team connections table
+ * Links a team to a GitHub repository for push-on-save (all prototypes in that team)
  */
-export const githubOrgConnections = pgTable(
-  'github_org_connections',
+export const githubTeamConnections = pgTable(
+  'github_team_connections',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: uuid('organization_id')
-      .references(() => organizations.id, { onDelete: 'cascade' })
+    teamId: uuid('team_id')
+      .references(() => teams.id, { onDelete: 'cascade' })
       .unique()
       .notNull(),
     repoOwner: varchar('repo_owner', { length: 255 }).notNull(),
@@ -338,17 +338,17 @@ export const githubOrgConnections = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    orgIdx: index('github_org_connections_org_idx').on(table.organizationId),
+    teamIdx: index('github_team_connections_team_idx').on(table.teamId),
   })
 );
 
-export const githubOrgConnectionsRelations = relations(githubOrgConnections, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [githubOrgConnections.organizationId],
-    references: [organizations.id],
+export const githubTeamConnectionsRelations = relations(githubTeamConnections, ({ one }) => ({
+  team: one(teams, {
+    fields: [githubTeamConnections.teamId],
+    references: [teams.id],
   }),
   connector: one(users, {
-    fields: [githubOrgConnections.connectedBy],
+    fields: [githubTeamConnections.connectedBy],
     references: [users.id],
   }),
 }));
@@ -401,8 +401,8 @@ export type NewPrototypeVersion = typeof prototypeVersions.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 
-export type GitHubOrgConnection = typeof githubOrgConnections.$inferSelect;
-export type NewGitHubOrgConnection = typeof githubOrgConnections.$inferInsert;
+export type GitHubTeamConnection = typeof githubTeamConnections.$inferSelect;
+export type NewGitHubTeamConnection = typeof githubTeamConnections.$inferInsert;
 
 export type Symbol = typeof symbols.$inferSelect;
 export type NewSymbol = typeof symbols.$inferInsert;

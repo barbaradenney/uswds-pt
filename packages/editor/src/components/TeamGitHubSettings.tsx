@@ -1,8 +1,8 @@
 /**
- * Org-Level GitHub Settings
+ * Team-Level GitHub Settings
  *
- * Modal dialog for connecting/disconnecting an organization to a GitHub repo.
- * All prototypes in the org auto-push to the connected repo on save.
+ * Modal dialog for connecting/disconnecting a team to a GitHub repo.
+ * All prototypes in the team auto-push to the connected repo on save.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,22 +17,22 @@ interface GitHubRepo {
   htmlUrl: string;
 }
 
-interface OrgConnection {
+interface TeamConnection {
   connected: boolean;
   repoOwner?: string;
   repoName?: string;
   defaultBranch?: string;
 }
 
-interface OrgGitHubSettingsProps {
+interface TeamGitHubSettingsProps {
   isOpen: boolean;
   onClose: () => void;
-  orgId: string;
+  teamId: string;
   hasGitHubLinked: boolean;
 }
 
-export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: OrgGitHubSettingsProps) {
-  const [connection, setConnection] = useState<OrgConnection | null>(null);
+export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }: TeamGitHubSettingsProps) {
+  const [connection, setConnection] = useState<TeamConnection | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [isLoadingConnection, setIsLoadingConnection] = useState(false);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
@@ -46,8 +46,8 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
   const fetchConnection = useCallback(async () => {
     setIsLoadingConnection(true);
     setError(null);
-    const result = await apiGet<OrgConnection>(
-      API_ENDPOINTS.GITHUB_ORG_CONNECTION(orgId),
+    const result = await apiGet<TeamConnection>(
+      API_ENDPOINTS.GITHUB_TEAM_CONNECTION(teamId),
       'Failed to fetch GitHub connection'
     );
     if (result.success && result.data) {
@@ -56,7 +56,7 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
       setError(result.error || null);
     }
     setIsLoadingConnection(false);
-  }, [orgId]);
+  }, [teamId]);
 
   const fetchRepos = useCallback(async () => {
     setIsLoadingRepos(true);
@@ -73,13 +73,13 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
   }, []);
 
   useEffect(() => {
-    if (isOpen && orgId) {
+    if (isOpen && teamId) {
       fetchConnection();
       if (hasGitHubLinked) {
         fetchRepos();
       }
     }
-  }, [isOpen, orgId, hasGitHubLinked, fetchConnection, fetchRepos]);
+  }, [isOpen, teamId, hasGitHubLinked, fetchConnection, fetchRepos]);
 
   // Escape key handling
   useEffect(() => {
@@ -115,7 +115,7 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
     setIsConnecting(true);
     setError(null);
     const result = await apiPost(
-      API_ENDPOINTS.GITHUB_ORG_CONNECT(orgId),
+      API_ENDPOINTS.GITHUB_TEAM_CONNECT(teamId),
       { owner: repo.owner, repo: repo.name, defaultBranch: repo.defaultBranch },
       'Failed to connect repository'
     );
@@ -137,7 +137,7 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
     setIsDisconnecting(true);
     setError(null);
     const result = await apiDelete(
-      API_ENDPOINTS.GITHUB_ORG_DISCONNECT(orgId),
+      API_ENDPOINTS.GITHUB_TEAM_DISCONNECT(teamId),
       'Failed to disconnect repository'
     );
     if (result.success) {

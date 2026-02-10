@@ -16,7 +16,7 @@ import { teamRoutes } from './routes/teams.js';
 import { invitationRoutes } from './routes/invitations.js';
 import { symbolRoutes } from './routes/symbols.js';
 import { githubAuthRoutes } from './routes/github-auth.js';
-import { githubRoutes, githubOrgRoutes } from './routes/github.js';
+import { githubRoutes, githubTeamRoutes } from './routes/github.js';
 import { errorHandler, checkDatabaseHealth } from './lib/error-handler.js';
 import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
@@ -124,7 +124,7 @@ async function main() {
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
   await app.register(githubAuthRoutes, { prefix: '/api/auth' });
   await app.register(githubRoutes, { prefix: '/api/github' });
-  await app.register(githubOrgRoutes, { prefix: '/api/organizations' });
+  await app.register(githubTeamRoutes, { prefix: '/api/teams' });
 
   // Health check endpoint with database status (exempt from rate limiting)
   app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async () => {

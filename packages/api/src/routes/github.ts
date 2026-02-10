@@ -1,12 +1,12 @@
 /**
  * GitHub Integration Routes
  *
- * Endpoints for GitHub repo listing and org-level GitHub connections.
+ * Endpoints for GitHub repo listing and team-level GitHub connections.
  *
- * GET    /api/github/repos                          - List user's GitHub repos
- * GET    /api/organizations/:orgId/github            - Get org connection status
- * POST   /api/organizations/:orgId/github/connect    - Connect org to a repo
- * DELETE /api/organizations/:orgId/github/disconnect  - Remove org connection
+ * GET    /api/github/repos                       - List user's GitHub repos
+ * GET    /api/teams/:teamId/github               - Get team connection status
+ * POST   /api/teams/:teamId/github/connect       - Connect team to a repo
+ * DELETE /api/teams/:teamId/github/disconnect     - Remove team connection
  */
 
 import { FastifyInstance } from 'fastify';
@@ -14,9 +14,8 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   users,
-  teams,
   teamMemberships,
-  githubOrgConnections,
+  githubTeamConnections,
 } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { listUserRepos } from '../lib/github-push.js';
@@ -85,34 +84,33 @@ export async function githubRoutes(app: FastifyInstance) {
   );
 }
 
-export async function githubOrgRoutes(app: FastifyInstance) {
+export async function githubTeamRoutes(app: FastifyInstance) {
   /**
-   * GET /api/organizations/:orgId/github
-   * Get GitHub connection status for an organization
+   * GET /api/teams/:teamId/github
+   * Get GitHub connection status for a team
    */
-  app.get<{ Params: { orgId: string } }>(
-    '/:orgId/github',
+  app.get<{ Params: { teamId: string } }>(
+    '/:teamId/github',
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { orgId } = request.params;
+      const { teamId } = request.params;
 
-      // Check user belongs to this org (has at least one team membership in the org)
-      const membership = await db
+      // Check user belongs to this team
+      const [membership] = await db
         .select({ role: teamMemberships.role })
         .from(teamMemberships)
-        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
-        .where(and(eq(teams.organizationId, orgId), eq(teamMemberships.userId, authUser.id)))
+        .where(and(eq(teamMemberships.teamId, teamId), eq(teamMemberships.userId, authUser.id)))
         .limit(1);
 
-      if (membership.length === 0) {
-        return reply.status(403).send({ message: 'Not a member of this organization' });
+      if (!membership) {
+        return reply.status(403).send({ message: 'Not a member of this team' });
       }
 
       const [connection] = await db
         .select()
-        .from(githubOrgConnections)
-        .where(eq(githubOrgConnections.organizationId, orgId))
+        .from(githubTeamConnections)
+        .where(eq(githubTeamConnections.teamId, teamId))
         .limit(1);
 
       if (!connection) {
@@ -129,11 +127,11 @@ export async function githubOrgRoutes(app: FastifyInstance) {
   );
 
   /**
-   * POST /api/organizations/:orgId/github/connect
-   * Connect an organization to a GitHub repository
+   * POST /api/teams/:teamId/github/connect
+   * Connect a team to a GitHub repository
    */
-  app.post<{ Params: { orgId: string }; Body: { owner: string; repo: string; defaultBranch?: string } }>(
-    '/:orgId/github/connect',
+  app.post<{ Params: { teamId: string }; Body: { owner: string; repo: string; defaultBranch?: string } }>(
+    '/:teamId/github/connect',
     {
       preHandler: [app.authenticate],
       schema: {
@@ -151,7 +149,7 @@ export async function githubOrgRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { orgId } = request.params;
+      const { teamId } = request.params;
       const { owner, repo, defaultBranch } = request.body;
 
       // Validate owner/repo format to prevent URL injection
@@ -164,34 +162,32 @@ export async function githubOrgRoutes(app: FastifyInstance) {
         return reply.status(400).send({ message: 'Invalid default branch name' });
       }
 
-      // Check user is org_admin
-      const membership = await db
+      // Check user is team_admin or org_admin
+      const [membership] = await db
         .select({ role: teamMemberships.role })
         .from(teamMemberships)
-        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
         .where(and(
           eq(teamMemberships.userId, authUser.id),
-          eq(teams.organizationId, orgId),
-          eq(teamMemberships.role, 'org_admin')
+          eq(teamMemberships.teamId, teamId),
         ))
         .limit(1);
 
-      if (membership.length === 0) {
-        return reply.status(403).send({ message: 'Only org admins can connect GitHub' });
+      if (!membership || (membership.role !== 'team_admin' && membership.role !== 'org_admin')) {
+        return reply.status(403).send({ message: 'Only team admins can connect GitHub' });
       }
 
       // Atomic upsert connection (avoids TOCTOU race)
       await db
-        .insert(githubOrgConnections)
+        .insert(githubTeamConnections)
         .values({
-          organizationId: orgId,
+          teamId,
           repoOwner: owner,
           repoName: repo,
           defaultBranch: resolvedBranch,
           connectedBy: authUser.id,
         })
         .onConflictDoUpdate({
-          target: githubOrgConnections.organizationId,
+          target: githubTeamConnections.teamId,
           set: {
             repoOwner: owner,
             repoName: repo,
@@ -206,39 +202,37 @@ export async function githubOrgRoutes(app: FastifyInstance) {
   );
 
   /**
-   * DELETE /api/organizations/:orgId/github/disconnect
-   * Remove GitHub connection from an organization
+   * DELETE /api/teams/:teamId/github/disconnect
+   * Remove GitHub connection from a team
    */
-  app.delete<{ Params: { orgId: string } }>(
-    '/:orgId/github/disconnect',
+  app.delete<{ Params: { teamId: string } }>(
+    '/:teamId/github/disconnect',
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { orgId } = request.params;
+      const { teamId } = request.params;
 
-      // Check user is org_admin
-      const membership = await db
+      // Check user is team_admin or org_admin
+      const [membership] = await db
         .select({ role: teamMemberships.role })
         .from(teamMemberships)
-        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
         .where(and(
           eq(teamMemberships.userId, authUser.id),
-          eq(teams.organizationId, orgId),
-          eq(teamMemberships.role, 'org_admin')
+          eq(teamMemberships.teamId, teamId),
         ))
         .limit(1);
 
-      if (membership.length === 0) {
-        return reply.status(403).send({ message: 'Only org admins can disconnect GitHub' });
+      if (!membership || (membership.role !== 'team_admin' && membership.role !== 'org_admin')) {
+        return reply.status(403).send({ message: 'Only team admins can disconnect GitHub' });
       }
 
       const result = await db
-        .delete(githubOrgConnections)
-        .where(eq(githubOrgConnections.organizationId, orgId))
+        .delete(githubTeamConnections)
+        .where(eq(githubTeamConnections.teamId, teamId))
         .returning();
 
       if (result.length === 0) {
-        return reply.code(404).send({ error: 'No GitHub connection found' });
+        return reply.code(404).send({ message: 'No GitHub connection found' });
       }
 
       return { message: 'Disconnected' };
