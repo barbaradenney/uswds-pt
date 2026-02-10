@@ -195,8 +195,11 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
         </div>
 
         <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '16px' }}>
-          Connect a GitHub repository to auto-push all prototypes on save.
-          Each prototype pushes to its own branch ({`uswds-pt/<name>`}).
+          Connect a GitHub repository to automatically push your prototype HTML
+          to your team's codebase every time you save. Developers can then review
+          changes, open pull requests, and merge production-ready USWDS markup
+          directly into their project. Each prototype pushes to its own
+          branch ({`uswds-pt/<name>`}).
         </p>
 
         {error && (
@@ -315,9 +318,9 @@ export function OrgGitHubSettings({ isOpen, onClose, orgId, hasGitHubLinked }: O
               <option value="">
                 {isLoadingRepos ? 'Loading repositories...' : '-- Choose a repo --'}
               </option>
-              {repos.map(repo => (
+              {repos.filter(repo => !repo.private).map(repo => (
                 <option key={repo.fullName} value={repo.fullName}>
-                  {repo.fullName} {repo.private ? '(private)' : ''}
+                  {repo.fullName}
                 </option>
               ))}
             </select>
