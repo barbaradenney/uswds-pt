@@ -465,6 +465,7 @@ export function useEditorPersistence({
             createdAt: new Date(data.createdAt),
             updatedAt: new Date(data.updatedAt),
             isPublic: false,
+            branchSlug: '',
           } as Prototype;
 
           prototypeLoaded(prototype);

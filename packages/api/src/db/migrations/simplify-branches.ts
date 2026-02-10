@@ -86,7 +86,7 @@ async function simplifyBranches() {
     // Track slugs per team to handle collisions
     const slugsByTeam = new Map<string, Set<string>>();
 
-    for (const row of rows.rows) {
+    for (const row of rows) {
       const id = row.id as string;
       const name = row.name as string;
       const teamId = (row.team_id as string) || '__none__';
@@ -114,7 +114,7 @@ async function simplifyBranches() {
       `);
     }
 
-    console.log(`  Backfilled branch_slug for ${rows.rows.length} prototypes`);
+    console.log(`  Backfilled branch_slug for ${rows.length} prototypes`);
 
     // ========================================================================
     // Step 4: Make branch_slug NOT NULL, add unique index

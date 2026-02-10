@@ -45,6 +45,7 @@ export function mockPrototype(overrides: Partial<Prototype> = {}): Prototype {
     createdAt: now,
     updatedAt: now,
     isPublic: false,
+    branchSlug: 'test-prototype',
     ...overrides,
   };
 }
