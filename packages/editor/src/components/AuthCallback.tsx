@@ -5,23 +5,26 @@
  * stores it in localStorage, fetches user data, and redirects to home.
  */
 
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { loginWithToken } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const token = params.get('token');
-    const errorParam = params.get('error');
+  // Capture params on first render before React Router can clear them
+  const paramsRef = useRef({ token: searchParams.get('token'), error: searchParams.get('error') });
 
-    // Immediately clear the token from the URL to prevent leaking via Referer or history
+  useEffect(() => {
+    const token = paramsRef.current.token;
+    const errorParam = paramsRef.current.error;
+
+    // Clear the token from the URL to prevent leaking via Referer or history
     if (token || errorParam) {
-      window.history.replaceState(null, '', window.location.pathname + '#/auth/callback');
+      navigate('/auth/callback', { replace: true });
     }
 
     if (errorParam) {
