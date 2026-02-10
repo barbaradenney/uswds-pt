@@ -196,10 +196,10 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
 
         <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '16px' }}>
           Connect a GitHub repository to automatically push your prototype HTML
-          to your team's codebase every time you save. Developers can then review
-          changes, open pull requests, and merge production-ready USWDS markup
-          directly into their project. Each prototype pushes to its own
-          branch ({`uswds-pt/<name>`}).
+          to your team's codebase every time you save. Each team can connect to a
+          different repository. Developers can then review changes, open pull requests,
+          and merge production-ready USWDS markup directly into their project. Each
+          prototype pushes to its own branch ({`uswds-pt/<name>`}).
         </p>
 
         {error && (

@@ -208,6 +208,14 @@ export function PrototypeList() {
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {isOrgAdmin && organization && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/org/settings')}
+            >
+              Org Settings
+            </button>
+          )}
           {currentTeam && (currentTeam.role === 'org_admin' || currentTeam.role === 'team_admin') && (
             <button
               className="btn btn-secondary"

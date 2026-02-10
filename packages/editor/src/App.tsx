@@ -11,6 +11,7 @@ const Preview = lazy(() => import('./components/Preview').then(m => ({ default: 
 const Embed = lazy(() => import('./components/Embed').then(m => ({ default: m.Embed })));
 const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
 const TeamSettingsPage = lazy(() => import('./components/TeamSettingsPage').then(m => ({ default: m.TeamSettingsPage })));
+const OrgSettingsPage = lazy(() => import('./components/OrgSettingsPage').then(m => ({ default: m.OrgSettingsPage })));
 const AuthCallback = lazy(() => import('./components/AuthCallback').then(m => ({ default: m.AuthCallback })));
 
 // Loading fallback component
@@ -87,6 +88,12 @@ function App() {
             path="/teams/:teamId/settings"
             element={
               isAuthenticated ? <TeamSettingsPage /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/org/settings"
+            element={
+              isAuthenticated ? <OrgSettingsPage /> : <Navigate to="/login" replace />
             }
           />
         </Routes>
