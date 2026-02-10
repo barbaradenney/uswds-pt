@@ -27,7 +27,7 @@ ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "team_id" uuid;--> statement-b
 ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "version" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
 ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "content_checksum" varchar(64);--> statement-breakpoint
 ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "branch_slug" varchar(200);--> statement-breakpoint
-UPDATE "prototypes" SET "branch_slug" = 'main' WHERE "branch_slug" IS NULL;--> statement-breakpoint
+UPDATE "prototypes" SET "branch_slug" = "slug" WHERE "branch_slug" IS NULL;--> statement-breakpoint
 ALTER TABLE "prototypes" ALTER COLUMN "branch_slug" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "last_github_push_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "prototypes" ADD COLUMN IF NOT EXISTS "last_github_commit_sha" varchar(40);--> statement-breakpoint
