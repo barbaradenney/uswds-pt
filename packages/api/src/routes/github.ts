@@ -1,13 +1,12 @@
 /**
  * GitHub Integration Routes
  *
- * Endpoints for connecting prototypes to GitHub repos and pushing HTML on save.
+ * Endpoints for GitHub repo listing and org-level GitHub connections.
  *
- * GET  /api/github/repos                     - List user's GitHub repos
- * GET  /api/prototypes/:slug/github           - Get connection info
- * POST /api/prototypes/:slug/github/connect   - Connect a repo
- * POST /api/prototypes/:slug/github/push      - Push current HTML to GitHub
- * POST /api/prototypes/:slug/github/disconnect - Remove connection
+ * GET    /api/github/repos                          - List user's GitHub repos
+ * GET    /api/organizations/:orgId/github            - Get org connection status
+ * POST   /api/organizations/:orgId/github/connect    - Connect org to a repo
+ * DELETE /api/organizations/:orgId/github/disconnect  - Remove org connection
  */
 
 import { FastifyInstance } from 'fastify';
@@ -15,13 +14,12 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   users,
-  prototypes,
-  githubRepoConnections,
+  teams,
   teamMemberships,
+  githubOrgConnections,
 } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
-import { pushToGitHub, createGitHubBranch, listUserRepos } from '../lib/github-push.js';
-import { hasPermission, Role, ROLES } from '../db/roles.js';
+import { listUserRepos } from '../lib/github-push.js';
 
 // ============================================================================
 // Validation helpers
@@ -29,20 +27,6 @@ import { hasPermission, Role, ROLES } from '../db/roles.js';
 
 /** GitHub owner/repo names: alphanumeric, hyphens, dots, underscores */
 const GITHUB_NAME_RE = /^[a-zA-Z0-9._-]{1,100}$/;
-
-/**
- * Validate a file path to prevent path traversal.
- * Must not contain `..`, must not start with `/`, and must only use
- * safe characters (alphanumeric, hyphens, underscores, dots, slashes).
- */
-function isValidFilePath(filePath: string): boolean {
-  if (!filePath || filePath.length > 256) return false;
-  if (filePath.includes('..')) return false;
-  if (filePath.startsWith('/')) return false;
-  if (filePath.includes('\\')) return false;
-  // Only allow safe characters
-  return /^[a-zA-Z0-9._/\- ]+$/.test(filePath);
-}
 
 /**
  * Validate a git branch name segment (the part after `uswds-pt/`).
@@ -53,47 +37,6 @@ export function isValidBranchSlug(slug: string): boolean {
   if (slug.includes('..')) return false;
   // Disallow characters invalid in git refs
   return /^[a-zA-Z0-9._/-]+$/.test(slug) && !slug.endsWith('.lock');
-}
-
-// ============================================================================
-// Authorization helpers
-// ============================================================================
-
-async function getTeamMembership(userId: string, teamId: string) {
-  const [membership] = await db
-    .select({ role: teamMemberships.role })
-    .from(teamMemberships)
-    .where(
-      and(
-        eq(teamMemberships.teamId, teamId),
-        eq(teamMemberships.userId, userId),
-      )
-    )
-    .limit(1);
-  return membership || null;
-}
-
-async function canAccessPrototype(
-  userId: string,
-  prototype: { teamId: string | null; createdBy: string },
-) {
-  if (!prototype.teamId) {
-    return prototype.createdBy === userId;
-  }
-  const membership = await getTeamMembership(userId, prototype.teamId);
-  return !!membership;
-}
-
-async function canEditPrototype(
-  userId: string,
-  prototype: { teamId: string | null; createdBy: string },
-) {
-  if (!prototype.teamId) {
-    return prototype.createdBy === userId;
-  }
-  const membership = await getTeamMembership(userId, prototype.teamId);
-  if (!membership) return false;
-  return hasPermission(membership.role as Role, ROLES.TEAM_MEMBER);
 }
 
 // ============================================================================
@@ -142,37 +85,34 @@ export async function githubRoutes(app: FastifyInstance) {
   );
 }
 
-export async function githubPrototypeRoutes(app: FastifyInstance) {
+export async function githubOrgRoutes(app: FastifyInstance) {
   /**
-   * GET /api/prototypes/:slug/github
-   * Get GitHub connection info for a prototype
+   * GET /api/organizations/:orgId/github
+   * Get GitHub connection status for an organization
    */
-  app.get<{ Params: { slug: string } }>(
-    '/:slug/github',
+  app.get<{ Params: { orgId: string } }>(
+    '/:orgId/github',
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { slug } = request.params;
+      const { orgId } = request.params;
 
-      const [proto] = await db
-        .select({ id: prototypes.id, teamId: prototypes.teamId, createdBy: prototypes.createdBy })
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
+      // Check user belongs to this org (has at least one team membership in the org)
+      const membership = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+        .where(and(eq(teams.organizationId, orgId), eq(teamMemberships.userId, authUser.id)))
         .limit(1);
 
-      if (!proto) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Authorization: must be able to access the prototype
-      if (!(await canAccessPrototype(authUser.id, proto))) {
-        return reply.status(403).send({ message: 'Not authorized to access this prototype' });
+      if (membership.length === 0) {
+        return reply.status(403).send({ message: 'Not a member of this organization' });
       }
 
       const [connection] = await db
         .select()
-        .from(githubRepoConnections)
-        .where(eq(githubRepoConnections.prototypeId, proto.id))
+        .from(githubOrgConnections)
+        .where(eq(githubOrgConnections.organizationId, orgId))
         .limit(1);
 
       if (!connection) {
@@ -184,23 +124,16 @@ export async function githubPrototypeRoutes(app: FastifyInstance) {
         repoOwner: connection.repoOwner,
         repoName: connection.repoName,
         defaultBranch: connection.defaultBranch,
-        filePath: connection.filePath,
-        lastPushedAt: connection.lastPushedAt,
-        lastPushedVersion: connection.lastPushedVersion,
-        lastPushedCommitSha: connection.lastPushedCommitSha,
       };
     },
   );
 
   /**
-   * POST /api/prototypes/:slug/github/connect
-   * Connect a prototype to a GitHub repository
+   * POST /api/organizations/:orgId/github/connect
+   * Connect an organization to a GitHub repository
    */
-  app.post<{
-    Params: { slug: string };
-    Body: { owner: string; repo: string; filePath?: string; defaultBranch?: string };
-  }>(
-    '/:slug/github/connect',
+  app.post<{ Params: { orgId: string }; Body: { owner: string; repo: string; defaultBranch?: string } }>(
+    '/:orgId/github/connect',
     {
       preHandler: [app.authenticate],
       schema: {
@@ -210,7 +143,6 @@ export async function githubPrototypeRoutes(app: FastifyInstance) {
           properties: {
             owner: { type: 'string', minLength: 1, maxLength: 100 },
             repo: { type: 'string', minLength: 1, maxLength: 100 },
-            filePath: { type: 'string', minLength: 1, maxLength: 256 },
             defaultBranch: { type: 'string', minLength: 1, maxLength: 100 },
           },
           additionalProperties: false,
@@ -219,220 +151,95 @@ export async function githubPrototypeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { slug } = request.params;
-      const { owner, repo, filePath, defaultBranch } = request.body;
+      const { orgId } = request.params;
+      const { owner, repo, defaultBranch } = request.body;
 
       // Validate owner/repo format to prevent URL injection
       if (!GITHUB_NAME_RE.test(owner) || !GITHUB_NAME_RE.test(repo)) {
         return reply.status(400).send({ message: 'Invalid repository owner or name' });
       }
 
-      // Validate filePath to prevent path traversal
-      const resolvedPath = filePath || 'prototype.html';
-      if (!isValidFilePath(resolvedPath)) {
-        return reply.status(400).send({ message: 'Invalid file path' });
-      }
-
-      // Validate defaultBranch if provided
       const resolvedBranch = defaultBranch || 'main';
       if (!isValidBranchSlug(resolvedBranch)) {
         return reply.status(400).send({ message: 'Invalid default branch name' });
       }
 
-      const [proto] = await db
-        .select({ id: prototypes.id, teamId: prototypes.teamId, createdBy: prototypes.createdBy })
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
+      // Check user is org_admin
+      const membership = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+        .where(and(
+          eq(teamMemberships.userId, authUser.id),
+          eq(teams.organizationId, orgId),
+          eq(teamMemberships.role, 'org_admin')
+        ))
         .limit(1);
 
-      if (!proto) {
-        return reply.status(404).send({ message: 'Prototype not found' });
+      if (membership.length === 0) {
+        return reply.status(403).send({ message: 'Only org admins can connect GitHub' });
       }
 
-      // Authorization: must be able to edit the prototype
-      if (!(await canEditPrototype(authUser.id, proto))) {
-        return reply.status(403).send({ message: 'Not authorized to modify this prototype' });
-      }
-
-      // Upsert connection
-      const existing = await db
-        .select({ id: githubRepoConnections.id })
-        .from(githubRepoConnections)
-        .where(eq(githubRepoConnections.prototypeId, proto.id))
-        .limit(1);
-
-      if (existing.length > 0) {
-        await db
-          .update(githubRepoConnections)
-          .set({
-            repoOwner: owner,
-            repoName: repo,
-            defaultBranch: resolvedBranch,
-            filePath: resolvedPath,
-            updatedAt: new Date(),
-          })
-          .where(eq(githubRepoConnections.prototypeId, proto.id));
-      } else {
-        await db.insert(githubRepoConnections).values({
-          prototypeId: proto.id,
+      // Atomic upsert connection (avoids TOCTOU race)
+      await db
+        .insert(githubOrgConnections)
+        .values({
+          organizationId: orgId,
           repoOwner: owner,
           repoName: repo,
           defaultBranch: resolvedBranch,
-          filePath: resolvedPath,
+          connectedBy: authUser.id,
+        })
+        .onConflictDoUpdate({
+          target: githubOrgConnections.organizationId,
+          set: {
+            repoOwner: owner,
+            repoName: repo,
+            defaultBranch: resolvedBranch,
+            connectedBy: authUser.id,
+            updatedAt: new Date(),
+          },
         });
-      }
 
       return { message: 'Connected' };
     },
   );
 
   /**
-   * POST /api/prototypes/:slug/github/push
-   * Push current prototype HTML to the connected GitHub repository
+   * DELETE /api/organizations/:orgId/github/disconnect
+   * Remove GitHub connection from an organization
    */
-  app.post<{ Params: { slug: string } }>(
-    '/:slug/github/push',
+  app.delete<{ Params: { orgId: string } }>(
+    '/:orgId/github/disconnect',
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const authUser = getAuthUser(request);
-      const { slug } = request.params;
+      const { orgId } = request.params;
 
-      // Get prototype
-      const [proto] = await db
-        .select({
-          id: prototypes.id,
-          htmlContent: prototypes.htmlContent,
-          version: prototypes.version,
-          name: prototypes.name,
-          activeBranchId: prototypes.activeBranchId,
-          teamId: prototypes.teamId,
-          createdBy: prototypes.createdBy,
-        })
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
+      // Check user is org_admin
+      const membership = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+        .where(and(
+          eq(teamMemberships.userId, authUser.id),
+          eq(teams.organizationId, orgId),
+          eq(teamMemberships.role, 'org_admin')
+        ))
         .limit(1);
 
-      if (!proto) {
-        return reply.status(404).send({ message: 'Prototype not found' });
+      if (membership.length === 0) {
+        return reply.status(403).send({ message: 'Only org admins can disconnect GitHub' });
       }
 
-      // Authorization: must be able to edit the prototype
-      if (!(await canEditPrototype(authUser.id, proto))) {
-        return reply.status(403).send({ message: 'Not authorized to modify this prototype' });
+      const result = await db
+        .delete(githubOrgConnections)
+        .where(eq(githubOrgConnections.organizationId, orgId))
+        .returning();
+
+      if (result.length === 0) {
+        return reply.code(404).send({ error: 'No GitHub connection found' });
       }
-
-      // Get connection
-      const [connection] = await db
-        .select()
-        .from(githubRepoConnections)
-        .where(eq(githubRepoConnections.prototypeId, proto.id))
-        .limit(1);
-
-      if (!connection) {
-        return reply.status(400).send({ message: 'No GitHub repo connected' });
-      }
-
-      // Get user's token
-      const [user] = await db
-        .select({ githubAccessToken: users.githubAccessToken })
-        .from(users)
-        .where(eq(users.id, authUser.id))
-        .limit(1);
-
-      if (!user?.githubAccessToken) {
-        return reply.status(400).send({ message: 'GitHub account not linked' });
-      }
-
-      // Determine branch: if prototype is on an app branch, use uswds-pt/<branchSlug>
-      let gitBranch = connection.defaultBranch;
-      if (proto.activeBranchId) {
-        const { prototypeBranches } = await import('../db/schema.js');
-        const [branch] = await db
-          .select({ slug: prototypeBranches.slug })
-          .from(prototypeBranches)
-          .where(eq(prototypeBranches.id, proto.activeBranchId))
-          .limit(1);
-
-        if (branch && isValidBranchSlug(branch.slug)) {
-          gitBranch = `uswds-pt/${branch.slug}`;
-          try {
-            await createGitHubBranch({
-              encryptedAccessToken: user.githubAccessToken,
-              owner: connection.repoOwner,
-              repo: connection.repoName,
-              branchName: gitBranch,
-              fromBranch: connection.defaultBranch,
-            });
-          } catch {
-            // Branch may already exist, that's fine
-          }
-        }
-      }
-
-      try {
-        const result = await pushToGitHub({
-          encryptedAccessToken: user.githubAccessToken,
-          owner: connection.repoOwner,
-          repo: connection.repoName,
-          branch: gitBranch,
-          filePath: connection.filePath,
-          content: proto.htmlContent,
-          commitMessage: `Update ${proto.name} (v${proto.version})`,
-        });
-
-        // Update connection with push info
-        await db
-          .update(githubRepoConnections)
-          .set({
-            lastPushedAt: new Date(),
-            lastPushedVersion: proto.version,
-            lastPushedCommitSha: result.commitSha,
-            updatedAt: new Date(),
-          })
-          .where(eq(githubRepoConnections.id, connection.id));
-
-        return {
-          commitSha: result.commitSha,
-          htmlUrl: result.htmlUrl,
-          branch: gitBranch,
-        };
-      } catch (err) {
-        request.log.error(err, 'GitHub push failed');
-        // Don't leak GitHub API error details to client
-        return reply.status(502).send({ message: 'Failed to push to GitHub' });
-      }
-    },
-  );
-
-  /**
-   * POST /api/prototypes/:slug/github/disconnect
-   * Remove GitHub connection from a prototype
-   */
-  app.post<{ Params: { slug: string } }>(
-    '/:slug/github/disconnect',
-    { preHandler: [app.authenticate] },
-    async (request, reply) => {
-      const authUser = getAuthUser(request);
-      const { slug } = request.params;
-
-      const [proto] = await db
-        .select({ id: prototypes.id, teamId: prototypes.teamId, createdBy: prototypes.createdBy })
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!proto) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Authorization: must be able to edit the prototype
-      if (!(await canEditPrototype(authUser.id, proto))) {
-        return reply.status(403).send({ message: 'Not authorized to modify this prototype' });
-      }
-
-      await db
-        .delete(githubRepoConnections)
-        .where(eq(githubRepoConnections.prototypeId, proto.id));
 
       return { message: 'Disconnected' };
     },

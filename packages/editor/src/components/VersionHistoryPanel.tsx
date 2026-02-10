@@ -5,8 +5,7 @@
 
 import { useState } from 'react';
 import { formatRelativeTime } from '../lib/date';
-import type { PrototypeVersion, BranchFilter } from '../hooks/useVersionHistory';
-import type { PrototypeBranch } from '@uswds-pt/shared';
+import type { PrototypeVersion } from '../hooks/useVersionHistory';
 import { VersionDiffView } from './VersionDiffView';
 
 interface VersionHistoryPanelProps {
@@ -19,12 +18,6 @@ interface VersionHistoryPanelProps {
   onUpdateLabel: (versionNumber: number, label: string) => Promise<boolean>;
   onRefresh: () => void;
   onClose: () => void;
-  /** Branch filter */
-  branchFilter?: BranchFilter;
-  /** Set branch filter */
-  onBranchFilterChange?: (filter: BranchFilter) => void;
-  /** Available branches for filter dropdown */
-  branches?: PrototypeBranch[];
 }
 
 export function VersionHistoryPanel({
@@ -37,9 +30,6 @@ export function VersionHistoryPanel({
   onUpdateLabel,
   onRefresh,
   onClose,
-  branchFilter = 'current',
-  onBranchFilterChange,
-  branches = [],
 }: VersionHistoryPanelProps) {
   const [confirmRestore, setConfirmRestore] = useState<number | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
@@ -85,7 +75,7 @@ export function VersionHistoryPanel({
   };
 
   return (
-    <div className="version-history-panel">
+    <div className="version-history-panel" role="complementary" aria-label="Version history">
       <div className="version-history-header">
         <h3>Version History</h3>
         <button
@@ -97,31 +87,6 @@ export function VersionHistoryPanel({
           &times;
         </button>
       </div>
-
-      {/* Branch filter */}
-      {onBranchFilterChange && branches.length > 0 && (
-        <div style={{ padding: '0 12px 8px', borderBottom: '1px solid #dfe1e2' }}>
-          <select
-            value={branchFilter}
-            onChange={(e) => onBranchFilterChange(e.target.value as BranchFilter)}
-            aria-label="Filter versions by branch"
-            style={{
-              width: '100%',
-              padding: '4px 8px',
-              fontSize: '0.8125rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          >
-            <option value="current">Current branch</option>
-            <option value="all">All branches</option>
-            <option value="main">main only</option>
-            {branches.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
 
       <div className="version-history-content">
         {error && (
@@ -146,7 +111,7 @@ export function VersionHistoryPanel({
             </p>
           </div>
         ) : (
-          <ul className="version-list">
+          <ul className="version-list" aria-label="Version history">
             {versions.map((version) => (
               <li key={version.id} className="version-item">
                 {confirmRestore === version.versionNumber ? (
@@ -181,21 +146,6 @@ export function VersionHistoryPanel({
                       <span className="version-number">
                         Version {version.versionNumber}
                       </span>
-                      {branchFilter === 'all' && (
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '1px 6px',
-                            fontSize: '0.6875rem',
-                            borderRadius: '3px',
-                            backgroundColor: version.branchName ? '#e7f2ff' : '#f0f0f0',
-                            color: '#1b1b1b',
-                            marginLeft: '4px',
-                          }}
-                        >
-                          {version.branchName || 'main'}
-                        </span>
-                      )}
                       {editingLabel === version.versionNumber ? (
                         <div className="version-label-edit">
                           <input
@@ -208,6 +158,7 @@ export function VersionHistoryPanel({
                               if (e.key === 'Escape') handleCancelEditLabel();
                             }}
                             placeholder="Label this version..."
+                            aria-label="Label this version"
                             maxLength={255}
                             autoFocus
                           />

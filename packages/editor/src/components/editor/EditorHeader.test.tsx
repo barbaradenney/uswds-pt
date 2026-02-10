@@ -8,7 +8,6 @@ import { EditorHeader, type EditorHeaderProps } from './EditorHeader';
 
 const defaultProps: EditorHeaderProps = {
   name: 'Test Prototype',
-  onNameChange: vi.fn(),
   onBack: vi.fn(),
   onPreview: vi.fn(),
   onExport: vi.fn(),
@@ -27,20 +26,9 @@ const defaultProps: EditorHeaderProps = {
 };
 
 describe('EditorHeader', () => {
-  it('renders the prototype name', () => {
+  it('renders the prototype name as read-only text', () => {
     render(<EditorHeader {...defaultProps} />);
-    const input = screen.getByDisplayValue('Test Prototype');
-    expect(input).toBeInTheDocument();
-  });
-
-  it('calls onNameChange when name is edited', () => {
-    const onNameChange = vi.fn();
-    render(<EditorHeader {...defaultProps} onNameChange={onNameChange} />);
-
-    const input = screen.getByDisplayValue('Test Prototype');
-    fireEvent.change(input, { target: { value: 'New Name' } });
-
-    expect(onNameChange).toHaveBeenCalledWith('New Name');
+    expect(screen.getByText('Test Prototype')).toBeInTheDocument();
   });
 
   it('calls onBack when back button is clicked', () => {

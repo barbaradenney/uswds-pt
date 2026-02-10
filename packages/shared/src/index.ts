@@ -12,3 +12,4 @@ export * from './types/api.js';
 export * from './debug.js';
 export * from './sanitize.js';
 export * from './checksum.js';
+export * from './slug.js';

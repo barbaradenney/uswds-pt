@@ -24,40 +24,63 @@ describe('TemplateChooser', () => {
   it('renders heading and description', () => {
     render(<TemplateChooser {...defaultProps} />);
 
-    expect(screen.getByText('Choose a Starting Template')).toBeInTheDocument();
-    expect(screen.getByText(/Pick a layout to start with/)).toBeInTheDocument();
+    expect(screen.getByText('Create a New Prototype')).toBeInTheDocument();
+    expect(screen.getByText(/Name your prototype and pick a layout/)).toBeInTheDocument();
   });
 
-  it('calls onSelect with correct template ID when clicking a card', () => {
+  it('renders name input with label', () => {
     render(<TemplateChooser {...defaultProps} />);
 
-    fireEvent.click(screen.getByText('Signed In'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('signed-in', undefined);
+    expect(screen.getByLabelText('Prototype name')).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByText('Signed Out'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('signed-out', undefined);
+  it('disables template cards when name is empty', () => {
+    render(<TemplateChooser {...defaultProps} />);
 
-    fireEvent.click(screen.getByText('Form'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('form', undefined);
+    // Cards should be disabled (aria-disabled)
+    const blankCard = screen.getByText('Blank').closest('[role="button"]')!;
+    expect(blankCard).toHaveAttribute('aria-disabled', 'true');
 
+    // Clicking a disabled card should not call onSelect
+    fireEvent.click(blankCard);
+    expect(defaultProps.onSelect).not.toHaveBeenCalled();
+  });
+
+  it('calls onSelect with template ID and name when name is provided', () => {
+    render(<TemplateChooser {...defaultProps} />);
+
+    // Enter a name
+    fireEvent.change(screen.getByLabelText('Prototype name'), {
+      target: { value: 'My Prototype' },
+    });
+
+    // Click a template card
     fireEvent.click(screen.getByText('Blank'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', undefined);
+    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', 'My Prototype');
   });
 
-  it('calls onSelect when pressing Enter on a card', () => {
+  it('calls onSelect when pressing Enter on a card with name filled', () => {
     render(<TemplateChooser {...defaultProps} />);
+
+    fireEvent.change(screen.getByLabelText('Prototype name'), {
+      target: { value: 'Test' },
+    });
 
     const signedInCard = screen.getByText('Signed In').closest('[role="button"]')!;
     fireEvent.keyDown(signedInCard, { key: 'Enter' });
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('signed-in', undefined);
+    expect(defaultProps.onSelect).toHaveBeenCalledWith('signed-in', 'Test');
   });
 
-  it('calls onSelect when pressing Space on a card', () => {
+  it('calls onSelect when pressing Space on a card with name filled', () => {
     render(<TemplateChooser {...defaultProps} />);
+
+    fireEvent.change(screen.getByLabelText('Prototype name'), {
+      target: { value: 'Test' },
+    });
 
     const blankCard = screen.getByText('Blank').closest('[role="button"]')!;
     fireEvent.keyDown(blankCard, { key: ' ' });
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', undefined);
+    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', 'Test');
   });
 
   it('calls onBack when clicking back button', () => {
@@ -76,44 +99,19 @@ describe('TemplateChooser', () => {
     expect(screen.getByText(/empty canvas/i)).toBeInTheDocument();
   });
 
-  it('shows branch input when "Start on a branch" checkbox is toggled', () => {
+  it('shows branch slug preview when name is entered', () => {
     render(<TemplateChooser {...defaultProps} />);
 
-    // Branch input should not be visible initially
-    expect(screen.queryByLabelText('Branch name')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Prototype name'), {
+      target: { value: 'Contact Form Redesign' },
+    });
 
-    // Toggle the checkbox
-    fireEvent.click(screen.getByLabelText('Start on a branch'));
-
-    // Branch input should now be visible
-    expect(screen.getByLabelText('Branch name')).toBeInTheDocument();
+    expect(screen.getByText(/uswds-pt\/contact-form-redesign/)).toBeInTheDocument();
   });
 
-  it('passes branch name to onSelect when provided', () => {
+  it('does not show slug preview when name is empty', () => {
     render(<TemplateChooser {...defaultProps} />);
 
-    // Enable branch input and type a name
-    fireEvent.click(screen.getByLabelText('Start on a branch'));
-    fireEvent.change(screen.getByLabelText('Branch name'), { target: { value: 'my-branch' } });
-
-    // Click a template card
-    fireEvent.click(screen.getByText('Blank'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', 'my-branch');
-  });
-
-  it('does not pass branch name when checkbox is checked but input is empty', () => {
-    render(<TemplateChooser {...defaultProps} />);
-
-    fireEvent.click(screen.getByLabelText('Start on a branch'));
-    // Leave input empty
-
-    fireEvent.click(screen.getByText('Blank'));
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('blank', undefined);
-  });
-
-  it('hides branch option when hideBranchOption is true', () => {
-    render(<TemplateChooser {...defaultProps} hideBranchOption />);
-
-    expect(screen.queryByText('Start on a branch')).not.toBeInTheDocument();
+    expect(screen.queryByText(/uswds-pt\//)).not.toBeInTheDocument();
   });
 });

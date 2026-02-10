@@ -1,26 +1,31 @@
 /**
  * Template Chooser
  *
- * Displays a card grid of starter templates when creating a new prototype.
+ * Displays a required name input and a card grid of starter templates
+ * when creating a new prototype. The name becomes the prototype's
+ * branch slug (shown as a preview below the input).
+ *
  * Rendered as an early return in Editor.tsx before the GrapesJS canvas mounts.
  */
 
 import { useState } from 'react';
 import { STARTER_TEMPLATES } from '@uswds-pt/adapter';
+import { toBranchSlug } from '@uswds-pt/shared';
 
 interface TemplateChooserProps {
-  onSelect: (templateId: string, branchName?: string) => void;
+  onSelect: (templateId: string, name: string) => void;
   onBack: () => void;
-  /** Hide the branch option (e.g., in demo mode) */
-  hideBranchOption?: boolean;
 }
 
-export function TemplateChooser({ onSelect, onBack, hideBranchOption }: TemplateChooserProps) {
-  const [showBranchInput, setShowBranchInput] = useState(false);
-  const [branchName, setBranchName] = useState('');
+export function TemplateChooser({ onSelect, onBack }: TemplateChooserProps) {
+  const [name, setName] = useState('');
+
+  const slugPreview = name.trim() ? toBranchSlug(name) : '';
+  const isNameValid = name.trim().length > 0;
 
   const handleSelect = (templateId: string) => {
-    onSelect(templateId, showBranchInput && branchName.trim() ? branchName.trim() : undefined);
+    if (!isNameValid) return;
+    onSelect(templateId, name.trim());
   };
 
   return (
@@ -45,57 +50,50 @@ export function TemplateChooser({ onSelect, onBack, hideBranchOption }: Template
         </button>
 
         <h1 style={{ margin: '0 0 8px', fontSize: '1.75rem', fontWeight: 700 }}>
-          Choose a Starting Template
+          Create a New Prototype
         </h1>
-        <p style={{ margin: '0 0 32px', color: 'var(--color-base-light, #71767a)' }}>
-          Pick a layout to start with. You can customize everything in the editor.
+        <p style={{ margin: '0 0 24px', color: 'var(--color-base-light, #71767a)' }}>
+          Name your prototype and pick a layout to start with.
         </p>
 
-        {/* Optional branch name input */}
-        {!hideBranchOption && (
-          <div style={{ marginBottom: '24px' }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                color: 'var(--color-base, #565c65)',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={showBranchInput}
-                onChange={(e) => setShowBranchInput(e.target.checked)}
-              />
-              Start on a branch
-            </label>
-            {showBranchInput && (
-              <div style={{ marginTop: '8px', maxWidth: '300px' }}>
-                <input
-                  type="text"
-                  value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
-                  placeholder="e.g., redesign-header"
-                  maxLength={100}
-                  aria-label="Branch name"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--color-base-light, #71767a)' }}>
-                  A branch lets you experiment without affecting the main version.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Name input */}
+        <div style={{ marginBottom: '32px', maxWidth: '400px' }}>
+          <label
+            htmlFor="prototype-name"
+            style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              marginBottom: '4px',
+              color: 'var(--color-base-ink, #1b1b1b)',
+            }}
+          >
+            Name your prototype
+          </label>
+          <input
+            id="prototype-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Contact Form Redesign"
+            maxLength={100}
+            aria-label="Prototype name"
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              boxSizing: 'border-box',
+            }}
+          />
+          {slugPreview && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--color-base-light, #71767a)' }}>
+              GitHub branch: uswds-pt/{slugPreview}
+            </p>
+          )}
+        </div>
 
         <div className="prototype-grid">
           {STARTER_TEMPLATES.map((template) => (
@@ -103,7 +101,7 @@ export function TemplateChooser({ onSelect, onBack, hideBranchOption }: Template
               key={template.id}
               className="prototype-card"
               role="button"
-              tabIndex={0}
+              tabIndex={isNameValid ? 0 : -1}
               onClick={() => handleSelect(template.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -111,7 +109,11 @@ export function TemplateChooser({ onSelect, onBack, hideBranchOption }: Template
                   handleSelect(template.id);
                 }
               }}
-              style={{ cursor: 'pointer' }}
+              style={{
+                cursor: isNameValid ? 'pointer' : 'not-allowed',
+                opacity: isNameValid ? 1 : 0.5,
+              }}
+              aria-disabled={!isNameValid}
             >
               <div
                 style={{

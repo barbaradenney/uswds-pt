@@ -136,8 +136,7 @@ export interface Prototype {
   isPublic: boolean;
   version?: number;
   contentChecksum?: string;
-  activeBranchId?: string | null;
-  activeBranchName?: string | null;
+  branchSlug: string;
 }
 
 export interface PrototypeVersion {
@@ -148,25 +147,8 @@ export interface PrototypeVersion {
   grapesData: GrapesProjectData;
   label?: string;
   contentChecksum?: string;
-  branchId?: string | null;
-  branchName?: string | null;
   createdAt: Date;
   createdBy?: string;
-}
-
-/**
- * Prototype branch — a named variant of a prototype's content
- */
-export interface PrototypeBranch {
-  id: string;
-  prototypeId: string;
-  name: string;
-  slug: string;
-  description?: string;
-  forkedFromVersion?: number | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 /**
@@ -223,98 +205,9 @@ export interface GrapesComponentData {
  * API Request/Response Types
  */
 
-export interface CreatePrototypeRequest {
-  name: string;
-  description?: string;
-  htmlContent?: string;
-  grapesData?: GrapesProjectData;
-  teamId: string;
-}
-
-export interface UpdatePrototypeRequest {
-  name?: string;
-  description?: string;
-  htmlContent?: string;
-  grapesData?: GrapesProjectData;
-}
-
-export interface PrototypeListResponse {
-  prototypes: Prototype[];
-}
-
-export interface ExportOptions {
-  mode: 'snippet' | 'full';
-  format?: 'html' | 'json';
-  includeStyles?: boolean;
-}
-
-export interface AuthLoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface AuthRegisterRequest {
-  email: string;
-  password: string;
-  name?: string;
-}
-
 export interface AuthResponse {
   token: string;
   user: UserWithOrgAndTeams | null;
-}
-
-// ============================================================================
-// Organization & Team API Types
-// ============================================================================
-
-export interface CreateTeamRequest {
-  name: string;
-  slug?: string;
-  description?: string;
-}
-
-export interface UpdateTeamRequest {
-  name?: string;
-  description?: string;
-}
-
-export interface UpdateOrganizationRequest {
-  name?: string;
-  description?: string;
-  logoUrl?: string;
-}
-
-export interface CreateInvitationRequest {
-  email: string;
-  role?: Role;
-}
-
-export interface TeamListResponse {
-  teams: Array<Team & { role: Role; joinedAt: Date }>;
-}
-
-export interface TeamMemberListResponse {
-  members: Array<{
-    id: string;
-    email: string;
-    name?: string;
-    role: Role;
-    joinedAt: Date;
-  }>;
-}
-
-export interface InvitationListResponse {
-  invitations: InvitationWithTeam[];
-}
-
-export interface AcceptInvitationResponse {
-  message: string;
-  membership: {
-    teamId: string;
-    role: Role;
-    joinedAt: Date;
-  };
 }
 
 // ============================================================================

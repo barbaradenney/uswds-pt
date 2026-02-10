@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
@@ -9,6 +9,8 @@ import { useInvitations } from '../hooks/useInvitations';
 import { TeamSwitcher } from './TeamSwitcher';
 import { InvitationBannerList } from './InvitationBanner';
 import { CreateTeamModal } from './CreateTeamModal';
+import { OrgGitHubSettings } from './OrgGitHubSettings';
+import { apiGet, API_ENDPOINTS } from '../lib/api';
 
 type SortOption = 'updated' | 'name-asc' | 'name-desc' | 'oldest';
 
@@ -20,9 +22,13 @@ export function PrototypeList() {
   const [error, setError] = useState<string | null>(null);
   const [acceptingToken, setAcceptingToken] = useState<string | null>(null);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+  const [showGitHubSettings, setShowGitHubSettings] = useState(false);
+  const [gitHubConnectedRepo, setGitHubConnectedRepo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('updated');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [confirmDeleteSlug, setConfirmDeleteSlug] = useState<string | null>(null);
+  const wasGitHubSettingsOpen = useRef(false);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -33,6 +39,29 @@ export function PrototypeList() {
   // If user has no teams, allow them to create their first one
   const isOrgAdmin = teams.length === 0 || teams.some((t) => t.role === 'org_admin');
   const hasNoTeams = teams.length === 0;
+  const hasGitHubLinked = !!user?.hasGitHubLinked;
+
+  // Fetch org-level GitHub connection status
+  useEffect(() => {
+    if (!organization?.id) {
+      setGitHubConnectedRepo(null);
+      return;
+    }
+    // Fetch on mount, or when GitHub settings modal closes (to pick up changes)
+    const shouldFetch = !wasGitHubSettingsOpen.current || (wasGitHubSettingsOpen.current && !showGitHubSettings);
+    wasGitHubSettingsOpen.current = showGitHubSettings;
+    if (shouldFetch) {
+      apiGet<{ connected: boolean; repoOwner?: string; repoName?: string }>(
+        API_ENDPOINTS.GITHUB_ORG_CONNECTION(organization.id)
+      ).then(result => {
+        if (result.success && result.data?.connected) {
+          setGitHubConnectedRepo(`${result.data.repoOwner}/${result.data.repoName}`);
+        } else {
+          setGitHubConnectedRepo(null);
+        }
+      });
+    }
+  }, [organization?.id, showGitHubSettings]);
 
   const loadPrototypes = useCallback(async () => {
     try {
@@ -59,13 +88,12 @@ export function PrototypeList() {
     loadPrototypes();
   }, [currentTeam, loadPrototypes]);
 
-  async function handleDelete(slug: string, e: React.MouseEvent) {
+  function handleDelete(slug: string, e: React.MouseEvent) {
     e.stopPropagation();
+    setConfirmDeleteSlug(slug);
+  }
 
-    if (!confirm('Are you sure you want to delete this prototype?')) {
-      return;
-    }
-
+  async function confirmDelete(slug: string) {
     try {
       const response = await authFetch(`/api/prototypes/${slug}`, {
         method: 'DELETE',
@@ -76,8 +104,10 @@ export function PrototypeList() {
       }
 
       setPrototypes((prev) => prev.filter((p) => p.slug !== slug));
+      setConfirmDeleteSlug(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
+      setConfirmDeleteSlug(null);
     }
   }
 
@@ -205,7 +235,27 @@ export function PrototypeList() {
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {gitHubConnectedRepo && (
+            <span style={{
+              fontSize: '0.75rem',
+              color: 'var(--color-success-darker, #4d8055)',
+              backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+              padding: '4px 8px',
+              borderRadius: '4px',
+            }}>
+              {gitHubConnectedRepo}
+            </span>
+          )}
+          {organization && isOrgAdmin && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowGitHubSettings(true)}
+              title="GitHub Integration"
+            >
+              GitHub
+            </button>
+          )}
           {currentTeam && (currentTeam.role === 'org_admin' || currentTeam.role === 'team_admin') && (
             <button
               className="btn btn-secondary"
@@ -369,28 +419,60 @@ export function PrototypeList() {
                   </Link>
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <button
-                    className="btn"
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.875rem',
-                      color: 'var(--color-base-light)',
-                    }}
-                    onClick={(e) => handleDelete(prototype.slug, e)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className="btn"
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.875rem',
-                      color: 'var(--color-base-light)',
-                    }}
-                    onClick={(e) => handleDuplicate(prototype.slug, e)}
-                  >
-                    Duplicate
-                  </button>
+                  {confirmDeleteSlug === prototype.slug ? (
+                    <>
+                      <button
+                        className="btn"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.875rem',
+                          color: '#b50909',
+                        }}
+                        onClick={(e) => { e.stopPropagation(); confirmDelete(prototype.slug); }}
+                        aria-label={`Confirm delete ${prototype.name}`}
+                      >
+                        Confirm Delete?
+                      </button>
+                      <button
+                        className="btn"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.875rem',
+                          color: 'var(--color-base-light)',
+                        }}
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteSlug(null); }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="btn"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.875rem',
+                          color: 'var(--color-base-light)',
+                        }}
+                        onClick={(e) => handleDelete(prototype.slug, e)}
+                        aria-label={`Delete ${prototype.name}`}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        className="btn"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.875rem',
+                          color: 'var(--color-base-light)',
+                        }}
+                        onClick={(e) => handleDuplicate(prototype.slug, e)}
+                        aria-label={`Duplicate ${prototype.name}`}
+                      >
+                        Duplicate
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               {prototype.description && (
@@ -435,6 +517,16 @@ export function PrototypeList() {
         onClose={() => setShowCreateTeamModal(false)}
         onCreateTeam={handleCreateTeam}
       />
+
+      {/* GitHub Settings Modal */}
+      {organization && (
+        <OrgGitHubSettings
+          isOpen={showGitHubSettings}
+          onClose={() => setShowGitHubSettings(false)}
+          orgId={organization.id}
+          hasGitHubLinked={hasGitHubLinked}
+        />
+      )}
     </div>
   );
 }

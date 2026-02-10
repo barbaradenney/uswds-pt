@@ -3,23 +3,20 @@
  *
  * Contains the top navigation bar for the editor with:
  * - Back button
- * - Prototype name input
+ * - Prototype name (read-only)
  * - Action buttons (Preview, Export, Embed, History, Save)
  * - Autosave indicator
  * - Error display
  */
 
-import { memo, useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
-import type { PrototypeBranch } from '@uswds-pt/shared';
+import { memo, useState, useEffect, useRef } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 import { mod } from '../../lib/platform';
 
 export interface EditorHeaderProps {
-  /** Prototype name */
+  /** Prototype name (read-only) */
   name: string;
-  /** Callback when name changes */
-  onNameChange: (name: string) => void;
   /** Callback for back button */
   onBack: () => void;
   /** Callback for preview button */
@@ -64,26 +61,6 @@ export interface EditorHeaderProps {
   canRedo?: boolean;
   /** Callback to show keyboard shortcuts dialog */
   onShowShortcuts?: () => void;
-  /** Whether to show branch selector */
-  showBranchSelector?: boolean;
-  /** Available branches */
-  branches?: PrototypeBranch[];
-  /** Currently active branch ID (null = main) */
-  activeBranchId?: string | null;
-  /** Whether branch switch is in progress */
-  isSwitchingBranch?: boolean;
-  /** Callback when user selects a branch */
-  onSwitchBranch?: (branchSlug: string) => void;
-  /** Callback when user selects main */
-  onSwitchToMain?: () => void;
-  /** Callback to create a new branch */
-  onCreateBranch?: () => void;
-  /** Whether to show GitHub button */
-  showGitHubButton?: boolean;
-  /** Callback for GitHub button */
-  onGitHub?: () => void;
-  /** GitHub repo connection info for link display */
-  gitHubRepo?: { owner: string; name: string; branch?: string; filePath?: string } | null;
 }
 
 function formatLastSaved(date: Date): string {
@@ -97,7 +74,6 @@ function formatLastSaved(date: Date): string {
 
 export const EditorHeader = memo(function EditorHeader({
   name,
-  onNameChange,
   onBack,
   onPreview,
   onExport,
@@ -120,16 +96,6 @@ export const EditorHeader = memo(function EditorHeader({
   canUndo = false,
   canRedo = false,
   onShowShortcuts,
-  showBranchSelector = false,
-  branches = [],
-  activeBranchId = null,
-  isSwitchingBranch = false,
-  onSwitchBranch,
-  onSwitchToMain,
-  onCreateBranch,
-  showGitHubButton = false,
-  onGitHub,
-  gitHubRepo = null,
 }: EditorHeaderProps) {
   const connectionStatus = useConnectionStatus();
 
@@ -148,10 +114,13 @@ export const EditorHeader = memo(function EditorHeader({
     return () => clearTimeout(timeout);
   }, [lastSnapshotAt]);
 
-  const handleNameChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => onNameChange(e.target.value),
-    [onNameChange]
-  );
+  // Force re-render every 30s to keep the relative "Saved Xm ago" timestamp fresh
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!lastSavedAt) return;
+    const interval = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, [lastSavedAt]);
 
   return (
     <header className="editor-header">
@@ -159,69 +128,21 @@ export const EditorHeader = memo(function EditorHeader({
         <button
           className="btn btn-secondary"
           onClick={onBack}
+          aria-label="Back to prototype list"
           style={{ padding: '6px 12px' }}
         >
           ← Back
         </button>
-        <input
-          type="text"
+        <span
           className="editor-title"
-          value={name}
-          onChange={handleNameChange}
-          placeholder="Prototype name"
-          aria-label="Prototype name"
           style={{
-            border: 'none',
-            background: 'transparent',
             fontSize: '1.125rem',
             fontWeight: 600,
             padding: '4px 8px',
-            borderRadius: '4px',
           }}
-        />
-        {/* Branch selector */}
-        {showBranchSelector && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
-            <select
-              value={activeBranchId || '__main__'}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '__main__') {
-                  onSwitchToMain?.();
-                } else {
-                  const branch = branches.find(b => b.id === val);
-                  if (branch) onSwitchBranch?.(branch.slug);
-                }
-              }}
-              disabled={isSwitchingBranch}
-              aria-label="Select branch"
-              style={{
-                padding: '4px 8px',
-                fontSize: '0.8125rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: activeBranchId ? '#e7f2ff' : '#fff',
-                cursor: isSwitchingBranch ? 'wait' : 'pointer',
-                maxWidth: '160px',
-              }}
-            >
-              <option value="__main__">main</option>
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-            <button
-              className="btn btn-secondary"
-              onClick={onCreateBranch}
-              disabled={isSwitchingBranch}
-              aria-label="Create branch"
-              title="Create new branch"
-              style={{ padding: '4px 8px', fontSize: '0.8125rem', minWidth: 'auto' }}
-            >
-              +
-            </button>
-          </div>
-        )}
+        >
+          {name || 'Untitled Prototype'}
+        </span>
         {/* Undo/Redo */}
         {onUndo && (
           <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
@@ -253,6 +174,7 @@ export const EditorHeader = memo(function EditorHeader({
         {/* Connection status indicator */}
         {showConnectionStatus && !connectionStatus.isOnline && (
           <span
+            role="status"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -272,6 +194,7 @@ export const EditorHeader = memo(function EditorHeader({
         )}
         {showConnectionStatus && connectionStatus.justReconnected && (
           <span
+            role="status"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -289,7 +212,7 @@ export const EditorHeader = memo(function EditorHeader({
           </span>
         )}
         {error && (
-          <span style={{ color: 'var(--color-error)', marginRight: '12px' }}>
+          <span role="alert" style={{ color: 'var(--color-error)', marginRight: '12px' }}>
             {error}
           </span>
         )}
@@ -315,6 +238,7 @@ export const EditorHeader = memo(function EditorHeader({
         )}
         {showDraftBadge && (
           <span
+            role="status"
             style={{
               fontSize: '0.75rem',
               color: '#71767a',
@@ -326,7 +250,7 @@ export const EditorHeader = memo(function EditorHeader({
           </span>
         )}
         {showAutosaveIndicator && (
-          <div className={`autosave-indicator ${autosaveStatus}`}>
+          <div className={`autosave-indicator ${autosaveStatus}`} aria-live="polite">
             <span className="autosave-dot" />
             <span>
               {autosaveStatus === 'saving' && 'Saving...'}
@@ -347,41 +271,6 @@ export const EditorHeader = memo(function EditorHeader({
           >
             ?
           </button>
-        )}
-        {showGitHubButton && onGitHub && (
-          <button
-            className="btn btn-secondary"
-            onClick={onGitHub}
-            aria-label="GitHub"
-            title={gitHubRepo ? `Connected to ${gitHubRepo.owner}/${gitHubRepo.name}` : 'Connect GitHub'}
-            style={{ padding: '4px 10px', fontSize: '0.875rem', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            {gitHubRepo ? '' : 'GitHub'}
-          </button>
-        )}
-        {/* GitHub repo link (visible when connected + on a branch) */}
-        {gitHubRepo && activeBranchId && (
-          <a
-            href={`https://github.com/${encodeURIComponent(gitHubRepo.owner)}/${encodeURIComponent(gitHubRepo.name)}/blob/uswds-pt/${encodeURIComponent(branches.find(b => b.id === activeBranchId)?.slug || 'main')}/${(gitHubRepo.filePath || 'prototype.html').split('/').map(encodeURIComponent).join('/')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="View on GitHub"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontSize: '0.75rem',
-              color: '#1a4480',
-              textDecoration: 'none',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              backgroundColor: '#f0f0f0',
-            }}
-          >
-            ↗ GitHub
-          </a>
         )}
         <button
           className="btn btn-primary"

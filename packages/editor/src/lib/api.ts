@@ -4,6 +4,13 @@
  */
 
 import { authFetch } from '../hooks/useAuth';
+import type {
+  GlobalSymbol,
+  GlobalSymbolListResponse,
+  CreateGlobalSymbolRequest,
+  UpdateGlobalSymbolRequest,
+  GrapesJSSymbol,
+} from '@uswds-pt/shared';
 
 /**
  * API endpoint constants
@@ -44,25 +51,15 @@ export const API_ENDPOINTS = {
   PROTOTYPE_VERSION_LABEL: (slug: string, version: number) =>
     `/api/prototypes/${encodeURIComponent(slug)}/versions/${version}`,
 
-  // Branches
-  PROTOTYPE_BRANCHES: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/branches`,
-  PROTOTYPE_BRANCH_SWITCH: (slug: string, branchSlug: string) =>
-    `/api/prototypes/${encodeURIComponent(slug)}/branches/${encodeURIComponent(branchSlug)}/switch`,
-  PROTOTYPE_BRANCH_SWITCH_MAIN: (slug: string) =>
-    `/api/prototypes/${encodeURIComponent(slug)}/branches/switch-main`,
-  PROTOTYPE_BRANCH_DELETE: (slug: string, branchSlug: string) =>
-    `/api/prototypes/${encodeURIComponent(slug)}/branches/${encodeURIComponent(branchSlug)}`,
-
   // Global Symbols
   TEAM_SYMBOLS: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols`,
   TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols/${encodeURIComponent(symbolId)}`,
 
-  // GitHub Integration
+  // GitHub Integration (org-level)
   GITHUB_REPOS: '/api/github/repos',
-  GITHUB_CONNECTION: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github`,
-  GITHUB_CONNECT: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/connect`,
-  GITHUB_PUSH: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/push`,
-  GITHUB_DISCONNECT: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/github/disconnect`,
+  GITHUB_ORG_CONNECTION: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github`,
+  GITHUB_ORG_CONNECT: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github/connect`,
+  GITHUB_ORG_DISCONNECT: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/github/disconnect`,
 } as const;
 
 /**
@@ -117,13 +114,20 @@ export async function apiRequest<T>(
 
     // Handle empty responses (e.g., DELETE)
     const text = await response.text();
-    const data = text ? JSON.parse(text) : undefined;
+    let data: T | undefined;
+    try {
+      data = text ? JSON.parse(text) : undefined;
+    } catch {
+      // Non-JSON response body — treat as successful with no data
+      data = undefined;
+    }
 
     return {
       success: true,
       data,
     };
   } catch (err) {
+    console.error('[apiRequest]', defaultError, err);
     return {
       success: false,
       error: defaultError,
@@ -169,14 +173,6 @@ export function apiDelete<T>(endpoint: string, defaultError?: string): Promise<A
 // ============================================================================
 // Global Symbols API Functions
 // ============================================================================
-
-import type {
-  GlobalSymbol,
-  GlobalSymbolListResponse,
-  CreateGlobalSymbolRequest,
-  UpdateGlobalSymbolRequest,
-  GrapesJSSymbol,
-} from '@uswds-pt/shared';
 
 /**
  * Fetch all global symbols for a team
