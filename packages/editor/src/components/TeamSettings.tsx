@@ -314,11 +314,12 @@ export function TeamSettings({
       {/* GitHub Integration Section - org_admin only */}
       {isOrgAdmin && organization && (
         <div className="team-settings-section">
-          <h2>GitHub Integration</h2>
+          <h2>GitHub Integration <span style={{ fontWeight: 400, fontSize: '0.875rem', color: 'var(--color-base-light, #71767a)' }}>(optional)</span></h2>
           <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
             Connect a GitHub repository to automatically push prototype HTML to your
             team's codebase on every save. Developers can review changes, open pull
             requests, and merge production-ready USWDS markup directly into their project.
+            This is entirely optional — prototypes save and work normally without it.
           </p>
           {gitHubConnectedRepo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
