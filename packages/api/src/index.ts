@@ -80,8 +80,16 @@ async function main() {
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [];
 
+  // CORS uses origin (protocol + host + port) — strip any path from FRONTEND_URL
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  let frontendOrigin = frontendUrl;
+  try {
+    const parsed = new URL(frontendUrl);
+    frontendOrigin = parsed.origin;
+  } catch { /* use as-is if not a valid URL */ }
+
   const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
+    frontendOrigin,
     ...(!isProduction ? ['http://localhost:5173'] : []), // Vite dev server (dev only)
     ...additionalOrigins,
   ].filter(Boolean);
