@@ -1,6 +1,7 @@
 /**
- * Preview Routes - Public endpoints for viewing prototypes
- * No authentication required for preview access
+ * Preview Routes - Endpoints for viewing prototypes
+ * Public prototypes (isPublic=true) require no auth.
+ * Authenticated users can preview any prototype they have access to.
  */
 
 import { FastifyInstance } from 'fastify';
@@ -14,29 +15,59 @@ interface PreviewParams {
 export async function previewRoutes(app: FastifyInstance) {
   /**
    * GET /api/preview/:slug
-   * Get a prototype for public preview (no auth required)
+   * Get a prototype for preview. Public prototypes need no auth;
+   * authenticated users can preview their own non-public prototypes.
    */
   app.get<{ Params: PreviewParams }>(
     '/:slug',
     async (request, reply) => {
       const { slug } = request.params;
 
-      const [prototype] = await db
+      // Try to extract user ID from auth token (optional — don't fail if missing)
+      let userId: string | null = null;
+      try {
+        await request.jwtVerify();
+        userId = (request.user as { id: string }).id;
+      } catch {
+        // No valid token — proceed as unauthenticated
+      }
+
+      // First try public access (no auth needed)
+      let [prototype] = await db
         .select({
           name: prototypes.name,
           htmlContent: prototypes.htmlContent,
           grapesData: prototypes.grapesData,
+          createdBy: prototypes.createdBy,
         })
         .from(prototypes)
         .where(and(eq(prototypes.slug, slug), eq(prototypes.isPublic, true)))
         .limit(1);
 
+      // If not public but user is authenticated, check if they created it
+      if (!prototype && userId) {
+        [prototype] = await db
+          .select({
+            name: prototypes.name,
+            htmlContent: prototypes.htmlContent,
+            grapesData: prototypes.grapesData,
+            createdBy: prototypes.createdBy,
+          })
+          .from(prototypes)
+          .where(and(eq(prototypes.slug, slug), eq(prototypes.createdBy, userId)))
+          .limit(1);
+      }
+
       if (!prototype) {
         return reply.status(404).send({ message: 'Prototype not found' });
       }
 
-      // Cache preview responses for 5 minutes (public, revalidate after)
-      reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      // Only cache public prototypes
+      if (!userId || prototype.createdBy !== userId) {
+        reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      } else {
+        reply.header('Cache-Control', 'private, no-cache');
+      }
 
       // Return with gjsData key for frontend compatibility
       return {

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { cleanExport, generateFullDocument, generateMultiPageDocument } from '../lib/export';
 import type { PageData } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
+import { getAuthToken } from '../contexts/AuthContext';
 import { escapeHtml } from '@uswds-pt/shared';
 
 // Check if we're in demo mode
@@ -167,9 +168,14 @@ export function Preview() {
         }
       }
 
-      // Use the public preview API endpoint (no auth required)
+      // Use the preview API endpoint (sends auth token if available for non-public prototypes)
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`);
+      const headers: Record<string, string> = {};
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`, { headers });
 
       if (!response.ok) {
         if (response.status === 404) {
