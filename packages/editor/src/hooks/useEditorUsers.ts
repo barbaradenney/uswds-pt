@@ -92,6 +92,7 @@ export function useEditorUsers(): UseEditorUsersReturn {
     const updated = [...readUsers(editor), newUser];
     writeUsers(editor, updated);
     setUsers(updated);
+    editor.trigger('users:update');
   }, [editor]);
 
   const renameUser = useCallback((id: string, name: string) => {
@@ -103,6 +104,7 @@ export function useEditorUsers(): UseEditorUsersReturn {
     const updated = current.map(u => u.id === id ? { ...u, name: trimmed } : u);
     writeUsers(editor, updated);
     setUsers(updated);
+    editor.trigger('users:update');
   }, [editor]);
 
   const removeUser = useCallback((id: string) => {
@@ -136,6 +138,8 @@ export function useEditorUsers(): UseEditorUsersReturn {
       };
       cleanComponent(wrapper);
     }
+
+    editor.trigger('users:update');
 
     // If the active user was deleted, clear it
     if (activeUserId === id) {

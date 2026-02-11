@@ -89,6 +89,7 @@ export function useEditorStates(): UseEditorStatesReturn {
     const updated = [...readStates(editor), newState];
     writeStates(editor, updated);
     setStates(updated);
+    editor.trigger('states:update');
   }, [editor]);
 
   const renameState = useCallback((id: string, name: string) => {
@@ -100,6 +101,7 @@ export function useEditorStates(): UseEditorStatesReturn {
     const updated = current.map(s => s.id === id ? { ...s, name: trimmed } : s);
     writeStates(editor, updated);
     setStates(updated);
+    editor.trigger('states:update');
   }, [editor]);
 
   const removeState = useCallback((id: string) => {
@@ -133,6 +135,8 @@ export function useEditorStates(): UseEditorStatesReturn {
       };
       cleanComponent(wrapper);
     }
+
+    editor.trigger('states:update');
 
     // If the active state was deleted, clear it
     if (activeStateId === id) {

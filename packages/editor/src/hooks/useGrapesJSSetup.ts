@@ -271,6 +271,7 @@ export function useGrapesJSSetup({
         traitLabel: 'Visible In States',
         dataAttribute: 'data-states',
         selectEvent: 'state:select',
+        updateEvent: 'states:update',
       });
 
       // Set up user visibility trait (checkbox-group for multi-select user tagging)
@@ -280,6 +281,7 @@ export function useGrapesJSSetup({
         traitLabel: 'Visible For Users',
         dataAttribute: 'data-users',
         selectEvent: 'user:select',
+        updateEvent: 'users:update',
       });
 
       // Set up state visibility watcher (dimming in canvas)
@@ -1092,8 +1094,10 @@ interface VisibilityTraitConfig {
   traitLabel: string;
   /** DOM attribute (e.g. 'data-states' or 'data-users') */
   dataAttribute: string;
-  /** Editor event to listen for (e.g. 'state:select' or 'user:select') */
+  /** Editor event to listen for active selection changes (e.g. 'state:select' or 'user:select') */
   selectEvent: string;
+  /** Editor event fired when items are added/renamed/removed (e.g. 'states:update' or 'users:update') */
+  updateEvent: string;
 }
 
 /** Track whether the checkbox-group trait type has been registered */
@@ -1170,6 +1174,11 @@ function setupVisibilityTrait(
 
     const items: Array<{ id: string; name: string }> = (() => {
       try {
+        // Read from instance properties first (set by useEditorStates/useEditorUsers),
+        // falling back to getProjectData() for initial load before hooks mount.
+        const instanceKey = config.dataKey === 'states' ? '__projectStates' : '__projectUsers';
+        const instanceArr = (editor as any)[instanceKey];
+        if (Array.isArray(instanceArr)) return instanceArr;
         const data = editor.getProjectData?.();
         const arr = data?.[config.dataKey];
         return Array.isArray(arr) ? arr : [];
@@ -1213,8 +1222,16 @@ function setupVisibilityTrait(
     addVisibilityTrait(component);
   });
 
-  // Refresh trait when items are modified
+  // Refresh trait when active selection changes
   registerListener(editor, config.selectEvent, () => {
+    const selected = editor.getSelected?.();
+    if (selected) {
+      addVisibilityTrait(selected);
+    }
+  });
+
+  // Refresh trait when items are added/renamed/removed
+  registerListener(editor, config.updateEvent, () => {
     const selected = editor.getSelected?.();
     if (selected) {
       addVisibilityTrait(selected);
