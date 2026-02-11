@@ -12,7 +12,7 @@ import { db } from '../db/index.js';
 import { prototypes, prototypeVersions, teamMemberships, users, githubTeamConnections } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
-import { pushToGitHub, createGitHubBranch } from '../lib/github-push.js';
+import { pushFilesToGitHub, createGitHubBranch } from '../lib/github-push.js';
 
 /**
  * Normalize GrapesJS project data to ensure consistent structure
@@ -194,7 +194,20 @@ async function isNameTaken(
  */
 async function autoGitHubPush(
   request: import('fastify').FastifyRequest,
-  updated: { id: string; htmlContent: string; version: number; name: string; branchSlug: string; teamId: string | null; contentChecksum: string | null },
+  updated: {
+    id: string;
+    htmlContent: string;
+    grapesData: unknown;
+    version: number;
+    name: string;
+    description: string | null;
+    slug: string;
+    branchSlug: string;
+    teamId: string | null;
+    contentChecksum: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
 ): Promise<void> {
   if (!updated.teamId) return;
 
@@ -234,13 +247,43 @@ async function autoGitHubPush(
     // Branch may already exist
   }
 
-  const result = await pushToGitHub({
+  // Build the 3 files for a full prototype backup
+  const grapesData = updated.grapesData as Record<string, unknown> | null;
+  const states = grapesData && Array.isArray((grapesData as Record<string, unknown>).states)
+    ? (grapesData as Record<string, unknown>).states
+    : [];
+
+  const files = [
+    {
+      path: '.uswds-pt/project-data.json',
+      content: JSON.stringify(grapesData, null, 2),
+    },
+    {
+      path: '.uswds-pt/metadata.json',
+      content: JSON.stringify({
+        name: updated.name,
+        description: updated.description,
+        version: updated.version,
+        branchSlug: updated.branchSlug,
+        slug: updated.slug,
+        states,
+        updatedAt: updated.updatedAt.toISOString(),
+        createdAt: updated.createdAt.toISOString(),
+        generator: 'uswds-pt',
+      }, null, 2),
+    },
+    {
+      path: 'output/index.html',
+      content: updated.htmlContent,
+    },
+  ];
+
+  const result = await pushFilesToGitHub({
     encryptedAccessToken: user.githubAccessToken,
     owner: connection.repoOwner,
     repo: connection.repoName,
     branch: gitBranch,
-    filePath: 'prototype.html',
-    content: updated.htmlContent,
+    files,
     commitMessage: `Update ${updated.name} (v${updated.version})`,
   });
 

@@ -1,8 +1,9 @@
 /**
  * GitHub Push Utilities
  *
- * Handles pushing prototype HTML to GitHub repositories using the GitHub API.
- * Uses the Contents API (createOrUpdateFileContents) for simplicity.
+ * Handles pushing prototype data to GitHub repositories using the GitHub API.
+ * - pushToGitHub: Single-file push via Contents API (legacy, kept for reference)
+ * - pushFilesToGitHub: Multi-file atomic commit via Git Data API
  */
 
 import { decryptToken } from './github-oauth.js';
@@ -106,6 +107,134 @@ export async function pushToGitHub(options: PushOptions): Promise<PushResult> {
   return {
     commitSha: result.commit.sha,
     htmlUrl: result.content.html_url,
+  };
+}
+
+// ============================================================================
+// Multi-file push via Git Data API
+// ============================================================================
+
+interface FileToCommit {
+  path: string;    // e.g. ".uswds-pt/project-data.json"
+  content: string;
+}
+
+interface MultiFilePushOptions {
+  encryptedAccessToken: string;
+  owner: string;
+  repo: string;
+  branch: string;
+  files: FileToCommit[];
+  commitMessage: string;
+}
+
+/**
+ * Push multiple files in a single atomic commit using the Git Data API.
+ *
+ * Flow: get HEAD ref → get tree SHA → create blobs (parallel) → create tree → create commit → update ref
+ */
+export async function pushFilesToGitHub(options: MultiFilePushOptions): Promise<PushResult> {
+  const { encryptedAccessToken, owner, repo, branch, files, commitMessage } = options;
+  const accessToken = decryptToken(encryptedAccessToken);
+
+  const baseUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+
+  // 1. Get current HEAD commit SHA
+  const refResponse = await fetch(
+    `${baseUrl}/git/ref/heads/${encodeURIComponent(branch)}`,
+    { headers }
+  );
+  if (!refResponse.ok) {
+    throw new Error(`Failed to get branch ref (${refResponse.status})`);
+  }
+  const refData = await refResponse.json() as { object: { sha: string } };
+  const headSha = refData.object.sha;
+
+  // 2. Get the HEAD commit's tree SHA
+  const commitResponse = await fetch(
+    `${baseUrl}/git/commits/${headSha}`,
+    { headers }
+  );
+  if (!commitResponse.ok) {
+    throw new Error(`Failed to get commit (${commitResponse.status})`);
+  }
+  const commitData = await commitResponse.json() as { tree: { sha: string } };
+  const baseTreeSha = commitData.tree.sha;
+
+  // 3. Create blobs in parallel
+  const blobShas = await Promise.all(
+    files.map(async (file) => {
+      const blobResponse = await fetch(`${baseUrl}/git/blobs`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          content: Buffer.from(file.content, 'utf8').toString('base64'),
+          encoding: 'base64',
+        }),
+      });
+      if (!blobResponse.ok) {
+        throw new Error(`Failed to create blob for ${file.path} (${blobResponse.status})`);
+      }
+      const blobData = await blobResponse.json() as { sha: string };
+      return { path: file.path, sha: blobData.sha };
+    })
+  );
+
+  // 4. Create tree with base_tree to preserve existing files
+  const treeResponse = await fetch(`${baseUrl}/git/trees`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      base_tree: baseTreeSha,
+      tree: blobShas.map(({ path, sha }) => ({
+        path,
+        mode: '100644',
+        type: 'blob',
+        sha,
+      })),
+    }),
+  });
+  if (!treeResponse.ok) {
+    throw new Error(`Failed to create tree (${treeResponse.status})`);
+  }
+  const treeData = await treeResponse.json() as { sha: string };
+
+  // 5. Create commit
+  const newCommitResponse = await fetch(`${baseUrl}/git/commits`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      message: commitMessage,
+      tree: treeData.sha,
+      parents: [headSha],
+    }),
+  });
+  if (!newCommitResponse.ok) {
+    throw new Error(`Failed to create commit (${newCommitResponse.status})`);
+  }
+  const newCommitData = await newCommitResponse.json() as { sha: string; html_url: string };
+
+  // 6. Update branch ref to point to new commit
+  const updateRefResponse = await fetch(
+    `${baseUrl}/git/refs/heads/${encodeURIComponent(branch)}`,
+    {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ sha: newCommitData.sha }),
+    }
+  );
+  if (!updateRefResponse.ok) {
+    throw new Error(`Failed to update ref (${updateRefResponse.status})`);
+  }
+
+  return {
+    commitSha: newCommitData.sha,
+    htmlUrl: newCommitData.html_url,
   };
 }
 
