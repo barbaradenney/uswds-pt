@@ -23,30 +23,21 @@ export interface UseEditorUsersReturn {
 }
 
 /**
- * Read users from project data
+ * Read users from the editor instance property.
+ * Falls back to an empty array if not yet initialized.
  */
 function readUsers(editor: any): UserDefinition[] {
-  try {
-    const data = editor.getProjectData?.();
-    return Array.isArray(data?.users) ? data.users : [];
-  } catch {
-    return [];
-  }
+  const users = (editor as any).__projectUsers;
+  return Array.isArray(users) ? users : [];
 }
 
 /**
- * Write users to project data without triggering a full reload.
+ * Write users to the editor instance property.
+ * This avoids calling loadProjectData() which would reset the entire editor.
+ * Users are merged into the project data snapshot at save time.
  */
 function writeUsers(editor: any, users: UserDefinition[]): void {
-  try {
-    const data = editor.getProjectData?.();
-    if (data) {
-      data.users = users;
-      editor.loadProjectData(data);
-    }
-  } catch {
-    // Silently ignore — editor may not be ready
-  }
+  (editor as any).__projectUsers = users;
 }
 
 export function useEditorUsers(): UseEditorUsersReturn {
@@ -54,17 +45,28 @@ export function useEditorUsers(): UseEditorUsersReturn {
   const [users, setUsers] = useState<UserDefinition[]>([]);
   const [activeUserId, setActiveUserIdLocal] = useState<string | null>(null);
 
-  // Read users on mount and when editor becomes available
+  // Initialize __projectUsers from project data on mount, and re-seed on 'load'
+  // (covers crash recovery / version restore which call loadProjectData).
   useEffect(() => {
     if (!editor) return;
 
-    const syncUsers = () => setUsers(readUsers(editor));
-    syncUsers();
+    const seedFromProjectData = () => {
+      try {
+        const data = editor.getProjectData?.();
+        const stored = Array.isArray(data?.users) ? data.users : [];
+        (editor as any).__projectUsers = stored;
+        setUsers(stored);
+      } catch {
+        (editor as any).__projectUsers = [];
+        setUsers([]);
+      }
+    };
 
-    // Re-sync when project data is loaded (e.g. after save/restore)
-    const handler = () => syncUsers();
-    editor.on('load', handler);
-    return () => { editor.off('load', handler); };
+    seedFromProjectData();
+
+    // Re-seed when project data is fully reloaded (e.g. crash recovery, version restore)
+    editor.on('load', seedFromProjectData);
+    return () => { editor.off('load', seedFromProjectData); };
   }, [editor]);
 
   // Listen for user:select events from other components

@@ -20,31 +20,21 @@ export interface UseEditorStatesReturn {
 }
 
 /**
- * Read states from project data
+ * Read states from the editor instance property.
+ * Falls back to an empty array if not yet initialized.
  */
 function readStates(editor: any): StateDefinition[] {
-  try {
-    const data = editor.getProjectData?.();
-    return Array.isArray(data?.states) ? data.states : [];
-  } catch {
-    return [];
-  }
+  const states = (editor as any).__projectStates;
+  return Array.isArray(states) ? states : [];
 }
 
 /**
- * Write states to project data without triggering a full reload.
- * Mutates the states array in-place on the project data object.
+ * Write states to the editor instance property.
+ * This avoids calling loadProjectData() which would reset the entire editor.
+ * States are merged into the project data snapshot at save time.
  */
 function writeStates(editor: any, states: StateDefinition[]): void {
-  try {
-    const data = editor.getProjectData?.();
-    if (data) {
-      data.states = states;
-      editor.loadProjectData(data);
-    }
-  } catch {
-    // Silently ignore — editor may not be ready
-  }
+  (editor as any).__projectStates = states;
 }
 
 export function useEditorStates(): UseEditorStatesReturn {
@@ -52,17 +42,28 @@ export function useEditorStates(): UseEditorStatesReturn {
   const [states, setStates] = useState<StateDefinition[]>([]);
   const [activeStateId, setActiveStateIdLocal] = useState<string | null>(null);
 
-  // Read states on mount and when editor becomes available
+  // Initialize __projectStates from project data on mount, and re-seed on 'load'
+  // (covers crash recovery / version restore which call loadProjectData).
   useEffect(() => {
     if (!editor) return;
 
-    const syncStates = () => setStates(readStates(editor));
-    syncStates();
+    const seedFromProjectData = () => {
+      try {
+        const data = editor.getProjectData?.();
+        const stored = Array.isArray(data?.states) ? data.states : [];
+        (editor as any).__projectStates = stored;
+        setStates(stored);
+      } catch {
+        (editor as any).__projectStates = [];
+        setStates([]);
+      }
+    };
 
-    // Re-sync when project data is loaded (e.g. after save/restore)
-    const handler = () => syncStates();
-    editor.on('load', handler);
-    return () => { editor.off('load', handler); };
+    seedFromProjectData();
+
+    // Re-seed when project data is fully reloaded (e.g. crash recovery, version restore)
+    editor.on('load', seedFromProjectData);
+    return () => { editor.off('load', seedFromProjectData); };
   }, [editor]);
 
   // Listen for state:select events from other components

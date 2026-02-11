@@ -176,6 +176,17 @@ export function useEditorPersistence({
         const rawGrapesData = editor.getProjectData();
         const currentHtml = editor.getHtml() || htmlContent;
 
+        // Merge states/users from instance properties into the snapshot.
+        // These are maintained by useEditorStates/useEditorUsers without
+        // calling loadProjectData(), so they must be merged at save time.
+        const editorAny = editor as any;
+        if (Array.isArray(editorAny.__projectStates)) {
+          rawGrapesData.states = editorAny.__projectStates;
+        }
+        if (Array.isArray(editorAny.__projectUsers)) {
+          rawGrapesData.users = editorAny.__projectUsers;
+        }
+
         // For multi-page prototypes, extract per-page HTML so Preview can
         // render pages reliably without reconstructing from the component tree.
         // The isExtractingPerPageHtml flag suppresses page:select side effects
