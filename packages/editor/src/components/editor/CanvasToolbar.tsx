@@ -1,7 +1,7 @@
 /**
  * CanvasToolbar Component
  *
- * Compact toolbar above the canvas with device viewport switcher
+ * Compact toolbar above the canvas with a device viewport dropdown
  * and view toggle buttons (outline, code view, fullscreen).
  *
  * Uses useEditorMaybe() from @grapesjs/react to access the editor instance.
@@ -12,40 +12,10 @@ import { useEditorMaybe } from '@grapesjs/react';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
 
-interface DeviceOption {
-  id: DeviceId;
-  label: string;
-  icon: JSX.Element;
-}
-
-const DEVICES: DeviceOption[] = [
-  {
-    id: 'Desktop',
-    label: 'Desktop',
-    icon: (
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-        <path d="M21 2H3a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h7v2H8v2h8v-2h-2v-2h7a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm-1 14H4V4h16v12z" />
-      </svg>
-    ),
-  },
-  {
-    id: 'Tablet',
-    label: 'Tablet',
-    icon: (
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-        <path d="M18 0H6a2 2 0 0 0-2 2v20a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm-4 22h-4v-1h4v1zm5-3H5V3h14v16z" />
-      </svg>
-    ),
-  },
-  {
-    id: 'Mobile portrait',
-    label: 'Mobile',
-    icon: (
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-        <path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm-3 20h-4v-1h4v1zm4-3H6V4h12v14z" />
-      </svg>
-    ),
-  },
+const DEVICE_OPTIONS: { id: DeviceId; label: string }[] = [
+  { id: 'Desktop', label: 'Desktop' },
+  { id: 'Tablet', label: 'Tablet' },
+  { id: 'Mobile portrait', label: 'Mobile' },
 ];
 
 interface ToggleCommand {
@@ -94,7 +64,6 @@ export function CanvasToolbar() {
   const [activeDevice, setActiveDevice] = useState<DeviceId>('Desktop');
   const [activeCommands, setActiveCommands] = useState<Set<string>>(new Set());
 
-  // Sync device state from editor events
   useEffect(() => {
     if (!editor) return;
 
@@ -117,7 +86,6 @@ export function CanvasToolbar() {
 
     editor.on('device:select', onDeviceSelect);
 
-    // Track command run/stop for toggle state
     const onRun = (id: string) => {
       if (TOGGLE_COMMANDS.some((c) => c.id === id)) {
         setActiveCommands((prev) => new Set(prev).add(id));
@@ -143,10 +111,10 @@ export function CanvasToolbar() {
     };
   }, [editor]);
 
-  const handleDeviceSelect = useCallback(
-    (deviceId: DeviceId) => {
+  const handleDeviceChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
       if (!editor) return;
-      editor.Devices?.select?.(deviceId);
+      editor.Devices?.select?.(e.target.value);
     },
     [editor]
   );
@@ -165,35 +133,34 @@ export function CanvasToolbar() {
 
   return (
     <div className="canvas-toolbar">
-      {/* Left: Device switcher */}
+      {/* Left: Device dropdown */}
       <div className="canvas-toolbar-group">
-        {DEVICES.map((device) => (
-          <button
-            key={device.id}
-            className={`canvas-toolbar-btn${activeDevice === device.id ? ' canvas-toolbar-btn--active' : ''}`}
-            onClick={() => handleDeviceSelect(device.id)}
-            aria-label={device.label}
-            title={device.label}
-          >
-            {device.icon}
-          </button>
-        ))}
+        <select
+          className="canvas-toolbar-select"
+          value={activeDevice}
+          onChange={handleDeviceChange}
+          aria-label="Viewport size"
+        >
+          {DEVICE_OPTIONS.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Right: View toggles */}
       <div className="canvas-toolbar-group">
-        {TOGGLE_COMMANDS.map((cmd, i) => (
-          <span key={cmd.id}>
-            {i > 0 && <span className="canvas-toolbar-separator" />}
-            <button
-              className={`canvas-toolbar-btn${activeCommands.has(cmd.id) ? ' canvas-toolbar-btn--active' : ''}`}
-              onClick={() => handleToggleCommand(cmd.id)}
-              aria-label={cmd.ariaLabel}
-              title={cmd.label}
-            >
-              {cmd.icon}
-            </button>
-          </span>
+        {TOGGLE_COMMANDS.map((cmd) => (
+          <button
+            key={cmd.id}
+            className={`canvas-toolbar-btn${activeCommands.has(cmd.id) ? ' canvas-toolbar-btn--active' : ''}`}
+            onClick={() => handleToggleCommand(cmd.id)}
+            aria-label={cmd.ariaLabel}
+            title={cmd.label}
+          >
+            {cmd.icon}
+          </button>
         ))}
       </div>
     </div>
