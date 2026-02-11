@@ -208,6 +208,69 @@ function TraitsPanel({ traits }: { traits: any[] }) {
   );
 }
 
+function CheckboxGroupField({ trait }: { trait: any }) {
+  const options: Array<{ id: string; label: string }> = trait.get?.('options') || [];
+  const label = trait.getLabel() || trait.getName();
+  const component = trait.target;
+
+  // Read initial checked state from component's data-states attribute
+  const getCheckedIds = (): string[] => {
+    const dataStates = component?.getAttributes?.()?.['data-states'] || '';
+    return dataStates ? dataStates.split(',').map((s: string) => s.trim()) : [];
+  };
+
+  const [checkedIds, setCheckedIds] = useState<string[]>(getCheckedIds);
+
+  // Sync when trait/component changes
+  useEffect(() => {
+    setCheckedIds(getCheckedIds());
+  }, [trait, component]);
+
+  const isAllOrNone = (ids: string[]) =>
+    ids.length === 0 || ids.length === options.length;
+
+  const handleToggle = (optId: string, checked: boolean) => {
+    const next = checked
+      ? [...checkedIds, optId]
+      : checkedIds.filter((id) => id !== optId);
+    setCheckedIds(next);
+
+    if (!component) return;
+    if (isAllOrNone(next)) {
+      component.removeAttributes?.(['data-states']);
+    } else {
+      component.addAttributes?.({ 'data-states': next.join(',') });
+    }
+  };
+
+  if (options.length === 0) return null;
+
+  // If no data-states attribute, all are considered checked
+  const dataStates = component?.getAttributes?.()?.['data-states'] || '';
+  const effectiveChecked = dataStates === ''
+    ? options.map((o) => o.id)
+    : checkedIds;
+
+  return (
+    <div className="trait-field">
+      <label className="trait-label">{label}</label>
+      <div className="trait-checkbox-group">
+        {options.map((opt) => (
+          <label key={opt.id} className="trait-checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem', padding: '2px 0', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={effectiveChecked.includes(opt.id)}
+              onChange={(e) => handleToggle(opt.id, e.target.checked)}
+              style={{ width: '14px', height: '14px', accentColor: 'var(--color-primary)' }}
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TraitField({ trait }: { trait: any }) {
   const type = trait.getType();
   const label = trait.getLabel() || trait.getName();
@@ -222,6 +285,10 @@ function TraitField({ trait }: { trait: any }) {
     setLocalValue(newValue);
     trait.set('value', newValue);
   };
+
+  if (type === 'checkbox-group') {
+    return <CheckboxGroupField trait={trait} />;
+  }
 
   if (type === 'checkbox') {
     return (

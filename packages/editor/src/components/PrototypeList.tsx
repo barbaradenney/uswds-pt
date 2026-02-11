@@ -26,6 +26,7 @@ export function PrototypeList() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [confirmDeleteSlug, setConfirmDeleteSlug] = useState<string | null>(null);
   const [gitHubConnection, setGitHubConnection] = useState<{ repoOwner: string; repoName: string } | null>(null);
+  const [gitHubConnectionLoaded, setGitHubConnectionLoaded] = useState(false);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -65,8 +66,10 @@ export function PrototypeList() {
   useEffect(() => {
     if (!currentTeam) {
       setGitHubConnection(null);
+      setGitHubConnectionLoaded(false);
       return;
     }
+    setGitHubConnectionLoaded(false);
     authFetch(`/api/teams/${currentTeam.id}/github`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -76,7 +79,8 @@ export function PrototypeList() {
           setGitHubConnection(null);
         }
       })
-      .catch(() => setGitHubConnection(null));
+      .catch(() => setGitHubConnection(null))
+      .finally(() => setGitHubConnectionLoaded(true));
   }, [currentTeam]);
 
   function handleDelete(slug: string, e: React.MouseEvent) {
@@ -337,6 +341,15 @@ export function PrototypeList() {
         </div>
       )}
 
+      {/* GitHub connect prompt for admin users without a connection */}
+      {currentTeam && gitHubConnectionLoaded && !gitHubConnection &&
+        (currentTeam.role === 'org_admin' || currentTeam.role === 'team_admin') && (
+        <div className="github-connect-prompt">
+          <span>Connect a GitHub repository to automatically push prototypes as branches.</span>
+          <Link to={`/teams/${currentTeam.id}/settings`}>Set up GitHub</Link>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="loading-screen" style={{ height: '300px' }}>
           <div className="loading-spinner" />
@@ -471,16 +484,29 @@ export function PrototypeList() {
                   </span>
                 )}
                 Updated {formatDate(prototype.updatedAt)}
-                {gitHubConnection && prototype.lastGithubPushAt && (
-                  <a
-                    className="prototype-card-github"
-                    href={`https://github.com/${gitHubConnection.repoOwner}/${gitHubConnection.repoName}/tree/uswds-pt/${prototype.branchSlug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {gitHubConnection && (
+                  <span
+                    className={`prototype-card-branch${prototype.lastGithubPushAt ? '' : ' prototype-card-branch--pending'}`}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    View on GitHub
-                  </a>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                      <path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z" />
+                    </svg>
+                    {prototype.lastGithubPushAt ? (
+                      <a
+                        href={`https://github.com/${gitHubConnection.repoOwner}/${gitHubConnection.repoName}/tree/uswds-pt/${prototype.branchSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        uswds-pt/{prototype.branchSlug}
+                      </a>
+                    ) : (
+                      <>
+                        <span>uswds-pt/{prototype.branchSlug}</span>
+                        <span className="prototype-card-branch-label">(not pushed)</span>
+                      </>
+                    )}
+                  </span>
                 )}
               </div>
             </div>
