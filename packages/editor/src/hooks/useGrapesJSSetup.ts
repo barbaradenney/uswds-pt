@@ -10,14 +10,15 @@ import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
-import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, addBannerCollapseCSS, addWrapperOverrideCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import { isExtractingPerPageHtml } from '../lib/grapesjs/data-extractor';
 import {
   forceCanvasUpdate,
   setupCanvasEventHandlers,
   registerClearCommand,
   setupAllInteractiveHandlers,
-  setupPageLinkHandler,
+  reinitInteractiveHandlers,
+  syncPageLinkHrefs,
   exposeDebugHelpers,
   cleanupCanvasHelpers,
 } from '../lib/grapesjs/canvas-helpers';
@@ -269,7 +270,6 @@ export function useGrapesJSSetup({
       // so we also poll for the canvas document as a fallback.
       registerListener(editor, 'canvas:frame:load', () => loadUSWDSResources(editor));
       registerListener(editor, 'canvas:frame:load', () => syncPageLinkHrefs(editor));
-      registerListener(editor, 'page:select', () => syncPageLinkHrefs(editor));
 
       // Try immediately, then retry with increasing delays if canvas isn't ready
       const tryLoadResources = (attempt: number) => {
@@ -280,6 +280,8 @@ export function useGrapesJSSetup({
           addFieldsetSpacingCSS(editor);
           addButtonGroupCSS(editor);
           addTypographyCSS(editor);
+          addBannerCollapseCSS(editor);
+          addWrapperOverrideCSS(editor);
         } else if (attempt < 10) {
           debug(`Canvas document not ready, retrying (attempt ${attempt + 1})...`);
           setTimeout(() => tryLoadResources(attempt + 1), 200);
@@ -501,6 +503,10 @@ function setupPageEventHandlers(
   // Track pending operations to prevent race conditions
   let pendingPageSwitch: AbortController | null = null;
 
+  // Consolidated page:select handler — handles resource loading, template
+  // injection, canvas refresh, and page-link sync in a single sequential flow.
+  // This eliminates the race condition that occurred when two separate handlers
+  // ran async operations concurrently on the same page:select event.
   registerListener(editor, 'page:select', async (page: any) => {
     // Skip side effects when data extractor is cycling pages for HTML extraction
     if (isExtractingPerPageHtml()) return;
@@ -540,20 +546,61 @@ function setupPageEventHandlers(
 
       if (signal.aborted) return;
 
-      // Log page state
-      const wrapper = editor.DomComponents?.getWrapper();
-      if (wrapper) {
-        const components = wrapper.components();
-        debug('Page has', components?.length || 0, 'top-level components');
+      // Inject template into newly added pages AFTER resources are loaded,
+      // so USWDS CSS/JS applies to the injected content.
+      if (pageId && pagesNeedingTemplate.has(pageId)) {
+        pagesNeedingTemplate.delete(pageId);
+
+        try {
+          // Use getWrapper() which always returns the current page's wrapper
+          // after page:select — simpler and more reliable than the multiple
+          // fallback strategies used previously.
+          const mainComponent = editor.DomComponents?.getWrapper?.();
+
+          if (mainComponent) {
+            const existingComponents = mainComponent.components?.();
+            const componentCount = existingComponents?.length || 0;
+
+            let shouldAddTemplate = componentCount === 0;
+
+            if (!shouldAddTemplate && componentCount <= 3) {
+              const componentTypes = existingComponents.map((c: any) =>
+                c.get?.('tagName')?.toLowerCase() || c.get?.('type') || ''
+              );
+
+              const isDefaultContent = componentTypes.every((type: string) =>
+                ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'text', 'default', 'heading-block', 'text-block'].includes(type)
+              );
+
+              if (isDefaultContent) {
+                shouldAddTemplate = true;
+              }
+            }
+
+            if (shouldAddTemplate) {
+              const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+              if (blankTemplate) {
+                mainComponent.components(blankTemplate);
+                debug('Added default template to new page');
+              }
+            }
+          }
+        } catch (err) {
+          debug('Error adding template to new page:', err);
+        }
       }
 
       forceCanvasUpdate(editor);
 
-      // Re-attach page link click handler to the now-ready document.
-      // The handler registered via setupAllInteractiveHandlers fires on page:select
-      // BEFORE the frame is ready, so it may attach to the wrong document.
-      // This call ensures the handler is on the correct document after resources load.
-      setupPageLinkHandler(editor);
+      // Re-attach all interactive handlers (page links, banner, accordion,
+      // modal) to the now-ready canvas document. setupAllInteractiveHandlers
+      // only registers on canvas:frame:load; page:select is handled here
+      // after the frame is confirmed ready.
+      reinitInteractiveHandlers(editor);
+
+      // Sync page-link hrefs after every page switch to ensure href attributes
+      // match #page-{pageLink} — needed for both in-canvas nav and Preview.
+      syncPageLinkHrefs(editor);
 
       debug('Page switch completed');
     } catch (err) {
@@ -566,10 +613,15 @@ function setupPageEventHandlers(
         debug('Page switch warning:', err);
       }
     } finally {
-      // Always release the page-switch lock so the state machine doesn't get stuck.
-      // Even if the signal was aborted, the new page:select handler will start its own flow.
-      stateMachine.pageSwitchComplete();
-      debug('Page switch lock released');
+      // Release the page-switch lock ONLY if this switch wasn't aborted.
+      // If aborted, a new switch is already in progress — it called
+      // pageSwitchComplete() (to release OUR lock) then pageSwitchStart()
+      // (for itself). Calling pageSwitchComplete() here would release the
+      // NEW switch's lock, allowing saves during its transition.
+      if (!signal.aborted) {
+        stateMachine.pageSwitchComplete();
+        debug('Page switch lock released');
+      }
     }
   });
 
@@ -584,73 +636,6 @@ function setupPageEventHandlers(
       debug('Marked page for template:', pageId);
     } else {
       debug('Skipping template mark for initial page:', pageId);
-    }
-  });
-
-  // Add template when new page is selected
-  registerListener(editor, 'page:select', async (page: any) => {
-    // Skip side effects when data extractor is cycling pages for HTML extraction
-    if (isExtractingPerPageHtml()) return;
-
-    const pageId = page?.getId?.() || page?.id;
-
-    if (pageId && pagesNeedingTemplate.has(pageId)) {
-      pagesNeedingTemplate.delete(pageId);
-      // Wait for frame to be ready before adding template
-      await waitForFrameReady(editor, 200);
-
-      try {
-        let mainComponent = page.getMainComponent?.();
-
-        if (!mainComponent) {
-          const mainFrame = page.getMainFrame?.();
-          mainComponent = mainFrame?.getComponent?.();
-        }
-
-        if (!mainComponent) {
-          const frames = page.get?.('frames');
-          if (frames && frames.length > 0) {
-            mainComponent = frames.at?.(0)?.get?.('component');
-          }
-        }
-
-        if (!mainComponent) {
-          mainComponent = editor.DomComponents?.getWrapper?.();
-        }
-
-        if (mainComponent) {
-          const existingComponents = mainComponent.components?.();
-          const componentCount = existingComponents?.length || 0;
-
-          let shouldAddTemplate = componentCount === 0;
-
-          if (!shouldAddTemplate && componentCount <= 3) {
-            const componentTypes = existingComponents.map((c: any) =>
-              c.get?.('tagName')?.toLowerCase() || c.get?.('type') || ''
-            );
-
-            const isDefaultContent = componentTypes.every((type: string) =>
-              ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'text', 'default', 'heading-block', 'text-block'].includes(type)
-            );
-
-            if (isDefaultContent) {
-              shouldAddTemplate = true;
-            }
-          }
-
-          if (shouldAddTemplate) {
-            const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
-            if (blankTemplate) {
-              mainComponent.components(blankTemplate);
-              debug('Added default template to new page');
-              // Use requestAnimationFrame for smoother refresh
-              requestAnimationFrame(() => editor.refresh?.());
-            }
-          }
-        }
-      } catch (err) {
-        debug('Error adding template to new page:', err);
-      }
     }
   });
 
@@ -717,82 +702,6 @@ function setupPageLinkTrait(
       updatePageLinkOptions(selected);
     }
   });
-}
-
-/**
- * Sync page-link hrefs for components
- */
-function syncPageLinkHrefs(editor: EditorInstance): void {
-  try {
-    const doc = editor.Canvas?.getDocument?.();
-    if (!doc) return;
-
-    const findComponent = (el: Element) => {
-      const wrapper = editor.DomComponents?.getWrapper?.();
-      if (!wrapper) return null;
-
-      const findInChildren = (comp: any): any => {
-        if (comp.getEl?.() === el) return comp;
-        const children = comp.components?.() || [];
-        const childArray = children.models || children;
-        if (!childArray || !childArray.length) return null;
-        for (const child of childArray) {
-          const found = findInChildren(child);
-          if (found) return found;
-        }
-        return null;
-      };
-
-      return findInChildren(wrapper);
-    };
-
-    // Fix page links
-    const elementsWithPageLink = doc.querySelectorAll('usa-button[page-link], usa-link[page-link]');
-    elementsWithPageLink.forEach((el: Element) => {
-      const pageLink = el.getAttribute('page-link');
-      const linkType = el.getAttribute('link-type');
-      const currentHref = el.getAttribute('href');
-
-      if (pageLink && (linkType === 'page' || !linkType)) {
-        const expectedHref = `#page-${pageLink}`;
-        if (currentHref !== expectedHref) {
-          el.setAttribute('href', expectedHref);
-          (el as any).href = expectedHref;
-          const innerAnchor = el.querySelector('a');
-          if (innerAnchor) {
-            innerAnchor.setAttribute('href', expectedHref);
-          }
-          const component = findComponent(el);
-          if (component?.addAttributes) {
-            component.addAttributes({ href: expectedHref, 'link-type': 'page' });
-          }
-          debug('Fixed page-link href:', pageLink, '->', expectedHref);
-        }
-      }
-    });
-
-    // Fix external URLs without protocol
-    const elementsWithExternalLink = doc.querySelectorAll('usa-button[link-type="external"], usa-link[link-type="external"]');
-    elementsWithExternalLink.forEach((el: Element) => {
-      const href = el.getAttribute('href');
-      if (href && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
-        const normalizedHref = 'https://' + href;
-        el.setAttribute('href', normalizedHref);
-        (el as any).href = normalizedHref;
-        const innerAnchor = el.querySelector('a');
-        if (innerAnchor) {
-          innerAnchor.setAttribute('href', normalizedHref);
-        }
-        const component = findComponent(el);
-        if (component?.addAttributes) {
-          component.addAttributes({ href: normalizedHref });
-        }
-        debug('Normalized external href:', href, '->', normalizedHref);
-      }
-    });
-  } catch (err) {
-    debug('Error syncing page-link hrefs:', err);
-  }
 }
 
 /**

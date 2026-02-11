@@ -16,6 +16,8 @@ const mockAddCardContainerCSS = vi.fn();
 const mockAddFieldsetSpacingCSS = vi.fn();
 const mockAddButtonGroupCSS = vi.fn();
 const mockAddTypographyCSS = vi.fn();
+const mockAddBannerCollapseCSS = vi.fn();
+const mockAddWrapperOverrideCSS = vi.fn();
 const mockClearGrapesJSStorage = vi.fn();
 vi.mock('../lib/grapesjs/resource-loader', () => ({
   loadUSWDSResources: (...args: unknown[]) => mockLoadUSWDSResources(...args),
@@ -23,6 +25,8 @@ vi.mock('../lib/grapesjs/resource-loader', () => ({
   addFieldsetSpacingCSS: (...args: unknown[]) => mockAddFieldsetSpacingCSS(...args),
   addButtonGroupCSS: (...args: unknown[]) => mockAddButtonGroupCSS(...args),
   addTypographyCSS: (...args: unknown[]) => mockAddTypographyCSS(...args),
+  addBannerCollapseCSS: (...args: unknown[]) => mockAddBannerCollapseCSS(...args),
+  addWrapperOverrideCSS: (...args: unknown[]) => mockAddWrapperOverrideCSS(...args),
   clearGrapesJSStorage: (...args: unknown[]) => mockClearGrapesJSStorage(...args),
 }));
 
@@ -37,6 +41,8 @@ const mockForceCanvasUpdate = vi.fn();
 const mockSetupCanvasEventHandlers = vi.fn();
 const mockRegisterClearCommand = vi.fn();
 const mockSetupAllInteractiveHandlers = vi.fn();
+const mockReinitInteractiveHandlers = vi.fn();
+const mockSyncPageLinkHrefs = vi.fn();
 const mockExposeDebugHelpers = vi.fn();
 const mockCleanupCanvasHelpers = vi.fn();
 vi.mock('../lib/grapesjs/canvas-helpers', () => ({
@@ -44,6 +50,8 @@ vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   setupCanvasEventHandlers: (...args: unknown[]) => mockSetupCanvasEventHandlers(...args),
   registerClearCommand: (...args: unknown[]) => mockRegisterClearCommand(...args),
   setupAllInteractiveHandlers: (...args: unknown[]) => mockSetupAllInteractiveHandlers(...args),
+  reinitInteractiveHandlers: (...args: unknown[]) => mockReinitInteractiveHandlers(...args),
+  syncPageLinkHrefs: (...args: unknown[]) => mockSyncPageLinkHrefs(...args),
   exposeDebugHelpers: (...args: unknown[]) => mockExposeDebugHelpers(...args),
   cleanupCanvasHelpers: (...args: unknown[]) => mockCleanupCanvasHelpers(...args),
 }));

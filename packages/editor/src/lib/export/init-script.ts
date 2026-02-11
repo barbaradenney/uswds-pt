@@ -34,23 +34,23 @@ export function generateInitScript(): string {
       console.warn('USWDS web components may not be fully loaded:', err);
     });
 
-    // Initialize usa-banner components - ensure toggle functionality works
+    // Initialize usa-banner components - ensure they start collapsed and toggle works.
+    // Collapsed state is enforced by CSS (supplemental CSS hides .usa-banner__content
+    // unless .usa-banner__header--expanded is present), so we only need JS for the
+    // click toggle handler as a fallback in case the web component doesn't wire it.
     document.querySelectorAll('usa-banner').forEach(banner => {
-      // Trigger update to ensure component is fully rendered
-      if (typeof banner.requestUpdate === 'function') {
-        banner.requestUpdate();
-      }
+      banner.removeAttribute('expanded');
 
-      // Set up click handler for the banner toggle button as a fallback
-      // The web component should handle this, but we add it as insurance
       setTimeout(() => {
         const button = banner.querySelector('.usa-banner__button');
         const content = banner.querySelector('.usa-banner__content');
         const header = banner.querySelector('.usa-banner__header');
 
         if (button && content && header) {
-          // Check if handler is already attached by checking if clicking works
-          // We'll add our own handler that won't conflict
+          // Ensure collapsed DOM state on init
+          button.setAttribute('aria-expanded', 'false');
+          header.classList.remove('usa-banner__header--expanded');
+
           button.addEventListener('click', (e) => {
             e.preventDefault();
             const isExpanded = button.getAttribute('aria-expanded') === 'true';

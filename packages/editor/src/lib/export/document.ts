@@ -12,6 +12,42 @@ import { generateInitScript, hasConditionalFields } from './init-script';
 
 const debug = createDebugLogger('Export');
 
+/**
+ * Generate supplemental CSS that the GrapesJS canvas applies via resource-loader.ts
+ * but that the preview/export documents also need for visual parity.
+ */
+function generateSupplementalCSS(): string {
+  return `
+  <style>
+    /* Apply USWDS font stack to base text elements (mirrors canvas typography CSS) */
+    body, h1, h2, h3, h4, h5, h6, p, li, td, th, label, input, textarea, select, button {
+      font-family: "Source Sans Pro Web", "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+    }
+    /* Ensure fieldsets with usa-form-group get proper margin-top */
+    fieldset.usa-fieldset.usa-form-group {
+      margin-top: 1.5rem !important;
+    }
+    /* Reset padding on usa-button-group web component */
+    usa-button-group {
+      display: block;
+      padding: 0 !important;
+      margin: 0;
+    }
+    usa-button-group ul.usa-button-group {
+      padding: 0;
+      margin: 0;
+    }
+    /* Collapse usa-banner accordion content by default */
+    usa-banner .usa-banner__content {
+      display: none !important;
+    }
+    usa-banner .usa-banner__header--expanded + .usa-banner__content,
+    usa-banner[expanded] .usa-banner__content {
+      display: block !important;
+    }
+  </style>`;
+}
+
 // Used in preview functions for debug output
 const DEBUG =
   typeof window !== 'undefined' &&
@@ -61,6 +97,7 @@ export function generateFullDocument(
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsCss}">
   <!-- USWDS Web Components CSS -->
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
+  ${generateSupplementalCSS()}
   <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
   <!-- Initialize web component properties after they render -->
@@ -204,6 +241,7 @@ ${indentContent(cleanedHtml, 4)}
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsCss}">
   <!-- USWDS Web Components CSS -->
   <link rel="stylesheet" href="${PREVIEW_CDN_URLS.uswdsWcCss}">
+  ${generateSupplementalCSS()}
   <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
   <!-- Initialize web component properties after they render -->

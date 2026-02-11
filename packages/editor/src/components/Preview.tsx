@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { cleanExport, generateFullDocument, generateMultiPageDocument } from '../lib/export';
 import type { PageData } from '../lib/export';
-import { getPrototype, createPrototype } from '../lib/localStorage';
+import { getPrototype } from '../lib/localStorage';
 import { getAuthToken } from '../contexts/AuthContext';
 import { escapeHtml } from '@uswds-pt/shared';
 
@@ -201,20 +201,6 @@ export function Preview() {
     }
   }
 
-  function handleMakeCopy() {
-    if (!data) return;
-
-    // Create a copy of the prototype in localStorage
-    const copyName = `${data.name} (Copy)`;
-    const newPrototype = createPrototype(copyName, data.htmlContent, data.gjsData);
-
-    // Open the editor with the new prototype
-    // Use hash-based URL for GitHub Pages compatibility with HashRouter
-    const basePath = window.location.pathname.split('#')[0].replace(/\/$/, '');
-    const baseUrl = window.location.origin + basePath;
-    window.open(`${baseUrl}/#/edit/${newPrototype.id}`, '_blank');
-  }
-
   if (isLoading) {
     return (
       <div style={{
@@ -276,46 +262,20 @@ export function Preview() {
     return null;
   }
 
-  const copyButtonStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '16px',
-    right: '16px',
-    padding: '8px 16px',
-    backgroundColor: '#005ea2',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '14px',
-    fontFamily: 'system-ui, sans-serif',
-    cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-    zIndex: 1000,
-  };
-
   // Render preview content in a sandboxed iframe to isolate it from
   // the parent application context (prevents stored XSS from accessing
   // cookies/localStorage). allow-scripts is needed for web component JS.
   return (
-    <>
-      <iframe
-        sandbox="allow-scripts"
-        srcDoc={previewDoc}
-        title={`Preview: ${data.name || 'Prototype'}`}
-        style={{
-          width: '100%',
-          height: '100vh',
-          border: 'none',
-          display: 'block',
-        }}
-      />
-      <button
-        style={copyButtonStyle}
-        onClick={handleMakeCopy}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1a4480')}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#005ea2')}
-      >
-        Make a Copy
-      </button>
-    </>
+    <iframe
+      sandbox="allow-scripts"
+      srcDoc={previewDoc}
+      title={`Preview: ${data.name || 'Prototype'}`}
+      style={{
+        width: '100%',
+        height: '100vh',
+        border: 'none',
+        display: 'block',
+      }}
+    />
   );
 }

@@ -304,6 +304,53 @@ export function addButtonGroupCSS(editor: EditorInstance): void {
 }
 
 /**
+ * Remove the GrapesJS wrapper's `min-height: 100vh` so the canvas layout
+ * matches preview/export (no large gap between content and footer).
+ * GrapesJS injects this rule to ensure there's always drop space, but
+ * it creates a visual mismatch with the preview.
+ */
+export function addWrapperOverrideCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Remove min-height so content flows naturally like in preview */
+      [data-gjs-type="wrapper"] {
+        min-height: auto !important;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added wrapper override CSS to canvas');
+  }
+}
+
+/**
+ * Add CSS to canvas to ensure usa-banner starts collapsed.
+ * The web component renders its accordion content visible by default;
+ * requestUpdate() re-renders and removes the JS-set `hidden` attribute.
+ * A CSS rule is more reliable because it applies immediately and can't
+ * be undone by a re-render cycle.
+ */
+export function addBannerCollapseCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Collapse usa-banner accordion content by default */
+      usa-banner .usa-banner__content {
+        display: none !important;
+      }
+      usa-banner .usa-banner__header--expanded + .usa-banner__content,
+      usa-banner[expanded] .usa-banner__content {
+        display: block !important;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added banner collapse CSS to canvas');
+  }
+}
+
+/**
  * Clear GrapesJS localStorage to prevent state bleeding between prototypes
  */
 export function clearGrapesJSStorage(): void {

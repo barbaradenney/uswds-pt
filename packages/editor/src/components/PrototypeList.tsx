@@ -25,6 +25,7 @@ export function PrototypeList() {
   const [sortBy, setSortBy] = useState<SortOption>('updated');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [confirmDeleteSlug, setConfirmDeleteSlug] = useState<string | null>(null);
+  const [gitHubConnection, setGitHubConnection] = useState<{ repoOwner: string; repoName: string } | null>(null);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -59,6 +60,24 @@ export function PrototypeList() {
   useEffect(() => {
     loadPrototypes();
   }, [currentTeam, loadPrototypes]);
+
+  // Fetch team GitHub connection for displaying links on cards
+  useEffect(() => {
+    if (!currentTeam) {
+      setGitHubConnection(null);
+      return;
+    }
+    authFetch(`/api/teams/${currentTeam.id}/github`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.repoOwner && data?.repoName) {
+          setGitHubConnection({ repoOwner: data.repoOwner, repoName: data.repoName });
+        } else {
+          setGitHubConnection(null);
+        }
+      })
+      .catch(() => setGitHubConnection(null));
+  }, [currentTeam]);
 
   function handleDelete(slug: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -452,6 +471,17 @@ export function PrototypeList() {
                   </span>
                 )}
                 Updated {formatDate(prototype.updatedAt)}
+                {gitHubConnection && prototype.lastGithubPushAt && (
+                  <a
+                    className="prototype-card-github"
+                    href={`https://github.com/${gitHubConnection.repoOwner}/${gitHubConnection.repoName}/tree/uswds-pt/${prototype.branchSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View on GitHub
+                  </a>
+                )}
               </div>
             </div>
             );

@@ -31,6 +31,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../types/grapesjs';
+import { syncPageLinkHrefs } from './canvas-helpers';
 
 const debug = createDebugLogger('DataExtractor');
 
@@ -294,6 +295,11 @@ export function extractPerPageHtml(editor: EditorInstance, projectData: GrapesPr
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       editor.Pages?.select?.(page);
+      // Ensure page-link hrefs are correct before extracting HTML.
+      // The _extractingPerPageHtml flag suppresses the full page:select handler
+      // (resource loading, template injection, etc.), but syncPageLinkHrefs is
+      // safe to call directly — it only reads/writes DOM attributes.
+      syncPageLinkHrefs(editor);
       const html = editor.getHtml();
 
       // Match page in projectData by id

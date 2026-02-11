@@ -137,6 +137,8 @@ export interface Prototype {
   version?: number;
   contentChecksum?: string;
   branchSlug: string;
+  lastGithubPushAt?: Date;
+  lastGithubCommitSha?: string;
 }
 
 export interface PrototypeVersion {

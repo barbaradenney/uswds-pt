@@ -4,7 +4,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, desc, and, or, count } from 'drizzle-orm';
+import { eq, ne, desc, and, or, count, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum, toBranchSlug } from '@uswds-pt/shared';
@@ -162,6 +162,29 @@ async function canDeletePrototype(userId: string, prototype: { teamId: string | 
   if (!membership) return false;
 
   return hasPermission(membership.role as Role, ROLES.TEAM_ADMIN);
+}
+
+/**
+ * Check if a prototype name is already taken within a team (case-insensitive).
+ * Optionally exclude a specific slug (for rename checks).
+ */
+async function isNameTaken(
+  teamId: string,
+  name: string,
+  excludeSlug?: string
+): Promise<boolean> {
+  const conditions = [
+    eq(prototypes.teamId, teamId),
+    eq(sql`lower(${prototypes.name})`, name.toLowerCase().trim()),
+  ];
+  if (excludeSlug) {
+    conditions.push(ne(prototypes.slug, excludeSlug));
+  }
+  const [result] = await db
+    .select({ count: count() })
+    .from(prototypes)
+    .where(and(...conditions));
+  return Number(result.count) > 0;
 }
 
 /**
@@ -415,6 +438,13 @@ export async function prototypeRoutes(app: FastifyInstance) {
         return reply.status(403).send({ message: 'Viewers cannot create prototypes' });
       }
 
+      // Check for duplicate name within the team
+      if (await isNameTaken(teamId, name)) {
+        return reply.status(409).send({
+          message: `A prototype named "${name}" already exists in this team`,
+        });
+      }
+
       // Validate grapesData size and shape
       const grapesError = validateGrapesData(grapesData);
       if (grapesError) {
@@ -490,6 +520,15 @@ export async function prototypeRoutes(app: FastifyInstance) {
       // Check edit permission
       if (!(await canEditPrototype(userId, current))) {
         return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      // Check for duplicate name when renaming
+      if (name && name !== current.name && current.teamId) {
+        if (await isNameTaken(current.teamId, name, slug)) {
+          return reply.status(409).send({
+            message: `A prototype named "${name}" already exists in this team`,
+          });
+        }
       }
 
       // Validate grapesData size and shape
@@ -1008,9 +1047,18 @@ export async function prototypeRoutes(app: FastifyInstance) {
           }
         }
 
-        // Create new slug and name
+        // Create new slug and name, auto-resolving collisions
         const newSlug = nanoid(10);
-        const newName = `Copy of ${original.name}`;
+        let newName = `Copy of ${original.name}`;
+        if (original.teamId && await isNameTaken(original.teamId, newName)) {
+          for (let i = 2; i <= 100; i++) {
+            const candidate = `Copy of ${original.name} (${i})`;
+            if (!(await isNameTaken(original.teamId, candidate))) {
+              newName = candidate;
+              break;
+            }
+          }
+        }
         const branchSlug = toBranchSlug(newName);
 
         // Create the duplicate - ensure grapesData has a default value
