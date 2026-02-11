@@ -17,11 +17,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: uswds-pt-db
-          property: connectionString
-
-databases:
-  - name: uswds-pt-db
-    plan: free
-    region: oregon
+        sync: false  # Set manually in Render dashboard (Supabase connection string)
