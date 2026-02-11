@@ -515,6 +515,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
         branchSlug,
       });
 
+      // Auto-push to GitHub if a connection exists (fire-and-forget)
+      autoGitHubPush(request, prototype).catch((err) => {
+        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
+      });
+
       return reply.status(201).send(prototype);
     }
   );
@@ -883,6 +888,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
         throw err;
       }
 
+      // Auto-push to GitHub if a connection exists (fire-and-forget)
+      autoGitHubPush(request, updated).catch((err) => {
+        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
+      });
+
       return updated;
     }
   );
@@ -1119,6 +1129,11 @@ export async function prototypeRoutes(app: FastifyInstance) {
           teamId: original.teamId,
           createdBy: userId,
           branchSlug,
+        });
+
+        // Auto-push to GitHub if a connection exists (fire-and-forget)
+        autoGitHubPush(request, duplicate).catch((err) => {
+          request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
         });
 
         return reply.status(201).send(duplicate);
