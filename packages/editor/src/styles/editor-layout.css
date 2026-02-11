@@ -74,13 +74,81 @@
 }
 
 /* ============================================
-   Canvas Area (center)
+   Canvas Column (center — toolbar + canvas)
    ============================================ */
+
+.editor-canvas-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
 
 .editor-canvas {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  min-height: 0;
+}
+
+/* ============================================
+   Canvas Toolbar
+   ============================================ */
+
+.canvas-toolbar {
+  height: 34px;
+  background: var(--color-base-lightest);
+  border-bottom: 1px solid var(--color-base-lighter);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.canvas-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.canvas-toolbar-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius, 4px);
+  color: var(--color-base-light);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.canvas-toolbar-btn:hover {
+  background: var(--color-base-lighter);
+  color: var(--color-base);
+}
+
+.canvas-toolbar-btn--active {
+  background: rgba(0, 94, 162, 0.12);
+  color: var(--color-primary);
+}
+
+.canvas-toolbar-btn--active:hover {
+  background: rgba(0, 94, 162, 0.18);
+  color: var(--color-primary);
+}
+
+.canvas-toolbar-separator {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--color-base-lighter);
+  margin: 0 4px;
+  vertical-align: middle;
 }
 
 /* ============================================

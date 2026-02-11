@@ -23,6 +23,7 @@ import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { LeftSidebar } from './LeftSidebar';
 import { RightSidebar } from './RightSidebar';
+import { CanvasToolbar } from './CanvasToolbar';
 import '../../styles/ai-copilot.css';
 import '../../styles/grapesjs-overrides.css';
 import '../../styles/editor-layout.css';
@@ -164,7 +165,10 @@ export const EditorCanvas = memo(function EditorCanvas({
       >
         <div className="editor-workspace">
           <LeftSidebar />
-          <Canvas className="editor-canvas" />
+          <div className="editor-canvas-column">
+            <CanvasToolbar />
+            <Canvas className="editor-canvas" />
+          </div>
           <RightSidebar />
         </div>
         {/* AI copilot mount point (used when AI is enabled) */}

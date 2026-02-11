@@ -23,3 +23,50 @@
   width: 100%;
   height: 100%;
 }
+
+/* ============================================
+   GrapesJS Code Editor Modal
+   Light-theme overrides so the modal renders
+   correctly above our custom layout.
+   ============================================ */
+
+.gjs-mdl-container {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.gjs-mdl-dialog {
+  background: #fff;
+  color: #1b1b1b;
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  max-width: 80vw;
+}
+
+.gjs-mdl-header {
+  border-bottom: 1px solid #dfe1e2;
+  color: #1b1b1b;
+}
+
+.gjs-mdl-title {
+  color: #1b1b1b;
+}
+
+.gjs-mdl-btn-close {
+  color: #71767a;
+}
+
+.gjs-mdl-btn-close:hover {
+  color: #1b1b1b;
+}
+
+/* Code editor textarea within the modal */
+.gjs-cm-editor {
+  background: #f0f0f0;
+  border: 1px solid #dfe1e2;
+  border-radius: 4px;
+}
+
+.gjs-cm-editor .CodeMirror {
+  background: #f0f0f0;
+  color: #1b1b1b;
+}
