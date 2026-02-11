@@ -1151,6 +1151,11 @@ function setupVisibilityTrait(
           cb.value = opt.id;
           cb.style.cssText = 'width: 14px; height: 14px; accent-color: var(--color-primary);';
 
+          // Bubble change event to the container so GrapesJS calls onEvent()
+          cb.addEventListener('change', () => {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+
           label.appendChild(cb);
           label.appendChild(document.createTextNode(opt.label));
           el.appendChild(label);
