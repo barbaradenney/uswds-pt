@@ -154,6 +154,16 @@ export interface PrototypeVersion {
 }
 
 /**
+ * Named state for toggling component visibility.
+ * Used to show different views (Customer/Admin) or data conditions (Empty/Error).
+ * Stored in GrapesProjectData.states — no DB migration needed.
+ */
+export interface StateDefinition {
+  id: string;          // "state-<timestamp>"
+  name: string;        // "Customer", "Admin", "Empty"
+}
+
+/**
  * GrapesJS project data structure
  * This is stored as JSONB in the database
  */
@@ -163,6 +173,7 @@ export interface GrapesProjectData {
   pages?: GrapesPage[];
   symbols?: unknown[];
   dataSources?: unknown[];
+  states?: StateDefinition[];
 }
 
 export interface GrapesAsset {

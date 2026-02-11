@@ -19,6 +19,7 @@ const mockAddTypographyCSS = vi.fn();
 const mockAddBannerCollapseCSS = vi.fn();
 const mockAddWrapperOverrideCSS = vi.fn();
 const mockClearGrapesJSStorage = vi.fn();
+const mockAddStateDimmingCSS = vi.fn();
 vi.mock('../lib/grapesjs/resource-loader', () => ({
   loadUSWDSResources: (...args: unknown[]) => mockLoadUSWDSResources(...args),
   addCardContainerCSS: (...args: unknown[]) => mockAddCardContainerCSS(...args),
@@ -27,6 +28,7 @@ vi.mock('../lib/grapesjs/resource-loader', () => ({
   addTypographyCSS: (...args: unknown[]) => mockAddTypographyCSS(...args),
   addBannerCollapseCSS: (...args: unknown[]) => mockAddBannerCollapseCSS(...args),
   addWrapperOverrideCSS: (...args: unknown[]) => mockAddWrapperOverrideCSS(...args),
+  addStateDimmingCSS: (...args: unknown[]) => mockAddStateDimmingCSS(...args),
   clearGrapesJSStorage: (...args: unknown[]) => mockClearGrapesJSStorage(...args),
 }));
 
@@ -46,6 +48,7 @@ const mockSyncPageLinkHrefs = vi.fn();
 const mockExposeDebugHelpers = vi.fn();
 const mockCleanupCanvasHelpers = vi.fn();
 const mockSetupConditionalFieldsWatcher = vi.fn();
+const mockSetupStateVisibilityWatcher = vi.fn();
 vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   forceCanvasUpdate: (...args: unknown[]) => mockForceCanvasUpdate(...args),
   setupCanvasEventHandlers: (...args: unknown[]) => mockSetupCanvasEventHandlers(...args),
@@ -56,6 +59,7 @@ vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   exposeDebugHelpers: (...args: unknown[]) => mockExposeDebugHelpers(...args),
   cleanupCanvasHelpers: (...args: unknown[]) => mockCleanupCanvasHelpers(...args),
   setupConditionalFieldsWatcher: (...args: unknown[]) => mockSetupConditionalFieldsWatcher(...args),
+  setupStateVisibilityWatcher: (...args: unknown[]) => mockSetupStateVisibilityWatcher(...args),
 }));
 
 // Mock adapter
@@ -159,6 +163,9 @@ function createMockEditor() {
     },
     Commands: {
       add: vi.fn(),
+    },
+    TraitManager: {
+      addType: vi.fn(),
     },
     getSelected: vi.fn(),
     refresh: vi.fn(),

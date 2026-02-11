@@ -5,6 +5,7 @@ import type { PageData } from '../lib/export';
 import { getPrototype } from '../lib/localStorage';
 import { getAuthToken } from '../contexts/AuthContext';
 import { escapeHtml } from '@uswds-pt/shared';
+import type { StateDefinition } from '@uswds-pt/shared';
 
 // Check if we're in demo mode
 const isDemoMode = !import.meta.env.VITE_API_URL;
@@ -104,11 +105,25 @@ function buildHtmlFromComponent(component: any): string {
   return `<${tagName}${attrString}>${escapeHtml(content)}${childrenHtml}</${tagName}>`;
 }
 
+/**
+ * Extract state definitions from GrapesJS project data
+ */
+function extractStatesFromGjsData(gjsDataString: string | undefined): StateDefinition[] {
+  if (!gjsDataString) return [];
+  try {
+    const gjsData = typeof gjsDataString === 'string' ? JSON.parse(gjsDataString) : gjsDataString;
+    return Array.isArray(gjsData?.states) ? gjsData.states : [];
+  } catch {
+    return [];
+  }
+}
+
 export function Preview() {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeStateId, setActiveStateId] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug) {
@@ -128,6 +143,11 @@ export function Preview() {
     return extractPagesFromGjsData(data?.gjsData);
   }, [data?.gjsData]);
 
+  // Extract states from gjsData
+  const states = useMemo(() => {
+    return extractStatesFromGjsData(data?.gjsData);
+  }, [data?.gjsData]);
+
   // Determine if we have multi-page content
   const isMultiPage = pages.length > 1;
 
@@ -142,13 +162,13 @@ export function Preview() {
   // which include USWDS CDN resources, init scripts, and page navigation.
   const previewDoc = useMemo(() => {
     if (isMultiPage && pages.length > 0) {
-      return generateMultiPageDocument(pages, { title: data?.name });
+      return generateMultiPageDocument(pages, { title: data?.name, activeStateId });
     }
     if (cleanedHtml) {
-      return generateFullDocument(cleanedHtml, { title: data?.name });
+      return generateFullDocument(cleanedHtml, { title: data?.name, activeStateId });
     }
     return '';
-  }, [cleanedHtml, isMultiPage, pages, data?.name]);
+  }, [cleanedHtml, isMultiPage, pages, data?.name, activeStateId]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
@@ -266,16 +286,51 @@ export function Preview() {
   // the parent application context (prevents stored XSS from accessing
   // cookies/localStorage). allow-scripts is needed for web component JS.
   return (
-    <iframe
-      sandbox="allow-scripts"
-      srcDoc={previewDoc}
-      title={`Preview: ${data.name || 'Prototype'}`}
-      style={{
-        width: '100%',
-        height: '100vh',
-        border: 'none',
-        display: 'block',
-      }}
-    />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {states.length > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 12px',
+          background: '#f0f0f0',
+          borderBottom: '1px solid #ddd',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '0.8125rem',
+          flexShrink: 0,
+        }}>
+          <label htmlFor="preview-state-select" style={{ fontWeight: 500, color: '#1b1b1b' }}>
+            State:
+          </label>
+          <select
+            id="preview-state-select"
+            value={activeStateId || ''}
+            onChange={(e) => setActiveStateId(e.target.value || null)}
+            style={{
+              padding: '4px 8px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              fontSize: '0.8125rem',
+            }}
+          >
+            <option value="">All States</option>
+            {states.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      <iframe
+        sandbox="allow-scripts"
+        srcDoc={previewDoc}
+        title={`Preview: ${data.name || 'Prototype'}`}
+        style={{
+          width: '100%',
+          flex: 1,
+          border: 'none',
+          display: 'block',
+        }}
+      />
+    </div>
   );
 }

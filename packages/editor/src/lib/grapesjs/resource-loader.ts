@@ -351,6 +351,26 @@ export function addBannerCollapseCSS(editor: EditorInstance): void {
 }
 
 /**
+ * Add CSS to canvas for state-based component dimming.
+ * Hidden-in-state components appear dimmed but remain editable.
+ */
+export function addStateDimmingCSS(editor: EditorInstance): void {
+  const canvasFrame = editor.Canvas?.getFrameEl();
+  if (canvasFrame?.contentDocument) {
+    const style = canvasFrame.contentDocument.createElement('style');
+    style.textContent = `
+      /* Dim components that are hidden in the active state */
+      .gjs-state-dimmed {
+        opacity: 0.25 !important;
+        outline: 1px dashed rgba(150, 150, 150, 0.5) !important;
+      }
+    `;
+    canvasFrame.contentDocument.head.appendChild(style);
+    debug('Added state dimming CSS to canvas');
+  }
+}
+
+/**
  * Clear GrapesJS localStorage to prevent state bleeding between prototypes
  */
 export function clearGrapesJSStorage(): void {

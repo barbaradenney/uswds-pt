@@ -4,7 +4,7 @@
  */
 
 import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
-import { CDN_URLS, CONDITIONAL_FIELDS_SCRIPT } from '@uswds-pt/adapter';
+import { CDN_URLS, CONDITIONAL_FIELDS_SCRIPT, STATE_VISIBILITY_SCRIPT } from '@uswds-pt/adapter';
 import { BLOB_URL_REVOKE_DELAY_MS } from '../constants';
 
 import { cleanExport } from './clean';
@@ -67,6 +67,13 @@ export interface PageData {
 }
 
 /**
+ * Check if content uses data-states attributes for state visibility
+ */
+function hasStateVisibility(content: string): boolean {
+  return content.includes('data-states=');
+}
+
+/**
  * Generate a full HTML document with USWDS imports
  */
 export function generateFullDocument(
@@ -74,17 +81,26 @@ export function generateFullDocument(
   options: {
     title?: string;
     lang?: string;
+    activeStateId?: string | null;
   } = {}
 ): string {
   const {
     title = 'Prototype',
     lang = 'en',
+    activeStateId = null,
   } = options;
 
   // Include conditional fields script only if content uses data-reveals or data-hides
   const conditionalScript = hasConditionalFields(content) ? `
   <!-- Conditional field show/hide functionality -->
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
+
+  // Include state visibility script if content uses data-states
+  const stateScript = hasStateVisibility(content) ? `
+  <!-- State visibility functionality -->
+  ${STATE_VISIBILITY_SCRIPT}` : '';
+
+  const bodyAttrs = activeStateId ? ` data-active-state="${escapeHtml(activeStateId)}"` : '';
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(lang)}">
@@ -101,9 +117,9 @@ export function generateFullDocument(
   <!-- USWDS Web Components JS (handles all component behavior - USWDS JS is NOT loaded as it conflicts) -->
   <script type="module" src="${PREVIEW_CDN_URLS.uswdsWcJs}"></script>
   <!-- Initialize web component properties after they render -->
-  ${generateInitScript()}${conditionalScript}
+  ${generateInitScript()}${conditionalScript}${stateScript}
 </head>
-<body>
+<body${bodyAttrs}>
 ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 </body>
 </html>`;
@@ -204,11 +220,13 @@ export function generateMultiPageDocument(
   options: {
     title?: string;
     lang?: string;
+    activeStateId?: string | null;
   } = {}
 ): string {
   const {
     title = 'Prototype',
     lang = 'en',
+    activeStateId = null,
   } = options;
 
   // Wrap each page in a container with data-page-id attribute
@@ -230,6 +248,14 @@ ${indentContent(cleanedHtml, 4)}
   <!-- Conditional field show/hide functionality -->
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
 
+  // Include state visibility script if any page uses data-states
+  const anyPageHasStates = pages.some(page => hasStateVisibility(page.html));
+  const stateScript = anyPageHasStates ? `
+  <!-- State visibility functionality -->
+  ${STATE_VISIBILITY_SCRIPT}` : '';
+
+  const bodyAttrs = activeStateId ? ` data-active-state="${escapeHtml(activeStateId)}"` : '';
+
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(lang)}">
 <head>
@@ -247,9 +273,9 @@ ${indentContent(cleanedHtml, 4)}
   <!-- Initialize web component properties after they render -->
   ${initScript}
   <!-- Page navigation for multi-page preview -->
-  ${pageNavScript}${conditionalScript}
+  ${pageNavScript}${conditionalScript}${stateScript}
 </head>
-<body>
+<body${bodyAttrs}>
 ${pagesHtml}
 </body>
 </html>`;

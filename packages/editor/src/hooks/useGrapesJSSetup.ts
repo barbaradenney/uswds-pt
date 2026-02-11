@@ -10,7 +10,7 @@ import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
-import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, addBannerCollapseCSS, addWrapperOverrideCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
+import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, addBannerCollapseCSS, addWrapperOverrideCSS, addStateDimmingCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
 import { isExtractingPerPageHtml } from '../lib/grapesjs/data-extractor';
 import {
   forceCanvasUpdate,
@@ -22,6 +22,7 @@ import {
   exposeDebugHelpers,
   cleanupCanvasHelpers,
   setupConditionalFieldsWatcher,
+  setupStateVisibilityWatcher,
 } from '../lib/grapesjs/canvas-helpers';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import type { EditorInstance } from '../types/grapesjs';
@@ -263,6 +264,12 @@ export function useGrapesJSSetup({
       // Set up conditional show/hide trait (dynamic component picker)
       setupConditionalShowHideTrait(editor, registerListener);
 
+      // Set up state visibility trait (checkbox-group for multi-select state tagging)
+      setupStateVisibilityTrait(editor, registerListener);
+
+      // Set up state visibility watcher (dimming in canvas)
+      setupStateVisibilityWatcher(editor, (event, handler) => registerListener(editor, event, handler));
+
       // Set up proactive ID assignment for targetable components
       setupProactiveIdAssignment(editor, registerListener);
 
@@ -286,6 +293,7 @@ export function useGrapesJSSetup({
           addTypographyCSS(editor);
           addBannerCollapseCSS(editor);
           addWrapperOverrideCSS(editor);
+          addStateDimmingCSS(editor);
         } else if (attempt < 10) {
           debug(`Canvas document not ready, retrying (attempt ${attempt + 1})...`);
           setTimeout(() => tryLoadResources(attempt + 1), 200);
@@ -1053,6 +1061,124 @@ function setupConditionalShowHideTrait(
       if (selected) {
         updateConditionalTraits(selected);
       }
+    }
+  });
+}
+
+/**
+ * Set up state visibility trait for all components.
+ * When states are defined, adds a "Visible In States" checkbox group
+ * to the selected component's traits panel.
+ */
+function setupStateVisibilityTrait(
+  editor: EditorInstance,
+  registerListener: (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => void
+): void {
+  // Register the checkbox-group trait type
+  editor.TraitManager.addType('checkbox-group', {
+    createInput({ trait }: { trait: any }) {
+      const el = document.createElement('div');
+      el.className = 'trait-checkbox-group';
+      const options: Array<{ id: string; label: string }> = trait.get('options') || [];
+
+      options.forEach((opt: { id: string; label: string }) => {
+        const label = document.createElement('label');
+        label.className = 'trait-checkbox-group-item';
+        label.style.cssText = 'display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--color-base); cursor: pointer; padding: 2px 0;';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = opt.id;
+        cb.style.cssText = 'width: 14px; height: 14px; accent-color: var(--color-primary);';
+
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(opt.label));
+        el.appendChild(label);
+      });
+
+      return el;
+    },
+
+    onEvent({ elInput, component }: { elInput: HTMLElement; component: any }) {
+      const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+      const checkedIds: string[] = [];
+      checkboxes.forEach((cb) => {
+        if (cb.checked) checkedIds.push(cb.value);
+      });
+
+      if (checkedIds.length === 0 || checkedIds.length === checkboxes.length) {
+        // All checked or none checked → visible in all states → remove attribute
+        component.removeAttributes?.(['data-states']);
+      } else {
+        component.addAttributes?.({ 'data-states': checkedIds.join(',') });
+      }
+    },
+
+    onUpdate({ elInput, component }: { elInput: HTMLElement; component: any }) {
+      const dataStates = component.getAttributes?.()?.['data-states'] || '';
+      const activeIds = dataStates ? dataStates.split(',').map((s: string) => s.trim()) : [];
+      const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+
+      checkboxes.forEach((cb) => {
+        // If no data-states attribute, all checkboxes are checked (visible in all)
+        cb.checked = dataStates === '' || activeIds.includes(cb.value);
+      });
+    },
+  });
+
+  const addStateVisibilityTrait = (component: any) => {
+    if (!component) return;
+
+    const states: Array<{ id: string; name: string }> = (() => {
+      try {
+        const data = editor.getProjectData?.();
+        return Array.isArray(data?.states) ? data.states : [];
+      } catch {
+        return [];
+      }
+    })();
+
+    // Only show trait if states are defined
+    if (states.length === 0) {
+      // Remove trait if it exists but states were all deleted
+      const traits = component.get('traits');
+      const existing = traits.where({ name: 'state-visibility' });
+      if (existing.length > 0) {
+        existing.forEach((t: any) => traits.remove(t));
+      }
+      return;
+    }
+
+    const traits = component.get('traits');
+    const hasStateTrait = traits.where({ name: 'state-visibility' }).length > 0;
+
+    if (hasStateTrait) {
+      // Update options on existing trait
+      const existing = traits.where({ name: 'state-visibility' })[0];
+      if (existing) {
+        existing.set('options', states.map(s => ({ id: s.id, label: s.name })));
+      }
+      return;
+    }
+
+    traits.add({
+      type: 'checkbox-group',
+      name: 'state-visibility',
+      label: 'Visible In States',
+      options: states.map(s => ({ id: s.id, label: s.name })),
+      changeProp: false,
+    });
+  };
+
+  registerListener(editor, 'component:selected', (component: any) => {
+    addStateVisibilityTrait(component);
+  });
+
+  // Refresh trait when states are modified
+  registerListener(editor, 'state:select', () => {
+    const selected = editor.getSelected?.();
+    if (selected) {
+      addStateVisibilityTrait(selected);
     }
   });
 }

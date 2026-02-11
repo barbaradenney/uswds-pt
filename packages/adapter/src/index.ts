@@ -19,6 +19,7 @@ export {
   CDN_STYLES,
   generateComponentLoaderScript,
   CONDITIONAL_FIELDS_SCRIPT,
+  STATE_VISIBILITY_SCRIPT,
   STARTER_TEMPLATES,
 } from './constants/index.js';
 export { WebComponentTraitManager } from './WebComponentTraitManager.js';

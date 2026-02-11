@@ -96,3 +96,42 @@ if (!window._conditionalFieldsInit) {
   }
 }
 </script>`;
+
+/**
+ * State visibility script for preview/export.
+ * Hides elements whose data-states attribute doesn't include the active state.
+ * Exposes window.setActiveState(id) for external control (e.g. state switcher UI).
+ */
+export const STATE_VISIBILITY_SCRIPT = `
+<script>
+if (!window._stateVisibilityInit) {
+  window._stateVisibilityInit = true;
+
+  function applyStateVisibility(activeStateId) {
+    document.querySelectorAll('[data-states]').forEach(function(el) {
+      var stateIds = el.getAttribute('data-states').split(',').map(function(s) { return s.trim(); });
+      if (!activeStateId || stateIds.indexOf(activeStateId) !== -1) {
+        el.style.display = '';
+        el.removeAttribute('hidden');
+      } else {
+        el.style.display = 'none';
+        el.setAttribute('hidden', '');
+      }
+    });
+  }
+
+  window.setActiveState = function(id) {
+    applyStateVisibility(id || null);
+  };
+
+  // Apply initial state if set via data attribute on body
+  var initialState = document.body.getAttribute('data-active-state');
+  if (initialState) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { setTimeout(function() { applyStateVisibility(initialState); }, 100); });
+    } else {
+      setTimeout(function() { applyStateVisibility(initialState); }, 100);
+    }
+  }
+}
+</script>`;

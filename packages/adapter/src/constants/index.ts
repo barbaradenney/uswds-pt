@@ -17,4 +17,4 @@ export {
   CDN_STYLES,
   generateComponentLoaderScript,
 } from './cdn.js';
-export { CONDITIONAL_FIELDS_SCRIPT } from './scripts.js';
+export { CONDITIONAL_FIELDS_SCRIPT, STATE_VISIBILITY_SCRIPT } from './scripts.js';

@@ -698,6 +698,80 @@ export function setupAllInteractiveHandlers(
 }
 
 // ============================================================================
+// State Visibility (dimming hidden-in-state components)
+// ============================================================================
+
+/**
+ * Apply state visibility dimming to canvas components.
+ * Components with `data-states` not matching activeStateId get dimmed.
+ * Components without `data-states` are always visible.
+ */
+export function applyStateVisibility(editor: EditorInstance, activeStateId: string | null): void {
+  const doc = editor.Canvas?.getDocument?.();
+  if (!doc) return;
+
+  const wrapper = editor.DomComponents?.getWrapper?.();
+  if (!wrapper) return;
+
+  const walkComponent = (comp: any) => {
+    const el = comp.getEl?.();
+    if (el) {
+      const dataStates = comp.getAttributes?.()?.['data-states'] || '';
+      if (!dataStates || activeStateId === null) {
+        // No attribute or "All States" — never dimmed
+        el.classList.remove('gjs-state-dimmed');
+      } else {
+        const stateIds = dataStates.split(',').map((s: string) => s.trim());
+        if (stateIds.includes(activeStateId)) {
+          el.classList.remove('gjs-state-dimmed');
+        } else {
+          el.classList.add('gjs-state-dimmed');
+        }
+      }
+    }
+
+    const children = comp.components?.();
+    if (children) {
+      children.forEach((child: any) => walkComponent(child));
+    }
+  };
+
+  walkComponent(wrapper);
+}
+
+/**
+ * Set up a watcher that re-applies state visibility when the active state
+ * changes or when components are added/removed/page-switched.
+ */
+export function setupStateVisibilityWatcher(
+  editor: EditorInstance,
+  registerListener: (event: string, handler: (...args: unknown[]) => void) => void
+): void {
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const refresh = () => {
+    if (debounceTimer !== null) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      const activeStateId = (editor as any).__activeStateId ?? null;
+      applyStateVisibility(editor, activeStateId);
+    }, 150);
+  };
+
+  // Re-apply when active state changes
+  registerListener('state:select', () => {
+    // Immediate apply for state switch (no debounce)
+    const activeStateId = (editor as any).__activeStateId ?? null;
+    applyStateVisibility(editor, activeStateId);
+  });
+
+  // Re-apply on structural changes (debounced)
+  registerListener('component:add', refresh);
+  registerListener('component:remove', refresh);
+  registerListener('page:select', refresh);
+}
+
+// ============================================================================
 // Page Link Sync
 // ============================================================================
 
