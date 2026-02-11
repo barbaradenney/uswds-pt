@@ -108,6 +108,25 @@
                         ]
                       },
                       {
+                        "type": "usa-breadcrumb",
+                        "attributes": {
+                          "wrap": false,
+                          "count": "3",
+                          "item1-href": "#",
+                          "item2-href": "#",
+                          "item3-href": "#",
+                          "item4-href": "#",
+                          "item5-href": "#",
+                          "item6-href": "#",
+                          "item1-label": "Home",
+                          "item2-label": "Section",
+                          "item3-label": "Current Page",
+                          "item4-label": "Current Page",
+                          "item5-label": "Current Page",
+                          "item6-label": "Current Page"
+                        }
+                      },
+                      {
                         "classes": [
                           "usa-prose"
                         ],
