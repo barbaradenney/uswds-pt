@@ -106,6 +106,60 @@
                             ]
                           }
                         ]
+                      },
+                      {
+                        "classes": [
+                          "usa-prose"
+                        ],
+                        "components": [
+                          {
+                            "type": "heading-block",
+                            "attributes": {
+                              "heading-level": "h2"
+                            },
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Heading"
+                              }
+                            ],
+                            "heading-level": "h2"
+                          }
+                        ]
+                      },
+                      {
+                        "classes": [
+                          "usa-prose"
+                        ],
+                        "components": [
+                          {
+                            "type": "text-block",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "This is a paragraph of text. Click to edit."
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "usa-button",
+                        "attributes": {
+                          "href": "",
+                          "size": "default",
+                          "text": "Click me",
+                          "variant": "default",
+                          "disabled": false,
+                          "link-type": "none",
+                          "page-link": ""
+                        },
+                        "components": [
+                          {
+                            "type": "textnode",
+                            "content": "Click me"
+                          }
+                        ]
                       }
                     ]
                   },
