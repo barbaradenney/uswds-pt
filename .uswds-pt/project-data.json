@@ -155,7 +155,7 @@
                           "text": "submit",
                           "variant": "default",
                           "disabled": false,
-                          "link-type": "none",
+                          "link-type": "page",
                           "page-link": ""
                         },
                         "components": [
