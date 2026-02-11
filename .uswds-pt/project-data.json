@@ -134,6 +134,9 @@
                         "components": [
                           {
                             "type": "text-block",
+                            "attributes": {
+                              "id": "imyos"
+                            },
                             "components": [
                               {
                                 "type": "textnode",
