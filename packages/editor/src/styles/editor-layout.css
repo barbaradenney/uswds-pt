@@ -205,11 +205,12 @@
 .block-search {
   padding: 8px;
   border-bottom: 1px solid var(--color-base-lightest);
+  position: relative;
 }
 
 .block-search-input {
   width: 100%;
-  padding: 6px 8px;
+  padding: 6px 28px 6px 8px;
   border: 1px solid var(--color-base-lighter);
   border-radius: var(--border-radius);
   font-size: 0.75rem;
@@ -224,148 +225,323 @@
   box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
 }
 
-.block-search-no-results {
-  padding: 12px 8px;
+.block-search-clear {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-base-light);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.block-search-clear:hover {
+  color: var(--color-base);
+}
+
+/* ============================================
+   Blocks Container & Categories
+   ============================================ */
+
+.blocks-container {
+  padding: 0;
+}
+
+.blocks-empty {
+  padding: 16px 12px;
   color: var(--color-base-light);
   font-size: 0.75rem;
   text-align: center;
 }
 
+.block-category {
+  border-bottom: 1px solid var(--color-base-lightest);
+}
+
+.block-category-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: var(--color-base-lightest);
+  color: var(--color-base);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.block-category-title:hover {
+  background: var(--color-base-lighter);
+}
+
+.block-category-caret {
+  font-size: 0.625rem;
+  color: var(--color-base-light);
+  width: 10px;
+  text-align: center;
+}
+
+.block-category-name {
+  flex: 1;
+}
+
+.block-category-count {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--color-base-light);
+  background: var(--color-white);
+  padding: 0 5px;
+  border-radius: 8px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.block-category-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px;
+}
+
 /* ============================================
-   Light-theme overrides for GrapesJS portal content
-   inside sidebars. The portaled panels use GrapesJS's
-   default dark CSS classes — we override them to match
-   our light sidebar.
+   Block Items
    ============================================ */
 
-.editor-sidebar .gjs-one-bg {
-  background-color: var(--color-white) !important;
-}
-
-.editor-sidebar .gjs-two-color {
-  color: var(--color-base) !important;
-}
-
-.editor-sidebar .gjs-three-bg {
-  background-color: var(--color-base-lightest) !important;
-}
-
-.editor-sidebar .gjs-four-color {
-  color: var(--color-base-light) !important;
-}
-
-/* Block items */
-.editor-sidebar .gjs-block {
-  background-color: var(--color-white) !important;
-  color: var(--color-base) !important;
-  border: 1px solid var(--color-base-lightest) !important;
-  box-shadow: none !important;
-  min-height: auto;
-  padding: 8px;
+.custom-block-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  background: var(--color-white);
+  border: 1px solid var(--color-base-lightest);
   border-radius: var(--border-radius);
+  cursor: grab;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
 }
 
-.editor-sidebar .gjs-block:hover {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 1px 3px rgba(0, 94, 162, 0.15) !important;
+.custom-block-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 94, 162, 0.15);
 }
 
-.editor-sidebar .gjs-block svg {
-  fill: var(--color-base-light) !important;
+.custom-block-item:active {
+  cursor: grabbing;
+  box-shadow: 0 2px 6px rgba(0, 94, 162, 0.2);
 }
 
-.editor-sidebar .gjs-block.gjs-block__focused {
-  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.3) !important;
+.custom-block-media {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-base-light);
 }
 
-/* Block category headers */
-.editor-sidebar .gjs-block-category {
-  border-bottom: 1px solid var(--color-base-lightest) !important;
+.custom-block-media svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 
-.editor-sidebar .gjs-title {
-  background-color: var(--color-base-lightest) !important;
-  color: var(--color-base) !important;
-  border-bottom: 1px solid var(--color-base-lighter) !important;
-  padding: 8px 10px !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+.custom-block-label {
+  font-size: 0.6875rem;
+  color: var(--color-base);
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
-/* Blocks container */
-.editor-sidebar .gjs-blocks-cs {
-  background-color: var(--color-white) !important;
+/* ============================================
+   Layers Tree (left sidebar)
+   ============================================ */
+
+.layers-tree {
+  padding: 4px 0;
 }
 
-/* Layer items */
-.editor-sidebar .gjs-layer {
-  background-color: var(--color-white) !important;
-  color: var(--color-base) !important;
+.layers-empty {
+  padding: 16px 12px;
+  color: var(--color-base-light);
+  font-size: 0.75rem;
+  text-align: center;
 }
 
-.editor-sidebar .gjs-layer:hover {
-  background-color: var(--color-base-lightest) !important;
+.layer-node {
+  /* wrapper for recursive items */
 }
 
-.editor-sidebar .gjs-layer.gjs-selected {
-  background-color: rgba(0, 94, 162, 0.08) !important;
-  color: var(--color-primary) !important;
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-left: 2px solid transparent;
 }
 
-.editor-sidebar .gjs-layer-title {
-  background: transparent !important;
+.layer-item:hover {
+  background: var(--color-base-lightest);
 }
 
-.editor-sidebar .gjs-layer-name {
-  color: var(--color-base) !important;
+.layer-item--selected {
+  background: rgba(0, 94, 162, 0.08);
+  border-left-color: var(--color-primary);
 }
 
-.editor-sidebar .gjs-layer .gjs-layer-vis,
-.editor-sidebar .gjs-layer .gjs-layer-caret {
-  color: var(--color-base-light) !important;
+.layer-item--selected:hover {
+  background: rgba(0, 94, 162, 0.12);
 }
 
-/* Layer manager container */
-.editor-sidebar .gjs-layers {
-  background-color: var(--color-white) !important;
+.layer-toggle {
+  background: none;
+  border: none;
+  color: var(--color-base-light);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.75rem;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* Trait inputs */
-.editor-sidebar .gjs-trt-trait {
-  color: var(--color-base) !important;
+.layer-toggle:hover {
+  color: var(--color-base);
 }
 
-.editor-sidebar .gjs-trt-trait .gjs-label {
-  color: var(--color-base) !important;
+.layer-toggle-spacer {
+  width: 14px;
+  flex-shrink: 0;
 }
 
-.editor-sidebar .gjs-field {
-  background-color: var(--color-white) !important;
-  border: 1px solid var(--color-base-lighter) !important;
-  color: var(--color-base) !important;
-  border-radius: var(--border-radius) !important;
+.layer-name {
+  font-size: 0.75rem;
+  color: var(--color-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
-.editor-sidebar .gjs-field:focus-within {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2) !important;
+.layer-item--selected .layer-name {
+  color: var(--color-primary);
+  font-weight: 500;
 }
 
-.editor-sidebar .gjs-field input,
-.editor-sidebar .gjs-field select,
-.editor-sidebar .gjs-field textarea {
-  color: var(--color-base) !important;
-  background: transparent !important;
+/* ============================================
+   Traits Panel (right sidebar)
+   ============================================ */
+
+.traits-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* Trait container */
-.editor-sidebar .gjs-traits-cs {
-  background-color: var(--color-white) !important;
+.traits-empty {
+  padding: 24px 16px;
+  color: var(--color-base-light);
+  font-size: 0.8125rem;
+  text-align: center;
 }
 
-/* Scrollbar styling for sidebar panels */
+.trait-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trait-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.trait-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-base);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.trait-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  font-size: 0.8125rem;
+  color: var(--color-base);
+  background: var(--color-white);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.trait-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+.trait-select {
+  appearance: auto;
+}
+
+.trait-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--color-base);
+  cursor: pointer;
+}
+
+.trait-checkbox-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-primary);
+}
+
+.trait-color-wrapper {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.trait-color-input {
+  width: 32px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.trait-color-text {
+  flex: 1;
+}
+
+/* ============================================
+   Scrollbar styling for sidebar panels
+   ============================================ */
+
 .sidebar-panel-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -381,9 +557,4 @@
 
 .sidebar-panel-content::-webkit-scrollbar-thumb:hover {
   background: var(--color-base-light);
-}
-
-/* No component selected message for traits */
-.editor-sidebar .gjs-trt-traits {
-  padding: 8px !important;
 }
