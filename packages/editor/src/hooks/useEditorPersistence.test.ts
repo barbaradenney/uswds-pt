@@ -885,4 +885,284 @@ describe('useEditorPersistence', () => {
       expect(onSaveComplete).toHaveBeenCalled();
     });
   });
+
+  // ============================================================================
+  // Concurrent Save Queueing Tests
+  // ============================================================================
+
+  describe('concurrent save queueing', () => {
+    it('should queue a save and drain it after in-flight save completes', async () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine({
+        state: {
+          status: 'ready',
+          prototype: proto,
+          dirty: true,
+          error: null,
+          meta: {},
+          previousStatus: null,
+          lastSavedAt: null,
+        },
+      });
+      const editorRef = { current: createMockEditor() };
+
+      // Use a deferred promise so we can control when the first save resolves
+      let resolveFirst!: (value: unknown) => void;
+      const firstResponse = new Promise((resolve) => { resolveFirst = resolve; });
+
+      let callCount = 0;
+      mockAuthFetch.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return firstResponse;
+        }
+        // Second call resolves immediately
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+      });
+
+      const { result } = renderHook(() =>
+        useEditorPersistence({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          name: proto.name,
+          htmlContent: '',
+          setHtmlContent: vi.fn(),
+          setLocalPrototype: vi.fn(),
+          localPrototype: null,
+        })
+      );
+
+      // Start first save (will be in-flight)
+      let firstResult: unknown;
+      let secondResult: unknown;
+      await act(async () => {
+        const firstPromise = result.current.save('autosave');
+        // Immediately queue a second save while first is in-flight
+        const secondPromise = result.current.save('autosave');
+
+        // Resolve first save
+        resolveFirst({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+
+        firstResult = await firstPromise;
+        // Allow the setTimeout(0) drain to fire
+        await vi.waitFor(() => {
+          expect(callCount).toBe(2);
+        });
+        secondResult = await secondPromise;
+      });
+
+      expect(firstResult).toBeTruthy();
+      expect(secondResult).toBeTruthy();
+      // Two API calls total
+      expect(callCount).toBe(2);
+    });
+
+    it('should upgrade pending save type to manual when manual arrives after autosave', async () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine({
+        state: {
+          status: 'ready',
+          prototype: proto,
+          dirty: true,
+          error: null,
+          meta: {},
+          previousStatus: null,
+          lastSavedAt: null,
+        },
+      });
+      const editorRef = { current: createMockEditor() };
+
+      let resolveFirst!: (value: unknown) => void;
+      const firstResponse = new Promise((resolve) => { resolveFirst = resolve; });
+
+      let callCount = 0;
+      mockAuthFetch.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return firstResponse;
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+      });
+
+      const { result } = renderHook(() =>
+        useEditorPersistence({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          name: proto.name,
+          htmlContent: '',
+          setHtmlContent: vi.fn(),
+          setLocalPrototype: vi.fn(),
+          localPrototype: null,
+        })
+      );
+
+      await act(async () => {
+        const firstPromise = result.current.save('autosave');
+        // Queue autosave, then manual — manual should upgrade the pending type
+        result.current.save('autosave');
+        const manualPromise = result.current.save('manual');
+
+        resolveFirst({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+
+        await firstPromise;
+        await vi.waitFor(() => {
+          expect(callCount).toBe(2);
+        });
+        const manualResult = await manualPromise;
+        expect(manualResult).toBeTruthy();
+      });
+
+      // The drained save should have been called with 'manual' type
+      // (saveStart is called with the type argument)
+      const saveStartCalls = stateMachine.saveStart.mock.calls;
+      expect(saveStartCalls[saveStartCalls.length - 1][0]).toBe('manual');
+    });
+
+    it('should resolve superseded pending saves with null', async () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine({
+        state: {
+          status: 'ready',
+          prototype: proto,
+          dirty: true,
+          error: null,
+          meta: {},
+          previousStatus: null,
+          lastSavedAt: null,
+        },
+      });
+      const editorRef = { current: createMockEditor() };
+
+      let resolveFirst!: (value: unknown) => void;
+      const firstResponse = new Promise((resolve) => { resolveFirst = resolve; });
+
+      let callCount = 0;
+      mockAuthFetch.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return firstResponse;
+        // Subsequent calls resolve immediately
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+      });
+
+      const { result } = renderHook(() =>
+        useEditorPersistence({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          name: proto.name,
+          htmlContent: '',
+          setHtmlContent: vi.fn(),
+          setLocalPrototype: vi.fn(),
+          localPrototype: null,
+        })
+      );
+
+      await act(async () => {
+        const firstPromise = result.current.save('autosave');
+        // Queue two saves — the first should be superseded
+        const supersededPromise = result.current.save('autosave');
+        const finalPromise = result.current.save('autosave');
+
+        resolveFirst({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+
+        await firstPromise;
+        const supersededResult = await supersededPromise;
+        // Superseded save should resolve with null
+        expect(supersededResult).toBeNull();
+
+        // Final save should eventually complete
+        await vi.waitFor(async () => {
+          const finalResult = await finalPromise;
+          expect(finalResult).toBeTruthy();
+        });
+      });
+    });
+
+    it('should resolve pending promise gracefully when drained save errors', async () => {
+      const proto = mockPrototype();
+      const stateMachine = createMockStateMachine({
+        state: {
+          status: 'ready',
+          prototype: proto,
+          dirty: true,
+          error: null,
+          meta: {},
+          previousStatus: null,
+          lastSavedAt: null,
+        },
+      });
+      const editorRef = { current: createMockEditor() };
+
+      let resolveFirst!: (value: unknown) => void;
+      const firstResponse = new Promise((resolve) => { resolveFirst = resolve; });
+
+      let callCount = 0;
+      mockAuthFetch.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return firstResponse;
+        // Second call fails
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          text: () => Promise.resolve('Internal server error'),
+        });
+      });
+
+      const { result } = renderHook(() =>
+        useEditorPersistence({
+          stateMachine,
+          editorRef,
+          isDemoMode: false,
+          slug: proto.slug,
+          name: proto.name,
+          htmlContent: '',
+          setHtmlContent: vi.fn(),
+          setLocalPrototype: vi.fn(),
+          localPrototype: null,
+        })
+      );
+
+      await act(async () => {
+        const firstPromise = result.current.save('autosave');
+        const queuedPromise = result.current.save('autosave');
+
+        resolveFirst({
+          ok: true,
+          json: () => Promise.resolve({ ...proto, updatedAt: new Date() }),
+        });
+
+        await firstPromise;
+        await vi.waitFor(() => {
+          expect(callCount).toBe(2);
+        });
+
+        // Queued save should resolve with null (error case), not throw
+        const queuedResult = await queuedPromise;
+        expect(queuedResult).toBeNull();
+      });
+
+      expect(stateMachine.saveFailed).toHaveBeenCalled();
+    });
+  });
 });

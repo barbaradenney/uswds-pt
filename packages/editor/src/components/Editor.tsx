@@ -178,9 +178,11 @@ export function Editor() {
    */
   onSaveCompleteRef.current = () => {
     autosave.markSaved();
-    fetchVersions();
     crashRecovery.clearRecoveryData();
-    gitHubPush.markSaved();
+    if (!isDemoMode) gitHubPush.markSaved();
+    fetchVersions().catch((err: unknown) => {
+      debug('fetchVersions after save failed (non-critical):', err);
+    });
   };
 
   // Generate blocks

@@ -29,6 +29,11 @@ const debug = createDebugLogger('CrashRecovery');
 
 const SNAPSHOT_DEBOUNCE_MS = 3000;
 
+// Skip recovery banner if snapshot is less than this much newer than
+// the server save. A 10s gap means the snapshot was written within one
+// debounce cycle of the last save — almost certainly no meaningful unsaved work.
+const RECOVERY_THRESHOLD_MS = 10_000;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -204,9 +209,10 @@ export function useCrashRecovery({
           ? new Date(proto.updatedAt).getTime()
           : stateMachine.state.lastSavedAt;
 
-        // Show recovery if snapshot is newer than the last server save
-        // (or if there has never been a server save)
-        if (!serverTime || snapshot.savedAt > serverTime) {
+        // Show recovery only if snapshot is meaningfully newer (>10s)
+        // than the server save, or if there has never been a server save.
+        const delta = serverTime ? snapshot.savedAt - serverTime : Infinity;
+        if (!serverTime || delta > RECOVERY_THRESHOLD_MS) {
           debug('Recovery snapshot found:', {
             protoId,
             snapshotAge: Date.now() - snapshot.savedAt,

@@ -81,7 +81,7 @@ export function RecoveryBanner({ timestamp, onRestore, onDismiss }: RecoveryBann
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#e5a000" aria-hidden="true">
           <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
         </svg>
-        Unsaved changes recovered from {formatRelativeTime(timestamp)}
+        A local backup from {formatRelativeTime(timestamp)} was found. It may contain changes not in the last save.
       </span>
       <div style={buttonGroupStyle}>
         <button style={restoreButtonStyle} onClick={onRestore}>

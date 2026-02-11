@@ -98,6 +98,14 @@ export function useEditorPersistence({
   // Track what type of save is in progress (for UI: overlay only on manual)
   const saveTypeRef = useRef<'manual' | 'autosave' | null>(null);
 
+  // Pending save queue — at most one queued save. When a save is blocked by
+  // the concurrency lock, we store it here instead of dropping it. The finally
+  // block of the in-flight save drains this via setTimeout(0).
+  const pendingSaveRef = useRef<{
+    type: 'manual' | 'autosave';
+    resolve: (result: Prototype | null) => void;
+  } | null>(null);
+
   // Ref that always points to the latest stateMachine. The save callback reads
   // canSave / saveStart / etc. via this ref so it never uses a stale closure value
   // (e.g., canSave=false from a render during initializing_editor).
@@ -123,10 +131,22 @@ export function useEditorPersistence({
       // Read from ref to always get the latest stateMachine (avoids stale closure)
       const { state, canSave, saveStart, saveSuccess, saveFailed } = stateMachineRef.current;
 
-      // Prevent concurrent saves
+      // Queue save if another is in flight (instead of dropping it)
       if (isSavingRef.current) {
-        debug(`Save blocked: another save is in progress`);
-        return null;
+        debug(`Save queued (${type}): another save is in progress`);
+        // If there's already a pending save, supersede it (resolve with null)
+        if (pendingSaveRef.current) {
+          debug('Superseding previous pending save');
+          pendingSaveRef.current.resolve(null);
+        }
+        // If a manual save arrives while an autosave is pending, upgrade the type
+        const pendingType =
+          type === 'manual' || pendingSaveRef.current?.type === 'manual'
+            ? 'manual'
+            : 'autosave';
+        return new Promise<Prototype | null>((resolve) => {
+          pendingSaveRef.current = { type: pendingType, resolve };
+        });
       }
 
       // Check guards
@@ -401,6 +421,20 @@ export function useEditorPersistence({
         // Release save lock
         isSavingRef.current = false;
         saveTypeRef.current = null;
+
+        // Drain pending save if one was queued. Use setTimeout(0) so the
+        // state machine settles back to 'ready' before the next save starts.
+        const pending = pendingSaveRef.current;
+        if (pending) {
+          pendingSaveRef.current = null;
+          debug(`Draining pending save (${pending.type})`);
+          setTimeout(() => {
+            save(pending.type).then(
+              (result) => pending.resolve(result),
+              () => pending.resolve(null),
+            );
+          }, 0);
+        }
       }
     },
     [
