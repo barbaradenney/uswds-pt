@@ -1028,7 +1028,7 @@ describe('useEditorPersistence', () => {
 
       // The drained save should have been called with 'manual' type
       // (saveStart is called with the type argument)
-      const saveStartCalls = stateMachine.saveStart.mock.calls;
+      const saveStartCalls = (stateMachine.saveStart as ReturnType<typeof vi.fn>).mock.calls;
       expect(saveStartCalls[saveStartCalls.length - 1][0]).toBe('manual');
     });
 
