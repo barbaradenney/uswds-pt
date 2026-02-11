@@ -13,8 +13,16 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://barbaradenney.github.io
+        sync: false  # Set in Render dashboard
       - key: JWT_SECRET
-        generateValue: true
+        sync: false  # Set in Render dashboard
       - key: DATABASE_URL
-        sync: false  # Set manually in Render dashboard (Supabase connection string)
+        sync: false  # Supabase connection string, set in Render dashboard
+      - key: GITHUB_CLIENT_ID
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_CLIENT_SECRET
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_CALLBACK_URL
+        sync: false  # Set in Render dashboard
+      - key: ENCRYPTION_KEY
+        sync: false  # Set in Render dashboard
