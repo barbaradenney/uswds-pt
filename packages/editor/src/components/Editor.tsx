@@ -590,6 +590,14 @@ export function Editor() {
         // 4. In-place reload into editor
         const editor = editorRef.current;
         if (editor && proto.grapesData) {
+          // Seed states/users before loadProjectData — GrapesJS doesn't preserve custom keys
+          const rawData = proto.grapesData as any;
+          if (Array.isArray(rawData?.states)) {
+            (editor as any).__projectStates = rawData.states;
+          }
+          if (Array.isArray(rawData?.users)) {
+            (editor as any).__projectUsers = rawData.users;
+          }
           editor.loadProjectData(proto.grapesData as any);
           await loadUSWDSResources(editor);
           editor.refresh();

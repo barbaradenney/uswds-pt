@@ -52,6 +52,15 @@ export function useEditorUsers(): UseEditorUsersReturn {
 
     const seedFromProjectData = () => {
       try {
+        // Prefer instance property — it's seeded from raw project data before
+        // loadProjectData() calls, because GrapesJS getProjectData() doesn't
+        // preserve custom keys like 'users'.
+        const instance = (editor as any).__projectUsers;
+        if (Array.isArray(instance) && instance.length > 0) {
+          setUsers(instance);
+          return;
+        }
+        // Fallback: try getProjectData (empty for custom keys in current GrapesJS)
         const data = editor.getProjectData?.();
         const stored = Array.isArray(data?.users) ? data.users : [];
         (editor as any).__projectUsers = stored;

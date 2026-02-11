@@ -168,7 +168,13 @@ export function useGrapesJSSetup({
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
         debug('Merged data symbols:', mergedData.symbols?.length);
+        // Preserve states/users instance properties across loadProjectData
+        // (GrapesJS doesn't preserve custom keys in getProjectData/loadProjectData)
+        const savedStates = (editor as any).__projectStates;
+        const savedUsers = (editor as any).__projectUsers;
         editor.loadProjectData(mergedData);
+        if (Array.isArray(savedStates)) (editor as any).__projectStates = savedStates;
+        if (Array.isArray(savedUsers)) (editor as any).__projectUsers = savedUsers;
         debug('Injection complete');
       }
     } catch (e) {
@@ -222,6 +228,18 @@ export function useGrapesJSSetup({
       registerListener(editor, 'component:remove', changeHandler);
       registerListener(editor, 'component:update', changeHandler);
       registerListener(editor, 'style:change', changeHandler);
+
+      // Seed states/users from raw project data BEFORE loadProjectData.
+      // GrapesJS getProjectData() doesn't preserve custom keys like 'states'/'users',
+      // so useEditorStates/useEditorUsers read from these instance properties instead.
+      if (projectDataRef.current) {
+        if (Array.isArray(projectDataRef.current.states)) {
+          (editor as any).__projectStates = projectDataRef.current.states;
+        }
+        if (Array.isArray(projectDataRef.current.users)) {
+          (editor as any).__projectUsers = projectDataRef.current.users;
+        }
+      }
 
       // Safety-net: redundant when projectData option loads correctly,
       // but critical fallback when it doesn't (e.g., silent init failure).
@@ -1149,7 +1167,8 @@ function setupVisibilityTrait(
           if (cb.checked) checkedIds.push(cb.value);
         });
 
-        if (checkedIds.length === 0 || checkedIds.length === checkboxes.length) {
+        if (checkedIds.length === 0) {
+          // No checkboxes checked → remove attribute (visible in all states/users)
           component.removeAttributes?.([dataAttr]);
         } else {
           component.addAttributes?.({ [dataAttr]: checkedIds.join(',') });
@@ -1158,12 +1177,13 @@ function setupVisibilityTrait(
 
       onUpdate({ elInput, component, trait }: { elInput: HTMLElement; component: any; trait: any }) {
         const dataAttr = trait.get?.('dataAttribute') || 'data-states';
-        const dataValue = component.getAttributes?.()?.[ dataAttr] || '';
+        const dataValue = component.getAttributes?.()[dataAttr] || '';
         const activeIds = dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
         const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
 
+        // Unchecked = visible everywhere (no restriction). Checked = restricted to those items.
         checkboxes.forEach((cb) => {
-          cb.checked = dataValue === '' || activeIds.includes(cb.value);
+          cb.checked = activeIds.includes(cb.value);
         });
       },
     });
