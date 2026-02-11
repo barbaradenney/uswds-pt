@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
 import { useEditorStates } from '../../hooks/useEditorStates';
+import { useEditorUsers } from '../../hooks/useEditorUsers';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
 
@@ -62,6 +63,7 @@ const TOGGLE_COMMANDS: ToggleCommand[] = [
 export function CanvasToolbar() {
   const editor = useEditorMaybe();
   const { states, activeStateId, setActiveState } = useEditorStates();
+  const { users, activeUserId, setActiveUser } = useEditorUsers();
 
   const [activeDevice, setActiveDevice] = useState<DeviceId>('Desktop');
   const [activeCommands, setActiveCommands] = useState<Set<string>>(new Set());
@@ -148,6 +150,21 @@ export function CanvasToolbar() {
             {states.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {users.length > 0 && (
+          <select
+            className="canvas-toolbar-select"
+            value={activeUserId || ''}
+            onChange={(e) => setActiveUser(e.target.value || null)}
+            aria-label="Active user"
+          >
+            <option value="">All Users</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
               </option>
             ))}
           </select>

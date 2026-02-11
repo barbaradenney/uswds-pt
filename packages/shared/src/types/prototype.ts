@@ -164,6 +164,17 @@ export interface StateDefinition {
 }
 
 /**
+ * Named user persona for toggling component visibility.
+ * Used alongside states for AND logic — component must match
+ * BOTH active state AND active user to be visible.
+ * Stored in GrapesProjectData.users — no DB migration needed.
+ */
+export interface UserDefinition {
+  id: string;          // "user-<timestamp>"
+  name: string;        // "Admin", "Guest", "Customer"
+}
+
+/**
  * GrapesJS project data structure
  * This is stored as JSONB in the database
  */
@@ -174,6 +185,7 @@ export interface GrapesProjectData {
   symbols?: unknown[];
   dataSources?: unknown[];
   states?: StateDefinition[];
+  users?: UserDefinition[];
 }
 
 export interface GrapesAsset {

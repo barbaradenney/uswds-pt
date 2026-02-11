@@ -98,19 +98,42 @@ if (!window._conditionalFieldsInit) {
 </script>`;
 
 /**
- * State visibility script for preview/export.
- * Hides elements whose data-states attribute doesn't include the active state.
- * Exposes window.setActiveState(id) for external control (e.g. state switcher UI).
+ * State + User visibility script for preview/export.
+ * Uses AND logic: element must pass both state and user checks.
+ * Hides elements whose data-states/data-users don't include the active values.
+ * Exposes window.setActiveState(id) and window.setActiveUser(id).
  */
 export const STATE_VISIBILITY_SCRIPT = `
 <script>
 if (!window._stateVisibilityInit) {
   window._stateVisibilityInit = true;
 
-  function applyStateVisibility(activeStateId) {
-    document.querySelectorAll('[data-states]').forEach(function(el) {
-      var stateIds = el.getAttribute('data-states').split(',').map(function(s) { return s.trim(); });
-      if (!activeStateId || stateIds.indexOf(activeStateId) !== -1) {
+  var _activeStateId = null;
+  var _activeUserId = null;
+
+  function applyVisibility() {
+    document.querySelectorAll('[data-states], [data-users]').forEach(function(el) {
+      // State pass: no active state, or no data-states attr, or ID matches
+      var statePass = true;
+      if (_activeStateId) {
+        var ds = el.getAttribute('data-states');
+        if (ds) {
+          var stateIds = ds.split(',').map(function(s) { return s.trim(); });
+          statePass = stateIds.indexOf(_activeStateId) !== -1;
+        }
+      }
+
+      // User pass: no active user, or no data-users attr, or ID matches
+      var userPass = true;
+      if (_activeUserId) {
+        var du = el.getAttribute('data-users');
+        if (du) {
+          var userIds = du.split(',').map(function(s) { return s.trim(); });
+          userPass = userIds.indexOf(_activeUserId) !== -1;
+        }
+      }
+
+      if (statePass && userPass) {
         el.style.display = '';
         el.removeAttribute('hidden');
       } else {
@@ -121,16 +144,26 @@ if (!window._stateVisibilityInit) {
   }
 
   window.setActiveState = function(id) {
-    applyStateVisibility(id || null);
+    _activeStateId = id || null;
+    applyVisibility();
   };
 
-  // Apply initial state if set via data attribute on body
+  window.setActiveUser = function(id) {
+    _activeUserId = id || null;
+    applyVisibility();
+  };
+
+  // Apply initial values if set via data attributes on body
   var initialState = document.body.getAttribute('data-active-state');
-  if (initialState) {
+  var initialUser = document.body.getAttribute('data-active-user');
+  if (initialState) _activeStateId = initialState;
+  if (initialUser) _activeUserId = initialUser;
+
+  if (_activeStateId || _activeUserId) {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() { setTimeout(function() { applyStateVisibility(initialState); }, 100); });
+      document.addEventListener('DOMContentLoaded', function() { setTimeout(applyVisibility, 100); });
     } else {
-      setTimeout(function() { applyStateVisibility(initialState); }, 100);
+      setTimeout(applyVisibility, 100);
     }
   }
 }

@@ -392,6 +392,16 @@
   box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
 }
 
+.states-panel-divider {
+  border: none;
+  border-top: 1px solid var(--color-base-lightest);
+  margin: 8px 4px;
+}
+
+.states-panel-section {
+  /* No extra spacing needed — header/list handle it */
+}
+
 /* ============================================
    Block Search (right sidebar)
    ============================================ */

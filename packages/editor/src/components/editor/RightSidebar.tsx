@@ -212,11 +212,12 @@ function CheckboxGroupField({ trait }: { trait: any }) {
   const options: Array<{ id: string; label: string }> = trait.get?.('options') || [];
   const label = trait.getLabel() || trait.getName();
   const component = trait.target;
+  const dataAttr = trait.get?.('dataAttribute') || 'data-states';
 
-  // Read initial checked state from component's data-states attribute
+  // Read initial checked state from component's data attribute
   const getCheckedIds = (): string[] => {
-    const dataStates = component?.getAttributes?.()?.['data-states'] || '';
-    return dataStates ? dataStates.split(',').map((s: string) => s.trim()) : [];
+    const dataValue = component?.getAttributes?.()?.[ dataAttr] || '';
+    return dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
   };
 
   const [checkedIds, setCheckedIds] = useState<string[]>(getCheckedIds);
@@ -237,17 +238,17 @@ function CheckboxGroupField({ trait }: { trait: any }) {
 
     if (!component) return;
     if (isAllOrNone(next)) {
-      component.removeAttributes?.(['data-states']);
+      component.removeAttributes?.([dataAttr]);
     } else {
-      component.addAttributes?.({ 'data-states': next.join(',') });
+      component.addAttributes?.({ [dataAttr]: next.join(',') });
     }
   };
 
   if (options.length === 0) return null;
 
-  // If no data-states attribute, all are considered checked
-  const dataStates = component?.getAttributes?.()?.['data-states'] || '';
-  const effectiveChecked = dataStates === ''
+  // If no data attribute, all are considered checked
+  const dataValue = component?.getAttributes?.()?.[ dataAttr] || '';
+  const effectiveChecked = dataValue === ''
     ? options.map((o) => o.id)
     : checkedIds;
 

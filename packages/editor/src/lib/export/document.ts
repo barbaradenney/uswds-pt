@@ -74,6 +74,13 @@ function hasStateVisibility(content: string): boolean {
 }
 
 /**
+ * Check if content uses data-users attributes for user visibility
+ */
+function hasUserVisibility(content: string): boolean {
+  return content.includes('data-users=');
+}
+
+/**
  * Generate a full HTML document with USWDS imports
  */
 export function generateFullDocument(
@@ -82,12 +89,14 @@ export function generateFullDocument(
     title?: string;
     lang?: string;
     activeStateId?: string | null;
+    activeUserId?: string | null;
   } = {}
 ): string {
   const {
     title = 'Prototype',
     lang = 'en',
     activeStateId = null,
+    activeUserId = null,
   } = options;
 
   // Include conditional fields script only if content uses data-reveals or data-hides
@@ -95,12 +104,15 @@ export function generateFullDocument(
   <!-- Conditional field show/hide functionality -->
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
 
-  // Include state visibility script if content uses data-states
-  const stateScript = hasStateVisibility(content) ? `
-  <!-- State visibility functionality -->
+  // Include state/user visibility script if content uses data-states or data-users
+  const stateScript = (hasStateVisibility(content) || hasUserVisibility(content)) ? `
+  <!-- State/User visibility functionality -->
   ${STATE_VISIBILITY_SCRIPT}` : '';
 
-  const bodyAttrs = activeStateId ? ` data-active-state="${escapeHtml(activeStateId)}"` : '';
+  let bodyAttrs = '';
+  if (activeStateId) bodyAttrs += ` data-active-state="${escapeHtml(activeStateId)}"`;
+  if (activeUserId) bodyAttrs += ` data-active-user="${escapeHtml(activeUserId)}"`;
+
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(lang)}">
@@ -221,12 +233,14 @@ export function generateMultiPageDocument(
     title?: string;
     lang?: string;
     activeStateId?: string | null;
+    activeUserId?: string | null;
   } = {}
 ): string {
   const {
     title = 'Prototype',
     lang = 'en',
     activeStateId = null,
+    activeUserId = null,
   } = options;
 
   // Wrap each page in a container with data-page-id attribute
@@ -248,13 +262,17 @@ ${indentContent(cleanedHtml, 4)}
   <!-- Conditional field show/hide functionality -->
   ${CONDITIONAL_FIELDS_SCRIPT}` : '';
 
-  // Include state visibility script if any page uses data-states
+  // Include state/user visibility script if any page uses data-states or data-users
   const anyPageHasStates = pages.some(page => hasStateVisibility(page.html));
-  const stateScript = anyPageHasStates ? `
-  <!-- State visibility functionality -->
+  const anyPageHasUsers = pages.some(page => hasUserVisibility(page.html));
+  const stateScript = (anyPageHasStates || anyPageHasUsers) ? `
+  <!-- State/User visibility functionality -->
   ${STATE_VISIBILITY_SCRIPT}` : '';
 
-  const bodyAttrs = activeStateId ? ` data-active-state="${escapeHtml(activeStateId)}"` : '';
+  let bodyAttrs = '';
+  if (activeStateId) bodyAttrs += ` data-active-state="${escapeHtml(activeStateId)}"`;
+  if (activeUserId) bodyAttrs += ` data-active-user="${escapeHtml(activeUserId)}"`;
+
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(lang)}">

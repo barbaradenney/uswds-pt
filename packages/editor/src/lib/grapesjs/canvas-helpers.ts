@@ -702,9 +702,11 @@ export function setupAllInteractiveHandlers(
 // ============================================================================
 
 /**
- * Apply state visibility dimming to canvas components.
- * Components with `data-states` not matching activeStateId get dimmed.
- * Components without `data-states` are always visible.
+ * Apply state + user visibility dimming to canvas components.
+ * Uses AND logic: component must pass both state and user checks to be visible.
+ * - State pass: no active state, OR no `data-states`, OR ID matches
+ * - User pass: no active user, OR no `data-users`, OR ID matches
+ * Component is dimmed if !(statePass && userPass).
  */
 export function applyStateVisibility(editor: EditorInstance, activeStateId: string | null): void {
   const doc = editor.Canvas?.getDocument?.();
@@ -713,20 +715,27 @@ export function applyStateVisibility(editor: EditorInstance, activeStateId: stri
   const wrapper = editor.DomComponents?.getWrapper?.();
   if (!wrapper) return;
 
+  const activeUserId: string | null = (editor as any).__activeUserId ?? null;
+
   const walkComponent = (comp: any) => {
     const el = comp.getEl?.();
     if (el) {
-      const dataStates = comp.getAttributes?.()?.['data-states'] || '';
-      if (!dataStates || activeStateId === null) {
-        // No attribute or "All States" — never dimmed
+      const attrs = comp.getAttributes?.() || {};
+
+      // State pass
+      const dataStates = attrs['data-states'] || '';
+      const statePass = activeStateId === null || !dataStates ||
+        dataStates.split(',').map((s: string) => s.trim()).includes(activeStateId);
+
+      // User pass
+      const dataUsers = attrs['data-users'] || '';
+      const userPass = activeUserId === null || !dataUsers ||
+        dataUsers.split(',').map((s: string) => s.trim()).includes(activeUserId);
+
+      if (statePass && userPass) {
         el.classList.remove('gjs-state-dimmed');
       } else {
-        const stateIds = dataStates.split(',').map((s: string) => s.trim());
-        if (stateIds.includes(activeStateId)) {
-          el.classList.remove('gjs-state-dimmed');
-        } else {
-          el.classList.add('gjs-state-dimmed');
-        }
+        el.classList.add('gjs-state-dimmed');
       }
     }
 
@@ -761,6 +770,12 @@ export function setupStateVisibilityWatcher(
   // Re-apply when active state changes
   registerListener('state:select', () => {
     // Immediate apply for state switch (no debounce)
+    const activeStateId = (editor as any).__activeStateId ?? null;
+    applyStateVisibility(editor, activeStateId);
+  });
+
+  // Re-apply when active user changes
+  registerListener('user:select', () => {
     const activeStateId = (editor as any).__activeStateId ?? null;
     applyStateVisibility(editor, activeStateId);
   });
