@@ -18,6 +18,7 @@ import { useEditorAutosave } from '../hooks/useEditorAutosave';
 import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols, mergeGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { useCrashRecovery } from '../hooks/useCrashRecovery';
+import { useGitHubPush } from '../hooks/useGitHubPush';
 import { ExportModal } from './ExportModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorHeader } from './editor/EditorHeader';
@@ -149,6 +150,13 @@ export function Editor() {
     editorKey,
   });
 
+  // GitHub push hook
+  const gitHubPush = useGitHubPush({
+    slug,
+    teamId: currentTeam?.id,
+    enabled: !isDemoMode,
+  });
+
   // Version history hook
   const {
     versions,
@@ -172,6 +180,7 @@ export function Editor() {
     autosave.markSaved();
     fetchVersions();
     crashRecovery.clearRecoveryData();
+    gitHubPush.markSaved();
   };
 
   // Generate blocks
@@ -877,6 +886,12 @@ export function Editor() {
         canUndo={canUndo}
         canRedo={canRedo}
         onShowShortcuts={() => setShowShortcuts(true)}
+        canPush={gitHubPush.canPush}
+        isPushing={gitHubPush.isPushing}
+        hasUnpushedChanges={gitHubPush.hasUnpushedChanges}
+        onPush={gitHubPush.push}
+        lastPushResult={gitHubPush.lastPushResult}
+        onDismissPushResult={gitHubPush.dismissResult}
       />
 
       {/* Recovery Banner */}

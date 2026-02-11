@@ -43,6 +43,9 @@ export const API_ENDPOINTS = {
   PROTOTYPES: '/api/prototypes',
   PROTOTYPE: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}`,
 
+  // Prototype Actions
+  PROTOTYPE_PUSH: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/push`,
+
   // Prototype Versions
   PROTOTYPE_VERSIONS: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/versions`,
   PROTOTYPE_VERSION_RESTORE: (slug: string, version: number) => `/api/prototypes/${encodeURIComponent(slug)}/versions/${version}/restore`,

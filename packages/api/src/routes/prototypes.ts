@@ -187,116 +187,6 @@ async function isNameTaken(
   return Number(result.count) > 0;
 }
 
-/**
- * Fire-and-forget auto-push to GitHub after a successful save.
- * Looks up team-level GitHub connection directly via teamId.
- * Errors are logged but do not block the save response.
- */
-async function autoGitHubPush(
-  request: import('fastify').FastifyRequest,
-  updated: {
-    id: string;
-    htmlContent: string;
-    grapesData: unknown;
-    version: number;
-    name: string;
-    description: string | null;
-    slug: string;
-    branchSlug: string;
-    teamId: string | null;
-    contentChecksum: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  },
-): Promise<void> {
-  if (!updated.teamId) return;
-
-  const userId = getAuthUser(request).id;
-
-  // Look up team-level GitHub connection directly
-  const [connection] = await db
-    .select()
-    .from(githubTeamConnections)
-    .where(eq(githubTeamConnections.teamId, updated.teamId))
-    .limit(1);
-
-  if (!connection) return;
-
-  // Get user's token
-  const [user] = await db
-    .select({ githubAccessToken: users.githubAccessToken })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  if (!user?.githubAccessToken) return;
-
-  // Git branch = uswds-pt/<branchSlug>
-  const gitBranch = `uswds-pt/${updated.branchSlug}`;
-
-  // Try to create the branch (may already exist)
-  try {
-    await createGitHubBranch({
-      encryptedAccessToken: user.githubAccessToken,
-      owner: connection.repoOwner,
-      repo: connection.repoName,
-      branchName: gitBranch,
-      fromBranch: connection.defaultBranch,
-    });
-  } catch {
-    // Branch may already exist
-  }
-
-  // Build the 3 files for a full prototype backup
-  const grapesData = updated.grapesData as Record<string, unknown> | null;
-  const states = grapesData && Array.isArray((grapesData as Record<string, unknown>).states)
-    ? (grapesData as Record<string, unknown>).states
-    : [];
-
-  const files = [
-    {
-      path: '.uswds-pt/project-data.json',
-      content: JSON.stringify(grapesData, null, 2),
-    },
-    {
-      path: '.uswds-pt/metadata.json',
-      content: JSON.stringify({
-        name: updated.name,
-        description: updated.description,
-        version: updated.version,
-        branchSlug: updated.branchSlug,
-        slug: updated.slug,
-        states,
-        updatedAt: updated.updatedAt.toISOString(),
-        createdAt: updated.createdAt.toISOString(),
-        generator: 'uswds-pt',
-      }, null, 2),
-    },
-    {
-      path: 'output/index.html',
-      content: updated.htmlContent,
-    },
-  ];
-
-  const result = await pushFilesToGitHub({
-    encryptedAccessToken: user.githubAccessToken,
-    owner: connection.repoOwner,
-    repo: connection.repoName,
-    branch: gitBranch,
-    files,
-    commitMessage: `Update ${updated.name} (v${updated.version})`,
-  });
-
-  // Update prototype with push metadata
-  await db
-    .update(prototypes)
-    .set({
-      lastGithubPushAt: new Date(),
-      lastGithubCommitSha: result.commitSha,
-    })
-    .where(eq(prototypes.id, updated.id));
-}
-
 export async function prototypeRoutes(app: FastifyInstance) {
   /**
    * Insert a prototype, retrying with a nanoid suffix on branch-slug uniqueness collisions.
@@ -515,11 +405,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
         branchSlug,
       });
 
-      // Auto-push to GitHub if a connection exists (fire-and-forget)
-      autoGitHubPush(request, prototype).catch((err) => {
-        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
-      });
-
       return reply.status(201).send(prototype);
     }
   );
@@ -669,11 +554,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
         throw err;
       }
-
-      // Auto-push to GitHub if a connection exists (fire-and-forget)
-      autoGitHubPush(request, updated).catch((err) => {
-        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
-      });
 
       return updated;
     }
@@ -887,11 +767,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
         throw err;
       }
-
-      // Auto-push to GitHub if a connection exists (fire-and-forget)
-      autoGitHubPush(request, updated).catch((err) => {
-        request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
-      });
 
       return updated;
     }
@@ -1131,11 +1006,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
           branchSlug,
         });
 
-        // Auto-push to GitHub if a connection exists (fire-and-forget)
-        autoGitHubPush(request, duplicate).catch((err) => {
-          request.log.warn(err, 'Auto GitHub push failed (non-blocking)');
-        });
-
         return reply.status(201).send(duplicate);
       } catch (error) {
         if (error instanceof Error && error.message.includes('duplicate key')) {
@@ -1143,6 +1013,134 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
         throw error;
       }
+    }
+  );
+
+  /**
+   * POST /api/prototypes/:slug/push
+   * Manually push a prototype to the team's connected GitHub repo
+   */
+  app.post<{ Params: PrototypeParams }>(
+    '/:slug/push',
+    {
+      preHandler: [app.authenticate],
+    },
+    async (request, reply) => {
+      const { slug } = request.params;
+      const userId = getAuthUser(request).id;
+
+      // Get prototype
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      // Check edit permission
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      if (!prototype.teamId) {
+        return reply.status(400).send({ message: 'Prototype must belong to a team' });
+      }
+
+      // Look up team-level GitHub connection
+      const [connection] = await db
+        .select()
+        .from(githubTeamConnections)
+        .where(eq(githubTeamConnections.teamId, prototype.teamId))
+        .limit(1);
+
+      if (!connection) {
+        return reply.status(400).send({ message: 'No GitHub connection for this team' });
+      }
+
+      // Get user's GitHub token
+      const [user] = await db
+        .select({ githubAccessToken: users.githubAccessToken })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.githubAccessToken) {
+        return reply.status(400).send({ message: 'Your GitHub account is not linked. Connect via Settings.' });
+      }
+
+      // Git branch = uswds-pt/<branchSlug>
+      const gitBranch = `uswds-pt/${prototype.branchSlug}`;
+
+      // Try to create the branch (may already exist)
+      try {
+        await createGitHubBranch({
+          encryptedAccessToken: user.githubAccessToken,
+          owner: connection.repoOwner,
+          repo: connection.repoName,
+          branchName: gitBranch,
+          fromBranch: connection.defaultBranch,
+        });
+      } catch {
+        // Branch may already exist
+      }
+
+      // Build the 3 files for a full prototype backup
+      const grapesData = prototype.grapesData as Record<string, unknown> | null;
+      const states = grapesData && Array.isArray((grapesData as Record<string, unknown>).states)
+        ? (grapesData as Record<string, unknown>).states
+        : [];
+
+      const files = [
+        {
+          path: '.uswds-pt/project-data.json',
+          content: JSON.stringify(grapesData, null, 2),
+        },
+        {
+          path: '.uswds-pt/metadata.json',
+          content: JSON.stringify({
+            name: prototype.name,
+            description: prototype.description,
+            version: prototype.version,
+            branchSlug: prototype.branchSlug,
+            slug: prototype.slug,
+            states,
+            updatedAt: prototype.updatedAt.toISOString(),
+            createdAt: prototype.createdAt.toISOString(),
+            generator: 'uswds-pt',
+          }, null, 2),
+        },
+        {
+          path: 'output/index.html',
+          content: prototype.htmlContent,
+        },
+      ];
+
+      const result = await pushFilesToGitHub({
+        encryptedAccessToken: user.githubAccessToken,
+        owner: connection.repoOwner,
+        repo: connection.repoName,
+        branch: gitBranch,
+        files,
+        commitMessage: `Update ${prototype.name} (v${prototype.version})`,
+      });
+
+      // Update prototype with push metadata
+      await db
+        .update(prototypes)
+        .set({
+          lastGithubPushAt: new Date(),
+          lastGithubCommitSha: result.commitSha,
+        })
+        .where(eq(prototypes.id, prototype.id));
+
+      return {
+        commitSha: result.commitSha,
+        commitUrl: result.htmlUrl,
+        branch: gitBranch,
+      };
     }
   );
 }

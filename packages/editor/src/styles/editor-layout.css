@@ -762,3 +762,72 @@
 .sidebar-panel-content::-webkit-scrollbar-thumb:hover {
   background: var(--color-base-light);
 }
+
+/* ============================================
+   Push to GitHub Button
+   ============================================ */
+
+.push-button-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.push-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+.push-indicator {
+  width: 7px;
+  height: 7px;
+  background: #e52207;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.push-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-base-lighter);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.push-success {
+  font-size: 0.75rem;
+  color: var(--color-base);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  animation: push-fade-in 0.2s ease-out;
+}
+
+.push-success-dismiss {
+  background: none;
+  border: none;
+  color: var(--color-base-light);
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0 2px;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.push-success-dismiss:hover {
+  color: var(--color-base);
+}
+
+@keyframes push-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
