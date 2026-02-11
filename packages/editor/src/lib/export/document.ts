@@ -173,12 +173,17 @@ export function openPreviewInNewTab(html: string, title: string = 'Prototype Pre
 /**
  * Generate page navigation script for multi-page preview
  */
-function generatePageNavigationScript(): string {
+function generatePageNavigationScript(defaultPageId?: string | null): string {
+  // Inject the default page ID as a string literal (or null) so the script
+  // can use it as a fallback when no URL hash is present.
+  const defaultPageLiteral = defaultPageId ? `"${defaultPageId.replace(/"/g, '\\"')}"` : 'null';
   return `
   // Page navigation for multi-page preview
   function initPageNavigation() {
     const pages = document.querySelectorAll('[data-page-id]');
     if (pages.length === 0) return;
+
+    var defaultPageId = ${defaultPageLiteral};
 
     // Show the first page by default, or the one in the URL hash
     function showPage(pageId) {
@@ -198,7 +203,7 @@ function generatePageNavigationScript(): string {
     const firstPageId = pages[0].getAttribute('data-page-id');
     const initialPageId = hashPageId && document.querySelector('[data-page-id="' + hashPageId + '"]')
       ? hashPageId
-      : firstPageId;
+      : (defaultPageId || firstPageId);
     showPage(initialPageId);
 
     // Handle clicks on page links
@@ -234,6 +239,7 @@ export function generateMultiPageDocument(
     lang?: string;
     activeStateId?: string | null;
     activeUserId?: string | null;
+    activePageId?: string | null;
   } = {}
 ): string {
   const {
@@ -241,6 +247,7 @@ export function generateMultiPageDocument(
     lang = 'en',
     activeStateId = null,
     activeUserId = null,
+    activePageId = null,
   } = options;
 
   // Wrap each page in a container with data-page-id attribute
@@ -254,7 +261,7 @@ ${indentContent(cleanedHtml, 4)}
 
   // Generate init script with page navigation added
   const initScript = generateInitScript();
-  const pageNavScript = `<script type="module">${generatePageNavigationScript()}</script>`;
+  const pageNavScript = `<script type="module">${generatePageNavigationScript(activePageId)}</script>`;
 
   // Include conditional fields script only if any page uses data-reveals or data-hides
   const anyPageHasConditionalFields = pages.some(page => hasConditionalFields(page.html));

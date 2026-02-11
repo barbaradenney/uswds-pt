@@ -173,7 +173,7 @@ body {
 .editor-header-left {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 8px;
   flex: 1;
   min-width: 0;
 }
@@ -181,7 +181,7 @@ body {
 .editor-header-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 6px;
 }
 
 .editor-title {
@@ -212,7 +212,6 @@ body {
 .editor-header-undo-redo {
   display: flex;
   gap: 2px;
-  margin-left: 8px;
 }
 
 /* Connection status badges */
@@ -223,7 +222,6 @@ body {
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.875rem;
-  margin-right: 8px;
 }
 
 .editor-header-status--offline {
@@ -234,6 +232,30 @@ body {
 .editor-header-status--online {
   background-color: var(--color-success-lighter, #ecf3ec);
   color: var(--color-success-darker, #4d8055);
+}
+
+/* Error message in header */
+.editor-header-error {
+  color: var(--color-error);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Status area — pinned to far-right edge, fixed width prevents button shifting */
+.editor-header-status-area {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.editor-header-draft-badge {
+  font-size: 0.75rem;
+  color: #71767a;
+  opacity: 0.8;
+  white-space: nowrap;
 }
 
 /* Prototype List */
@@ -305,9 +327,9 @@ body {
   color: var(--color-base-light);
   font-size: 0.875rem;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin-top: auto;
 }
 
@@ -940,12 +962,11 @@ body {
 .autosave-indicator {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 4px;
   font-size: 0.75rem;
   color: var(--color-base-light);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius);
-  transition: all 0.2s ease;
+  white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
 .autosave-indicator.saving {

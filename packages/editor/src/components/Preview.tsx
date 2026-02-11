@@ -115,6 +115,7 @@ export function Preview() {
   const [error, setError] = useState<string | null>(null);
   const [activeStateId, setActiveStateId] = useState<string | null>(null);
   const [activeUserId, setActiveUserId] = useState<string | null>(null);
+  const [activePageId, setActivePageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug) {
@@ -157,13 +158,13 @@ export function Preview() {
   // which include USWDS CDN resources, init scripts, and page navigation.
   const previewDoc = useMemo(() => {
     if (isMultiPage && pages.length > 0) {
-      return generateMultiPageDocument(pages, { title: data?.name, activeStateId, activeUserId });
+      return generateMultiPageDocument(pages, { title: data?.name, activeStateId, activeUserId, activePageId });
     }
     if (cleanedHtml) {
       return generateFullDocument(cleanedHtml, { title: data?.name, activeStateId, activeUserId });
     }
     return '';
-  }, [cleanedHtml, isMultiPage, pages, data?.name, activeStateId, activeUserId]);
+  }, [cleanedHtml, isMultiPage, pages, data?.name, activeStateId, activeUserId, activePageId]);
 
   async function loadPreview(prototypeSlug: string) {
     try {
@@ -282,7 +283,7 @@ export function Preview() {
   // cookies/localStorage). allow-scripts is needed for web component JS.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {(states.length > 0 || users.length > 0) && (
+      {(isMultiPage || states.length > 0 || users.length > 0) && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -294,6 +295,28 @@ export function Preview() {
           fontSize: '0.8125rem',
           flexShrink: 0,
         }}>
+          {isMultiPage && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label htmlFor="preview-page-select" style={{ fontWeight: 500, color: '#1b1b1b' }}>
+                Page:
+              </label>
+              <select
+                id="preview-page-select"
+                value={activePageId || ''}
+                onChange={(e) => setActivePageId(e.target.value || null)}
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  fontSize: '0.8125rem',
+                }}
+              >
+                {pages.map((p, i) => (
+                  <option key={p.id} value={i === 0 ? '' : p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {states.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <label htmlFor="preview-state-select" style={{ fontWeight: 500, color: '#1b1b1b' }}>

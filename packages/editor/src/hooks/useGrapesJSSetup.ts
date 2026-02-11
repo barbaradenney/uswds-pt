@@ -430,12 +430,13 @@ function setupSpacingTrait(
     }
   });
 
-  registerListener(editor, 'component:update', (component: any) => {
-    const topSpacing = component.getTrait('top-spacing');
-    if (topSpacing) {
-      const value = topSpacing.getValue();
-      updateSpacingClass(component, value);
-    }
+  // Listen for trait value changes — GrapesJS fires 'trait:value' when the
+  // user changes a trait via the properties panel UI.
+  registerListener(editor, 'trait:value', ({ trait, component }: any) => {
+    if (trait?.get('name') !== 'top-spacing') return;
+    if (!component) return;
+    const value = trait.get('value') ?? '';
+    updateSpacingClass(component, value);
   });
 }
 

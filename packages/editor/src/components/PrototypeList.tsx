@@ -232,7 +232,7 @@ export function PrototypeList() {
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {isOrgAdmin && organization && (
+          {isOrgAdmin && organization && !currentTeam && (
             <button
               className="btn btn-secondary"
               onClick={() => navigate('/org/settings')}
@@ -477,6 +477,7 @@ export function PrototypeList() {
                 </p>
               )}
               <div className="prototype-card-meta">
+                <span>Updated {formatDate(prototype.updatedAt)}</span>
                 <span
                   className={`prototype-card-branch${gitHubConnection && prototype.lastGithubPushAt ? '' : ' prototype-card-branch--pending'}`}
                   onClick={(e) => e.stopPropagation()}
@@ -496,7 +497,6 @@ export function PrototypeList() {
                     <span>uswds-pt/{prototype.branchSlug}</span>
                   )}
                 </span>
-                <span>Updated {formatDate(prototype.updatedAt)}</span>
               </div>
             </div>
             );
