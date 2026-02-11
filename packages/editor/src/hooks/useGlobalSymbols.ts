@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GlobalSymbol, GrapesJSSymbol } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import {
   fetchGlobalSymbols,
   createGlobalSymbol,
@@ -14,17 +15,7 @@ import {
   deleteGlobalSymbol,
 } from '../lib/api';
 
-// Debug logging
-const DEBUG =
-  typeof window !== 'undefined' &&
-  (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
-
-function debug(...args: unknown[]): void {
-  if (DEBUG) {
-    console.log('[GlobalSymbols]', ...args);
-  }
-}
+const debug = createDebugLogger('GlobalSymbols');
 
 // Prefix for global symbol IDs to distinguish from local symbols
 export const GLOBAL_SYMBOL_PREFIX = 'global-';
@@ -127,12 +118,11 @@ export function useGlobalSymbols({
   const create = useCallback(
     async (name: string, symbolData: GrapesJSSymbol): Promise<GlobalSymbol | null> => {
       if (!teamId) {
-        console.error('[GlobalSymbols] Create failed: No team selected');
+        debug('Create failed: No team selected');
         setState((prev) => ({ ...prev, error: 'No team selected' }));
         return null;
       }
 
-      console.log('[GlobalSymbols] Creating global symbol:', { name, teamId, symbolData });
       debug('Creating global symbol:', name);
 
       // Ensure the symbol has a unique global ID
@@ -141,14 +131,11 @@ export function useGlobalSymbols({
         id: `${GLOBAL_SYMBOL_PREFIX}${symbolData.id || Date.now()}`,
       };
 
-      console.log('[GlobalSymbols] Calling API with:', { teamId, name, globalSymbolData });
       const result = await createGlobalSymbol(teamId, name, globalSymbolData);
-      console.log('[GlobalSymbols] API result:', result);
 
       if (!mountedRef.current) return null;
 
       if (result.success && result.data) {
-        console.log('[GlobalSymbols] Symbol created successfully:', result.data);
         debug('Created global symbol:', result.data.id);
         setState((prev) => ({
           ...prev,
@@ -158,7 +145,7 @@ export function useGlobalSymbols({
         return result.data;
       }
 
-      console.error('[GlobalSymbols] Create failed:', result.error);
+      debug('Create failed:', result.error);
       setState((prev) => ({ ...prev, error: result.error || 'Failed to create symbol' }));
       return null;
     },

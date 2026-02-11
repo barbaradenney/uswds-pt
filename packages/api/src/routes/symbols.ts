@@ -66,6 +66,7 @@ export async function symbolRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['name', 'symbolData'],
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             symbolData: { type: 'object' },
@@ -129,6 +130,7 @@ export async function symbolRoutes(app: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             symbolData: { type: 'object' },

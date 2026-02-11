@@ -14,12 +14,6 @@ import {
   invitations,
 } from '../db/schema.js';
 import { ROLES, INVITATION_STATUS } from '../db/roles.js';
-import {
-  createUser,
-  findUserByEmail,
-  verifyPassword,
-} from '../plugins/auth.js';
-import { JWT_EXPIRY } from '../constants.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { normalizeEmail } from '../lib/email.js';
 

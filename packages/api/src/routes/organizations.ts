@@ -134,9 +134,10 @@ export async function organizationRoutes(app: FastifyInstance) {
           },
         };
         });
-      } catch (err: any) {
-        if (err?.statusCode) {
-          return reply.status(err.statusCode).send({ message: err.message });
+      } catch (err: unknown) {
+        const httpErr = err as { statusCode?: number; message?: string };
+        if (httpErr?.statusCode) {
+          return reply.status(httpErr.statusCode).send({ message: httpErr.message });
         }
         throw err;
       }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
+import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
 import { formatDate } from '../lib/date';
 import { inferTemplateLabel } from '../lib/template-utils';
@@ -13,6 +14,7 @@ import { CreateTeamModal } from './CreateTeamModal';
 
 type SortOption = 'updated' | 'name-asc' | 'name-desc' | 'oldest';
 
+const debug = createDebugLogger('PrototypeList');
 const PAGE_SIZE = 20;
 
 export function PrototypeList() {
@@ -76,7 +78,10 @@ export function PrototypeList() {
           setGitHubConnection(null);
         }
       })
-      .catch(() => setGitHubConnection(null));
+      .catch((err) => {
+        debug('Failed to check GitHub connection:', err);
+        setGitHubConnection(null);
+      });
   }, [currentTeam]);
 
   function handleDelete(slug: string, e: React.MouseEvent) {

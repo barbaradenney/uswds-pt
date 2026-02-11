@@ -50,6 +50,7 @@ export async function invitationRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['email'],
+          additionalProperties: false,
           properties: {
             email: { type: 'string', format: 'email' },
             role: { type: 'string', enum: Object.values(ROLES) },

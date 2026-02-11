@@ -307,6 +307,7 @@ export async function teamRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['userId'],
+          additionalProperties: false,
           properties: {
             userId: { type: 'string', format: 'uuid' },
             role: { type: 'string', enum: Object.values(ROLES) },

@@ -3,6 +3,7 @@
  * Centralized API endpoint constants and helper functions
  */
 
+import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import type {
   GlobalSymbol,
@@ -64,6 +65,8 @@ export const API_ENDPOINTS = {
   GITHUB_TEAM_CONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/connect`,
   GITHUB_TEAM_DISCONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/disconnect`,
 } as const;
+
+const debug = createDebugLogger('API');
 
 /**
  * Result type for API operations
@@ -130,7 +133,7 @@ export async function apiRequest<T>(
       data,
     };
   } catch (err) {
-    console.error('[apiRequest]', defaultError, err);
+    debug(defaultError, err);
     return {
       success: false,
       error: defaultError,

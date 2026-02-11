@@ -7,20 +7,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
-import { authPlugin, findUserByEmail, verifyPassword } from '../plugins/auth.js';
+import { authPlugin } from '../plugins/auth.js';
 import { authRoutes } from './auth.js';
 import { errorHandler } from '../lib/error-handler.js';
-
-// Mock the auth plugin functions
-vi.mock('../plugins/auth.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../plugins/auth.js')>();
-  return {
-    ...original,
-    findUserByEmail: vi.fn(),
-    verifyPassword: vi.fn(),
-    createUser: vi.fn(),
-  };
-});
 
 // Mock database queries
 vi.mock('../db/index.js', () => ({
@@ -59,76 +48,30 @@ describe('Auth Routes', () => {
   });
 
   describe('POST /api/auth/login', () => {
-    it('should return 401 for non-existent user', async () => {
-      vi.mocked(findUserByEmail).mockResolvedValue(null);
-
+    it('should return 410 Gone (email/password auth removed)', async () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/login',
         payload: { email: 'test@example.com', password: 'password123' },
       });
 
-      expect(response.statusCode).toBe(401);
+      expect(response.statusCode).toBe(410);
       const body = JSON.parse(response.payload);
-      expect(body.message).toBe('Invalid email or password');
-    });
-
-    it('should return 401 for inactive user', async () => {
-      vi.mocked(findUserByEmail).mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        passwordHash: 'hash',
-        isActive: false,
-      } as any);
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/auth/login',
-        payload: { email: 'test@example.com', password: 'password123' },
-      });
-
-      expect(response.statusCode).toBe(401);
-      const body = JSON.parse(response.payload);
-      expect(body.message).toBe('Account is disabled');
-    });
-
-    it('should return 401 for wrong password', async () => {
-      vi.mocked(findUserByEmail).mockResolvedValue({
-        id: 'user-123',
-        email: 'test@example.com',
-        passwordHash: 'hash',
-        isActive: true,
-      } as any);
-      vi.mocked(verifyPassword).mockResolvedValue(false);
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/auth/login',
-        payload: { email: 'test@example.com', password: 'wrongpassword' },
-      });
-
-      expect(response.statusCode).toBe(401);
-      const body = JSON.parse(response.payload);
-      expect(body.message).toBe('Invalid email or password');
+      expect(body.message).toContain('GitHub sign-in');
     });
   });
 
   describe('POST /api/auth/register', () => {
-    it('should return 400 if email already exists', async () => {
-      vi.mocked(findUserByEmail).mockResolvedValue({
-        id: 'existing-user',
-        email: 'test@example.com',
-      } as any);
-
+    it('should return 410 Gone (email/password registration removed)', async () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/register',
         payload: { email: 'test@example.com', password: 'password123' },
       });
 
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode).toBe(410);
       const body = JSON.parse(response.payload);
-      expect(body.message).toBe('Email already registered');
+      expect(body.message).toContain('GitHub sign-in');
     });
   });
 

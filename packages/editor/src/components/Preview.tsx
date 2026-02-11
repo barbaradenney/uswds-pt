@@ -4,7 +4,9 @@ import { cleanExport, generateFullDocument, generateMultiPageDocument } from '..
 import type { PageData } from '../lib/export';
 import { getPrototype } from '../lib/localStorage';
 import { getAuthToken } from '../contexts/AuthContext';
-import { escapeHtml } from '@uswds-pt/shared';
+import { escapeHtml, createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('Preview');
 
 // Check if we're in demo mode
 const isDemoMode = !import.meta.env.VITE_API_URL;
@@ -49,7 +51,7 @@ function extractPagesFromGjsData(gjsDataString: string | undefined): PageData[] 
       };
     }).filter((page: PageData) => page.id && page.html);
   } catch (e) {
-    console.error('Failed to parse gjsData:', e);
+    debug('Failed to parse gjsData:', e);
     return [];
   }
 }
