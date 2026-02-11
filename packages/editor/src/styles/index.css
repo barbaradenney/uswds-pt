@@ -269,6 +269,8 @@ body {
   transition: box-shadow 0.2s;
   cursor: pointer;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .prototype-card:hover {
@@ -304,7 +306,13 @@ body {
   font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: auto;
+}
+
+.prototype-card-template-row {
+  margin-bottom: 6px;
 }
 
 .prototype-card-template {

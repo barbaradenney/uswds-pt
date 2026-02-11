@@ -385,6 +385,13 @@ export function PrototypeList() {
               key={prototype.id}
               className="prototype-card"
             >
+              {templateLabel && (
+                <div className="prototype-card-template-row">
+                  <span className="prototype-card-template">
+                    {templateLabel}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   display: 'flex',
@@ -465,12 +472,6 @@ export function PrototypeList() {
                 </p>
               )}
               <div className="prototype-card-meta">
-                {templateLabel && (
-                  <span className="prototype-card-template">
-                    {templateLabel}
-                  </span>
-                )}
-                Updated {formatDate(prototype.updatedAt)}
                 <span
                   className={`prototype-card-branch${gitHubConnection && prototype.lastGithubPushAt ? '' : ' prototype-card-branch--pending'}`}
                   onClick={(e) => e.stopPropagation()}
@@ -490,6 +491,7 @@ export function PrototypeList() {
                     <span>uswds-pt/{prototype.branchSlug}</span>
                   )}
                 </span>
+                <span>Updated {formatDate(prototype.updatedAt)}</span>
               </div>
             </div>
             );
