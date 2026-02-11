@@ -168,42 +168,10 @@ export async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      const { email, password } = request.body;
-
-      // Find user
-      const user = await findUserByEmail(email);
-      if (!user) {
-        return reply.status(401).send({ message: 'Invalid email or password' });
-      }
-
-      // Check if user is active
-      if (!user.isActive) {
-        return reply.status(401).send({ message: 'Account is disabled' });
-      }
-
-      // Verify password (OAuth-only users have no passwordHash)
-      if (!user.passwordHash) {
-        return reply.status(401).send({ message: 'This account uses GitHub sign-in' });
-      }
-      const isValid = await verifyPassword(password, user.passwordHash);
-      if (!isValid) {
-        return reply.status(401).send({ message: 'Invalid email or password' });
-      }
-
-      // Generate JWT token
-      const token = app.jwt.sign(
-        { id: user.id, email: user.email },
-        { expiresIn: JWT_EXPIRY }
-      );
-
-      // Get user with org and team data
-      const userData = await getUserWithOrgAndTeams(user.id);
-
-      return {
-        token,
-        user: userData,
-      };
+    async (_request, reply) => {
+      return reply.status(410).send({
+        message: 'Email/password login has been removed. Please use GitHub sign-in.',
+      });
     }
   );
 
@@ -233,33 +201,9 @@ export async function authRoutes(app: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      const { email, password, name } = request.body;
-
-      // Check if user already exists
-      const existing = await findUserByEmail(email);
-      if (existing) {
-        return reply.status(400).send({ message: 'Email already registered' });
-      }
-
-      // Create user
-      const user = await createUser(email, password, name);
-
-      // Setup organization and team for new user
-      await setupNewUserOrganization(user.id, email);
-
-      // Generate JWT token
-      const token = app.jwt.sign(
-        { id: user.id, email: user.email },
-        { expiresIn: JWT_EXPIRY }
-      );
-
-      // Get user with org and team data
-      const userData = await getUserWithOrgAndTeams(user.id);
-
-      return reply.status(201).send({
-        token,
-        user: userData,
+    async (_request, reply) => {
+      return reply.status(410).send({
+        message: 'Email/password registration has been removed. Please use GitHub sign-in.',
       });
     }
   );

@@ -1,13 +1,7 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
-
-// Demo credentials — only pre-filled in development
-const IS_DEV = import.meta.env.DEV;
-const DEMO_EMAIL = IS_DEV ? 'demo@example.com' : '';
-const DEMO_PASSWORD = IS_DEV ? 'password123' : '';
 
 // GitHub OAuth SVG icon
 const GitHubIcon = () => (
@@ -17,34 +11,12 @@ const GitHubIcon = () => (
 );
 
 export function Login() {
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
-  const [isRegister, setIsRegister] = useState(false);
-  const [name, setName] = useState('');
-  const [showEmailForm, setShowEmailForm] = useState(false);
-
-  const { login, register, isLoading, error, clearError } = useAuth();
-  const navigate = useNavigate();
+  const { error, clearError } = useAuth();
   const [searchParams] = useSearchParams();
   const oauthError = searchParams.get('error');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearError();
-
-    try {
-      if (isRegister) {
-        await register(email, password, name);
-      } else {
-        await login(email, password);
-      }
-      navigate('/');
-    } catch {
-      // Error is handled by useAuth
-    }
-  };
-
   const handleGitHubLogin = () => {
+    clearError();
     window.location.href = `${API_URL}/api/auth/github`;
   };
 
@@ -57,7 +29,7 @@ export function Login() {
   return (
     <div className="login-container">
       <div className="login-card card">
-        <h1>{isRegister ? 'Create Account' : 'Sign In'}</h1>
+        <h1>Sign In</h1>
 
         {oauthError && (
           <div className="login-error">
@@ -84,148 +56,11 @@ export function Login() {
             fontSize: '0.9375rem',
             fontWeight: 500,
             cursor: 'pointer',
-            marginBottom: '16px',
           }}
         >
           <GitHubIcon />
           Sign in with GitHub
         </button>
-
-        {/* Divider */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            margin: '16px 0',
-            gap: '12px',
-          }}
-        >
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #ddd' }} />
-          <span style={{ fontSize: '0.8125rem', color: '#71767a' }}>or</span>
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #ddd' }} />
-        </div>
-
-        {/* Email/password toggle */}
-        {!showEmailForm ? (
-          <button
-            type="button"
-            onClick={() => setShowEmailForm(true)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              backgroundColor: 'transparent',
-              border: '1px solid #ccc',
-              borderRadius: '6px',
-              fontSize: '0.9375rem',
-              cursor: 'pointer',
-              color: '#1b1b1b',
-            }}
-          >
-            {isRegister ? 'Register with email' : 'Sign in with email'}
-          </button>
-        ) : (
-          <>
-            <form onSubmit={handleSubmit}>
-              {isRegister && (
-                <div className="form-group">
-                  <label htmlFor="name" className="form-label">
-                    Name
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    className="form-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-              )}
-
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="form-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password" className="form-label">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isLoading}
-                style={{ width: '100%', marginTop: '16px' }}
-              >
-                {isLoading
-                  ? 'Loading...'
-                  : isRegister
-                  ? 'Create Account'
-                  : 'Sign In'}
-              </button>
-            </form>
-          </>
-        )}
-
-        <p style={{ textAlign: 'center', marginTop: '16px' }}>
-          {isRegister ? (
-            <>
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => setIsRegister(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-primary)',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                Sign in
-              </button>
-            </>
-          ) : (
-            <>
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                onClick={() => setIsRegister(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-primary)',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                Create one
-              </button>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );

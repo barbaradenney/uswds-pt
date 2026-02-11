@@ -6,7 +6,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { UserWithOrgAndTeams, AuthResponse } from '@uswds-pt/shared';
+import type { UserWithOrgAndTeams } from '@uswds-pt/shared';
 
 // ============================================================================
 // Types
@@ -21,9 +21,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
   refreshUser: () => Promise<void>;
@@ -103,59 +101,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [readFromStorage]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Login failed';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = `Login failed: ${response.status} ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      let data: AuthResponse;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error('Invalid response from server');
-      }
-
-      if (!data.token || !data.user) {
-        throw new Error('Invalid login response');
-      }
-
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-
-      setState({
-        user: data.user,
-        token: data.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-      throw new Error(errorMessage);
-    }
-  }, []);
-
   /**
    * Login with an existing JWT token (used by OAuth callback).
    * Stores the token, fetches user data from /api/auth/me, and updates state.
@@ -188,59 +133,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err) {
       localStorage.removeItem(TOKEN_KEY);
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-      throw new Error(errorMessage);
-    }
-  }, []);
-
-  const register = useCallback(async (email: string, password: string, name?: string) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Registration failed';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = `Registration failed: ${response.status} ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      let data: AuthResponse;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error('Invalid response from server');
-      }
-
-      if (!data.token || !data.user) {
-        throw new Error('Invalid registration response');
-      }
-
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-
-      setState({
-        user: data.user,
-        token: data.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -291,9 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextValue = {
     ...state,
-    login,
     loginWithToken,
-    register,
     logout,
     clearError,
     refreshUser,
