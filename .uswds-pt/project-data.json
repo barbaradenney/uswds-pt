@@ -191,6 +191,7 @@
                   {
                     "type": "usa-footer",
                     "attributes": {
+                      "id": "iko7w",
                       "variant": "medium",
                       "logo-alt": "",
                       "logo-src": "",
