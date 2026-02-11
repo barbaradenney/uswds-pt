@@ -4,7 +4,8 @@
  * Contains the top navigation bar for the editor with:
  * - Back button
  * - Prototype name (read-only)
- * - Action buttons (Preview, Export, Embed, History, Save)
+ * - Undo/Redo buttons
+ * - Action buttons (Preview, Export, History, Save)
  * - Autosave indicator
  * - Error display
  */
@@ -23,16 +24,12 @@ export interface EditorHeaderProps {
   onPreview: () => void;
   /** Callback for export button */
   onExport: () => void;
-  /** Callback for embed button */
-  onEmbed: () => void;
   /** Callback for save button */
   onSave: () => void;
   /** Callback for history button toggle */
   onToggleHistory: () => void;
   /** Whether history panel is open */
   showVersionHistory: boolean;
-  /** Whether embed button should be shown */
-  showEmbedButton: boolean;
   /** Whether history button should be shown */
   showHistoryButton: boolean;
   /** Whether autosave indicator should be shown */
@@ -77,11 +74,9 @@ export const EditorHeader = memo(function EditorHeader({
   onBack,
   onPreview,
   onExport,
-  onEmbed,
   onSave,
   onToggleHistory,
   showVersionHistory,
-  showEmbedButton,
   showHistoryButton,
   showAutosaveIndicator,
   autosaveStatus,
@@ -126,43 +121,33 @@ export const EditorHeader = memo(function EditorHeader({
     <header className="editor-header">
       <div className="editor-header-left">
         <button
-          className="btn btn-secondary"
+          className="btn btn-secondary editor-header-btn"
           onClick={onBack}
           aria-label="Back to prototype list"
-          style={{ padding: '6px 12px' }}
         >
           ← Back
         </button>
-        <span
-          className="editor-title"
-          style={{
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            padding: '4px 8px',
-          }}
-        >
+        <span className="editor-title">
           {name || 'Untitled Prototype'}
         </span>
         {/* Undo/Redo */}
         {onUndo && (
-          <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
+          <div className="editor-header-undo-redo">
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
               onClick={onUndo}
               disabled={!canUndo}
               aria-label="Undo"
               title={`Undo (${mod}+Z)`}
-              style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
             >
               ↩
             </button>
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
               onClick={onRedo}
               disabled={!canRedo}
               aria-label="Redo"
               title={`Redo (${mod}+Shift+Z)`}
-              style={{ padding: '4px 8px', fontSize: '0.875rem', minWidth: 'auto' }}
             >
               ↪
             </button>
@@ -175,17 +160,7 @@ export const EditorHeader = memo(function EditorHeader({
         {showConnectionStatus && !connectionStatus.isOnline && (
           <span
             role="status"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              backgroundColor: 'var(--color-warning-lighter, #faf3d1)',
-              color: 'var(--color-warning-darker, #936f38)',
-              fontSize: '0.875rem',
-              marginRight: '8px',
-            }}
+            className="editor-header-status editor-header-status--offline"
             title="You are offline. Changes will be saved when you reconnect."
           >
             <span style={{ fontSize: '0.75rem' }}>⚠</span>
@@ -195,17 +170,7 @@ export const EditorHeader = memo(function EditorHeader({
         {showConnectionStatus && connectionStatus.justReconnected && (
           <span
             role="status"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
-              color: 'var(--color-success-darker, #4d8055)',
-              fontSize: '0.875rem',
-              marginRight: '8px',
-            }}
+            className="editor-header-status editor-header-status--online"
           >
             <span style={{ fontSize: '0.75rem' }}>✓</span>
             Back online
@@ -216,24 +181,22 @@ export const EditorHeader = memo(function EditorHeader({
             {error}
           </span>
         )}
-        <button className="btn btn-secondary" onClick={onPreview}>
+        <button className="btn btn-secondary editor-header-btn" onClick={onPreview}>
           Preview
         </button>
-        <button className="btn btn-secondary" onClick={onExport}>
+        <button className="btn btn-secondary editor-header-btn" onClick={onExport}>
           Export
         </button>
-        {showEmbedButton && (
-          <button className="btn btn-secondary" onClick={onEmbed}>
-            Embed
-          </button>
-        )}
         {showHistoryButton && (
           <button
-            className={`btn btn-secondary ${showVersionHistory ? 'active' : ''}`}
+            className={`btn btn-secondary editor-header-btn editor-header-btn--icon ${showVersionHistory ? 'active' : ''}`}
             onClick={onToggleHistory}
+            aria-label="Version History"
             title="Version History"
           >
-            History
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            </svg>
           </button>
         )}
         {showDraftBadge && (
@@ -263,17 +226,16 @@ export const EditorHeader = memo(function EditorHeader({
         )}
         {onShowShortcuts && (
           <button
-            className="btn btn-secondary"
+            className="btn btn-secondary editor-header-btn editor-header-btn--icon"
             onClick={onShowShortcuts}
             aria-label="Keyboard shortcuts"
             title="Keyboard Shortcuts (?)"
-            style={{ padding: '4px 10px', fontSize: '0.875rem', minWidth: 'auto' }}
           >
             ?
           </button>
         )}
         <button
-          className="btn btn-primary"
+          className="btn btn-primary editor-header-btn"
           onClick={onSave}
           disabled={isSaveDisabled}
         >

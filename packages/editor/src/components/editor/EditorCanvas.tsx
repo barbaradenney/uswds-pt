@@ -1,24 +1,31 @@
 /**
  * EditorCanvas Component
  *
- * Wraps the GrapesJS core editor via @grapesjs/react with all required
- * configuration, plugins, and error boundary.
+ * Wraps the GrapesJS core editor via @grapesjs/react with a custom layout:
+ * - Left sidebar (Pages + Layers)
+ * - Center canvas
+ * - Right sidebar (Components/Blocks + Properties/Traits)
+ *
+ * When GjsEditor has children, the default GrapesJS panel UI is NOT rendered.
+ * Instead, Provider Containers portal the default panel rendering into our
+ * custom sidebar locations.
  */
 
 import { memo } from 'react';
 import grapesjs from 'grapesjs';
-import GjsEditor from '@grapesjs/react';
+import GjsEditor, { Canvas } from '@grapesjs/react';
 import 'grapesjs/dist/css/grapes.min.css';
 import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
-import { pagesManagerPlugin } from '../../lib/grapesjs/plugins/pages-manager';
-import { blockSearchPlugin } from '../../lib/grapesjs/plugins/block-search';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import { CDN_URLS } from '@uswds-pt/adapter';
 import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
 import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
 import { createDebugLogger } from '@uswds-pt/shared';
+import { LeftSidebar } from './LeftSidebar';
+import { RightSidebar } from './RightSidebar';
 import '../../styles/ai-copilot.css';
 import '../../styles/grapesjs-overrides.css';
+import '../../styles/editor-layout.css';
 
 const debug = createDebugLogger('AI Copilot');
 
@@ -109,8 +116,8 @@ const AI_COPILOT_CONFIG = {
   apiKey: AI_API_KEY,
   model: AI_MODEL,
   customPrompt: generateUSWDSPrompt(),
-  // Panel positioning
-  containerSelector: '.gjs-pn-views-container',
+  // Panel positioning — use a container we place in the layout
+  containerSelector: '.ai-copilot-container',
   // Update suggestions less frequently to reduce API costs
   updateInterval: 30000, // 30 seconds
   minChangesThreshold: 10,
@@ -142,8 +149,6 @@ export const EditorCanvas = memo(function EditorCanvas({
           },
           plugins: [
             uswdsComponentsPlugin,
-            pagesManagerPlugin,
-            blockSearchPlugin,
             ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
           ],
           projectData: projectData || {
@@ -156,7 +161,15 @@ export const EditorCanvas = memo(function EditorCanvas({
             blocks: blocks as any,
           },
         }}
-      />
+      >
+        <div className="editor-workspace">
+          <LeftSidebar />
+          <Canvas className="editor-canvas" />
+          <RightSidebar />
+        </div>
+        {/* AI copilot mount point (used when AI is enabled) */}
+        <div className="ai-copilot-container" />
+      </GjsEditor>
     </EditorErrorBoundary>
   );
 });

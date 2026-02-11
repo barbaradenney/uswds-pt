@@ -1,9 +1,9 @@
 /* ============================================
    GrapesJS Core UI Overrides
 
-   The default GrapesJS UI renders its own panels (blocks, layers, styles,
-   traits, devices) inside .gjs-editor. These overrides ensure it fills
-   the .editor-main container and integrates with our layout.
+   With custom sidebar layout, we no longer render the default GrapesJS
+   panel UI. These overrides ensure the editor fills its container and
+   the canvas renders correctly.
    ============================================ */
 
 /* Ensure the GrapesJS editor fills its container */
@@ -22,119 +22,4 @@
 .gjs-cv-canvas {
   width: 100%;
   height: 100%;
-}
-
-/* ============================================
-   Pages Manager Panel
-   ============================================ */
-
-.gjs-pages {
-  padding: 5px;
-  color: #ddd;
-}
-
-.gjs-pages-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 5px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 5px;
-}
-
-.gjs-pages-title {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.gjs-pages-add-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #ddd;
-  padding: 4px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.gjs-pages-add-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.gjs-pages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.gjs-pages-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.gjs-pages-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.gjs-pages-item--selected {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-.gjs-pages-item--selected:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.gjs-pages-item-name {
-  flex: 1;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gjs-pages-delete-btn {
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0 4px;
-  opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
-}
-
-.gjs-pages-item:hover .gjs-pages-delete-btn {
-  opacity: 1;
-}
-
-.gjs-pages-delete-btn:hover {
-  color: #e74c3c;
-}
-
-.gjs-pages-rename-input {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-  font-size: 13px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  width: 100%;
-  outline: none;
-}
-
-.gjs-pages-rename-input:focus {
-  border-color: rgba(255, 255, 255, 0.5);
 }

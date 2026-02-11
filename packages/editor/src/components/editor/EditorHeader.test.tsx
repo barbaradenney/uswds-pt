@@ -11,11 +11,9 @@ const defaultProps: EditorHeaderProps = {
   onBack: vi.fn(),
   onPreview: vi.fn(),
   onExport: vi.fn(),
-  onEmbed: vi.fn(),
   onSave: vi.fn(),
   onToggleHistory: vi.fn(),
   showVersionHistory: false,
-  showEmbedButton: true,
   showHistoryButton: true,
   showAutosaveIndicator: true,
   autosaveStatus: 'idle',
@@ -63,24 +61,14 @@ describe('EditorHeader', () => {
     expect(onSave).toHaveBeenCalled();
   });
 
-  it('shows embed button when showEmbedButton is true', () => {
-    render(<EditorHeader {...defaultProps} showEmbedButton={true} />);
-    expect(screen.getByText('Embed')).toBeInTheDocument();
-  });
-
-  it('hides embed button when showEmbedButton is false', () => {
-    render(<EditorHeader {...defaultProps} showEmbedButton={false} />);
-    expect(screen.queryByText('Embed')).not.toBeInTheDocument();
-  });
-
-  it('shows history button when showHistoryButton is true', () => {
+  it('shows history button as icon with aria-label when showHistoryButton is true', () => {
     render(<EditorHeader {...defaultProps} showHistoryButton={true} />);
-    expect(screen.getByText('History')).toBeInTheDocument();
+    expect(screen.getByLabelText('Version History')).toBeInTheDocument();
   });
 
   it('hides history button when showHistoryButton is false', () => {
     render(<EditorHeader {...defaultProps} showHistoryButton={false} />);
-    expect(screen.queryByText('History')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Version History')).not.toBeInTheDocument();
   });
 
   it('shows autosave indicator with correct status', () => {

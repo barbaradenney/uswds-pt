@@ -195,6 +195,45 @@ body {
   flex: 1;
   display: flex;
   overflow: hidden;
+  position: relative;
+}
+
+/* Uniform header button sizing */
+.editor-header-btn {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  min-width: auto;
+}
+
+.editor-header-btn--icon {
+  padding: 6px 8px;
+}
+
+.editor-header-undo-redo {
+  display: flex;
+  gap: 2px;
+  margin-left: 8px;
+}
+
+/* Connection status badges */
+.editor-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  margin-right: 8px;
+}
+
+.editor-header-status--offline {
+  background-color: var(--color-warning-lighter, #faf3d1);
+  color: var(--color-warning-darker, #936f38);
+}
+
+.editor-header-status--online {
+  background-color: var(--color-success-lighter, #ecf3ec);
+  color: var(--color-success-darker, #4d8055);
 }
 
 /* Prototype List */
@@ -278,6 +317,18 @@ body {
   border-radius: 3px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+}
+
+.prototype-card-github {
+  position: relative;
+  z-index: 1;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.prototype-card-github:hover {
+  text-decoration: underline;
 }
 
 /* Login Page */
@@ -885,17 +936,17 @@ body {
    ============================================ */
 
 .version-history-panel {
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
   width: 320px;
-  height: 100%;
+  height: 100vh;
   background: var(--color-white);
   border-left: 1px solid var(--color-base-lighter);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: 200;
   animation: slideInRight 0.2s ease-out;
 }
 

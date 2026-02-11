@@ -19,7 +19,6 @@ import { useGrapesJSSetup } from '../hooks/useGrapesJSSetup';
 import { useGlobalSymbols, mergeGlobalSymbols } from '../hooks/useGlobalSymbols';
 import { useCrashRecovery } from '../hooks/useCrashRecovery';
 import { ExportModal } from './ExportModal';
-import { EmbedModal } from './EmbedModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
@@ -82,7 +81,6 @@ export function Editor() {
   const [exportPages, setExportPages] = useState<PageData[]>([]);
   const [localPrototype, setLocalPrototype] = useState<LocalPrototype | null>(null);
   const [showExport, setShowExport] = useState(false);
-  const [showEmbed, setShowEmbed] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [editorKey, setEditorKey] = useState(() => slug || `new-${Date.now()}`);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
@@ -838,11 +836,9 @@ export function Editor() {
         onBack={handleBack}
         onPreview={handlePreview}
         onExport={handleExport}
-        onEmbed={() => setShowEmbed(true)}
         onSave={handleSave}
         onToggleHistory={() => setShowVersionHistory(prev => !prev)}
         showVersionHistory={showVersionHistory}
-        showEmbedButton={!!(slug || localPrototype)}
         showHistoryButton={!isDemoMode && !!slug}
         showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
         autosaveStatus={autosave.status}
@@ -929,14 +925,8 @@ export function Editor() {
         <ExportModal
           htmlContent={htmlContent}
           pages={exportPages.length > 0 ? exportPages : undefined}
+          prototypeId={slug || localPrototype?.id}
           onClose={() => setShowExport(false)}
-        />
-      )}
-
-      {showEmbed && (slug || localPrototype?.id) && (
-        <EmbedModal
-          prototypeId={slug || localPrototype?.id || ''}
-          onClose={() => setShowEmbed(false)}
         />
       )}
 

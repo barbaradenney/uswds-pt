@@ -1,0 +1,389 @@
+/* ============================================
+   Editor Layout — Sidebar + Canvas Structure
+   ============================================ */
+
+.editor-workspace {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ============================================
+   Sidebar Shared Styles
+   ============================================ */
+
+.editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  border-color: var(--color-base-lighter);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.editor-sidebar--left {
+  width: 240px;
+  border-right: 1px solid var(--color-base-lighter);
+}
+
+.editor-sidebar--right {
+  width: 280px;
+  border-left: 1px solid var(--color-base-lighter);
+}
+
+.sidebar-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   Sidebar Tabs
+   ============================================ */
+
+.sidebar-tabs {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--color-base-lighter);
+  background: var(--color-base-lightest);
+  flex-shrink: 0;
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-base-light);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.sidebar-tab:hover {
+  color: var(--color-base);
+}
+
+.sidebar-tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ============================================
+   Canvas Area (center)
+   ============================================ */
+
+.editor-canvas {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+/* ============================================
+   Pages Panel (left sidebar)
+   ============================================ */
+
+.pages-panel {
+  padding: 8px;
+}
+
+.pages-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid var(--color-base-lightest);
+  margin-bottom: 4px;
+}
+
+.pages-panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-base-light);
+}
+
+.pages-panel-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-base-lightest);
+  border: none;
+  color: var(--color-base);
+  padding: 4px 10px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.pages-panel-add-btn:hover {
+  background: var(--color-base-lighter);
+}
+
+.pages-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pages-panel-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pages-panel-item:hover {
+  background: var(--color-base-lightest);
+}
+
+.pages-panel-item--selected {
+  background: rgba(0, 94, 162, 0.08);
+  color: var(--color-primary);
+}
+
+.pages-panel-item--selected:hover {
+  background: rgba(0, 94, 162, 0.12);
+}
+
+.pages-panel-item-name {
+  flex: 1;
+  font-size: 0.8125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pages-panel-delete-btn {
+  background: none;
+  border: none;
+  color: var(--color-base-lighter);
+  cursor: pointer;
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.pages-panel-item:hover .pages-panel-delete-btn {
+  opacity: 1;
+}
+
+.pages-panel-delete-btn:hover {
+  color: var(--color-error);
+}
+
+.pages-panel-rename-input {
+  background: var(--color-white);
+  border: 1px solid var(--color-primary);
+  color: var(--color-base);
+  font-size: 0.8125rem;
+  padding: 2px 6px;
+  border-radius: var(--border-radius);
+  width: 100%;
+  outline: none;
+}
+
+.pages-panel-rename-input:focus {
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+/* ============================================
+   Block Search (right sidebar)
+   ============================================ */
+
+.block-search {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-base-lightest);
+}
+
+.block-search-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  background: var(--color-white);
+  color: var(--color-base);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.block-search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+.block-search-no-results {
+  padding: 12px 8px;
+  color: var(--color-base-light);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ============================================
+   Light-theme overrides for GrapesJS portal content
+   inside sidebars. The portaled panels use GrapesJS's
+   default dark CSS classes — we override them to match
+   our light sidebar.
+   ============================================ */
+
+.editor-sidebar .gjs-one-bg {
+  background-color: var(--color-white) !important;
+}
+
+.editor-sidebar .gjs-two-color {
+  color: var(--color-base) !important;
+}
+
+.editor-sidebar .gjs-three-bg {
+  background-color: var(--color-base-lightest) !important;
+}
+
+.editor-sidebar .gjs-four-color {
+  color: var(--color-base-light) !important;
+}
+
+/* Block items */
+.editor-sidebar .gjs-block {
+  background-color: var(--color-white) !important;
+  color: var(--color-base) !important;
+  border: 1px solid var(--color-base-lightest) !important;
+  box-shadow: none !important;
+  min-height: auto;
+  padding: 8px;
+  border-radius: var(--border-radius);
+}
+
+.editor-sidebar .gjs-block:hover {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 1px 3px rgba(0, 94, 162, 0.15) !important;
+}
+
+.editor-sidebar .gjs-block svg {
+  fill: var(--color-base-light) !important;
+}
+
+.editor-sidebar .gjs-block.gjs-block__focused {
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.3) !important;
+}
+
+/* Block category headers */
+.editor-sidebar .gjs-block-category {
+  border-bottom: 1px solid var(--color-base-lightest) !important;
+}
+
+.editor-sidebar .gjs-title {
+  background-color: var(--color-base-lightest) !important;
+  color: var(--color-base) !important;
+  border-bottom: 1px solid var(--color-base-lighter) !important;
+  padding: 8px 10px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Blocks container */
+.editor-sidebar .gjs-blocks-cs {
+  background-color: var(--color-white) !important;
+}
+
+/* Layer items */
+.editor-sidebar .gjs-layer {
+  background-color: var(--color-white) !important;
+  color: var(--color-base) !important;
+}
+
+.editor-sidebar .gjs-layer:hover {
+  background-color: var(--color-base-lightest) !important;
+}
+
+.editor-sidebar .gjs-layer.gjs-selected {
+  background-color: rgba(0, 94, 162, 0.08) !important;
+  color: var(--color-primary) !important;
+}
+
+.editor-sidebar .gjs-layer-title {
+  background: transparent !important;
+}
+
+.editor-sidebar .gjs-layer-name {
+  color: var(--color-base) !important;
+}
+
+.editor-sidebar .gjs-layer .gjs-layer-vis,
+.editor-sidebar .gjs-layer .gjs-layer-caret {
+  color: var(--color-base-light) !important;
+}
+
+/* Layer manager container */
+.editor-sidebar .gjs-layers {
+  background-color: var(--color-white) !important;
+}
+
+/* Trait inputs */
+.editor-sidebar .gjs-trt-trait {
+  color: var(--color-base) !important;
+}
+
+.editor-sidebar .gjs-trt-trait .gjs-label {
+  color: var(--color-base) !important;
+}
+
+.editor-sidebar .gjs-field {
+  background-color: var(--color-white) !important;
+  border: 1px solid var(--color-base-lighter) !important;
+  color: var(--color-base) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.editor-sidebar .gjs-field:focus-within {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2) !important;
+}
+
+.editor-sidebar .gjs-field input,
+.editor-sidebar .gjs-field select,
+.editor-sidebar .gjs-field textarea {
+  color: var(--color-base) !important;
+  background: transparent !important;
+}
+
+/* Trait container */
+.editor-sidebar .gjs-traits-cs {
+  background-color: var(--color-white) !important;
+}
+
+/* Scrollbar styling for sidebar panels */
+.sidebar-panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-panel-content::-webkit-scrollbar-thumb {
+  background: var(--color-base-lighter);
+  border-radius: 3px;
+}
+
+.sidebar-panel-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-base-light);
+}
+
+/* No component selected message for traits */
+.editor-sidebar .gjs-trt-traits {
+  padding: 8px !important;
+}
