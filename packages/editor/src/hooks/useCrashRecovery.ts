@@ -242,15 +242,7 @@ export function useCrashRecovery({
 
     try {
       debug('Restoring recovery snapshot');
-      // Seed states/users before loadProjectData — GrapesJS doesn't preserve custom keys
-      const rawData = recoverySnapshot.projectData as any;
-      if (Array.isArray(rawData?.states)) {
-        (editor as any).__projectStates = rawData.states;
-      }
-      if (Array.isArray(rawData?.users)) {
-        (editor as any).__projectUsers = rawData.users;
-      }
-      editor.loadProjectData(rawData);
+      editor.loadProjectData(recoverySnapshot.projectData as any);
       await loadUSWDSResources(editor);
       editor.refresh();
 

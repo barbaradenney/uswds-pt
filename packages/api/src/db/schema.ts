@@ -33,6 +33,8 @@ export const organizations = pgTable(
     slug: varchar('slug', { length: 100 }).unique().notNull(),
     description: text('description'),
     logoUrl: varchar('logo_url', { length: 500 }),
+    stateDefinitions: jsonb('state_definitions').notNull().default([]),
+    userDefinitions: jsonb('user_definitions').notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
     isActive: boolean('is_active').default(true).notNull(),

@@ -14,12 +14,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { LayersProvider, useEditorMaybe } from '@grapesjs/react';
 import { SidebarTabs } from './SidebarTabs';
 import { PagesPanel } from './PagesPanel';
-import { StatesPanel } from './StatesPanel';
 
 const TABS = [
   { id: 'pages', label: 'Pages' },
   { id: 'layers', label: 'Layers' },
-  { id: 'states', label: 'States' },
 ];
 
 export function LeftSidebar() {
@@ -47,15 +45,6 @@ export function LeftSidebar() {
             <LayersProvider>
               {(props) => <LayersPanel root={props.root} />}
             </LayersProvider>
-          </div>
-        )}
-        {activeTab === 'states' && (
-          <div
-            id="sidebar-panel-states"
-            role="tabpanel"
-            aria-labelledby="sidebar-tab-states"
-          >
-            <StatesPanel />
           </div>
         )}
       </div>

@@ -168,6 +168,8 @@ export async function organizationRoutes(app: FastifyInstance) {
           slug: organizations.slug,
           description: organizations.description,
           logoUrl: organizations.logoUrl,
+          stateDefinitions: organizations.stateDefinitions,
+          userDefinitions: organizations.userDefinitions,
           createdAt: organizations.createdAt,
           updatedAt: organizations.updatedAt,
         })
@@ -199,13 +201,39 @@ export async function organizationRoutes(app: FastifyInstance) {
             name: { type: 'string', minLength: 1, maxLength: 255 },
             description: { type: 'string', maxLength: 5000 },
             logoUrl: { type: 'string', maxLength: 500, pattern: '^https?://' },
+            stateDefinitions: {
+              type: 'array',
+              maxItems: 50,
+              items: {
+                type: 'object',
+                required: ['id', 'name'],
+                additionalProperties: false,
+                properties: {
+                  id: { type: 'string', minLength: 1, maxLength: 100 },
+                  name: { type: 'string', minLength: 1, maxLength: 255 },
+                },
+              },
+            },
+            userDefinitions: {
+              type: 'array',
+              maxItems: 50,
+              items: {
+                type: 'object',
+                required: ['id', 'name'],
+                additionalProperties: false,
+                properties: {
+                  id: { type: 'string', minLength: 1, maxLength: 100 },
+                  name: { type: 'string', minLength: 1, maxLength: 255 },
+                },
+              },
+            },
           },
         },
       },
     },
     async (request, reply) => {
       const { orgId } = request.params;
-      const { name, description, logoUrl } = request.body;
+      const { name, description, logoUrl, stateDefinitions, userDefinitions } = request.body;
 
       // Verify user belongs to this organization
       if (request.userOrganizationId !== orgId) {
@@ -219,6 +247,8 @@ export async function organizationRoutes(app: FastifyInstance) {
       if (name !== undefined) updateData.name = name;
       if (description !== undefined) updateData.description = description;
       if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+      if (stateDefinitions !== undefined) updateData.stateDefinitions = stateDefinitions;
+      if (userDefinitions !== undefined) updateData.userDefinitions = userDefinitions;
 
       const [updated] = await db
         .update(organizations)
@@ -230,6 +260,8 @@ export async function organizationRoutes(app: FastifyInstance) {
           slug: organizations.slug,
           description: organizations.description,
           logoUrl: organizations.logoUrl,
+          stateDefinitions: organizations.stateDefinitions,
+          userDefinitions: organizations.userDefinitions,
           createdAt: organizations.createdAt,
           updatedAt: organizations.updatedAt,
         });

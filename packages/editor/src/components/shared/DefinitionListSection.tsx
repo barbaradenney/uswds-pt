@@ -1,47 +1,39 @@
 /**
- * StatesPanel Component
+ * DefinitionListSection Component
  *
- * Manages named states AND user personas for component visibility toggling.
- * Two sections in one tab, separated by a divider.
- *
- * States: "Customer view", "Admin view", "Empty State", "Error"
- * Users:  "Admin", "Guest", "Customer"
- *
- * AND logic: component must match BOTH active state AND active user.
+ * Reusable list component for managing named definitions (states, user personas, etc.).
+ * Supports add, rename, delete, and optional active selection.
+ * Used in both OrgSettings (CRUD only) and editor sidebar (CRUD + selection).
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useEditorStates } from '../../hooks/useEditorStates';
-import { useEditorUsers } from '../../hooks/useEditorUsers';
 
-/* ============================================
-   Reusable DefinitionListSection
-   ============================================ */
-
-interface DefinitionListSectionProps {
+export interface DefinitionListSectionProps {
   title: string;
   items: Array<{ id: string; name: string }>;
-  activeId: string | null;
-  onSetActive: (id: string | null) => void;
   onAdd: (name: string) => void;
   onRename: (id: string, name: string) => void;
   onRemove: (id: string) => void;
-  allLabel: string;
-  placeholder: string;
-  deleteConfirmMessage: (name: string) => string;
+  /** Optional: active selection (only needed in editor context) */
+  activeId?: string | null;
+  onSelect?: (id: string | null) => void;
+  allLabel?: string;
+  placeholder?: string;
+  deleteConfirmMessage?: (name: string) => string;
 }
 
-function DefinitionListSection({
+export function DefinitionListSection({
   title,
   items,
-  activeId,
-  onSetActive,
   onAdd,
   onRename,
   onRemove,
-  allLabel,
-  placeholder,
-  deleteConfirmMessage,
+  activeId,
+  onSelect,
+  allLabel = `All ${title}`,
+  placeholder = `${title.replace(/s$/, '')} name...`,
+  deleteConfirmMessage = (name) =>
+    `Delete "${name}"? Components tagged with only this ${title.toLowerCase().replace(/s$/, '')} will become visible in all ${title.toLowerCase()}.`,
 }: DefinitionListSectionProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -126,19 +118,21 @@ function DefinitionListSection({
       </div>
 
       <div className="states-panel-list" role="listbox" aria-label={title}>
-        {/* "All" option — always present */}
-        <div
-          className={`states-panel-item ${activeId === null ? 'states-panel-item--selected' : ''}`}
-          role="option"
-          aria-selected={activeId === null}
-          onClick={() => onSetActive(null)}
-        >
-          <span className="states-panel-item-name">{allLabel}</span>
-        </div>
+        {/* "All" option — only shown when selection is enabled */}
+        {onSelect && (
+          <div
+            className={`states-panel-item ${activeId === null ? 'states-panel-item--selected' : ''}`}
+            role="option"
+            aria-selected={activeId === null}
+            onClick={() => onSelect(null)}
+          >
+            <span className="states-panel-item-name">{allLabel}</span>
+          </div>
+        )}
 
         {/* User-defined items */}
         {items.map((item) => {
-          const isSelected = activeId === item.id;
+          const isSelected = onSelect ? activeId === item.id : false;
           const isRenaming = renamingId === item.id;
 
           return (
@@ -147,7 +141,7 @@ function DefinitionListSection({
               className={`states-panel-item ${isSelected ? 'states-panel-item--selected' : ''}`}
               role="option"
               aria-selected={isSelected}
-              onClick={() => onSetActive(item.id)}
+              onClick={() => onSelect?.(item.id)}
             >
               {isRenaming ? (
                 <input
@@ -212,51 +206,6 @@ function DefinitionListSection({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-/* ============================================
-   Main StatesPanel
-   ============================================ */
-
-export function StatesPanel() {
-  const { states, activeStateId, addState, renameState, removeState, setActiveState } = useEditorStates();
-  const { users, activeUserId, addUser, renameUser, removeUser, setActiveUser } = useEditorUsers();
-
-  return (
-    <div className="states-panel">
-      <DefinitionListSection
-        title="States"
-        items={states}
-        activeId={activeStateId}
-        onSetActive={setActiveState}
-        onAdd={addState}
-        onRename={renameState}
-        onRemove={removeState}
-        allLabel="All States"
-        placeholder="State name..."
-        deleteConfirmMessage={(name) =>
-          `Delete state "${name}"? Components tagged with only this state will become visible in all states.`
-        }
-      />
-
-      <hr className="states-panel-divider" />
-
-      <DefinitionListSection
-        title="Users"
-        items={users}
-        activeId={activeUserId}
-        onSetActive={setActiveUser}
-        onAdd={addUser}
-        onRename={renameUser}
-        onRemove={removeUser}
-        allLabel="All Users"
-        placeholder="User name..."
-        deleteConfirmMessage={(name) =>
-          `Delete user "${name}"? Components tagged with only this user will become visible for all users.`
-        }
-      />
     </div>
   );
 }

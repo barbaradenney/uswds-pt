@@ -5,12 +5,12 @@
  * and view toggle buttons (outline, code view, fullscreen).
  *
  * Uses useEditorMaybe() from @grapesjs/react to access the editor instance.
+ * State/user dropdowns read org-level definitions via useOrganization.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
-import { useEditorStates } from '../../hooks/useEditorStates';
-import { useEditorUsers } from '../../hooks/useEditorUsers';
+import { useOrganization } from '../../hooks/useOrganization';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
 
@@ -62,11 +62,31 @@ const TOGGLE_COMMANDS: ToggleCommand[] = [
 
 export function CanvasToolbar() {
   const editor = useEditorMaybe();
-  const { states, activeStateId, setActiveState } = useEditorStates();
-  const { users, activeUserId, setActiveUser } = useEditorUsers();
+  const { organization } = useOrganization();
 
+  const states = organization?.stateDefinitions || [];
+  const users = organization?.userDefinitions || [];
+
+  const [activeStateId, setActiveStateId] = useState<string | null>(null);
+  const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [activeDevice, setActiveDevice] = useState<DeviceId>('Desktop');
   const [activeCommands, setActiveCommands] = useState<Set<string>>(new Set());
+
+  const handleSetActiveState = useCallback((id: string | null) => {
+    setActiveStateId(id);
+    if (editor) {
+      (editor as any).__activeStateId = id;
+      editor.trigger('state:select', id);
+    }
+  }, [editor]);
+
+  const handleSetActiveUser = useCallback((id: string | null) => {
+    setActiveUserId(id);
+    if (editor) {
+      (editor as any).__activeUserId = id;
+      editor.trigger('user:select', id);
+    }
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -143,7 +163,7 @@ export function CanvasToolbar() {
           <select
             className="canvas-toolbar-select"
             value={activeStateId || ''}
-            onChange={(e) => setActiveState(e.target.value || null)}
+            onChange={(e) => handleSetActiveState(e.target.value || null)}
             aria-label="Active state"
           >
             <option value="">All States</option>
@@ -158,7 +178,7 @@ export function CanvasToolbar() {
           <select
             className="canvas-toolbar-select"
             value={activeUserId || ''}
-            onChange={(e) => setActiveUser(e.target.value || null)}
+            onChange={(e) => handleSetActiveUser(e.target.value || null)}
             aria-label="Active user"
           >
             <option value="">All Users</option>

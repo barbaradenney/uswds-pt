@@ -25,6 +25,8 @@ export interface Organization {
   slug: string;
   description?: string;
   logoUrl?: string;
+  stateDefinitions: StateDefinition[];
+  userDefinitions: UserDefinition[];
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
@@ -184,8 +186,6 @@ export interface GrapesProjectData {
   pages?: GrapesPage[];
   symbols?: unknown[];
   dataSources?: unknown[];
-  states?: StateDefinition[];
-  users?: UserDefinition[];
 }
 
 export interface GrapesAsset {

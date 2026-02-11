@@ -381,17 +381,6 @@ export function extractEditorData(
   // Normalize the project data
   projectData = normalizeProjectData(projectData, editor);
 
-  // Merge states/users from instance properties into the snapshot.
-  // These are maintained by useEditorStates/useEditorUsers without calling
-  // loadProjectData(), so they must be merged at extraction time.
-  const editorAny = editor as any;
-  if (Array.isArray(editorAny.__projectStates)) {
-    (projectData as any).states = editorAny.__projectStates;
-  }
-  if (Array.isArray(editorAny.__projectUsers)) {
-    (projectData as any).users = editorAny.__projectUsers;
-  }
-
   // Extract per-page HTML for reliable multi-page preview
   try {
     extractPerPageHtml(editor, projectData);

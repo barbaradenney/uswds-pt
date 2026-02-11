@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Organization } from '@uswds-pt/shared';
+import { DefinitionListSection } from './shared/DefinitionListSection';
 
 interface OrgSettingsProps {
   organization: Organization;
-  updateOrganization: (updates: { name?: string; description?: string }) => Promise<Organization | null>;
+  updateOrganization: (updates: {
+    name?: string;
+    description?: string;
+    stateDefinitions?: Array<{ id: string; name: string }>;
+    userDefinitions?: Array<{ id: string; name: string }>;
+  }) => Promise<Organization | null>;
 }
 
 export function OrgSettings({ organization, updateOrganization }: OrgSettingsProps) {
@@ -27,6 +33,42 @@ export function OrgSettings({ organization, updateOrganization }: OrgSettingsPro
     setNewOrgName(organization.name);
     setIsEditingOrgName(true);
   }
+
+  // --- State definitions CRUD ---
+  const stateDefinitions = organization.stateDefinitions || [];
+
+  const addState = useCallback(async (name: string) => {
+    const newItem = { id: `state-${Date.now()}`, name };
+    await updateOrganization({ stateDefinitions: [...stateDefinitions, newItem] });
+  }, [stateDefinitions, updateOrganization]);
+
+  const renameState = useCallback(async (id: string, name: string) => {
+    const updated = stateDefinitions.map(s => s.id === id ? { ...s, name } : s);
+    await updateOrganization({ stateDefinitions: updated });
+  }, [stateDefinitions, updateOrganization]);
+
+  const removeState = useCallback(async (id: string) => {
+    const updated = stateDefinitions.filter(s => s.id !== id);
+    await updateOrganization({ stateDefinitions: updated });
+  }, [stateDefinitions, updateOrganization]);
+
+  // --- User definitions CRUD ---
+  const userDefinitions = organization.userDefinitions || [];
+
+  const addUser = useCallback(async (name: string) => {
+    const newItem = { id: `user-${Date.now()}`, name };
+    await updateOrganization({ userDefinitions: [...userDefinitions, newItem] });
+  }, [userDefinitions, updateOrganization]);
+
+  const renameUser = useCallback(async (id: string, name: string) => {
+    const updated = userDefinitions.map(u => u.id === id ? { ...u, name } : u);
+    await updateOrganization({ userDefinitions: updated });
+  }, [userDefinitions, updateOrganization]);
+
+  const removeUser = useCallback(async (id: string) => {
+    const updated = userDefinitions.filter(u => u.id !== id);
+    await updateOrganization({ userDefinitions: updated });
+  }, [userDefinitions, updateOrganization]);
 
   return (
     <div className="team-settings">
@@ -89,6 +131,38 @@ export function OrgSettings({ organization, updateOrganization }: OrgSettingsPro
             </div>
           )}
         </div>
+      </div>
+
+      <div className="team-settings-section">
+        <h2>Visibility Dimensions</h2>
+        <p style={{ color: 'var(--color-base-light)', marginTop: '4px', marginBottom: '16px' }}>
+          Define states and user personas to toggle component visibility in prototypes.
+        </p>
+        <DefinitionListSection
+          title="States"
+          items={stateDefinitions}
+          onAdd={addState}
+          onRename={renameState}
+          onRemove={removeState}
+          placeholder="State name..."
+          deleteConfirmMessage={(name) =>
+            `Delete state "${name}"? Components tagged with only this state will become visible in all states.`
+          }
+        />
+
+        <hr className="states-panel-divider" />
+
+        <DefinitionListSection
+          title="Users"
+          items={userDefinitions}
+          onAdd={addUser}
+          onRename={renameUser}
+          onRemove={removeUser}
+          placeholder="User name..."
+          deleteConfirmMessage={(name) =>
+            `Delete user "${name}"? Components tagged with only this user will become visible for all users.`
+          }
+        />
       </div>
     </div>
   );

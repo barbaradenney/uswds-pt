@@ -18,7 +18,7 @@ interface UseOrganizationReturn extends OrganizationState {
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
   setupOrganization: (teamName: string) => Promise<boolean>;
-  updateOrganization: (updates: { name?: string; description?: string }) => Promise<Organization | null>;
+  updateOrganization: (updates: { name?: string; description?: string; stateDefinitions?: Array<{ id: string; name: string }>; userDefinitions?: Array<{ id: string; name: string }> }) => Promise<Organization | null>;
   createTeam: (name: string, description?: string) => Promise<Team | null>;
   updateTeam: (teamId: string, updates: { name?: string; description?: string }) => Promise<Team | null>;
   deleteTeam: (teamId: string) => Promise<boolean>;
@@ -114,7 +114,7 @@ export function useOrganization(): UseOrganizationReturn {
 
   // Update organization
   const updateOrganization = useCallback(async (
-    updates: { name?: string; description?: string }
+    updates: { name?: string; description?: string; stateDefinitions?: Array<{ id: string; name: string }>; userDefinitions?: Array<{ id: string; name: string }> }
   ): Promise<Organization | null> => {
     if (!state.organization) {
       setState((prev) => ({ ...prev, error: 'No organization found' }));

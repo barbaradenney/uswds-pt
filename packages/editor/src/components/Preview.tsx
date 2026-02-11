@@ -5,7 +5,6 @@ import type { PageData } from '../lib/export';
 import { getPrototype } from '../lib/localStorage';
 import { getAuthToken } from '../contexts/AuthContext';
 import { escapeHtml } from '@uswds-pt/shared';
-import type { StateDefinition, UserDefinition } from '@uswds-pt/shared';
 
 // Check if we're in demo mode
 const isDemoMode = !import.meta.env.VITE_API_URL;
@@ -14,6 +13,8 @@ interface PreviewData {
   name: string;
   htmlContent: string;
   gjsData?: string;
+  stateDefinitions?: Array<{ id: string; name: string }>;
+  userDefinitions?: Array<{ id: string; name: string }>;
 }
 
 /**
@@ -105,32 +106,6 @@ function buildHtmlFromComponent(component: any): string {
   return `<${tagName}${attrString}>${escapeHtml(content)}${childrenHtml}</${tagName}>`;
 }
 
-/**
- * Extract state definitions from GrapesJS project data
- */
-function extractStatesFromGjsData(gjsDataString: string | undefined): StateDefinition[] {
-  if (!gjsDataString) return [];
-  try {
-    const gjsData = typeof gjsDataString === 'string' ? JSON.parse(gjsDataString) : gjsDataString;
-    return Array.isArray(gjsData?.states) ? gjsData.states : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Extract user definitions from GrapesJS project data
- */
-function extractUsersFromGjsData(gjsDataString: string | undefined): UserDefinition[] {
-  if (!gjsDataString) return [];
-  try {
-    const gjsData = typeof gjsDataString === 'string' ? JSON.parse(gjsDataString) : gjsDataString;
-    return Array.isArray(gjsData?.users) ? gjsData.users : [];
-  } catch {
-    return [];
-  }
-}
-
 export function Preview() {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<PreviewData | null>(null);
@@ -157,15 +132,14 @@ export function Preview() {
     return extractPagesFromGjsData(data?.gjsData);
   }, [data?.gjsData]);
 
-  // Extract states from gjsData
+  // State/user definitions from API response (org-level)
   const states = useMemo(() => {
-    return extractStatesFromGjsData(data?.gjsData);
-  }, [data?.gjsData]);
+    return data?.stateDefinitions || [];
+  }, [data?.stateDefinitions]);
 
-  // Extract users from gjsData
   const users = useMemo(() => {
-    return extractUsersFromGjsData(data?.gjsData);
-  }, [data?.gjsData]);
+    return data?.userDefinitions || [];
+  }, [data?.userDefinitions]);
 
   // Determine if we have multi-page content
   const isMultiPage = pages.length > 1;

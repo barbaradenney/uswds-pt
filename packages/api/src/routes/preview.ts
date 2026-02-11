@@ -6,7 +6,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
-import { db, prototypes } from '../db/index.js';
+import { db, prototypes, teams, organizations } from '../db/index.js';
 
 interface PreviewParams {
   slug: string;
@@ -39,6 +39,7 @@ export async function previewRoutes(app: FastifyInstance) {
           htmlContent: prototypes.htmlContent,
           grapesData: prototypes.grapesData,
           createdBy: prototypes.createdBy,
+          teamId: prototypes.teamId,
         })
         .from(prototypes)
         .where(and(eq(prototypes.slug, slug), eq(prototypes.isPublic, true)))
@@ -52,6 +53,7 @@ export async function previewRoutes(app: FastifyInstance) {
             htmlContent: prototypes.htmlContent,
             grapesData: prototypes.grapesData,
             createdBy: prototypes.createdBy,
+            teamId: prototypes.teamId,
           })
           .from(prototypes)
           .where(and(eq(prototypes.slug, slug), eq(prototypes.createdBy, userId)))
@@ -60,6 +62,33 @@ export async function previewRoutes(app: FastifyInstance) {
 
       if (!prototype) {
         return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      // Look up org-level state/user definitions via prototype → team → organization
+      let stateDefinitions: unknown[] = [];
+      let userDefinitions: unknown[] = [];
+      if (prototype.teamId) {
+        const [team] = await db
+          .select({ organizationId: teams.organizationId })
+          .from(teams)
+          .where(eq(teams.id, prototype.teamId))
+          .limit(1);
+
+        if (team?.organizationId) {
+          const [org] = await db
+            .select({
+              stateDefinitions: organizations.stateDefinitions,
+              userDefinitions: organizations.userDefinitions,
+            })
+            .from(organizations)
+            .where(eq(organizations.id, team.organizationId))
+            .limit(1);
+
+          if (org) {
+            stateDefinitions = org.stateDefinitions as unknown[] || [];
+            userDefinitions = org.userDefinitions as unknown[] || [];
+          }
+        }
       }
 
       // Only cache public prototypes
@@ -76,6 +105,8 @@ export async function previewRoutes(app: FastifyInstance) {
         gjsData: prototype.grapesData && typeof prototype.grapesData === 'object' && Object.keys(prototype.grapesData as object).length > 0
           ? JSON.stringify(prototype.grapesData)
           : undefined,
+        stateDefinitions,
+        userDefinitions,
       };
     }
   );

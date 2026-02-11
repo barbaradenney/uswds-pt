@@ -63,6 +63,10 @@ export interface UseGrapesJSSetupOptions {
   globalSymbols?: GrapesJSSymbol[];
   /** Callback when a symbol is being created (to show scope dialog) */
   onSymbolCreate?: (symbolData: GrapesJSSymbol, selectedComponent: any) => void;
+  /** Org-level state definitions (synced from useOrganization) */
+  orgStates?: Array<{ id: string; name: string }>;
+  /** Org-level user definitions (synced from useOrganization) */
+  orgUsers?: Array<{ id: string; name: string }>;
 }
 
 export interface UseGrapesJSSetupReturn {
@@ -85,6 +89,8 @@ export function useGrapesJSSetup({
   blocks,
   globalSymbols = [],
   onSymbolCreate,
+  orgStates = [],
+  orgUsers = [],
 }: UseGrapesJSSetupOptions): UseGrapesJSSetupReturn {
   // Track registered event listeners for cleanup
   const listenersRef = useRef<Array<{ event: string; handler: (...args: unknown[]) => void }>>([]);
@@ -93,6 +99,12 @@ export function useGrapesJSSetup({
   // Stored as ref (not in onReady deps) to avoid recreating onReady on save.
   const projectDataRef = useRef<Record<string, any> | null>(projectData ?? null);
   projectDataRef.current = projectData ?? null;
+
+  // Refs for org-level state/user definitions — read by onReady to seed instance properties
+  const orgStatesRef = useRef(orgStates);
+  orgStatesRef.current = orgStates;
+  const orgUsersRef = useRef(orgUsers);
+  orgUsersRef.current = orgUsers;
 
   // Ref for onContentChange — the GrapesJS event handlers registered in onReady
   // capture this ref once and always call the latest triggerChange through it,
@@ -168,13 +180,7 @@ export function useGrapesJSSetup({
         debug('Injecting', newSymbols.length, 'new global symbols into editor');
         const mergedData = mergeGlobalSymbols(currentData, newSymbols);
         debug('Merged data symbols:', mergedData.symbols?.length);
-        // Preserve states/users instance properties across loadProjectData
-        // (GrapesJS doesn't preserve custom keys in getProjectData/loadProjectData)
-        const savedStates = (editor as any).__projectStates;
-        const savedUsers = (editor as any).__projectUsers;
         editor.loadProjectData(mergedData);
-        if (Array.isArray(savedStates)) (editor as any).__projectStates = savedStates;
-        if (Array.isArray(savedUsers)) (editor as any).__projectUsers = savedUsers;
         debug('Injection complete');
       }
     } catch (e) {
@@ -229,17 +235,11 @@ export function useGrapesJSSetup({
       registerListener(editor, 'component:update', changeHandler);
       registerListener(editor, 'style:change', changeHandler);
 
-      // Seed states/users from raw project data BEFORE loadProjectData.
-      // GrapesJS getProjectData() doesn't preserve custom keys like 'states'/'users',
-      // so useEditorStates/useEditorUsers read from these instance properties instead.
-      if (projectDataRef.current) {
-        if (Array.isArray(projectDataRef.current.states)) {
-          (editor as any).__projectStates = projectDataRef.current.states;
-        }
-        if (Array.isArray(projectDataRef.current.users)) {
-          (editor as any).__projectUsers = projectDataRef.current.users;
-        }
-      }
+      // Seed org-level state/user definitions into editor instance properties.
+      // The visibility traits read from these at component:selected time.
+      // Org definitions are the source of truth — stored in the organizations table.
+      (editor as any).__projectStates = orgStatesRef.current;
+      (editor as any).__projectUsers = orgUsersRef.current;
 
       // Safety-net: redundant when projectData option loads correctly,
       // but critical fallback when it doesn't (e.g., silent init failure).
@@ -1194,7 +1194,7 @@ function setupVisibilityTrait(
 
     const items: Array<{ id: string; name: string }> = (() => {
       try {
-        // Read from instance properties first (set by useEditorStates/useEditorUsers),
+        // Read from instance properties first (seeded from org definitions),
         // falling back to getProjectData() for initial load before hooks mount.
         const instanceKey = config.dataKey === 'states' ? '__projectStates' : '__projectUsers';
         const instanceArr = (editor as any)[instanceKey];

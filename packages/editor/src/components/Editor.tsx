@@ -59,7 +59,7 @@ export function Editor() {
   const isDemoMode = !import.meta.env.VITE_API_URL;
 
   // Organization context
-  const { currentTeam, isLoading: isLoadingTeam } = useOrganization();
+  const { organization, currentTeam, isLoading: isLoadingTeam } = useOrganization();
 
   // Editor state machine
   const stateMachine = useEditorStateMachine();
@@ -306,6 +306,12 @@ export function Editor() {
     []
   );
 
+  // Derive org-level state/user definitions for the editor.
+  // Declared here (before useGrapesJSSetup) so they can be passed as options,
+  // and also referenced by the sync useEffects further below.
+  const orgStates = organization?.stateDefinitions || [];
+  const orgUsers = organization?.userDefinitions || [];
+
   // GrapesJS setup hook
   const grapesSetup = useGrapesJSSetup({
     stateMachine,
@@ -320,6 +326,8 @@ export function Editor() {
     blocks,
     globalSymbols: globalSymbols.getGrapesJSSymbols(),
     onSymbolCreate: handleSymbolCreate,
+    orgStates,
+    orgUsers,
   });
 
   /**
@@ -590,14 +598,6 @@ export function Editor() {
         // 4. In-place reload into editor
         const editor = editorRef.current;
         if (editor && proto.grapesData) {
-          // Seed states/users before loadProjectData — GrapesJS doesn't preserve custom keys
-          const rawData = proto.grapesData as any;
-          if (Array.isArray(rawData?.states)) {
-            (editor as any).__projectStates = rawData.states;
-          }
-          if (Array.isArray(rawData?.users)) {
-            (editor as any).__projectUsers = rawData.users;
-          }
           editor.loadProjectData(proto.grapesData as any);
           await loadUSWDSResources(editor);
           editor.refresh();
@@ -661,6 +661,22 @@ export function Editor() {
       editor.off('change:changesCount', updateUndoState);
     };
   }, [editorKey, isEditorReady]);
+
+  // Sync org-level state/user definitions to the editor instance whenever they change.
+  // The visibility traits read from these instance properties at component:selected time.
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    (editor as any).__projectStates = orgStates;
+    editor.trigger?.('states:update');
+  }, [orgStates]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    (editor as any).__projectUsers = orgUsers;
+    editor.trigger?.('users:update');
+  }, [orgUsers]);
 
   /**
    * Registers global keyboard shortcuts: Cmd+S / Ctrl+S triggers manual save,

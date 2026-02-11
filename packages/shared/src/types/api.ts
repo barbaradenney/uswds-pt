@@ -28,6 +28,8 @@ export interface UpdateOrgBody {
   name?: string;
   description?: string;
   logoUrl?: string;
+  stateDefinitions?: Array<{ id: string; name: string }>;
+  userDefinitions?: Array<{ id: string; name: string }>;
 }
 
 // ============================================================================
