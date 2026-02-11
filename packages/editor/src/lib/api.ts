@@ -64,6 +64,14 @@ export const API_ENDPOINTS = {
   GITHUB_TEAM_CONNECTION: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github`,
   GITHUB_TEAM_CONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/connect`,
   GITHUB_TEAM_DISCONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/disconnect`,
+
+  // GitHub Handoff Integration (team-level)
+  GITHUB_TEAM_HANDOFF: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/handoff`,
+  GITHUB_TEAM_HANDOFF_CONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/handoff/connect`,
+  GITHUB_TEAM_HANDOFF_DISCONNECT: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/github/handoff/disconnect`,
+
+  // Prototype Actions — Handoff
+  PROTOTYPE_PUSH_HANDOFF: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/push-handoff`,
 } as const;
 
 const debug = createDebugLogger('API');

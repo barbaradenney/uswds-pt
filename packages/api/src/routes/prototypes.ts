@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum, toBranchSlug } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
-import { prototypes, prototypeVersions, teamMemberships, users, githubTeamConnections } from '../db/schema.js';
+import { prototypes, prototypeVersions, teamMemberships, users, githubTeamConnections, githubHandoffConnections } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
 import { pushFilesToGitHub, createGitHubBranch } from '../lib/github-push.js';
@@ -1135,6 +1135,113 @@ export async function prototypeRoutes(app: FastifyInstance) {
           lastGithubCommitSha: result.commitSha,
         })
         .where(eq(prototypes.id, prototype.id));
+
+      return {
+        commitSha: result.commitSha,
+        commitUrl: result.htmlUrl,
+        branch: gitBranch,
+      };
+    }
+  );
+
+  /**
+   * POST /api/prototypes/:slug/push-handoff
+   * Push clean HTML to the team's handoff GitHub repo for developer handoff
+   */
+  app.post<{ Params: PrototypeParams; Body: { htmlContent: string } }>(
+    '/:slug/push-handoff',
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['htmlContent'],
+          properties: {
+            htmlContent: { type: 'string', maxLength: 5 * 1024 * 1024 },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { slug } = request.params;
+      const userId = getAuthUser(request).id;
+      const { htmlContent } = request.body;
+
+      // Get prototype
+      const [prototype] = await db
+        .select()
+        .from(prototypes)
+        .where(eq(prototypes.slug, slug))
+        .limit(1);
+
+      if (!prototype) {
+        return reply.status(404).send({ message: 'Prototype not found' });
+      }
+
+      // Check edit permission
+      if (!(await canEditPrototype(userId, prototype))) {
+        return reply.status(403).send({ message: 'Access denied' });
+      }
+
+      if (!prototype.teamId) {
+        return reply.status(400).send({ message: 'Prototype must belong to a team' });
+      }
+
+      // Look up team-level handoff connection
+      const [connection] = await db
+        .select()
+        .from(githubHandoffConnections)
+        .where(eq(githubHandoffConnections.teamId, prototype.teamId))
+        .limit(1);
+
+      if (!connection) {
+        return reply.status(400).send({ message: 'No handoff connection for this team' });
+      }
+
+      // Get user's GitHub token
+      const [user] = await db
+        .select({ githubAccessToken: users.githubAccessToken })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.githubAccessToken) {
+        return reply.status(400).send({ message: 'Your GitHub account is not linked. Connect via Settings.' });
+      }
+
+      // Git branch = handoff/<branchSlug>
+      const gitBranch = `handoff/${prototype.branchSlug}`;
+
+      // Try to create the branch (may already exist)
+      try {
+        await createGitHubBranch({
+          encryptedAccessToken: user.githubAccessToken,
+          owner: connection.repoOwner,
+          repo: connection.repoName,
+          branchName: gitBranch,
+          fromBranch: connection.defaultBranch,
+        });
+      } catch {
+        // Branch may already exist
+      }
+
+      // Push a single clean index.html
+      const files = [
+        {
+          path: 'index.html',
+          content: htmlContent,
+        },
+      ];
+
+      const result = await pushFilesToGitHub({
+        encryptedAccessToken: user.githubAccessToken,
+        owner: connection.repoOwner,
+        repo: connection.repoName,
+        branch: gitBranch,
+        files,
+        commitMessage: `Handoff: ${prototype.name}`,
+      });
 
       return {
         commitSha: result.commitSha,

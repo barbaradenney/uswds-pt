@@ -7,6 +7,9 @@
  * GET    /api/teams/:teamId/github               - Get team connection status
  * POST   /api/teams/:teamId/github/connect       - Connect team to a repo
  * DELETE /api/teams/:teamId/github/disconnect     - Remove team connection
+ * GET    /api/teams/:teamId/github/handoff        - Get handoff connection status
+ * POST   /api/teams/:teamId/github/handoff/connect    - Connect handoff repo
+ * DELETE /api/teams/:teamId/github/handoff/disconnect  - Remove handoff connection
  */
 
 import { FastifyInstance } from 'fastify';
@@ -16,6 +19,7 @@ import {
   users,
   teamMemberships,
   githubTeamConnections,
+  githubHandoffConnections,
 } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { listUserRepos } from '../lib/github-push.js';
@@ -233,6 +237,159 @@ export async function githubTeamRoutes(app: FastifyInstance) {
 
       if (result.length === 0) {
         return reply.code(404).send({ message: 'No GitHub connection found' });
+      }
+
+      return { message: 'Disconnected' };
+    },
+  );
+
+  // ============================================================================
+  // Handoff Connection Endpoints
+  // ============================================================================
+
+  /**
+   * GET /api/teams/:teamId/github/handoff
+   * Get developer handoff connection status for a team
+   */
+  app.get<{ Params: { teamId: string } }>(
+    '/:teamId/github/handoff',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const authUser = getAuthUser(request);
+      const { teamId } = request.params;
+
+      const [membership] = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .where(and(eq(teamMemberships.teamId, teamId), eq(teamMemberships.userId, authUser.id)))
+        .limit(1);
+
+      if (!membership) {
+        return reply.status(403).send({ message: 'Not a member of this team' });
+      }
+
+      const [connection] = await db
+        .select()
+        .from(githubHandoffConnections)
+        .where(eq(githubHandoffConnections.teamId, teamId))
+        .limit(1);
+
+      if (!connection) {
+        return { connected: false };
+      }
+
+      return {
+        connected: true,
+        repoOwner: connection.repoOwner,
+        repoName: connection.repoName,
+        defaultBranch: connection.defaultBranch,
+      };
+    },
+  );
+
+  /**
+   * POST /api/teams/:teamId/github/handoff/connect
+   * Connect a team to a handoff GitHub repository
+   */
+  app.post<{ Params: { teamId: string }; Body: { owner: string; repo: string; defaultBranch?: string } }>(
+    '/:teamId/github/handoff/connect',
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          required: ['owner', 'repo'],
+          properties: {
+            owner: { type: 'string', minLength: 1, maxLength: 100 },
+            repo: { type: 'string', minLength: 1, maxLength: 100 },
+            defaultBranch: { type: 'string', minLength: 1, maxLength: 100 },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
+    async (request, reply) => {
+      const authUser = getAuthUser(request);
+      const { teamId } = request.params;
+      const { owner, repo, defaultBranch } = request.body;
+
+      if (!GITHUB_NAME_RE.test(owner) || !GITHUB_NAME_RE.test(repo)) {
+        return reply.status(400).send({ message: 'Invalid repository owner or name' });
+      }
+
+      const resolvedBranch = defaultBranch || 'main';
+      if (!isValidBranchSlug(resolvedBranch)) {
+        return reply.status(400).send({ message: 'Invalid default branch name' });
+      }
+
+      const [membership] = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .where(and(
+          eq(teamMemberships.userId, authUser.id),
+          eq(teamMemberships.teamId, teamId),
+        ))
+        .limit(1);
+
+      if (!membership || (membership.role !== 'team_admin' && membership.role !== 'org_admin')) {
+        return reply.status(403).send({ message: 'Only team admins can connect GitHub' });
+      }
+
+      await db
+        .insert(githubHandoffConnections)
+        .values({
+          teamId,
+          repoOwner: owner,
+          repoName: repo,
+          defaultBranch: resolvedBranch,
+          connectedBy: authUser.id,
+        })
+        .onConflictDoUpdate({
+          target: githubHandoffConnections.teamId,
+          set: {
+            repoOwner: owner,
+            repoName: repo,
+            defaultBranch: resolvedBranch,
+            connectedBy: authUser.id,
+            updatedAt: new Date(),
+          },
+        });
+
+      return { message: 'Connected' };
+    },
+  );
+
+  /**
+   * DELETE /api/teams/:teamId/github/handoff/disconnect
+   * Remove handoff connection from a team
+   */
+  app.delete<{ Params: { teamId: string } }>(
+    '/:teamId/github/handoff/disconnect',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const authUser = getAuthUser(request);
+      const { teamId } = request.params;
+
+      const [membership] = await db
+        .select({ role: teamMemberships.role })
+        .from(teamMemberships)
+        .where(and(
+          eq(teamMemberships.userId, authUser.id),
+          eq(teamMemberships.teamId, teamId),
+        ))
+        .limit(1);
+
+      if (!membership || (membership.role !== 'team_admin' && membership.role !== 'org_admin')) {
+        return reply.status(403).send({ message: 'Only team admins can disconnect GitHub' });
+      }
+
+      const result = await db
+        .delete(githubHandoffConnections)
+        .where(eq(githubHandoffConnections.teamId, teamId))
+        .returning();
+
+      if (result.length === 0) {
+        return reply.code(404).send({ message: 'No handoff connection found' });
       }
 
       return { message: 'Disconnected' };

@@ -33,28 +33,46 @@ interface TeamGitHubSettingsProps {
 
 export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }: TeamGitHubSettingsProps) {
   const [connection, setConnection] = useState<TeamConnection | null>(null);
+  const [handoffConnection, setHandoffConnection] = useState<TeamConnection | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [isLoadingConnection, setIsLoadingConnection] = useState(false);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isConnectingHandoff, setIsConnectingHandoff] = useState(false);
+  const [isDisconnectingHandoff, setIsDisconnectingHandoff] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<string>('');
+  const [selectedHandoffRepo, setSelectedHandoffRepo] = useState<string>('');
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [showHandoffDisconnectConfirm, setShowHandoffDisconnectConfirm] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const fetchConnection = useCallback(async () => {
     setIsLoadingConnection(true);
     setError(null);
-    const result = await apiGet<TeamConnection>(
-      API_ENDPOINTS.GITHUB_TEAM_CONNECTION(teamId),
-      'Failed to fetch GitHub connection'
-    );
-    if (result.success && result.data) {
-      setConnection(result.data);
+
+    const [connResult, handoffResult] = await Promise.all([
+      apiGet<TeamConnection>(
+        API_ENDPOINTS.GITHUB_TEAM_CONNECTION(teamId),
+        'Failed to fetch GitHub connection'
+      ),
+      apiGet<TeamConnection>(
+        API_ENDPOINTS.GITHUB_TEAM_HANDOFF(teamId),
+        'Failed to fetch handoff connection'
+      ),
+    ]);
+
+    if (connResult.success && connResult.data) {
+      setConnection(connResult.data);
     } else {
-      setError(result.error || null);
+      setError(connResult.error || null);
     }
+
+    if (handoffResult.success && handoffResult.data) {
+      setHandoffConnection(handoffResult.data);
+    }
+
     setIsLoadingConnection(false);
   }, [teamId]);
 
@@ -103,7 +121,9 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
     if (!isOpen) {
       setError(null);
       setSelectedRepo('');
+      setSelectedHandoffRepo('');
       setShowDisconnectConfirm(false);
+      setShowHandoffDisconnectConfirm(false);
     }
   }, [isOpen]);
 
@@ -147,6 +167,48 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
       setError(result.error || 'Failed to disconnect');
     }
     setIsDisconnecting(false);
+  };
+
+  const handleHandoffConnect = async () => {
+    if (!selectedHandoffRepo) return;
+    const repo = repos.find(r => r.fullName === selectedHandoffRepo);
+    if (!repo) return;
+
+    setIsConnectingHandoff(true);
+    setError(null);
+    const result = await apiPost(
+      API_ENDPOINTS.GITHUB_TEAM_HANDOFF_CONNECT(teamId),
+      { owner: repo.owner, repo: repo.name, defaultBranch: repo.defaultBranch },
+      'Failed to connect handoff repository'
+    );
+    if (result.success) {
+      setHandoffConnection({
+        connected: true,
+        repoOwner: repo.owner,
+        repoName: repo.name,
+        defaultBranch: repo.defaultBranch,
+      });
+      setSelectedHandoffRepo('');
+    } else {
+      setError(result.error || 'Failed to connect');
+    }
+    setIsConnectingHandoff(false);
+  };
+
+  const handleHandoffDisconnect = async () => {
+    setIsDisconnectingHandoff(true);
+    setError(null);
+    const result = await apiDelete(
+      API_ENDPOINTS.GITHUB_TEAM_HANDOFF_DISCONNECT(teamId),
+      'Failed to disconnect handoff repository'
+    );
+    if (result.success) {
+      setHandoffConnection({ connected: false });
+      setShowHandoffDisconnectConfirm(false);
+    } else {
+      setError(result.error || 'Failed to disconnect');
+    }
+    setIsDisconnectingHandoff(false);
   };
 
   if (!isOpen) return null;
@@ -333,6 +395,121 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
               {isConnecting ? 'Connecting...' : 'Connect Repository'}
             </button>
           </div>
+        )}
+
+        {/* Developer Handoff Repository Section */}
+        {!isLoadingConnection && hasGitHubLinked && (
+          <>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--color-base-lighter)', margin: '20px 0' }} />
+            <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Developer Handoff Repository</h3>
+            <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '16px' }}>
+              Prototypes will be handed off as clean HTML to branches in this repo.
+              Each prototype pushes to its own <code>handoff/&lt;name&gt;</code> branch.
+            </p>
+
+            {handoffConnection?.connected ? (
+              <div>
+                <div style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+                  borderRadius: '4px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>Connected</div>
+                  <div style={{ fontSize: '0.875rem' }}>
+                    <a
+                      href={`https://github.com/${handoffConnection.repoOwner}/${handoffConnection.repoName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      {handoffConnection.repoOwner}/{handoffConnection.repoName}
+                    </a>
+                    <span style={{ color: 'var(--color-base-light)', marginLeft: '8px' }}>
+                      (default: {handoffConnection.defaultBranch})
+                    </span>
+                  </div>
+                </div>
+                {showHandoffDisconnectConfirm ? (
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: '#fce4e4',
+                    borderRadius: '4px',
+                  }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#b50909' }}>
+                      Disconnect handoff repo? You will no longer be able to hand off prototypes.
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleHandoffDisconnect}
+                        disabled={isDisconnectingHandoff}
+                        style={{ flex: 1, color: '#b50909', borderColor: '#b50909' }}
+                      >
+                        {isDisconnectingHandoff ? 'Disconnecting...' : 'Yes, Disconnect'}
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setShowHandoffDisconnectConfirm(false)}
+                        disabled={isDisconnectingHandoff}
+                        style={{ flex: 1 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowHandoffDisconnectConfirm(true)}
+                    style={{ width: '100%' }}
+                  >
+                    Disconnect Handoff Repository
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label
+                  htmlFor="handoff-repo-select"
+                  style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px' }}
+                >
+                  Select a repository
+                </label>
+                <select
+                  id="handoff-repo-select"
+                  value={selectedHandoffRepo}
+                  onChange={(e) => setSelectedHandoffRepo(e.target.value)}
+                  disabled={isLoadingRepos || isConnectingHandoff}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <option value="">
+                    {isLoadingRepos ? 'Loading repositories...' : '-- Choose a repo --'}
+                  </option>
+                  {repos.filter(repo => !repo.private).map(repo => (
+                    <option key={repo.fullName} value={repo.fullName}>
+                      {repo.fullName}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleHandoffConnect}
+                  disabled={!selectedHandoffRepo || isConnectingHandoff}
+                  style={{ width: '100%' }}
+                >
+                  {isConnectingHandoff ? 'Connecting...' : 'Connect Handoff Repository'}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

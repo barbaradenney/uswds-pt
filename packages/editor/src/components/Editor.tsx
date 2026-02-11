@@ -27,7 +27,7 @@ import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
-import { openPreviewInNewTab, openMultiPagePreviewInNewTab, type PageData } from '../lib/export';
+import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
@@ -577,6 +577,45 @@ export function Editor() {
   }, [name, slug, localPrototype?.id]);
 
   /**
+   * Generates clean, production-ready HTML from the current editor state and
+   * pushes it to the team's handoff GitHub repository. Single-page prototypes
+   * produce a standalone document; multi-page prototypes include page navigation.
+   */
+  const handlePushHandoff = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const pages = editor.Pages?.getAll?.() || [];
+    const currentPage = editor.Pages?.getSelected?.();
+    let fullDocument: string;
+
+    if (pages.length <= 1) {
+      const html = editor.getHtml();
+      const cleaned = cleanExport(html);
+      fullDocument = generateFullDocument(cleaned, { title: name });
+    } else {
+      const pageDataList: PageData[] = [];
+      const originalPage = currentPage;
+
+      for (const page of pages) {
+        editor.Pages?.select?.(page);
+        const pageId = page.getId?.() || page.id;
+        const pageName = page.get?.('name') || page.getName?.() || `Page ${pageId}`;
+        const html = editor.getHtml();
+        pageDataList.push({ id: pageId, name: pageName, html });
+      }
+
+      if (originalPage) {
+        editor.Pages?.select?.(originalPage);
+      }
+
+      fullDocument = generateMultiPageDocument(pageDataList, { title: name });
+    }
+
+    gitHubPush.pushHandoff(fullDocument);
+  }, [name, gitHubPush]);
+
+  /**
    * Restores a specific version from history using in-place reload (Path 2).
    * Pauses autosave, calls the restore API, fetches the updated prototype,
    * and loads it directly into the existing GrapesJS editor via loadProjectData
@@ -889,9 +928,11 @@ export function Editor() {
         canRedo={canRedo}
         onShowShortcuts={() => setShowShortcuts(true)}
         canPush={gitHubPush.canPush}
+        canHandoff={gitHubPush.canHandoff}
         isPushing={gitHubPush.isPushing}
         hasUnpushedChanges={gitHubPush.hasUnpushedChanges}
         onPush={gitHubPush.push}
+        onPushHandoff={handlePushHandoff}
         lastPushResult={gitHubPush.lastPushResult}
         onDismissPushResult={gitHubPush.dismissResult}
       />

@@ -168,6 +168,10 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.id],
     references: [githubTeamConnections.teamId],
   }),
+  githubHandoffConnection: one(githubHandoffConnections, {
+    fields: [teams.id],
+    references: [githubHandoffConnections.teamId],
+  }),
 }));
 
 export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
@@ -356,6 +360,42 @@ export const githubTeamConnectionsRelations = relations(githubTeamConnections, (
 }));
 
 /**
+ * GitHub handoff connections table
+ * Links a team to a separate GitHub repository for developer handoff.
+ * Clean HTML (no GrapesJS metadata) is pushed to handoff/{branchSlug} branches.
+ */
+export const githubHandoffConnections = pgTable(
+  'github_handoff_connections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id')
+      .references(() => teams.id, { onDelete: 'cascade' })
+      .unique()
+      .notNull(),
+    repoOwner: varchar('repo_owner', { length: 255 }).notNull(),
+    repoName: varchar('repo_name', { length: 255 }).notNull(),
+    defaultBranch: varchar('default_branch', { length: 100 }).notNull().default('main'),
+    connectedBy: uuid('connected_by').references(() => users.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    teamIdx: index('github_handoff_connections_team_idx').on(table.teamId),
+  })
+);
+
+export const githubHandoffConnectionsRelations = relations(githubHandoffConnections, ({ one }) => ({
+  team: one(teams, {
+    fields: [githubHandoffConnections.teamId],
+    references: [teams.id],
+  }),
+  connector: one(users, {
+    fields: [githubHandoffConnections.connectedBy],
+    references: [users.id],
+  }),
+}));
+
+/**
  * Audit logs table (for future use)
  */
 export const auditLogs = pgTable(
@@ -408,3 +448,6 @@ export type NewGitHubTeamConnection = typeof githubTeamConnections.$inferInsert;
 
 export type Symbol = typeof symbols.$inferSelect;
 export type NewSymbol = typeof symbols.$inferInsert;
+
+export type GitHubHandoffConnection = typeof githubHandoffConnections.$inferSelect;
+export type NewGitHubHandoffConnection = typeof githubHandoffConnections.$inferInsert;

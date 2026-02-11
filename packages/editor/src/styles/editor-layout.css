@@ -650,6 +650,26 @@
   font-weight: 500;
 }
 
+/* Drag state on the item being dragged */
+.layer-item--dragging {
+  opacity: 0.4;
+}
+
+/* Drop indicator: line above */
+.layer-node--drop-before > .layer-item {
+  box-shadow: 0 -2px 0 0 var(--color-primary);
+}
+
+/* Drop indicator: highlight for reparenting */
+.layer-node--drop-inside > .layer-item {
+  background: rgba(0, 94, 162, 0.12);
+}
+
+/* Drop indicator: line below */
+.layer-node--drop-after > .layer-item {
+  box-shadow: 0 2px 0 0 var(--color-primary);
+}
+
 /* ============================================
    Traits Panel (right sidebar)
    ============================================ */
@@ -767,17 +787,7 @@
    Push to GitHub Button
    ============================================ */
 
-.push-button-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
 .push-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
   position: relative;
 }
 
@@ -830,4 +840,52 @@
 @keyframes push-fade-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   Push Dropdown Menu
+   ============================================ */
+
+.push-dropdown {
+  position: relative;
+}
+
+.push-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius, 4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  min-width: 200px;
+  overflow: hidden;
+}
+
+.push-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--color-base);
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.push-dropdown-item:hover:not(:disabled) {
+  background: var(--color-base-lightest);
+}
+
+.push-dropdown-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.push-dropdown-item + .push-dropdown-item {
+  border-top: 1px solid var(--color-base-lightest);
 }
