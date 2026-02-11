@@ -57,7 +57,7 @@ async function migrate() {
       SELECT id, organization_id, repo_owner, repo_name, default_branch, connected_by
       FROM github_org_connections
     `);
-    rows = existing.rows as typeof rows;
+    rows = existing as unknown as typeof rows;
   } catch {
     console.log('  - Old github_org_connections table not found, skipping data migration');
   }
@@ -71,7 +71,7 @@ async function migrate() {
         SELECT id FROM teams WHERE organization_id = ${row.organization_id}
       `);
 
-      const teamRows = teamsResult.rows as Array<{ id: string }>;
+      const teamRows = teamsResult as unknown as Array<{ id: string }>;
       for (const team of teamRows) {
         try {
           await db.execute(sql`
