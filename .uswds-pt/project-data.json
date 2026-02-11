@@ -106,6 +106,24 @@
                             ]
                           }
                         ]
+                      },
+                      {
+                        "type": "usa-button",
+                        "attributes": {
+                          "href": "",
+                          "size": "default",
+                          "text": "Click me",
+                          "variant": "default",
+                          "disabled": false,
+                          "link-type": "none",
+                          "page-link": ""
+                        },
+                        "components": [
+                          {
+                            "type": "textnode",
+                            "content": "Click me"
+                          }
+                        ]
                       }
                     ]
                   },
