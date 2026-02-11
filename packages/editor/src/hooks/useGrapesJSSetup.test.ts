@@ -45,6 +45,7 @@ const mockReinitInteractiveHandlers = vi.fn();
 const mockSyncPageLinkHrefs = vi.fn();
 const mockExposeDebugHelpers = vi.fn();
 const mockCleanupCanvasHelpers = vi.fn();
+const mockSetupConditionalFieldsWatcher = vi.fn();
 vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   forceCanvasUpdate: (...args: unknown[]) => mockForceCanvasUpdate(...args),
   setupCanvasEventHandlers: (...args: unknown[]) => mockSetupCanvasEventHandlers(...args),
@@ -54,6 +55,7 @@ vi.mock('../lib/grapesjs/canvas-helpers', () => ({
   syncPageLinkHrefs: (...args: unknown[]) => mockSyncPageLinkHrefs(...args),
   exposeDebugHelpers: (...args: unknown[]) => mockExposeDebugHelpers(...args),
   cleanupCanvasHelpers: (...args: unknown[]) => mockCleanupCanvasHelpers(...args),
+  setupConditionalFieldsWatcher: (...args: unknown[]) => mockSetupConditionalFieldsWatcher(...args),
 }));
 
 // Mock adapter

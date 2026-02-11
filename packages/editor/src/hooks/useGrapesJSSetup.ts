@@ -21,6 +21,7 @@ import {
   syncPageLinkHrefs,
   exposeDebugHelpers,
   cleanupCanvasHelpers,
+  setupConditionalFieldsWatcher,
 } from '../lib/grapesjs/canvas-helpers';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import type { EditorInstance } from '../types/grapesjs';
@@ -252,6 +253,9 @@ export function useGrapesJSSetup({
 
       // Set up interactive component handlers
       setupAllInteractiveHandlers(editor, (event, handler) => registerListener(editor, event, handler));
+
+      // Set up conditional fields visibility watcher (re-applies when traits change)
+      setupConditionalFieldsWatcher(editor, (event, handler) => registerListener(editor, event, handler));
 
       // Set up page link trait updates
       setupPageLinkTrait(editor, registerListener);

@@ -464,7 +464,9 @@ export function setupAccordionClickHandler(editor: EditorInstance): void {
 }
 
 /**
- * Set up modal click handler
+ * Set up modal click handler.
+ * Handles trigger clicks (inside or outside usa-modal), close buttons,
+ * and backdrop/overlay clicks.
  */
 export function setupModalClickHandler(editor: EditorInstance): void {
   const canvas = editor.Canvas;
@@ -475,45 +477,194 @@ export function setupModalClickHandler(editor: EditorInstance): void {
   if (isDocumentHandled(doc, handlerKey)) return;
   markDocumentHandled(doc, handlerKey);
 
+  /** Find the target usa-modal for a trigger outside usa-modal via aria-controls */
+  const findModalByTrigger = (trigger: HTMLElement): HTMLElement | null => {
+    const ariaControls = trigger.getAttribute('aria-controls');
+    if (ariaControls) {
+      const el = doc.getElementById(ariaControls);
+      if (el) {
+        if (el.tagName.toLowerCase() === 'usa-modal') return el;
+        const parentModal = el.closest('usa-modal');
+        if (parentModal) return parentModal as HTMLElement;
+      }
+    }
+    return null;
+  };
+
+  const openModal = (modal: HTMLElement) => {
+    modal.setAttribute('open', '');
+    (modal as any).open = true;
+    if (typeof (modal as any).requestUpdate === 'function') {
+      (modal as any).requestUpdate();
+    }
+    debug('Opened usa-modal');
+  };
+
+  const closeModal = (modal: HTMLElement) => {
+    modal.removeAttribute('open');
+    (modal as any).open = false;
+    if (typeof (modal as any).requestUpdate === 'function') {
+      (modal as any).requestUpdate();
+    }
+    debug('Closed usa-modal');
+  };
+
   const handler = (e: Event) => {
     const mouseEvent = e as MouseEvent;
     const target = mouseEvent.target as HTMLElement;
-    const modal = target.closest('usa-modal') as HTMLElement;
-    if (!modal) return;
 
-    const isTrigger = target.closest('.usa-modal__trigger') ||
+    // Case 1: Trigger click (inside or outside usa-modal)
+    const trigger = target.closest('.usa-modal__trigger') ||
       target.closest('[data-open-modal]') ||
       target.closest('.usa-button[aria-controls]');
 
-    const isCloseButton = target.closest('[data-close-modal]') ||
+    if (trigger) {
+      const modal = (trigger as HTMLElement).closest('usa-modal') as HTMLElement ||
+        findModalByTrigger(trigger as HTMLElement);
+      if (modal) {
+        mouseEvent.preventDefault();
+        mouseEvent.stopPropagation();
+        openModal(modal);
+        return;
+      }
+    }
+
+    // Case 2: Close button click
+    const closeButton = target.closest('[data-close-modal]') ||
       target.closest('.usa-modal__close');
 
-    if (isTrigger) {
-      mouseEvent.preventDefault();
-      mouseEvent.stopPropagation();
-      modal.setAttribute('open', '');
-      (modal as any).open = true;
-
-      if (typeof (modal as any).requestUpdate === 'function') {
-        (modal as any).requestUpdate();
+    if (closeButton) {
+      const modal = (closeButton as HTMLElement).closest('usa-modal') as HTMLElement;
+      if (modal) {
+        mouseEvent.preventDefault();
+        mouseEvent.stopPropagation();
+        closeModal(modal);
+        return;
       }
+    }
 
-      debug('Opened usa-modal');
-    } else if (isCloseButton) {
-      mouseEvent.preventDefault();
-      mouseEvent.stopPropagation();
-      modal.removeAttribute('open');
-      (modal as any).open = false;
-
-      if (typeof (modal as any).requestUpdate === 'function') {
-        (modal as any).requestUpdate();
+    // Case 3: Backdrop/overlay click (close unless force-action)
+    const overlay = target.closest('.usa-modal__overlay');
+    if (overlay && !target.closest('.usa-modal__main')) {
+      const modal = (overlay as HTMLElement).closest('usa-modal') as HTMLElement;
+      if (modal && !modal.hasAttribute('force-action')) {
+        mouseEvent.preventDefault();
+        mouseEvent.stopPropagation();
+        closeModal(modal);
+        return;
       }
-
-      debug('Closed usa-modal');
     }
   };
 
   addTrackedDocumentListener(doc, 'click', handler, true);
+}
+
+// ============================================================================
+// Conditional Field Handlers
+// ============================================================================
+
+/**
+ * Apply conditional field visibility based on current checkbox/radio state.
+ * Finds all elements with data-reveals/data-hides and sets visibility
+ * of their target elements. Safe to call repeatedly.
+ */
+function applyConditionalFieldVisibility(doc: Document): void {
+  const getTargets = (idString: string | null): HTMLElement[] => {
+    if (!idString) return [];
+    return idString.split(',')
+      .map(id => id.trim())
+      .filter(id => id)
+      .map(id => doc.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+  };
+
+  doc.querySelectorAll('[data-reveals], [data-hides]').forEach((trigger: Element) => {
+    const revealsTargets = getTargets(trigger.getAttribute('data-reveals'));
+    const hidesTargets = getTargets(trigger.getAttribute('data-hides'));
+    if (revealsTargets.length === 0 && hidesTargets.length === 0) return;
+
+    const input = trigger.querySelector('input') as HTMLInputElement | null;
+    const isChecked = trigger.hasAttribute('checked') || (input?.checked ?? false);
+
+    revealsTargets.forEach(t => {
+      if (isChecked) {
+        t.removeAttribute('hidden');
+        t.style.display = '';
+      } else {
+        t.setAttribute('hidden', '');
+        t.style.display = 'none';
+      }
+    });
+
+    hidesTargets.forEach(t => {
+      if (isChecked) {
+        t.setAttribute('hidden', '');
+        t.style.display = 'none';
+      } else {
+        t.removeAttribute('hidden');
+        t.style.display = '';
+      }
+    });
+  });
+}
+
+/**
+ * Set up conditional fields handler in the canvas.
+ * Attaches a delegated change listener for checkboxes/radios with
+ * data-reveals/data-hides attributes and sets initial visibility.
+ */
+export function setupConditionalFieldsHandler(editor: EditorInstance): void {
+  const doc = editor.Canvas?.getDocument?.();
+  if (!doc) return;
+
+  const handlerKey = 'conditionalFields';
+  if (isDocumentHandled(doc, handlerKey)) return;
+  markDocumentHandled(doc, handlerKey);
+
+  const handler = (e: Event) => {
+    const target = e.target as HTMLElement;
+    const trigger = target.closest?.('[data-reveals], [data-hides]') as HTMLElement;
+    if (!trigger) return;
+
+    const tagName = trigger.tagName.toLowerCase();
+    if (tagName !== 'usa-checkbox' && tagName !== 'usa-radio') return;
+
+    // Re-apply all conditional visibility (handles radio groups correctly)
+    applyConditionalFieldVisibility(doc);
+    debug('Conditional field visibility updated');
+  };
+
+  addTrackedDocumentListener(doc, 'change', handler, true);
+
+  // Set initial visibility state
+  applyConditionalFieldVisibility(doc);
+  debug('Conditional fields handler initialized');
+}
+
+/**
+ * Set up a GrapesJS event watcher that re-applies conditional field
+ * visibility when component attributes change (user edits traits panel).
+ */
+export function setupConditionalFieldsWatcher(
+  editor: EditorInstance,
+  registerListener: (event: string, handler: (...args: unknown[]) => void) => void
+): void {
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const refresh = () => {
+    if (debounceTimer !== null) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      const doc = editor.Canvas?.getDocument?.();
+      if (doc) {
+        applyConditionalFieldVisibility(doc);
+      }
+    }, 150);
+  };
+
+  registerListener('component:update', refresh);
+  registerListener('component:add', refresh);
+  registerListener('component:remove', refresh);
 }
 
 /**
@@ -528,6 +679,7 @@ export function reinitInteractiveHandlers(editor: EditorInstance): void {
   setupBannerClickHandler(editor);
   setupAccordionClickHandler(editor);
   setupModalClickHandler(editor);
+  setupConditionalFieldsHandler(editor);
 }
 
 /**
