@@ -784,6 +784,12 @@ export function setupStateVisibilityWatcher(
   registerListener('component:add', refresh);
   registerListener('component:remove', refresh);
   registerListener('page:select', refresh);
+
+  // Re-apply when component attributes change (covers checkbox trait
+  // toggling data-states / data-users). Uses the narrower
+  // `component:update:attributes` event instead of `component:update`
+  // to avoid excessive tree-walks on every model change.
+  registerListener('component:update:attributes', refresh);
 }
 
 // ============================================================================
