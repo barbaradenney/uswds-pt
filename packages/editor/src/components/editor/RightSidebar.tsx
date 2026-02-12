@@ -236,48 +236,43 @@ function CheckboxGroupField({ trait }: { trait: any }) {
   const component = trait.target;
   const dataAttr = trait.get?.('dataAttribute') || 'data-states';
 
-  // Read initial checked state from component's data attribute
-  const getCheckedIds = (): string[] => {
-    const dataValue = component?.getAttributes?.()?.[ dataAttr] || '';
-    return dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
-  };
+  // Use a tick counter to force re-render after attribute changes.
+  // No separate checkedIds state — always derive from the component attribute
+  // to avoid any React state ↔ GrapesJS attribute desynchronization.
+  const [, setTick] = useState(0);
 
-  const [checkedIds, setCheckedIds] = useState<string[]>(getCheckedIds);
+  // Read checked IDs directly from component attribute on every render
+  const dataValue = component?.getAttributes?.()[dataAttr] || '';
+  const checkedIds = dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
 
-  // Sync when trait/component changes
-  useEffect(() => {
-    setCheckedIds(getCheckedIds());
-  }, [trait, component]);
-
-  const isAllOrNone = (ids: string[]) =>
-    ids.length === 0 || ids.length === options.length;
+  // No attribute = "visible in all" = all options checked
+  const effectiveChecked = dataValue === ''
+    ? options.map((o) => o.id)
+    : checkedIds;
 
   const handleToggle = (optId: string, checked: boolean) => {
-    // Use effective state: if no attribute exists, all are considered checked
-    const currentAttr = component?.getAttributes?.()?.[ dataAttr] || '';
-    const current = currentAttr === ''
+    if (!component) return;
+
+    // Start from effective state (all if no attribute, otherwise current IDs)
+    const current = dataValue === ''
       ? options.map((o) => o.id)
       : checkedIds;
     const next = checked
       ? [...current, optId]
-      : current.filter((id) => id !== optId);
-    setCheckedIds(next);
+      : current.filter((id: string) => id !== optId);
 
-    if (!component) return;
-    if (isAllOrNone(next)) {
-      component.removeAttributes?.([dataAttr]);
+    const isAllOrNone = next.length === 0 || next.length === options.length;
+    if (isAllOrNone) {
+      component.removeAttributes([dataAttr]);
     } else {
-      component.addAttributes?.({ [dataAttr]: next.join(',') });
+      component.addAttributes({ [dataAttr]: next.join(',') });
     }
+
+    // Force re-render so checkbox UI reflects the new attribute value
+    setTick(t => t + 1);
   };
 
   if (options.length === 0) return null;
-
-  // If no data attribute, all are considered checked
-  const dataValue = component?.getAttributes?.()?.[ dataAttr] || '';
-  const effectiveChecked = dataValue === ''
-    ? options.map((o) => o.id)
-    : checkedIds;
 
   return (
     <div className="trait-field">

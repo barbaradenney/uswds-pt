@@ -719,19 +719,19 @@ export function applyStateVisibility(editor: EditorInstance, activeStateId: stri
 
   const walkComponent = (comp: any) => {
     const el = comp.getEl?.();
-    if (el) {
-      const attrs = comp.getAttributes?.() || {};
+    const attrs = comp.getAttributes?.() || {};
 
-      // State pass
-      const dataStates = attrs['data-states'] || '';
-      const statePass = activeStateId === null || !dataStates ||
-        dataStates.split(',').map((s: string) => s.trim()).includes(activeStateId);
+    // State pass
+    const dataStates = attrs['data-states'] || '';
+    const statePass = activeStateId === null || !dataStates ||
+      dataStates.split(',').map((s: string) => s.trim()).includes(activeStateId);
 
-      // User pass
-      const dataUsers = attrs['data-users'] || '';
-      const userPass = activeUserId === null || !dataUsers ||
-        dataUsers.split(',').map((s: string) => s.trim()).includes(activeUserId);
+    // User pass
+    const dataUsers = attrs['data-users'] || '';
+    const userPass = activeUserId === null || !dataUsers ||
+      dataUsers.split(',').map((s: string) => s.trim()).includes(activeUserId);
 
+    if (el?.classList) {
       if (statePass && userPass) {
         el.classList.remove('gjs-state-dimmed');
       } else {
