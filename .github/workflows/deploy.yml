@@ -62,7 +62,6 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.API_URL || '' }}
           VITE_AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          VITE_AI_SECRET: ${{ secrets.AI_SECRET }}
           VITE_AI_PROVIDER: ${{ vars.AI_PROVIDER || 'claude' }}
 
       - name: Create 404.html for SPA routing
