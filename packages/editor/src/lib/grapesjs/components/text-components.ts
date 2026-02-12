@@ -60,6 +60,7 @@ export function registerTextComponents(Components: ComponentsAPI): void {
             label: 'Heading Size',
             default: 'h2',
             options: headingLevelOptions,
+            changeProp: true,
           },
         ],
       },
