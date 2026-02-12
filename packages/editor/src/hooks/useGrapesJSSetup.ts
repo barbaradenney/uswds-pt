@@ -430,12 +430,15 @@ function setupSpacingTrait(
     }
   });
 
-  // Listen for trait value changes — GrapesJS fires 'trait:value' when the
-  // user changes a trait via the properties panel UI.
+  // Listen for trait value changes — GrapesJS fires 'trait:value' when
+  // trait.setValue() → setTargetValue() → targetUpdated() runs.
   registerListener(editor, 'trait:value', ({ trait, component }: any) => {
     if (trait?.get('name') !== 'top-spacing') return;
     if (!component) return;
-    const value = trait.get('value') ?? '';
+    // Use getValue() (reads from component attribute) not get('value')
+    // (reads from Backbone model) — setValue() syncs to the component
+    // but doesn't update the Backbone model's internal value.
+    const value = trait.getValue?.() ?? trait.get('value') ?? '';
     updateSpacingClass(component, value);
   });
 }

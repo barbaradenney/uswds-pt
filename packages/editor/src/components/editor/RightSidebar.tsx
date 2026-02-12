@@ -253,9 +253,14 @@ function CheckboxGroupField({ trait }: { trait: any }) {
     ids.length === 0 || ids.length === options.length;
 
   const handleToggle = (optId: string, checked: boolean) => {
+    // Use effective state: if no attribute exists, all are considered checked
+    const currentAttr = component?.getAttributes?.()?.[ dataAttr] || '';
+    const current = currentAttr === ''
+      ? options.map((o) => o.id)
+      : checkedIds;
     const next = checked
-      ? [...checkedIds, optId]
-      : checkedIds.filter((id) => id !== optId);
+      ? [...current, optId]
+      : current.filter((id) => id !== optId);
     setCheckedIds(next);
 
     if (!component) return;
@@ -311,7 +316,15 @@ const TraitField = memo(function TraitField({ trait }: { trait: any }) {
 
   const handleChange = (newValue: any) => {
     setLocalValue(newValue);
-    trait.set('value', newValue);
+    // Use the public GrapesJS API (setValue) which calls setTargetValue →
+    // syncs to component attributes → fires trait:value event.
+    // The low-level Backbone setter (set('value',...)) doesn't trigger the
+    // full pipeline when using custom trait UI (TraitsProvider custom:true).
+    if (trait.setValue) {
+      trait.setValue(newValue);
+    } else {
+      trait.set('value', newValue);
+    }
   };
 
   const handleFocus = () => { isFocusedRef.current = true; };
