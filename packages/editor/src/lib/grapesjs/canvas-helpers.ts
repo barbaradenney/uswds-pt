@@ -583,8 +583,12 @@ function applyConditionalFieldVisibility(doc: Document): void {
     const hidesTargets = getTargets(trigger.getAttribute('data-hides'));
     if (revealsTargets.length === 0 && hidesTargets.length === 0) return;
 
+    // Prefer the inner <input>'s runtime checked state over the outer
+    // element's `checked` attribute. The attribute reflects design-time
+    // state and doesn't update when users click in the canvas, whereas
+    // the inner input tracks the actual runtime state.
     const input = trigger.querySelector('input') as HTMLInputElement | null;
-    const isChecked = trigger.hasAttribute('checked') || (input?.checked ?? false);
+    const isChecked = input ? input.checked : trigger.hasAttribute('checked');
 
     revealsTargets.forEach(t => {
       if (isChecked) {
@@ -662,7 +666,7 @@ export function setupConditionalFieldsWatcher(
     }, 150);
   };
 
-  registerListener('component:update', refresh);
+  registerListener('component:update:attributes', refresh);
   registerListener('component:add', refresh);
   registerListener('component:remove', refresh);
 }
