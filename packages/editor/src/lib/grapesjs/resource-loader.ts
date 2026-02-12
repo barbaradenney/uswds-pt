@@ -92,20 +92,20 @@ async function waitForCustomElements(
  *
  * @param editor - GrapesJS editor instance
  * @param signal - Optional AbortSignal for cancellation
- * @returns Promise that resolves when resources are loaded
+ * @returns Promise resolving to true if new resources were injected, false if already loaded
  */
-export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortSignal): Promise<void> {
+export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortSignal): Promise<boolean> {
   // Check for early abort
   if (signal?.aborted) {
     debug('loadUSWDSResources aborted before start');
-    return;
+    return false;
   }
 
   const canvas = editor.Canvas;
-  if (!canvas) return;
+  if (!canvas) return false;
 
   const doc = canvas.getDocument();
-  if (!doc) return;
+  if (!doc) return false;
 
   // Check CSS and JS independently — canvas.styles may have loaded CSS
   // already, but we still need to inject the JS module script.
@@ -116,7 +116,7 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
 
   if (cssLoaded && jsLoaded) {
     debug('USWDS resources already loaded in this canvas');
-    return;
+    return false;
   }
 
   // If CSS link exists but stylesheet not loaded, remove stale links
@@ -148,7 +148,7 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
 
       if (signal?.aborted) {
         debug('loadUSWDSResources aborted after CSS load');
-        return;
+        return false;
       }
     } else {
       debug('CSS already loaded (via canvas.styles), skipping CSS injection');
@@ -165,7 +165,7 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
 
       if (signal?.aborted) {
         debug('loadUSWDSResources aborted after JS load');
-        return;
+        return false;
       }
     } else {
       debug('JS already loaded, skipping JS injection');
@@ -183,29 +183,27 @@ export async function loadUSWDSResources(editor: EditorInstance, signal?: AbortS
       await waitForCustomElements(iframeWindow, criticalElements, 5000, signal);
     }
 
-    // Final abort check before refresh
+    // Final abort check
     if (signal?.aborted) {
-      debug('loadUSWDSResources aborted before refresh');
-      return;
+      debug('loadUSWDSResources aborted before completion');
+      return false;
     }
 
     debug('All USWDS resources loaded successfully');
 
-    // 4. Trigger a canvas refresh
-    setTimeout(() => {
-      if (!signal?.aborted) {
-        editor.refresh();
-        debug('Canvas refreshed after resource load');
-      }
-    }, 100);
+    // Callers that need a canvas refresh should call editor.refresh() themselves.
+    // The deferred setTimeout(refresh) was removed because it fired outside the
+    // calling context and caused canvas wipes during save extraction.
+    return true;
 
   } catch (err) {
     // Don't log abort errors as they're expected during page switching
     if (err instanceof DOMException && err.name === 'AbortError') {
       debug('loadUSWDSResources aborted');
-      return;
+      return false;
     }
     debug('Error loading resources:', err);
+    return false;
   }
 }
 

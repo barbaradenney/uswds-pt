@@ -19,7 +19,7 @@ import {
   updatePrototype as updateLocalPrototype,
   type LocalPrototype,
 } from '../lib/localStorage';
-import { isEditorReadyForExtraction, extractPerPageHtml } from '../lib/grapesjs/data-extractor';
+import { isEditorReadyForExtraction, extractEditorData } from '../lib/grapesjs/data-extractor';
 import { loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
@@ -193,25 +193,17 @@ export function useEditorPersistence({
       debug(`Save started (${type})`);
 
       try {
-        // Extract data from GrapesJS API
-        const rawGrapesData = editor.getProjectData();
-        const currentHtml = editor.getHtml() || htmlContent;
-
-        // For multi-page prototypes, extract per-page HTML so Preview can
-        // render pages reliably without reconstructing from the component tree.
-        // The isExtractingPerPageHtml flag suppresses page:select side effects
-        // (resource loading, canvas refresh) during the brief page cycling.
-        try {
-          extractPerPageHtml(editor, rawGrapesData);
-        } catch (err) {
-          debug('Per-page HTML extraction failed (non-critical):', err);
+        // Extract HTML, project data, and per-page HTML in one consolidated call.
+        // extractEditorData handles fallback extraction, normalization, and
+        // per-page HTML extraction (for multi-page preview) internally.
+        const { html: currentHtml, projectData: rawGrapesData, warnings } = extractEditorData(editor, htmlContent);
+        if (warnings.length > 0) {
+          debug('Extraction warnings:', warnings);
         }
 
         // Ensure USWDS resources are loaded in the canvas after page cycling.
-        // extractPerPageHtml selects each page to get its HTML, which can
-        // trigger canvas:frame:load events. Those events are suppressed
-        // during extraction to avoid stale editor.refresh() calls, but the
-        // restored page's frame may have lost its injected CSS/JS.
+        // extractEditorData may cycle pages for per-page HTML extraction,
+        // which can cause the restored page's frame to lose injected CSS/JS.
         loadUSWDSResources(editor).catch((err) => {
           debug('Post-save resource reload failed (non-critical):', err);
         });

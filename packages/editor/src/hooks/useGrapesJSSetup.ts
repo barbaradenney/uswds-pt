@@ -1482,8 +1482,11 @@ function setupProactiveIdAssignment(
   // Assign IDs after project data is loaded
   registerListener(editor, 'load', scheduleIdProcessing);
 
-  // Also run when canvas frame loads (catches page switches and initial render)
-  registerListener(editor, 'canvas:frame:load', scheduleIdProcessing);
+  // Also run when canvas frame loads (catches page switches and initial render).
+  // Skip during per-page HTML extraction to avoid interfering with save flow.
+  registerListener(editor, 'canvas:frame:load', () => {
+    if (!isExtractingPerPageHtml()) scheduleIdProcessing();
+  });
 
   // Run when page is selected (in case components were loaded from another page)
   registerListener(editor, 'page:select', scheduleIdProcessing);

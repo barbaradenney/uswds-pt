@@ -122,12 +122,14 @@ const validTransitions: Record<EditorStatus, EditorAction['type'][]> = {
   initializing_editor: [
     'EDITOR_READY',
     'LOAD_PROTOTYPE',  // Safety net: allow re-loading if needed
+    'CONTENT_CHANGED',  // GrapesJS fires component changes during init
     'RESET',
   ],
   ready: [
     'LOAD_PROTOTYPE',
     'SAVE_START',
     'PAGE_SWITCH_START',
+    'PAGE_SWITCH_COMPLETE',  // Abort-cleanup safety net (already ready, no-op)
     'RESTORE_VERSION_START',
     'CONTENT_CHANGED',
     'MARK_CLEAN',

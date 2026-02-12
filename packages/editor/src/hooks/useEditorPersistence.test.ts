@@ -40,8 +40,10 @@ vi.mock('../lib/localStorage', () => ({
 
 // Mock data extractor
 const mockIsEditorReadyForExtraction = vi.fn();
+const mockExtractEditorData = vi.fn();
 vi.mock('../lib/grapesjs/data-extractor', () => ({
   isEditorReadyForExtraction: (...args: unknown[]) => mockIsEditorReadyForExtraction(...args),
+  extractEditorData: (...args: unknown[]) => mockExtractEditorData(...args),
 }));
 
 // Mock adapter
@@ -146,6 +148,14 @@ describe('useEditorPersistence', () => {
     });
 
     mockIsEditorReadyForExtraction.mockReturnValue(true);
+
+    // Default extractEditorData mock — returns mock HTML and project data
+    mockExtractEditorData.mockImplementation((editor: any, fallbackHtml: string) => ({
+      html: editor?.getHtml?.() || fallbackHtml || '<div>test</div>',
+      projectData: editor?.getProjectData?.() || { pages: [], styles: [], assets: [] },
+      warnings: [],
+      success: true,
+    }));
   });
 
   afterEach(() => {

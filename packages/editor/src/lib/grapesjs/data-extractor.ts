@@ -318,6 +318,18 @@ export function extractPerPageHtml(editor: EditorInstance, projectData: GrapesPr
     }
     _extractingPerPageHtml = false;
   }
+
+  // Post-extraction validation: verify the correct page is selected.
+  // If editor.Pages.select(currentPage) silently failed, the canvas
+  // would show the wrong page after save.
+  const restoredPage = editor.Pages?.getSelected?.();
+  const restoredId = restoredPage?.getId?.() || restoredPage?.id;
+  const expectedId = currentPage?.getId?.() || currentPage?.id;
+  if (expectedId && restoredId !== expectedId) {
+    // eslint-disable-next-line no-console
+    console.warn('[DataExtractor] Page restore failed, forcing re-select');
+    editor.Pages?.select?.(currentPage);
+  }
 }
 
 /**
