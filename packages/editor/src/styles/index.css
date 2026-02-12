@@ -241,7 +241,7 @@ body {
   white-space: nowrap;
 }
 
-/* Status area — sits on the left side after name + undo/redo */
+/* Status area — sits on the left side between name and undo/redo */
 .editor-header-status-area {
   display: flex;
   align-items: center;

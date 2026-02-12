@@ -171,30 +171,7 @@ export const EditorHeader = memo(function EditorHeader({
         <span className="editor-title">
           {name || 'Untitled Prototype'}
         </span>
-        {/* Undo/Redo */}
-        {onUndo && (
-          <div className="editor-header-undo-redo">
-            <button
-              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
-              onClick={onUndo}
-              disabled={!canUndo}
-              aria-label="Undo"
-              title={`Undo (${mod}+Z)`}
-            >
-              ↩
-            </button>
-            <button
-              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
-              onClick={onRedo}
-              disabled={!canRedo}
-              aria-label="Redo"
-              title={`Redo (${mod}+Shift+Z)`}
-            >
-              ↪
-            </button>
-          </div>
-        )}
-        {/* Status area — left-aligned after name + undo/redo */}
+        {/* Status area — left-aligned before undo/redo */}
         <div className="editor-header-status-area" aria-live="polite">
           {lastPushResult && (
             <span className="push-success" role="status">
@@ -236,6 +213,29 @@ export const EditorHeader = memo(function EditorHeader({
             </div>
           )}
         </div>
+        {/* Undo/Redo */}
+        {onUndo && (
+          <div className="editor-header-undo-redo">
+            <button
+              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
+              onClick={onUndo}
+              disabled={!canUndo}
+              aria-label="Undo"
+              title={`Undo (${mod}+Z)`}
+            >
+              ↩
+            </button>
+            <button
+              className="btn btn-secondary editor-header-btn editor-header-btn--icon"
+              onClick={onRedo}
+              disabled={!canRedo}
+              aria-label="Redo"
+              title={`Redo (${mod}+Shift+Z)`}
+            >
+              ↪
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="editor-header-right">
