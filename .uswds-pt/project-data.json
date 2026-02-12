@@ -1,0 +1,2094 @@
+{
+  "pages": [
+    {
+      "id": "6KYOI2YsrLMTslnG",
+      "name": "Prototype",
+      "frames": [
+        {
+          "id": "FvrwzcBgnl0tzAOS",
+          "component": {
+            "head": {
+              "type": "head"
+            },
+            "type": "wrapper",
+            "docEl": {
+              "tagName": "html"
+            },
+            "stylable": [
+              "background",
+              "background-color",
+              "background-image",
+              "background-repeat",
+              "background-attachment",
+              "background-position",
+              "background-size"
+            ],
+            "components": [
+              {
+                "classes": [
+                  "form-starter-template"
+                ],
+                "attributes": {
+                  "data-template": "form"
+                },
+                "components": [
+                  {
+                    "type": "usa-banner",
+                    "attributes": {
+                      "expanded": false,
+                      "action-text": "Here's how you know",
+                      "header-text": "An official website of the United States government"
+                    }
+                  },
+                  {
+                    "type": "usa-header",
+                    "attributes": {
+                      "extended": false,
+                      "logo-href": "/",
+                      "logo-text": "Agency Name",
+                      "nav-count": "2",
+                      "nav1-href": "#",
+                      "nav2-href": "#",
+                      "nav3-href": "#",
+                      "nav4-href": "#",
+                      "nav5-href": "#",
+                      "nav6-href": "#",
+                      "sec-count": "0",
+                      "sec1-href": "#",
+                      "sec2-href": "#",
+                      "sec3-href": "#",
+                      "sec4-href": "#",
+                      "nav1-label": "Home",
+                      "nav2-label": "Help",
+                      "nav3-label": "Link 3",
+                      "nav4-label": "Link 4",
+                      "nav5-label": "Link 5",
+                      "nav6-label": "Link 6",
+                      "sec1-label": "Link 1",
+                      "sec2-label": "Link 2",
+                      "sec3-label": "Link 3",
+                      "sec4-label": "Link 4",
+                      "show-search": false,
+                      "nav1-current": false,
+                      "nav2-current": false,
+                      "nav3-current": false,
+                      "nav4-current": false,
+                      "nav5-current": false,
+                      "nav6-current": false,
+                      "logo-image-alt": "",
+                      "logo-image-src": "",
+                      "show-skip-link": "true",
+                      "skip-link-href": "#main-content",
+                      "skip-link-text": "Skip to main content",
+                      "search-placeholder": "Search"
+                    }
+                  },
+                  {
+                    "type": "grid-container",
+                    "classes": [
+                      "grid-container"
+                    ],
+                    "tagName": "main",
+                    "attributes": {
+                      "id": "main-content"
+                    },
+                    "components": [
+                      {
+                        "attributes": {
+                          "id": "i06k"
+                        },
+                        "components": [
+                          {
+                            "type": "heading-block",
+                            "tagName": "h1",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Form Title"
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "heading-level": "h1",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-intro"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Brief instructions for completing this form."
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "form",
+                            "attributes": {
+                              "id": "",
+                              "name": "",
+                              "action": "#",
+                              "method": "post",
+                              "novalidate": true
+                            },
+                            "components": [
+                              {
+                                "type": "fieldset",
+                                "classes": [
+                                  "usa-fieldset"
+                                ],
+                                "attributes": {
+                                  "id": "imwwr",
+                                  "hint": "",
+                                  "count": "3",
+                                  "legend": "Group Label",
+                                  "required": false
+                                },
+                                "components": [
+                                  {
+                                    "type": "text",
+                                    "classes": [
+                                      "usa-legend",
+                                      "usa-legend--large"
+                                    ],
+                                    "tagName": "legend",
+                                    "components": [
+                                      {
+                                        "type": "textnode",
+                                        "content": "Section Title"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "usa-button",
+                                "attributes": {
+                                  "href": "",
+                                  "size": "default",
+                                  "text": "Submit",
+                                  "variant": "default",
+                                  "disabled": false,
+                                  "link-type": "none",
+                                  "page-link": ""
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "usa-footer",
+                    "attributes": {
+                      "variant": "slim",
+                      "logo-alt": "",
+                      "logo-src": "",
+                      "agency-url": "#",
+                      "agency-name": "Agency Name",
+                      "contact-email": "",
+                      "contact-phone": "",
+                      "section-count": "3",
+                      "section1-title": "Section 1",
+                      "section2-title": "Section 2",
+                      "section3-title": "Section 3",
+                      "section4-title": "Section 4",
+                      "section1-link1-href": "#",
+                      "section1-link2-href": "#",
+                      "section1-link3-href": "#",
+                      "section1-link4-href": "#",
+                      "section2-link1-href": "#",
+                      "section2-link2-href": "#",
+                      "section2-link3-href": "#",
+                      "section2-link4-href": "#",
+                      "section3-link1-href": "#",
+                      "section3-link2-href": "#",
+                      "section3-link3-href": "#",
+                      "section3-link4-href": "#",
+                      "section4-link1-href": "#",
+                      "section4-link2-href": "#",
+                      "section4-link3-href": "#",
+                      "section4-link4-href": "#",
+                      "section1-link1-label": "Link 1",
+                      "section1-link2-label": "",
+                      "section1-link3-label": "",
+                      "section1-link4-label": "",
+                      "section2-link1-label": "Link 1",
+                      "section2-link2-label": "",
+                      "section2-link3-label": "",
+                      "section2-link4-label": "",
+                      "section3-link1-label": "Link 1",
+                      "section3-link2-label": "",
+                      "section3-link3-label": "",
+                      "section3-link4-label": "",
+                      "section4-link1-label": "Link 1",
+                      "section4-link2-label": "",
+                      "section4-link3-label": "",
+                      "section4-link4-label": ""
+                    }
+                  },
+                  {
+                    "type": "usa-identifier",
+                    "attributes": {
+                      "domain": "agency.gov",
+                      "show-logos": true,
+                      "parent-agency": "Department of Example",
+                      "masthead-logo-alt": "",
+                      "parent-agency-href": "#",
+                      "show-required-links": true
+                    }
+                  }
+                ]
+              },
+              {
+                "attributes": {
+                  "id": "i3vsz"
+                },
+                "components": [
+                  {
+                    "type": "usa-step-indicator",
+                    "attributes": {
+                      "small": false,
+                      "centered": false,
+                      "counters": "none",
+                      "step-count": "4",
+                      "show-labels": true,
+                      "step1-label": "Personal Info",
+                      "step2-label": "Service History",
+                      "step3-label": "Request Details",
+                      "step4-label": "Review & Submit",
+                      "step5-label": "Step 5",
+                      "step6-label": "Step 6",
+                      "step1-status": "current",
+                      "step2-status": "incomplete",
+                      "step3-status": "incomplete",
+                      "step4-status": "incomplete",
+                      "step5-status": "incomplete",
+                      "step6-status": "incomplete"
+                    }
+                  },
+                  {
+                    "type": "heading-block",
+                    "tagName": "h1",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Request for Military Records"
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "heading-level": "h1",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "text-block",
+                    "classes": [
+                      "usa-intro"
+                    ],
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Standard Form 180 - Request Pertaining to Military Records. We'll help you request information from military service records."
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "form",
+                    "attributes": {
+                      "id": "",
+                      "name": "",
+                      "action": "#",
+                      "method": "post",
+                      "novalidate": true
+                    },
+                    "components": [
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Information needed to locate records"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-hint"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Provide as much information as possible to help us locate the correct records."
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "usa-name-pattern",
+                            "attributes": {
+                              "legend": "Name used during military service",
+                              "show-middle": "true",
+                              "show-suffix": true
+                            }
+                          },
+                          {
+                            "type": "usa-ssn-pattern",
+                            "attributes": {
+                              "legend": "Social Security Number",
+                              "alert-text": "We use your Social Security Number to verify your identity. Your information is protected and encrypted.",
+                              "show-alert": true,
+                              "alert-heading": "Why we need this"
+                            }
+                          },
+                          {
+                            "type": "usa-date-of-birth-pattern",
+                            "attributes": {
+                              "hint": "For example: January 19, 2000",
+                              "legend": "Date of birth"
+                            }
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input",
+                              "hint": "City and state",
+                              "name": "placeOfBirth",
+                              "type": "text",
+                              "error": false,
+                              "label": "Place of birth",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-1",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Current status questions"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "deceased",
+                              "tile": false,
+                              "error": false,
+                              "label": "No",
+                              "value": "no",
+                              "checked": "",
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "deceased",
+                              "tile": false,
+                              "error": false,
+                              "label": "Yes",
+                              "value": "yes",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-legend"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Is this person deceased?"
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "retired",
+                              "tile": false,
+                              "error": false,
+                              "label": "No",
+                              "value": "no",
+                              "checked": "",
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "retired",
+                              "tile": false,
+                              "error": false,
+                              "label": "Yes",
+                              "value": "yes",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-legend"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Did this person retire from military service?"
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "vaClaim",
+                              "tile": false,
+                              "error": false,
+                              "label": "No",
+                              "value": "no",
+                              "checked": "",
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "vaClaim",
+                              "tile": false,
+                              "error": false,
+                              "label": "Yes",
+                              "value": "yes",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-legend"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Has this person filed a claim with the VA?"
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          }
+                        ]
+                      },
+                      {
+                        "classes": [
+                          "margin-top-4"
+                        ],
+                        "components": [
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Continue",
+                              "variant": "default",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Service History"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "comment",
+                "content": " PAGE: Service History "
+              },
+              {
+                "attributes": {
+                  "id": "iml4l"
+                },
+                "components": [
+                  {
+                    "type": "usa-step-indicator",
+                    "attributes": {
+                      "small": false,
+                      "centered": false,
+                      "counters": "none",
+                      "step-count": "4",
+                      "show-labels": true,
+                      "step1-label": "Personal Info",
+                      "step2-label": "Service History",
+                      "step3-label": "Request Details",
+                      "step4-label": "Review & Submit",
+                      "step5-label": "Step 5",
+                      "step6-label": "Step 6",
+                      "step1-status": "complete",
+                      "step2-status": "current",
+                      "step3-status": "incomplete",
+                      "step4-status": "incomplete",
+                      "step5-status": "incomplete",
+                      "step6-status": "incomplete"
+                    }
+                  },
+                  {
+                    "type": "heading-block",
+                    "tagName": "h1",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Service history"
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "heading-level": "h1",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "text-block",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Please provide information about military service. Include all service periods (active duty, reserve, and National Guard)."
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "form",
+                    "attributes": {
+                      "id": "",
+                      "name": "",
+                      "action": "#",
+                      "method": "post",
+                      "novalidate": true
+                    },
+                    "components": [
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-4",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Service information"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-select",
+                            "attributes": {
+                              "id": "usa-select",
+                              "hint": "",
+                              "name": "branch",
+                              "error": false,
+                              "label": "Branch of service",
+                              "success": false,
+                              "disabled": false,
+                              "required": "",
+                              "option-count": "3",
+                              "error-message": "",
+                              "option1-label": "Option 1",
+                              "option1-value": "option1",
+                              "option2-label": "Option 2",
+                              "option2-value": "option2",
+                              "option3-label": "Option 3",
+                              "option3-value": "option3",
+                              "option4-label": "Option 4",
+                              "option4-value": "option4",
+                              "option5-label": "Option 5",
+                              "option5-value": "option5",
+                              "option6-label": "Option 6",
+                              "option6-value": "option6",
+                              "option7-label": "Option 7",
+                              "option7-value": "option7",
+                              "option8-label": "Option 8",
+                              "option8-value": "option8",
+                              "option9-label": "Option 9",
+                              "option9-value": "option9",
+                              "option10-label": "Option 10",
+                              "option10-value": "option10",
+                              "options-preset": "manual"
+                            },
+                            "components": [
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": ""
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Select branch"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "army"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Army"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "navy"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Navy"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "air-force"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Air Force"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "marines"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Marine Corps"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "coast-guard"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Coast Guard"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "space-force"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Space Force"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "grid-row",
+                            "classes": [
+                              "grid-row",
+                              "grid-gap"
+                            ],
+                            "components": [
+                              {
+                                "type": "grid-col",
+                                "classes": [
+                                  "grid-col-12",
+                                  "tablet:grid-col-6"
+                                ],
+                                "components": [
+                                  {
+                                    "type": "usa-date-picker",
+                                    "attributes": {
+                                      "id": "usa-date-picker",
+                                      "hint": "",
+                                      "name": "dateEntered",
+                                      "error": false,
+                                      "label": "Date entered service",
+                                      "disabled": false,
+                                      "max-date": "",
+                                      "min-date": "",
+                                      "required": "",
+                                      "error-message": ""
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "grid-col",
+                                "classes": [
+                                  "grid-col-12",
+                                  "tablet:grid-col-6"
+                                ],
+                                "components": [
+                                  {
+                                    "type": "usa-date-picker",
+                                    "attributes": {
+                                      "id": "usa-date-picker-1",
+                                      "hint": "",
+                                      "name": "dateReleased",
+                                      "error": false,
+                                      "label": "Date released from service",
+                                      "disabled": false,
+                                      "max-date": "",
+                                      "min-date": "",
+                                      "required": false,
+                                      "error-message": ""
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "fieldset",
+                            "classes": [
+                              "usa-fieldset"
+                            ],
+                            "attributes": {
+                              "id": "fieldset-2",
+                              "hint": "",
+                              "count": "3",
+                              "legend": "Group Label",
+                              "required": false
+                            },
+                            "components": [
+                              {
+                                "type": "text",
+                                "classes": [
+                                  "usa-legend"
+                                ],
+                                "tagName": "legend",
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Service type"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "usa-radio",
+                                "attributes": {
+                                  "id": "",
+                                  "hint": "",
+                                  "name": "serviceType",
+                                  "tile": false,
+                                  "error": false,
+                                  "label": "Active",
+                                  "value": "active",
+                                  "checked": false,
+                                  "disabled": false,
+                                  "required": false,
+                                  "data-hides": "none",
+                                  "data-reveals": "none",
+                                  "error-message": ""
+                                }
+                              },
+                              {
+                                "type": "usa-radio",
+                                "attributes": {
+                                  "id": "",
+                                  "hint": "",
+                                  "name": "serviceType",
+                                  "tile": false,
+                                  "error": false,
+                                  "label": "Reserve",
+                                  "value": "reserve",
+                                  "checked": false,
+                                  "disabled": false,
+                                  "required": false,
+                                  "data-hides": "none",
+                                  "data-reveals": "none",
+                                  "error-message": ""
+                                }
+                              },
+                              {
+                                "type": "usa-radio",
+                                "attributes": {
+                                  "id": "",
+                                  "hint": "",
+                                  "name": "serviceType",
+                                  "tile": false,
+                                  "error": false,
+                                  "label": "National Guard",
+                                  "value": "guard",
+                                  "checked": false,
+                                  "disabled": false,
+                                  "required": false,
+                                  "data-hides": "none",
+                                  "data-reveals": "none",
+                                  "error-message": ""
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "fieldset",
+                            "classes": [
+                              "usa-fieldset"
+                            ],
+                            "attributes": {
+                              "id": "fieldset-3",
+                              "hint": "",
+                              "count": "3",
+                              "legend": "Group Label",
+                              "required": false
+                            },
+                            "components": [
+                              {
+                                "type": "text",
+                                "classes": [
+                                  "usa-legend"
+                                ],
+                                "tagName": "legend",
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Service member type"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "usa-radio",
+                                "attributes": {
+                                  "id": "",
+                                  "hint": "",
+                                  "name": "memberType",
+                                  "tile": false,
+                                  "error": false,
+                                  "label": "Officer",
+                                  "value": "officer",
+                                  "checked": false,
+                                  "disabled": false,
+                                  "required": false,
+                                  "data-hides": "none",
+                                  "data-reveals": "none",
+                                  "error-message": ""
+                                }
+                              },
+                              {
+                                "type": "usa-radio",
+                                "attributes": {
+                                  "id": "",
+                                  "hint": "",
+                                  "name": "memberType",
+                                  "tile": false,
+                                  "error": false,
+                                  "label": "Enlisted",
+                                  "value": "enlisted",
+                                  "checked": false,
+                                  "disabled": false,
+                                  "required": false,
+                                  "data-hides": "none",
+                                  "data-reveals": "none",
+                                  "error-message": ""
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-1",
+                              "hint": "If unknown, write 'unknown'",
+                              "name": "serviceNumber",
+                              "type": "text",
+                              "error": false,
+                              "label": "Service number",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-2",
+                              "hint": "If unknown, write 'unknown'",
+                              "name": "dodId",
+                              "type": "text",
+                              "error": false,
+                              "label": "DOD ID/EDIPI number",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-3",
+                              "hint": "",
+                              "name": "lastDutyStation",
+                              "type": "text",
+                              "error": false,
+                              "label": "Last duty station(s)",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "classes": [
+                          "margin-top-4"
+                        ],
+                        "components": [
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Back",
+                              "variant": "outline",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Personal Information"
+                            }
+                          },
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Continue",
+                              "variant": "default",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Request Details"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "comment",
+                "content": " PAGE: Request Details "
+              },
+              {
+                "attributes": {
+                  "id": "izamsz"
+                },
+                "components": [
+                  {
+                    "type": "usa-step-indicator",
+                    "attributes": {
+                      "small": false,
+                      "centered": false,
+                      "counters": "none",
+                      "step-count": "4",
+                      "show-labels": true,
+                      "step1-label": "Personal Info",
+                      "step2-label": "Service History",
+                      "step3-label": "Request Details",
+                      "step4-label": "Review & Submit",
+                      "step5-label": "Step 5",
+                      "step6-label": "Step 6",
+                      "step1-status": "complete",
+                      "step2-status": "complete",
+                      "step3-status": "current",
+                      "step4-status": "incomplete",
+                      "step5-status": "incomplete",
+                      "step6-status": "incomplete"
+                    }
+                  },
+                  {
+                    "type": "heading-block",
+                    "tagName": "h1",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "What information do you need?"
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "heading-level": "h1",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "text-block",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Select the documents or information you're requesting from the military records."
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "form",
+                    "attributes": {
+                      "id": "",
+                      "name": "",
+                      "action": "#",
+                      "method": "post",
+                      "novalidate": true
+                    },
+                    "components": [
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-5",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Documents requested"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-hint"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Check all that apply."
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "usa-checkbox",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "dd214",
+                              "tile": "",
+                              "error": false,
+                              "label": "DD Form 214 or equivalent (Certificate of Release or Discharge)",
+                              "value": "on",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-checkbox",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "ompf",
+                              "tile": "",
+                              "error": false,
+                              "label": "Official Military Personnel File (OMPF)",
+                              "value": "on",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-checkbox",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "medical",
+                              "tile": "",
+                              "error": false,
+                              "label": "Medical Records",
+                              "value": "on",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-checkbox",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "dental",
+                              "tile": "",
+                              "error": false,
+                              "label": "Dental Records only",
+                              "value": "on",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-4",
+                              "hint": "",
+                              "name": "otherRecords",
+                              "type": "text",
+                              "error": false,
+                              "label": "Other records (please specify)",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-6",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Purpose of request"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "text-block",
+                            "classes": [
+                              "usa-hint"
+                            ],
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "This helps us provide the best response."
+                              }
+                            ],
+                            "font-style": "",
+                            "font-weight": "",
+                            "top-spacing": "",
+                            "bottom-spacing": "",
+                            "text-decoration": ""
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Benefits",
+                              "value": "benefits",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Employment",
+                              "value": "employment",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "VA Loan Programs",
+                              "value": "va-loan",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Medical",
+                              "value": "medical",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Genealogy",
+                              "value": "genealogy",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Correction",
+                              "value": "correction",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Personal",
+                              "value": "personal",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-radio",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "purpose",
+                              "tile": "",
+                              "error": false,
+                              "label": "Other",
+                              "value": "other",
+                              "checked": false,
+                              "disabled": false,
+                              "required": false,
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-textarea",
+                            "attributes": {
+                              "id": "usa-textarea",
+                              "hint": "This may help us provide a faster and more complete response",
+                              "name": "purposeExplanation",
+                              "rows": 5,
+                              "error": false,
+                              "label": "Please explain the purpose of your request",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": false,
+                              "error-message": ""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "classes": [
+                          "margin-top-4"
+                        ],
+                        "components": [
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Back",
+                              "variant": "outline",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Service History"
+                            }
+                          },
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Continue",
+                              "variant": "default",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Review & Submit"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "comment",
+                "content": " PAGE: Review & Submit "
+              },
+              {
+                "attributes": {
+                  "id": "ivekab"
+                },
+                "components": [
+                  {
+                    "type": "usa-step-indicator",
+                    "attributes": {
+                      "small": false,
+                      "centered": false,
+                      "counters": "none",
+                      "step-count": "4",
+                      "show-labels": true,
+                      "step1-label": "Personal Info",
+                      "step2-label": "Service History",
+                      "step3-label": "Request Details",
+                      "step4-label": "Review & Submit",
+                      "step5-label": "Step 5",
+                      "step6-label": "Step 6",
+                      "step1-status": "complete",
+                      "step2-status": "complete",
+                      "step3-status": "complete",
+                      "step4-status": "current",
+                      "step5-status": "incomplete",
+                      "step6-status": "incomplete"
+                    }
+                  },
+                  {
+                    "type": "heading-block",
+                    "tagName": "h1",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Review and submit your request"
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "heading-level": "h1",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "text-block",
+                    "components": [
+                      {
+                        "type": "textnode",
+                        "content": "Please review your information before submitting your SF 180 request."
+                      }
+                    ],
+                    "font-style": "",
+                    "font-weight": "",
+                    "top-spacing": "",
+                    "bottom-spacing": "",
+                    "text-decoration": ""
+                  },
+                  {
+                    "type": "usa-accordion",
+                    "attributes": {
+                      "id": "usa-accordion",
+                      "bordered": "",
+                      "section-count": "4",
+                      "section1-title": "Personal Information",
+                      "section2-title": "Service History",
+                      "section3-title": "Request Details",
+                      "section4-title": "Contact Information",
+                      "section5-title": "Section 5",
+                      "section6-title": "Section 6",
+                      "multiselectable": false,
+                      "section1-content": "Name: [Entered name] | Social Security: [Entered SSN] | Date of birth: [Entered date] | Place of birth: [Entered location]",
+                      "section2-content": "Branch: [Selected branch] | Service dates: [Entered dates] | Service type: [Selected type] | Last duty station: [Entered station]",
+                      "section3-content": "Documents: [Selected documents] | Purpose: [Selected purpose and explanation]",
+                      "section4-content": "Requester: [To be filled] | Relationship: [To be selected] | Mailing address: [To be provided]",
+                      "section5-content": "Content for section 5",
+                      "section6-content": "Content for section 6",
+                      "section1-expanded": true,
+                      "section2-expanded": false,
+                      "section3-expanded": false,
+                      "section4-expanded": false,
+                      "section5-expanded": false,
+                      "section6-expanded": false
+                    }
+                  },
+                  {
+                    "type": "form",
+                    "attributes": {
+                      "id": "",
+                      "name": "",
+                      "action": "#",
+                      "method": "post",
+                      "novalidate": true
+                    },
+                    "components": [
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-7",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Requester information"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-5",
+                              "hint": "",
+                              "name": "requesterName",
+                              "type": "text",
+                              "error": false,
+                              "label": "Your full name",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": "",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-select",
+                            "attributes": {
+                              "id": "usa-select-1",
+                              "hint": "",
+                              "name": "relationship",
+                              "error": false,
+                              "label": "Your relationship to the service member/veteran",
+                              "success": false,
+                              "disabled": false,
+                              "required": "",
+                              "option-count": "3",
+                              "error-message": "",
+                              "option1-label": "Option 1",
+                              "option1-value": "option1",
+                              "option2-label": "Option 2",
+                              "option2-value": "option2",
+                              "option3-label": "Option 3",
+                              "option3-value": "option3",
+                              "option4-label": "Option 4",
+                              "option4-value": "option4",
+                              "option5-label": "Option 5",
+                              "option5-value": "option5",
+                              "option6-label": "Option 6",
+                              "option6-value": "option6",
+                              "option7-label": "Option 7",
+                              "option7-value": "option7",
+                              "option8-label": "Option 8",
+                              "option8-value": "option8",
+                              "option9-label": "Option 9",
+                              "option9-value": "option9",
+                              "option10-label": "Option 10",
+                              "option10-value": "option10",
+                              "options-preset": "manual"
+                            },
+                            "components": [
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": ""
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Select relationship"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "self"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "I am the military service member or veteran"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "next-of-kin"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "I am the deceased veteran's next-of-kin"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "legal-guardian"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "I am the veteran's legal guardian"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "authorized-rep"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "I am an authorized representative"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "text",
+                                "tagName": "option",
+                                "attributes": {
+                                  "value": "other"
+                                },
+                                "components": [
+                                  {
+                                    "type": "textnode",
+                                    "content": "Other"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-address-pattern",
+                            "attributes": {
+                              "legend": "Where should we send the records?",
+                              "show-address-2": "true"
+                            }
+                          },
+                          {
+                            "type": "usa-phone-number-pattern",
+                            "attributes": {
+                              "legend": "Phone number",
+                              "show-phone-type": "false"
+                            }
+                          },
+                          {
+                            "type": "usa-email-address-pattern",
+                            "attributes": {
+                              "legend": "Email address",
+                              "show-confirm": "false"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "fieldset",
+                        "classes": [
+                          "usa-fieldset",
+                          "margin-bottom-4"
+                        ],
+                        "attributes": {
+                          "id": "fieldset-8",
+                          "hint": "",
+                          "count": "3",
+                          "legend": "Group Label",
+                          "required": false
+                        },
+                        "components": [
+                          {
+                            "type": "text",
+                            "classes": [
+                              "usa-legend",
+                              "usa-legend--large"
+                            ],
+                            "tagName": "legend",
+                            "components": [
+                              {
+                                "type": "textnode",
+                                "content": "Authorization"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "usa-alert",
+                            "attributes": {
+                              "id": "usa-alert",
+                              "slim": false,
+                              "text": "Your signature authorizes the release of the requested military records information.",
+                              "heading": "Signature required",
+                              "no-icon": false,
+                              "variant": "info"
+                            }
+                          },
+                          {
+                            "type": "usa-checkbox",
+                            "attributes": {
+                              "id": "",
+                              "hint": "",
+                              "name": "authorization",
+                              "tile": false,
+                              "error": false,
+                              "label": "I declare under penalty of perjury under the laws of the United States that the information in this request is true and correct, and I authorize the release of the requested information.",
+                              "value": "on",
+                              "checked": false,
+                              "disabled": false,
+                              "required": "",
+                              "data-hides": "none",
+                              "data-reveals": "none",
+                              "error-message": ""
+                            }
+                          },
+                          {
+                            "type": "usa-text-input",
+                            "attributes": {
+                              "id": "usa-text-input-6",
+                              "hint": "This serves as your legal signature on this request",
+                              "name": "signature",
+                              "type": "text",
+                              "error": false,
+                              "label": "Type your full name as signature",
+                              "width": "",
+                              "success": false,
+                              "disabled": false,
+                              "readonly": false,
+                              "required": "",
+                              "error-message": ""
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "classes": [
+                          "margin-top-4"
+                        ],
+                        "components": [
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Back",
+                              "variant": "outline",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": "Request Details"
+                            }
+                          },
+                          {
+                            "type": "usa-button",
+                            "attributes": {
+                              "href": "",
+                              "size": "default",
+                              "text": "Submit SF 180 Request",
+                              "variant": "default",
+                              "disabled": false,
+                              "link-type": "none",
+                              "page-link": ""
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "styles": [
+    {
+      "style": {
+        "border": "none",
+        "margin": "0 0 2rem",
+        "padding": "0"
+      },
+      "selectors": [
+        "#imwwr"
+      ]
+    },
+    {
+      "style": {
+        "margin-top": "2rem"
+      },
+      "selectors": [
+        "#if56z"
+      ]
+    },
+    {
+      "style": {
+        "max-width": "40rem"
+      },
+      "selectors": [
+        "#i06k"
+      ]
+    },
+    {
+      "style": {
+        "padding": "2rem 0"
+      },
+      "selectors": [
+        "#main-content"
+      ]
+    },
+    {
+      "style": {
+        "margin-top": "2rem"
+      },
+      "selectors": [
+        "#iony4"
+      ]
+    },
+    {
+      "style": {
+        "max-width": "40rem"
+      },
+      "selectors": [
+        "#i3vsz"
+      ]
+    },
+    {
+      "style": {
+        "margin-top": "2rem"
+      },
+      "selectors": [
+        "#iojvq"
+      ]
+    },
+    {
+      "style": {
+        "max-width": "40rem"
+      },
+      "selectors": [
+        "#iml4l"
+      ]
+    },
+    {
+      "style": {
+        "margin-top": "2rem"
+      },
+      "selectors": [
+        "#iplwo7"
+      ]
+    },
+    {
+      "style": {
+        "max-width": "40rem"
+      },
+      "selectors": [
+        "#izamsz"
+      ]
+    },
+    {
+      "style": {
+        "margin-top": "2rem"
+      },
+      "selectors": [
+        "#iwy4xl"
+      ]
+    },
+    {
+      "style": {
+        "max-width": "40rem"
+      },
+      "selectors": [
+        "#ivekab"
+      ]
+    }
+  ],
+  "symbols": [],
+  "dataSources": []
+}
