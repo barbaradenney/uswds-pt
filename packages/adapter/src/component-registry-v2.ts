@@ -30,6 +30,7 @@ import { registerDataComponents } from './components/data-components.js';
 import { registerFeedbackComponents } from './components/feedback-components.js';
 import { registerLayoutComponents } from './components/layout-components.js';
 import { registerNavigationComponents } from './components/navigation-components.js';
+import { registerPatternComponents } from './components/pattern-components.js';
 
 // Re-export types for external use
 export type { TraitHandler, UnifiedTrait, ComponentRegistration, RetryConfig };
@@ -149,3 +150,6 @@ registerLayoutComponents(componentRegistry);
 // Navigation: header, footer, in-page-navigation, language-selector,
 // character-count, memorable-date
 registerNavigationComponents(componentRegistry);
+
+// Form Patterns: name, address, phone, email, date-of-birth, ssn
+registerPatternComponents(componentRegistry);

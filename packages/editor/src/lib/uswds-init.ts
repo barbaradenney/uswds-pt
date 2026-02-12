@@ -7,6 +7,7 @@
  */
 
 import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
+import { rebuildAllPatterns } from '@uswds-pt/adapter';
 
 const debug = createDebugLogger('USWDSInit');
 
@@ -229,6 +230,10 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
       }
     }
   });
+
+  // Initialize form pattern components from attributes
+  // Must run BEFORE usa-select init so generated selects get their options
+  rebuildAllPatterns(container);
 
   // Initialize usa-select components with options
   container.querySelectorAll('usa-select').forEach((select: any) => {

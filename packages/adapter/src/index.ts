@@ -34,6 +34,12 @@ export {
   cleanupAllIntervals,
 } from './component-registry-v2.js';
 
+// Pattern component rebuild functions (used by editor's uswds-init.ts):
+export {
+  rebuildAllPatterns,
+  PATTERN_REBUILDERS,
+} from './components/pattern-components.js';
+
 export type {
   GrapesBlock,
   GrapesBlockContent,

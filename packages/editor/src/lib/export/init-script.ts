@@ -213,6 +213,55 @@ export function generateInitScript(): string {
       }
     });
 
+    // Initialize form pattern components from attributes
+    // Must run BEFORE usa-select init so generated selects get their options
+    function esc(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    document.querySelectorAll('usa-name-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Full Name';
+      var showMiddle = el.getAttribute('show-middle') !== 'false';
+      var showSuffix = el.getAttribute('show-suffix') !== 'false';
+      var middleHtml = showMiddle ? '<usa-text-input label="Middle Name" name="middle-name"></usa-text-input>' : '';
+      var suffixHtml = showSuffix ? '<usa-text-input label="Suffix" name="suffix" hint="e.g., Jr., Sr., III" width="sm" style="max-width: 8rem;"></usa-text-input>' : '';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"><usa-text-input label="First Name" name="first-name" required></usa-text-input>' + middleHtml + '<usa-text-input label="Last Name" name="last-name" required></usa-text-input></div>' + suffixHtml + '</fieldset>';
+    });
+
+    document.querySelectorAll('usa-address-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Mailing Address';
+      var showAddr2 = el.getAttribute('show-address-2') !== 'false';
+      var addr2Html = showAddr2 ? '<usa-text-input label="Street Address Line 2" name="street-address-2" hint="Apartment, suite, unit, building, floor, etc."></usa-text-input>' : '';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend><usa-text-input label="Street Address" name="street-address-1" required></usa-text-input>' + addr2Html + '<div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;"><usa-text-input label="City" name="city" required></usa-text-input><usa-select label="State" name="state" required options-preset="us-states"></usa-select><usa-text-input label="ZIP Code" name="zip-code" inputmode="numeric" required></usa-text-input></div></fieldset>';
+    });
+
+    document.querySelectorAll('usa-phone-number-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Phone Number';
+      var showType = el.getAttribute('show-phone-type') !== 'false';
+      var typeHtml = showType ? '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 1rem 0 0;"><legend class="usa-legend">Phone type</legend><usa-radio label="Mobile" name="phone-type" value="mobile"></usa-radio><usa-radio label="Home" name="phone-type" value="home"></usa-radio><usa-radio label="Work" name="phone-type" value="work"></usa-radio></fieldset>' : '';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend><usa-text-input label="Phone Number" name="phone" type="tel" hint="10-digit phone number, e.g., 202-555-0123" inputmode="tel" required></usa-text-input>' + typeHtml + '</fieldset>';
+    });
+
+    document.querySelectorAll('usa-email-address-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Email Address';
+      var showConfirm = el.getAttribute('show-confirm') !== 'false';
+      var confirmHtml = showConfirm ? '<usa-text-input label="Confirm Email Address" name="email-confirm" type="email" hint="Re-enter your email address" required></usa-text-input>' : '';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend><usa-text-input label="Email Address" name="email" type="email" hint="Enter your email address" required></usa-text-input>' + confirmHtml + '</fieldset>';
+    });
+
+    document.querySelectorAll('usa-date-of-birth-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Date of Birth';
+      var hint = el.getAttribute('hint') || 'For example: January 19, 2000';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend><p class="usa-hint" style="margin: 0 0 0.5rem;">' + esc(hint) + '</p><div style="display: flex; gap: 1rem;"><usa-select label="Month" name="dob-month" required options-preset="months" style="min-width: 10rem;"></usa-select><usa-text-input label="Day" name="dob-day" inputmode="numeric" maxlength="2" required style="max-width: 5rem;"></usa-text-input><usa-text-input label="Year" name="dob-year" inputmode="numeric" minlength="4" maxlength="4" required style="max-width: 6rem;"></usa-text-input></div></fieldset>';
+    });
+
+    document.querySelectorAll('usa-ssn-pattern').forEach(function(el) {
+      var legend = el.getAttribute('legend') || 'Social Security Number';
+      var showAlert = el.getAttribute('show-alert') !== 'false';
+      var alertHeading = el.getAttribute('alert-heading') || 'Why we need this';
+      var alertText = el.getAttribute('alert-text') || 'We use your Social Security Number to verify your identity. Your information is protected and encrypted.';
+      var alertHtml = showAlert ? '<usa-alert variant="info" heading="' + esc(alertHeading) + '" text="' + esc(alertText) + '" slim></usa-alert>' : '';
+      el.innerHTML = '<fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0;"><legend class="usa-legend usa-legend--large">' + esc(legend) + '</legend>' + alertHtml + '<usa-text-input label="Social Security Number" name="ssn" type="password" hint="Enter the 9 digits of your SSN" inputmode="numeric" maxlength="11" required style="max-width: 12rem; margin-top: 1rem;"></usa-text-input><usa-checkbox label="Show SSN" name="show-ssn" style="margin-top: 0.5rem;"></usa-checkbox></fieldset>';
+    });
+
     // Initialize usa-select components with options
     const SELECT_PRESETS = {
       'us-states': [

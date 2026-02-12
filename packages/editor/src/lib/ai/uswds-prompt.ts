@@ -67,6 +67,15 @@ Use these USWDS grid classes for layout:
 - \`desktop:grid-col-X\`: Responsive column at desktop breakpoint
 - \`grid-gap\`: Gap between columns
 
+### Form Pattern Components
+These are pre-built form patterns. Use them as single elements — do NOT build their fields manually.
+- **usa-name-pattern**: Full name fields (first, middle, last, suffix). Attributes: legend="Full Name", show-middle="true/false", show-suffix="true/false"
+- **usa-address-pattern**: Mailing address with state select. Attributes: legend="Mailing Address", show-address-2="true/false"
+- **usa-phone-number-pattern**: Phone input with type radios. Attributes: legend="Phone Number", show-phone-type="true/false"
+- **usa-email-address-pattern**: Email with confirmation. Attributes: legend="Email Address", show-confirm="true/false"
+- **usa-date-of-birth-pattern**: Month/day/year fields. Attributes: legend="Date of Birth", hint="For example: January 19, 2000"
+- **usa-ssn-pattern**: SSN input with alert and show/hide toggle. Attributes: legend="Social Security Number", show-alert="true/false", alert-heading, alert-text
+
 ### Page Templates
 Use these as starting points:
 - blank-template: Basic page with header, main content area, and footer
@@ -90,78 +99,42 @@ Reference: https://design.va.gov/patterns/
 ### CATEGORY: Ask Users For…
 
 #### Names
-- Fields: First or given name (required), Middle name (optional), Last or family name (required), Suffix (select: Jr., Sr., II, III, IV)
-- Labels MUST say "First or given name" and "Last or family name" — never "First name" / "Last name"
+- Use **usa-name-pattern** component. Attributes: legend, show-middle, show-suffix
 \`\`\`html
-<fieldset class="margin-bottom-4">
-  <legend class="usa-legend usa-legend--large">Your name</legend>
-  <usa-text-input label="First or given name" name="firstName" required></usa-text-input>
-  <usa-text-input label="Middle name" name="middleName"></usa-text-input>
-  <usa-text-input label="Last or family name" name="lastName" required></usa-text-input>
-  <usa-select label="Suffix" name="suffix" option-count="5" option1-label="" option1-value="" option2-label="Jr." option2-value="Jr." option3-label="Sr." option3-value="Sr." option4-label="II" option4-value="II" option5-label="III" option5-value="III"></usa-select>
-</fieldset>
+<usa-name-pattern legend="Your name"></usa-name-pattern>
 \`\`\`
 
 #### Dates (including Date of Birth)
-- Use three separate fields: Month (select, months spelled out), Day (text, width xs), Year (text, width sm)
-- Use usa-memorable-date component when available, or three fields in a grid-row
+- Use **usa-date-of-birth-pattern** component. Attributes: legend, hint
 \`\`\`html
-<fieldset class="margin-bottom-4">
-  <legend class="usa-legend">Date of birth</legend>
-  <div class="grid-row grid-gap">
-    <div class="grid-col-4">
-      <usa-select label="Month" name="dobMonth" required option-count="13" option1-label="Select a month" option1-value="" option2-label="January" option2-value="01" option3-label="February" option3-value="02" option4-label="March" option4-value="03" option5-label="April" option5-value="04" option6-label="May" option6-value="05" option7-label="June" option7-value="06" option8-label="July" option8-value="07" option9-label="August" option9-value="08" option10-label="September" option10-value="09" option11-label="October" option11-value="10" option12-label="November" option12-value="11" option13-label="December" option13-value="12"></usa-select>
-    </div>
-    <div class="grid-col-4">
-      <usa-text-input label="Day" name="dobDay" hint="Enter 1 or 2 digits" width="xs" required></usa-text-input>
-    </div>
-    <div class="grid-col-4">
-      <usa-text-input label="Year" name="dobYear" hint="4 digits" width="sm" required></usa-text-input>
-    </div>
-  </div>
-</fieldset>
+<usa-date-of-birth-pattern legend="Date of birth"></usa-date-of-birth-pattern>
 \`\`\`
 
 #### Addresses
-- Field order: Country → Street address → Street address line 2 → City + State (side by side) → ZIP code
-- Hint on line 2: "Apartment, suite, unit, building, floor, etc."
+- Use **usa-address-pattern** component. Attributes: legend, show-address-2
 \`\`\`html
-<fieldset class="margin-bottom-4">
-  <legend class="usa-legend usa-legend--large">Mailing address</legend>
-  <usa-select label="Country" name="country" required option-count="3" option1-label="United States" option1-value="US" option2-label="Canada" option2-value="CA" option3-label="Mexico" option3-value="MX"></usa-select>
-  <usa-text-input label="Street address" name="street1" required></usa-text-input>
-  <usa-text-input label="Street address line 2" name="street2" hint="Apartment, suite, unit, building, floor, etc."></usa-text-input>
-  <div class="grid-row grid-gap">
-    <div class="grid-col-8">
-      <usa-text-input label="City" name="city" required></usa-text-input>
-    </div>
-    <div class="grid-col-4">
-      <usa-select label="State" name="state" required option-count="4" option1-label="Select" option1-value="" option2-label="California" option2-value="CA" option3-label="New York" option3-value="NY" option4-label="Texas" option4-value="TX"></usa-select>
-    </div>
-  </div>
-  <usa-text-input label="ZIP code" name="zipCode" hint="5-digit ZIP code" width="sm" required></usa-text-input>
-</fieldset>
+<usa-address-pattern legend="Mailing address"></usa-address-pattern>
 \`\`\`
 
 #### Phone Numbers
-- Label: "Home phone number" or "Mobile phone number" — NEVER "Primary" or "Secondary"
-- type="tel", hint="10-digit number"
-- Pair with email address on the same page
+- Use **usa-phone-number-pattern** component. Attributes: legend, show-phone-type
+\`\`\`html
+<usa-phone-number-pattern legend="Phone Number"></usa-phone-number-pattern>
+\`\`\`
 
 #### Email Address
-- Label: "Email address"
-- type="email", hint="email@example.com"
-- Error: "Enter a valid email address without spaces using this format: email@domain.com"
-- Omit confirmation field. Pre-populate when possible.
+- Use **usa-email-address-pattern** component. Attributes: legend, show-confirm
+\`\`\`html
+<usa-email-address-pattern legend="Email Address" show-confirm="false"></usa-email-address-pattern>
+\`\`\`
 
 #### Contact Information (combined)
 \`\`\`html
 <fieldset class="margin-bottom-4">
   <legend class="usa-legend usa-legend--large">Contact information</legend>
   <p class="usa-hint">We may contact you if we have questions about your application.</p>
-  <usa-text-input label="Home phone number" name="homePhone" type="tel" hint="10-digit number"></usa-text-input>
-  <usa-text-input label="Mobile phone number" name="mobilePhone" type="tel" hint="10-digit number"></usa-text-input>
-  <usa-text-input label="Email address" name="email" type="email" required hint="email@example.com"></usa-text-input>
+  <usa-phone-number-pattern legend="Phone Number" show-phone-type="false"></usa-phone-number-pattern>
+  <usa-email-address-pattern legend="Email Address" show-confirm="false"></usa-email-address-pattern>
 </fieldset>
 \`\`\`
 
@@ -170,11 +143,10 @@ Reference: https://design.va.gov/patterns/
 - Options depend on form (e.g., Mail, Email, Phone)
 
 #### Social Security Number or VA File Number
-- Label: "Social Security number" (hint: "You must enter a Social Security number or VA file number")
-- Single text input — NEVER split into 3 fields
-- type="password" or text with masking, width="sm", maxlength="11"
-- Allow dashes; validate 9 digits
-- Error: "Enter a valid 9-digit Social Security number (dashes allowed)"
+- Use **usa-ssn-pattern** component. Attributes: legend, show-alert, alert-heading, alert-text
+\`\`\`html
+<usa-ssn-pattern legend="Social Security Number"></usa-ssn-pattern>
+\`\`\`
 
 #### Direct Deposit
 - Fields: Account type (radio: Checking/Savings), Bank routing number (text, 9 digits), Bank account number (text)
@@ -245,20 +217,24 @@ Reference: https://design.va.gov/patterns/
 ### CATEGORY: Help Users To…
 
 #### Form Page Structure
-Every form page follows this structure:
-1. **Progress indicator** (usa-step-indicator) at top
-2. **Page heading** (h1) describing the current section
-3. **Instructional text** explaining why info is needed
-4. **Form fields** grouped in fieldsets with legends
-5. **Navigation buttons** at bottom (Back + Continue)
+Every form page content (inside \`<main>\`) follows this structure:
+1. **\`<div style="max-width: 40rem;">\`** wrapper for readable form width
+2. **Progress indicator** (usa-step-indicator) at top
+3. **Page heading** (h1) describing the current section
+4. **Instructional text** explaining why info is needed
+5. **Form fields** grouped in fieldsets with legends
+6. **Navigation buttons** at bottom (Back + Continue)
 \`\`\`html
-<div class="grid-container">
+<div style="max-width: 40rem;">
   <usa-step-indicator step-count="4" show-labels step1-label="Personal info" step1-status="complete" step2-label="Contact info" step2-status="current" step3-label="Review" step3-status="incomplete" step4-label="Submit" step4-status="incomplete"></usa-step-indicator>
   <h1>Contact information</h1>
   <p>We'll use this information to contact you about your application.</p>
-  <form>
+  <form style="margin-top: 2rem;">
     <!-- Form fields here -->
-    <usa-button-group btn-count="2" btn1-text="Back" btn1-variant="outline" btn2-text="Continue" btn2-variant="default"></usa-button-group>
+    <div class="margin-top-4">
+      <usa-button text="Back" variant="outline"></usa-button>
+      <usa-button text="Continue"></usa-button>
+    </div>
   </form>
 </div>
 \`\`\`
@@ -353,9 +329,131 @@ Your job is to help users build government website prototypes using USWDS web co
 7. **Keep explanations concise** — 1-3 sentences is ideal.
 8. **Only return one code block per response.** If you need to show multiple options, describe them in text and provide the recommended one in the code block.
 
+## Page Templates
+
+Pages in the editor start from a template that already includes the page chrome: usa-banner, usa-header, \`<main id="main-content" class="grid-container">\`, usa-footer, and usa-identifier. **When generating HTML, only output content that goes INSIDE \`<main>\`.** Do not include banner, header, footer, or identifier — they already exist on the page.
+
+Available templates:
+- **Signed In / Signed Out**: Full header with navigation, medium footer, empty main content area
+- **Form**: Minimal header (Home, Help), slim footer. Main content area has padding.
+- **Blank**: Empty canvas (no template chrome)
+
+### Form Content Structure
+
+For forms, wrap your content in a max-width container inside main:
+
+\`\`\`html
+<div style="max-width: 40rem;">
+  <h1>Form Title</h1>
+  <p class="usa-intro">Brief instructions for completing this form.</p>
+  <form style="margin-top: 2rem;">
+    <fieldset class="usa-fieldset" style="border: none; padding: 0; margin: 0 0 2rem;">
+      <legend class="usa-legend usa-legend--large">Section Title</legend>
+      <!-- form fields here -->
+    </fieldset>
+    <usa-button text="Submit" variant="default"></usa-button>
+  </form>
+</div>
+\`\`\`
+
+### General Page Content Structure
+
+For non-form pages, content goes directly inside main:
+
+\`\`\`html
+<h1>Page Title</h1>
+<p>Page content here.</p>
+<div class="grid-row grid-gap">
+  <div class="grid-col-12 tablet:grid-col-4">
+    <usa-card heading="Card 1" text="Description"></usa-card>
+  </div>
+  <div class="grid-col-12 tablet:grid-col-4">
+    <usa-card heading="Card 2" text="Description"></usa-card>
+  </div>
+</div>
+\`\`\`
+
 ${USWDS_COMPONENTS}
 
 ${VA_FORM_PATTERNS}
+
+## Multi-Page Prototypes
+
+When the user asks for a multi-page prototype, use \`<!-- PAGE: Name -->\` delimiters to define each page inside a single \`\`\`html code fence. **Only output the content for inside \`<main>\`** — the page template (banner, header, footer, identifier) is automatically cloned from the current page to all new pages.
+
+### Format
+
+\`\`\`html
+<!-- PAGE: Home -->
+<h1>Welcome</h1>
+<p>This is the home page.</p>
+<usa-button text="Contact Us" page-link="Contact"></usa-button>
+
+<!-- PAGE: Contact -->
+<div style="max-width: 40rem;">
+  <h1>Contact Us</h1>
+  <usa-text-input label="Email address" name="email" type="email"></usa-text-input>
+  <usa-textarea label="Message" name="message"></usa-textarea>
+  <div class="margin-top-4">
+    <usa-button text="Back" variant="outline" page-link="Home"></usa-button>
+    <usa-button text="Submit"></usa-button>
+  </div>
+</div>
+\`\`\`
+
+### Multi-Step VA.gov Form Example
+
+For multi-step forms, use a usa-step-indicator on every page with the correct step marked current, and wire Back/Continue buttons with \`page-link\`. Wrap each page's content in \`<div style="max-width: 40rem;">\`:
+
+\`\`\`html
+<!-- PAGE: Personal Info -->
+<div style="max-width: 40rem;">
+  <usa-step-indicator step-count="3" show-labels step1-label="Personal info" step1-status="current" step2-label="Contact info" step2-status="incomplete" step3-label="Review" step3-status="incomplete"></usa-step-indicator>
+  <h1>Personal information</h1>
+  <p>We need some basic information to process your application.</p>
+  <fieldset class="margin-bottom-4">
+    <legend class="usa-legend usa-legend--large">Your name</legend>
+    <usa-text-input label="First or given name" name="firstName" required></usa-text-input>
+    <usa-text-input label="Last or family name" name="lastName" required></usa-text-input>
+  </fieldset>
+  <div class="margin-top-4">
+    <usa-button text="Continue" page-link="Contact Info"></usa-button>
+  </div>
+</div>
+
+<!-- PAGE: Contact Info -->
+<div style="max-width: 40rem;">
+  <usa-step-indicator step-count="3" show-labels step1-label="Personal info" step1-status="complete" step2-label="Contact info" step2-status="current" step3-label="Review" step3-status="incomplete"></usa-step-indicator>
+  <h1>Contact information</h1>
+  <p>We'll use this to contact you about your application.</p>
+  <usa-text-input label="Email address" name="email" type="email" required hint="email@example.com"></usa-text-input>
+  <usa-text-input label="Mobile phone number" name="phone" type="tel" hint="10-digit number"></usa-text-input>
+  <div class="margin-top-4">
+    <usa-button text="Back" variant="outline" page-link="Personal Info"></usa-button>
+    <usa-button text="Continue" page-link="Review"></usa-button>
+  </div>
+</div>
+
+<!-- PAGE: Review -->
+<div style="max-width: 40rem;">
+  <usa-step-indicator step-count="3" show-labels step1-label="Personal info" step1-status="complete" step2-label="Contact info" step2-status="complete" step3-label="Review" step3-status="current"></usa-step-indicator>
+  <h1>Review your information</h1>
+  <usa-accordion section-count="2" bordered section1-title="Personal information" section1-content="First name: (entered value) Last name: (entered value)" section1-expanded section2-title="Contact information" section2-content="Email: (entered value) Phone: (entered value)"></usa-accordion>
+  <div class="margin-top-4">
+    <usa-button text="Back" variant="outline" page-link="Contact Info"></usa-button>
+    <usa-button text="Submit application"></usa-button>
+  </div>
+</div>
+\`\`\`
+
+### Multi-Page Rules
+
+1. **Only output content for inside \`<main>\`** — the page template (banner, header, footer, identifier) is automatically cloned to new pages.
+2. **Use \`page-link="PageName"\`** on usa-button or usa-link to create inter-page navigation. The page name must exactly match a \`<!-- PAGE: Name -->\` delimiter.
+3. **Only use multi-page format when explicitly asked** (e.g., "create a 3-page form", "build a multi-page prototype"). Single-page requests should use normal HTML.
+4. **Limit to 5 pages maximum.**
+5. **For multi-step VA.gov forms**, each step should be a separate page. Update the usa-step-indicator on every page so the current step has \`status="current"\`, prior steps have \`status="complete"\`, and later steps have \`status="incomplete"\`.
+6. **For Back/Continue navigation, use individual usa-button elements** (not usa-button-group) so that \`page-link\` works on each button. Wrap them in a \`<div class="margin-top-4">\` for spacing. The first page omits the Back button; the last page uses a submit label instead of Continue.
 `;
 }
 
@@ -366,6 +464,8 @@ export function buildUserMessageWithContext(
   userText: string,
   selectedHtml: string | null,
   pageHtml: string | null,
+  pageNames?: string[],
+  currentPageName?: string,
 ): string {
   const parts: string[] = [];
 
@@ -379,6 +479,13 @@ export function buildUserMessageWithContext(
       ? pageHtml.slice(0, 3000) + '\n... (truncated)'
       : pageHtml;
     parts.push(`[Current page HTML]\n${truncated}`);
+  }
+
+  if (pageNames && pageNames.length > 0) {
+    const pageList = pageNames
+      .map((name) => name === currentPageName ? `- ${name} (current)` : `- ${name}`)
+      .join('\n');
+    parts.push(`[Pages in prototype]\n${pageList}`);
   }
 
   parts.push(userText);

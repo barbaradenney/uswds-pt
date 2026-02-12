@@ -44,3 +44,14 @@ export { registerDataComponents } from './data-components.js';
 export { registerFeedbackComponents } from './feedback-components.js';
 export { registerLayoutComponents } from './layout-components.js';
 export { registerNavigationComponents } from './navigation-components.js';
+export {
+  registerPatternComponents,
+  rebuildNamePattern,
+  rebuildAddressPattern,
+  rebuildPhoneNumberPattern,
+  rebuildEmailAddressPattern,
+  rebuildDateOfBirthPattern,
+  rebuildSSNPattern,
+  rebuildAllPatterns,
+  PATTERN_REBUILDERS,
+} from './pattern-components.js';
