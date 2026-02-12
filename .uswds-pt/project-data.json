@@ -1,0 +1,194 @@
+{
+  "pages": [
+    {
+      "id": "l6AQUq8UPcG3feog",
+      "name": "Prototype",
+      "frames": [
+        {
+          "id": "uy6auzpQ6h5oqEpf",
+          "component": {
+            "head": {
+              "type": "head"
+            },
+            "type": "wrapper",
+            "docEl": {
+              "tagName": "html"
+            },
+            "stylable": [
+              "background",
+              "background-color",
+              "background-image",
+              "background-repeat",
+              "background-attachment",
+              "background-position",
+              "background-size"
+            ],
+            "components": [
+              {
+                "classes": [
+                  "signed-in-template"
+                ],
+                "attributes": {
+                  "data-template": "signed-in"
+                },
+                "components": [
+                  {
+                    "type": "usa-banner",
+                    "attributes": {
+                      "expanded": false,
+                      "action-text": "Here's how you know",
+                      "header-text": "An official website of the United States government"
+                    }
+                  },
+                  {
+                    "type": "usa-header",
+                    "attributes": {
+                      "extended": "",
+                      "logo-href": "/",
+                      "logo-text": "Agency Name",
+                      "nav-count": "3",
+                      "nav1-href": "#",
+                      "nav2-href": "#",
+                      "nav3-href": "#",
+                      "nav4-href": "#",
+                      "nav5-href": "#",
+                      "nav6-href": "#",
+                      "sec-count": "2",
+                      "sec1-href": "#",
+                      "sec2-href": "#",
+                      "sec3-href": "#",
+                      "sec4-href": "#",
+                      "nav1-label": "Home",
+                      "nav2-label": "Benefits",
+                      "nav3-label": "Records",
+                      "nav4-label": "Link 4",
+                      "nav5-label": "Link 5",
+                      "nav6-label": "Link 6",
+                      "sec1-label": "My Account",
+                      "sec2-label": "Sign Out",
+                      "sec3-label": "Link 3",
+                      "sec4-label": "Link 4",
+                      "show-search": "",
+                      "nav1-current": "",
+                      "nav2-current": false,
+                      "nav3-current": false,
+                      "nav4-current": false,
+                      "nav5-current": false,
+                      "nav6-current": false,
+                      "logo-image-alt": "",
+                      "logo-image-src": "",
+                      "show-skip-link": "true",
+                      "skip-link-href": "#main-content",
+                      "skip-link-text": "Skip to main content",
+                      "search-placeholder": "Search"
+                    }
+                  },
+                  {
+                    "type": "grid-container",
+                    "classes": [
+                      "grid-container"
+                    ],
+                    "tagName": "main",
+                    "attributes": {
+                      "id": "main-content"
+                    },
+                    "components": [
+                      {
+                        "type": "grid-row",
+                        "classes": [
+                          "grid-row"
+                        ],
+                        "components": [
+                          {
+                            "type": "grid-col",
+                            "classes": [
+                              "grid-col-12"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "usa-footer",
+                    "attributes": {
+                      "variant": "medium",
+                      "logo-alt": "",
+                      "logo-src": "",
+                      "agency-url": "#",
+                      "agency-name": "Agency Name",
+                      "contact-email": "",
+                      "contact-phone": "",
+                      "section-count": "3",
+                      "section1-title": "Section 1",
+                      "section2-title": "Section 2",
+                      "section3-title": "Section 3",
+                      "section4-title": "Section 4",
+                      "section1-link1-href": "#",
+                      "section1-link2-href": "#",
+                      "section1-link3-href": "#",
+                      "section1-link4-href": "#",
+                      "section2-link1-href": "#",
+                      "section2-link2-href": "#",
+                      "section2-link3-href": "#",
+                      "section2-link4-href": "#",
+                      "section3-link1-href": "#",
+                      "section3-link2-href": "#",
+                      "section3-link3-href": "#",
+                      "section3-link4-href": "#",
+                      "section4-link1-href": "#",
+                      "section4-link2-href": "#",
+                      "section4-link3-href": "#",
+                      "section4-link4-href": "#",
+                      "section1-link1-label": "Link 1",
+                      "section1-link2-label": "",
+                      "section1-link3-label": "",
+                      "section1-link4-label": "",
+                      "section2-link1-label": "Link 1",
+                      "section2-link2-label": "",
+                      "section2-link3-label": "",
+                      "section2-link4-label": "",
+                      "section3-link1-label": "Link 1",
+                      "section3-link2-label": "",
+                      "section3-link3-label": "",
+                      "section3-link4-label": "",
+                      "section4-link1-label": "Link 1",
+                      "section4-link2-label": "",
+                      "section4-link3-label": "",
+                      "section4-link4-label": ""
+                    }
+                  },
+                  {
+                    "type": "usa-identifier",
+                    "attributes": {
+                      "domain": "agency.gov",
+                      "show-logos": true,
+                      "parent-agency": "Department of Example",
+                      "masthead-logo-alt": "",
+                      "parent-agency-href": "#",
+                      "show-required-links": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "styles": [
+    {
+      "style": {
+        "padding": "2rem 0",
+        "min-height": "400px"
+      },
+      "selectors": [
+        "#main-content"
+      ]
+    }
+  ],
+  "symbols": [],
+  "dataSources": []
+}
