@@ -194,6 +194,48 @@ export const EditorHeader = memo(function EditorHeader({
             </button>
           </div>
         )}
+        {/* Status area — left-aligned after name + undo/redo */}
+        <div className="editor-header-status-area" aria-live="polite">
+          {lastPushResult && (
+            <span className="push-success" role="status">
+              <span style={{ color: '#2e8540' }}>&#10003;</span>
+              {' '}Pushed to {lastPushResult.branch.replace(/^(uswds-pt|handoff)\//, '')}
+              {' '}&middot;{' '}
+              <a
+                href={lastPushResult.commitUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#005ea2' }}
+              >
+                View commit
+              </a>
+              <button
+                className="push-success-dismiss"
+                onClick={onDismissPushResult}
+                aria-label="Dismiss"
+              >
+                &times;
+              </button>
+            </span>
+          )}
+          {!lastPushResult && showDraftBadge && (
+            <span role="status" className="editor-header-draft-badge">
+              Draft backed up
+            </span>
+          )}
+          {!lastPushResult && !showDraftBadge && showAutosaveIndicator && (
+            <div className={`autosave-indicator ${autosaveStatus}`}>
+              <span className="autosave-dot" />
+              <span>
+                {autosaveStatus === 'saving' && 'Saving...'}
+                {autosaveStatus === 'saved' && 'Saved'}
+                {autosaveStatus === 'error' && 'Save failed'}
+                {autosaveStatus === 'idle' && (lastSavedAt ? `Saved ${formatLastSaved(lastSavedAt)}` : 'Autosave on')}
+                {autosaveStatus === 'pending' && 'Unsaved changes'}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="editor-header-right">
@@ -312,48 +354,6 @@ export const EditorHeader = memo(function EditorHeader({
         >
           {isSaving ? 'Saving...' : isSaveDisabled ? 'Loading...' : 'Save'}
         </button>
-        {/* Status area — fixed position at far right so it never shifts buttons */}
-        <div className="editor-header-status-area" aria-live="polite">
-          {lastPushResult && (
-            <span className="push-success" role="status">
-              <span style={{ color: '#2e8540' }}>&#10003;</span>
-              {' '}Pushed to {lastPushResult.branch.replace(/^(uswds-pt|handoff)\//, '')}
-              {' '}&middot;{' '}
-              <a
-                href={lastPushResult.commitUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#005ea2' }}
-              >
-                View commit
-              </a>
-              <button
-                className="push-success-dismiss"
-                onClick={onDismissPushResult}
-                aria-label="Dismiss"
-              >
-                &times;
-              </button>
-            </span>
-          )}
-          {!lastPushResult && showDraftBadge && (
-            <span role="status" className="editor-header-draft-badge">
-              Draft backed up
-            </span>
-          )}
-          {!lastPushResult && !showDraftBadge && showAutosaveIndicator && (
-            <div className={`autosave-indicator ${autosaveStatus}`}>
-              <span className="autosave-dot" />
-              <span>
-                {autosaveStatus === 'saving' && 'Saving...'}
-                {autosaveStatus === 'saved' && 'Saved'}
-                {autosaveStatus === 'error' && 'Save failed'}
-                {autosaveStatus === 'idle' && (lastSavedAt ? `Saved ${formatLastSaved(lastSavedAt)}` : 'Autosave on')}
-                {autosaveStatus === 'pending' && 'Unsaved changes'}
-              </span>
-            </div>
-          )}
-        </div>
       </div>
     </header>
   );

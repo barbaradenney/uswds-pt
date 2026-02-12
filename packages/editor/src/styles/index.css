@@ -211,7 +211,7 @@ body {
 
 .editor-header-undo-redo {
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
 /* Connection status badges */
@@ -241,13 +241,10 @@ body {
   white-space: nowrap;
 }
 
-/* Status area — pinned to far-right edge, fixed width prevents button shifting */
+/* Status area — sits on the left side after name + undo/redo */
 .editor-header-status-area {
-  width: 140px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   overflow: hidden;
 }
 
