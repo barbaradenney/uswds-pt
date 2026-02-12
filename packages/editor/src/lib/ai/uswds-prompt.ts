@@ -78,25 +78,20 @@ Use these as starting points:
 
 /**
  * VA.gov Form Patterns - Based on https://design.va.gov/patterns/
- * These patterns define how to collect specific information from users
+ * Complete catalog of "Ask users for…" and "Help users to…" patterns.
  */
 const VA_FORM_PATTERNS = `
-## VA.gov Form Patterns (REQUIRED for all forms)
+## VA.gov Design Patterns (REQUIRED — follow these for all VA prototypes)
 
-When building forms, you MUST follow these VA.gov design patterns. These ensure consistency and accessibility.
+Reference: https://design.va.gov/patterns/
 
-### Names Pattern
-When collecting a person's name:
+---
 
-**Required Fields:**
-- First or given name (usa-text-input, label="First or given name", required)
-- Last or family name (usa-text-input, label="Last or family name", required)
+### CATEGORY: Ask Users For…
 
-**Optional Fields:**
-- Middle name (usa-text-input, label="Middle name")
-- Suffix (usa-select with options: Jr., Sr., II, III, IV)
-
-**Example:**
+#### Names
+- Fields: First or given name (required), Middle name (optional), Last or family name (required), Suffix (select: Jr., Sr., II, III, IV)
+- Labels MUST say "First or given name" and "Last or family name" — never "First name" / "Last name"
 \`\`\`html
 <fieldset class="margin-bottom-4">
   <legend class="usa-legend usa-legend--large">Your name</legend>
@@ -107,15 +102,9 @@ When collecting a person's name:
 </fieldset>
 \`\`\`
 
-### Date of Birth Pattern
-When collecting dates (especially birth dates):
-
-**Use three separate fields:**
-- Month (usa-select with all 12 months spelled out fully)
-- Day (usa-text-input, hint="Enter 1 or 2 digits")
-- Year (usa-text-input, hint="4 digits for the year")
-
-**Example:**
+#### Dates (including Date of Birth)
+- Use three separate fields: Month (select, months spelled out), Day (text, width xs), Year (text, width sm)
+- Use usa-memorable-date component when available, or three fields in a grid-row
 \`\`\`html
 <fieldset class="margin-bottom-4">
   <legend class="usa-legend">Date of birth</legend>
@@ -133,18 +122,9 @@ When collecting dates (especially birth dates):
 </fieldset>
 \`\`\`
 
-### Address Pattern
-When collecting addresses:
-
-**Field Order (important!):**
-1. Country (usa-select, required)
-2. Street address (usa-text-input, required)
-3. Street address line 2 (usa-text-input, optional)
-4. City (usa-text-input, required)
-5. State/Province/Region (usa-select for US, text input for other countries)
-6. ZIP/Postal code (usa-text-input, required)
-
-**Example:**
+#### Addresses
+- Field order: Country → Street address → Street address line 2 → City + State (side by side) → ZIP code
+- Hint on line 2: "Apartment, suite, unit, building, floor, etc."
 \`\`\`html
 <fieldset class="margin-bottom-4">
   <legend class="usa-legend usa-legend--large">Mailing address</legend>
@@ -163,16 +143,18 @@ When collecting addresses:
 </fieldset>
 \`\`\`
 
-### Phone Numbers Pattern
-When collecting phone numbers:
+#### Phone Numbers
+- Label: "Home phone number" or "Mobile phone number" — NEVER "Primary" or "Secondary"
+- type="tel", hint="10-digit number"
+- Pair with email address on the same page
 
-**Labels:**
-- "Home phone number" or "Mobile phone number" (not "Primary" or "Secondary")
-- Use usa-text-input with type="tel"
+#### Email Address
+- Label: "Email address"
+- type="email", hint="email@example.com"
+- Error: "Enter a valid email address without spaces using this format: email@domain.com"
+- Omit confirmation field. Pre-populate when possible.
 
-**Pair with email address on the same page.**
-
-**Example:**
+#### Contact Information (combined)
 \`\`\`html
 <fieldset class="margin-bottom-4">
   <legend class="usa-legend usa-legend--large">Contact information</legend>
@@ -183,29 +165,161 @@ When collecting phone numbers:
 </fieldset>
 \`\`\`
 
-### Form Page Structure
-Every form page should follow this structure:
+#### Contact Preferences
+- Use radio buttons for single method: "How would you like to be contacted?"
+- Options depend on form (e.g., Mail, Email, Phone)
 
-1. **Progress indicator** (usa-step-indicator) at the top
+#### Social Security Number or VA File Number
+- Label: "Social Security number" (hint: "You must enter a Social Security number or VA file number")
+- Single text input — NEVER split into 3 fields
+- type="password" or text with masking, width="sm", maxlength="11"
+- Allow dashes; validate 9 digits
+- Error: "Enter a valid 9-digit Social Security number (dashes allowed)"
+
+#### Direct Deposit
+- Fields: Account type (radio: Checking/Savings), Bank routing number (text, 9 digits), Bank account number (text)
+- Include a check image guide showing where to find routing/account numbers
+\`\`\`html
+<fieldset class="margin-bottom-4">
+  <legend class="usa-legend usa-legend--large">Direct deposit</legend>
+  <p class="usa-hint">We'll deposit your payments into this account.</p>
+  <usa-radio label="Checking" name="accountType" value="checking" checked></usa-radio>
+  <usa-radio label="Savings" name="accountType" value="savings"></usa-radio>
+  <usa-text-input label="Bank routing number" name="routingNumber" hint="9-digit number on the bottom left of a check" required></usa-text-input>
+  <usa-text-input label="Bank account number" name="accountNumber" required></usa-text-input>
+</fieldset>
+\`\`\`
+
+#### Files
+- Use usa-file-input with clear label describing what to upload
+- Specify accepted formats in the accept attribute
+- Describe file requirements in hint text (size limits, formats)
+
+#### Service History (military)
+- Sections: Service periods, Service locations, Service details
+- Service period fields: Branch of service (combo box), Service start date (memorable date), Service end date (memorable date)
+- Service detail fields: Service number, Grade/rank, Character of discharge, Type of service
+- Allow multiple service periods with "Add another" pattern
+
+#### A Mutually Exclusive Answer
+- Use radio buttons when user must pick exactly one option
+- Use tile variant for 2–4 options with descriptions
+
+#### A Single Response
+- For short answers: usa-text-input
+- For selections from a short list (<7): radio buttons
+- For selections from a long list (7+): usa-select or usa-combo-box
+
+#### Multiple Responses
+- Use checkboxes when user can select more than one
+- "Add another" button pattern for repeating field groups (e.g., multiple dependents)
+
+#### Signature
+- Use a card container with certification statement
+- Include checkbox: "I certify the information above is correct and true to the best of my knowledge"
+- Include text input for typed full name as signature
+- Do NOT add a separate privacy policy checkbox when signature is present
+
+#### Feedback
+- Use usa-textarea with clear prompt describing what feedback is requested
+- Keep optional unless critical
+
+#### Housing Status
+- Use radio buttons: "Permanent address", "Temporary address", "Experiencing homelessness"
+- Show conditional fields based on selection
+
+#### Marital Information
+- Use radio buttons for status: "Married", "Never married", "Separated", "Widowed", "Divorced"
+- Conditional fields for spouse information when "Married" or "Separated"
+
+#### Race and Ethnicity
+- Two-part question: ethnicity first (Hispanic/Latino yes/no), then race (checkboxes, select all that apply)
+- Always optional
+
+#### Relationship to Veteran
+- Use radio buttons: "I am the Veteran", "Spouse", "Child", "Parent", "Other"
+- Conditional fields based on relationship
+
+---
+
+### CATEGORY: Help Users To…
+
+#### Form Page Structure
+Every form page follows this structure:
+1. **Progress indicator** (usa-step-indicator) at top
 2. **Page heading** (h1) describing the current section
-3. **Form fields** grouped in fieldsets with legends
-4. **Navigation buttons** at bottom (Back and Continue)
-
-**Example Form Page:**
+3. **Instructional text** explaining why info is needed
+4. **Form fields** grouped in fieldsets with legends
+5. **Navigation buttons** at bottom (Back + Continue)
 \`\`\`html
 <div class="grid-container">
   <usa-step-indicator step-count="4" show-labels step1-label="Personal info" step1-status="complete" step2-label="Contact info" step2-status="current" step3-label="Review" step3-status="incomplete" step4-label="Submit" step4-status="incomplete"></usa-step-indicator>
-
   <h1>Contact information</h1>
   <p>We'll use this information to contact you about your application.</p>
-
   <form>
     <!-- Form fields here -->
-
     <usa-button-group btn-count="2" btn1-text="Back" btn1-variant="outline" btn2-text="Continue" btn2-variant="default"></usa-button-group>
   </form>
 </div>
 \`\`\`
+
+#### Check Answers (Review Page)
+- Place at end of form flow before submission
+- Use usa-accordion to group answers by section/chapter in chronological order
+- Each section shows a summary of entered data with an "Edit" link
+- Include privacy agreement at the bottom
+
+#### Check Eligibility
+- Use short screening questions BEFORE the full form
+- Show clear "You may be eligible" or "You may not be eligible" results with usa-alert
+- Always provide a path forward even if not eligible
+
+#### Identify Who Is Filling Out the Form
+- Ask "Who is filling out this form?" with radio buttons: "I'm the Veteran", "I'm a family member or caregiver", etc.
+- Adjust subsequent field labels based on answer (your/the Veteran's)
+
+#### Prefilled Information
+- Show prefilled data in a grey usa-card with a note: "We've prefilled some of your information"
+- Use usa-alert variant="info" to tell users their info was prefilled
+- Always let users edit prefilled data
+
+#### Recover from Errors
+- System errors: Start with "We're sorry" and explain what happened
+- User errors: Neutral tone, no apology — describe the issue
+- Alert titles: 50 characters max
+- Always provide specific recovery steps
+- Include relevant contact number:
+  - General: MyVA411 800-698-2411 (24/7)
+  - Benefits: 800-827-1000 (Mon–Fri 8am–9pm ET)
+  - Health: 877-222-8387 (Mon–Fri 8am–8pm ET)
+
+#### Sign In
+- Primary CTA: "Sign in" button
+- Supported methods: Login.gov, ID.me
+- Show usa-alert if sign-in is required to continue
+
+#### Keep a Record
+- After submission, show a confirmation page with:
+  - usa-alert variant="success" with heading "We've received your [form name]"
+  - Summary of what was submitted
+  - "Print this page" link
+  - Next steps and expected timeline
+
+#### Navigate Benefit Applications
+- Multi-step form: use usa-step-indicator for progress
+- Each step is a separate page with Back/Continue navigation
+- Save progress automatically between steps
+- Allow users to navigate back to any completed step
+
+#### Stay Informed of Submission Status
+- After submission, show timeline of expected steps
+- Use usa-process-list for status progression
+- Include "Check your claim status" link
+
+#### Manage Benefits and Tools
+- Dashboard layout with usa-card components for each benefit/tool
+- Group by category (Health, Education, Disability, etc.)
+- Show status tags on each card
 `;
 
 /**
