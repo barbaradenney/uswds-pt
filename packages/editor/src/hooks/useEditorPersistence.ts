@@ -20,6 +20,7 @@ import {
   type LocalPrototype,
 } from '../lib/localStorage';
 import { isEditorReadyForExtraction, extractPerPageHtml } from '../lib/grapesjs/data-extractor';
+import { loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import { DEFAULT_CONTENT } from '@uswds-pt/adapter';
 import { withRetry, classifyError, isOnline, subscribeToOnlineStatus } from '../lib/retry';
 import type { EditorInstance } from '../types/grapesjs';
@@ -205,6 +206,15 @@ export function useEditorPersistence({
         } catch (err) {
           debug('Per-page HTML extraction failed (non-critical):', err);
         }
+
+        // Ensure USWDS resources are loaded in the canvas after page cycling.
+        // extractPerPageHtml selects each page to get its HTML, which can
+        // trigger canvas:frame:load events. Those events are suppressed
+        // during extraction to avoid stale editor.refresh() calls, but the
+        // restored page's frame may have lost its injected CSS/JS.
+        loadUSWDSResources(editor).catch((err) => {
+          debug('Post-save resource reload failed (non-critical):', err);
+        });
 
         // Filter out global symbols - they're stored separately via the API
         // This ensures only local symbols are saved with the prototype

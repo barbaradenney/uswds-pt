@@ -314,8 +314,16 @@ export function useGrapesJSSetup({
       // Load USWDS resources into canvas iframe.
       // The canvas:frame:load event may have already fired before onReady,
       // so we also poll for the canvas document as a fallback.
-      registerListener(editor, 'canvas:frame:load', () => loadUSWDSResources(editor));
-      registerListener(editor, 'canvas:frame:load', () => syncPageLinkHrefs(editor));
+      // Skip during per-page HTML extraction — the data extractor cycles
+      // through pages which fires canvas:frame:load for each. Running
+      // loadUSWDSResources during extraction causes stale editor.refresh()
+      // calls that can wipe the canvas after save completes.
+      registerListener(editor, 'canvas:frame:load', () => {
+        if (!isExtractingPerPageHtml()) loadUSWDSResources(editor);
+      });
+      registerListener(editor, 'canvas:frame:load', () => {
+        if (!isExtractingPerPageHtml()) syncPageLinkHrefs(editor);
+      });
 
       // Try immediately, then retry with increasing delays if canvas isn't ready
       const tryLoadResources = (attempt: number) => {
