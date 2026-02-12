@@ -9,14 +9,17 @@
 import { useState, useCallback, useRef } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
 import { sendAIMessage } from '../lib/ai/ai-client';
-import type { AIMessage, Attachment } from '../lib/ai/ai-client';
+import type { AIMessage, Attachment, PageDefinition } from '../lib/ai/ai-client';
 import { generateUSWDSPrompt, buildUserMessageWithContext } from '../lib/ai/uswds-prompt';
+import { syncPageLinkHrefs } from '../lib/grapesjs/canvas-helpers';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   html?: string;
+  /** Parsed multi-page definitions from AI response */
+  pages?: PageDefinition[];
   /** Was a component selected when the user sent this message? */
   hadSelection?: boolean;
   isError?: boolean;
@@ -29,6 +32,7 @@ export interface UseAICopilotReturn {
   isLoading: boolean;
   sendMessage: (text: string, attachments?: Attachment[]) => Promise<void>;
   applyHtml: (messageId: string, mode: 'replace' | 'add') => void;
+  applyMultiPage: (messageId: string) => void;
   clearHistory: () => void;
 }
 
@@ -51,6 +55,12 @@ export function useAICopilot(): UseAICopilotReturn {
     const selectedHtml = selected ? selected.toHTML?.() || null : null;
     const pageHtml = editor ? editor.getHtml?.() || null : null;
     const hadSelection = !!selected;
+
+    // Capture page context for multi-page awareness
+    const allPages = editor?.Pages?.getAll?.() || [];
+    const pageNames = allPages.map((p: any) => p.getName?.() || p.get?.('name') || 'Untitled');
+    const selectedPage = editor?.Pages?.getSelected?.();
+    const currentPageName = selectedPage?.getName?.() || selectedPage?.get?.('name') || undefined;
 
     // Add user message
     const userMsg: ChatMessage = {
@@ -88,7 +98,7 @@ export function useAICopilot(): UseAICopilotReturn {
     // Add current user message with context
     apiMessages.push({
       role: 'user',
-      content: buildUserMessageWithContext(text.trim(), selectedHtml, pageHtml),
+      content: buildUserMessageWithContext(text.trim(), selectedHtml, pageHtml, pageNames, currentPageName, !!attachments?.length),
       attachments,
     });
 
@@ -107,6 +117,7 @@ export function useAICopilot(): UseAICopilotReturn {
                 ...m,
                 content: response.explanation,
                 html: response.html || undefined,
+                pages: response.pages || undefined,
                 isLoading: false,
               }
             : m,
@@ -186,6 +197,124 @@ export function useAICopilot(): UseAICopilotReturn {
     }
   }, [editor, messages]);
 
+  const applyMultiPage = useCallback((messageId: string) => {
+    if (!editor) return;
+
+    const msg = messages.find((m) => m.id === messageId);
+    if (!msg?.pages?.length) return;
+
+    const um = editor.UndoManager;
+    um?.start?.();
+
+    try {
+      const pages = msg.pages;
+      const nameToIdMap = new Map<string, string>();
+
+      // Capture template HTML from the current page BEFORE any modifications.
+      // This is used to clone the page chrome (banner, header, footer, identifier)
+      // into new pages, so the AI only needs to output <main> inner content.
+      const templateHtml = editor.getHtml?.() || '';
+      const mainRegex = /(<main[^>]*>)([\s\S]*?)(<\/main>)/;
+      const hasMainElement = mainRegex.test(templateHtml);
+
+      // Step 1: Create all pages first (so name→ID map is complete before link resolution)
+      const createdPages: Array<{ page: any; html: string }> = [];
+
+      for (let i = 0; i < pages.length; i++) {
+        if (i === 0) {
+          // Reuse current page for page 0
+          const currentPage = editor.Pages?.getSelected?.();
+          if (currentPage) {
+            const pageId = currentPage.getId?.() || currentPage.get?.('id') || 'page-current';
+            currentPage.set?.('name', pages[i].name);
+            nameToIdMap.set(pages[i].name, pageId);
+            createdPages.push({ page: currentPage, html: pages[i].html });
+          }
+        } else {
+          // Create new pages for 1..N
+          const pageId = `page-${Date.now()}-${i}`;
+          const newPage = editor.Pages?.add?.({
+            id: pageId,
+            name: pages[i].name,
+          });
+          if (newPage) {
+            nameToIdMap.set(pages[i].name, newPage.getId?.() || pageId);
+            createdPages.push({ page: newPage, html: pages[i].html });
+          }
+        }
+      }
+
+      // Step 2: Resolve page-link references in each page's HTML
+      const resolvedPages = createdPages.map(({ page, html }) => {
+        let resolved = html;
+        for (const [name, id] of nameToIdMap) {
+          const nameEscaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          // Replace page-link="Name" on usa-button / usa-link
+          resolved = resolved.replace(
+            new RegExp(`page-link="${nameEscaped}"`, 'g'),
+            `page-link="${id}" link-type="page" href="#page-${id}"`,
+          );
+          // Also resolve btn{N}-page-link="Name" on usa-button-group (N=1-4)
+          for (let n = 1; n <= 4; n++) {
+            resolved = resolved.replace(
+              new RegExp(`btn${n}-page-link="${nameEscaped}"`, 'g'),
+              `btn${n}-page-link="${id}" btn${n}-link-type="page" btn${n}-href="#page-${id}"`,
+            );
+          }
+        }
+        return { page, html: resolved };
+      });
+
+      // Step 3: Inject content into each page
+      for (let i = 0; i < resolvedPages.length; i++) {
+        const { page, html } = resolvedPages[i];
+        if (i === 0) {
+          // Current page: inject into <main> if it exists, otherwise replace wrapper
+          if (hasMainElement) {
+            const wrapper = editor.DomComponents?.getWrapper?.();
+            const mainComps = wrapper?.find?.('main') || [];
+            const mainComp = mainComps[0];
+            if (mainComp) {
+              mainComp.components?.(html);
+            } else {
+              wrapper?.components?.(html);
+            }
+          } else {
+            const wrapper = editor.DomComponents?.getWrapper?.();
+            wrapper?.components?.(html);
+          }
+        } else {
+          // Other pages: combine template chrome with AI content
+          let fullHtml: string;
+          if (hasMainElement) {
+            // Replace <main> inner content in template with AI-generated content
+            fullHtml = templateHtml.replace(mainRegex, `$1\n${html}\n$3`);
+          } else {
+            // No template — use AI content directly
+            fullHtml = html;
+          }
+
+          const mainComp = page.getMainComponent?.();
+          if (mainComp) {
+            mainComp.components?.(fullHtml);
+          } else {
+            const frameComp = page.getMainFrame?.()?.getComponent?.();
+            frameComp?.components?.(fullHtml);
+          }
+        }
+      }
+
+      // Step 4: Post-processing — sync page link hrefs
+      try {
+        syncPageLinkHrefs(editor);
+      } catch {
+        // Non-critical — links may need manual sync
+      }
+    } finally {
+      um?.stop?.();
+    }
+  }, [editor, messages]);
+
   const clearHistory = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -194,5 +323,5 @@ export function useAICopilot(): UseAICopilotReturn {
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, sendMessage, applyHtml, clearHistory };
+  return { messages, isLoading, sendMessage, applyHtml, applyMultiPage, clearHistory };
 }

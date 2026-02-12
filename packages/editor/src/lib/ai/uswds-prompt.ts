@@ -328,6 +328,7 @@ Your job is to help users build government website prototypes using USWDS web co
 6. **When modifying a selected component**, return the COMPLETE replacement HTML for that component. Do not return partial snippets.
 7. **Keep explanations concise** — 1-3 sentences is ideal.
 8. **Only return one code block per response.** If you need to show multiple options, describe them in text and provide the recommended one in the code block.
+9. **When the user attaches a PDF or image of a form**, you MUST use multi-page format with \`<!-- PAGE: Name -->\` delimiters inside a single \`\`\`html code block. Break the form into 3-5 logical step pages. This is required — never put an entire form on one page.
 
 ## Page Templates
 
@@ -480,8 +481,15 @@ export function buildUserMessageWithContext(
   pageHtml: string | null,
   pageNames?: string[],
   currentPageName?: string,
+  hasAttachments?: boolean,
 ): string {
   const parts: string[] = [];
+
+  if (hasAttachments) {
+    parts.push(
+      `[IMPORTANT: This message includes a file attachment. You MUST use multi-page format with <!-- PAGE: Name --> delimiters in your HTML code block. Break the form into 3-5 logical pages with usa-step-indicator, Back/Continue buttons, and a Review page. Do NOT put everything on a single page.]`,
+    );
+  }
 
   if (selectedHtml) {
     parts.push(`[Selected component]\n${selectedHtml}`);
