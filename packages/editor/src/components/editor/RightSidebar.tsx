@@ -1,11 +1,14 @@
 /**
  * RightSidebar Component
  *
- * Tabbed sidebar with Components (blocks) and Properties (traits) panels.
+ * Tabbed sidebar with Components (blocks), Properties (traits), and
+ * optionally AI assistant panels.
  * - Components tab: Custom block grid using BlocksProvider data
  * - Properties tab: Custom trait forms using TraitsProvider data
+ * - AI tab: Chat panel for AI-assisted prototyping (when enabled)
  *
- * Auto-switches to Properties tab when a component is selected.
+ * Auto-switches to Properties tab when a component is selected,
+ * unless the AI tab is currently active.
  *
  * Note: Provider components set `custom: true` on their GrapesJS managers,
  * which prevents default UI rendering. We render our own React UI using the
@@ -16,20 +19,30 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
 import { SidebarTabs } from './SidebarTabs';
+import { AI_ENABLED } from '../../lib/ai/ai-config';
+import { AICopilotPanel } from './AICopilotPanel';
+import '../../styles/ai-copilot.css';
 
-const TABS = [
+const BASE_TABS = [
   { id: 'components', label: 'Components' },
   { id: 'properties', label: 'Properties' },
 ];
+
+const TABS = AI_ENABLED
+  ? [...BASE_TABS, { id: 'ai', label: 'AI' }]
+  : BASE_TABS;
 
 export function RightSidebar() {
   const [activeTab, setActiveTab] = useState('components');
   const editor = useEditorMaybe();
 
-  // Auto-switch to Properties tab when a component is selected
+  // Auto-switch to Properties tab when a component is selected,
+  // but don't switch away from the AI tab
   useEffect(() => {
     if (!editor) return;
-    const handleSelect = () => setActiveTab('properties');
+    const handleSelect = () => {
+      setActiveTab((current) => current === 'ai' ? 'ai' : 'properties');
+    };
     editor.on('component:selected', handleSelect);
     return () => {
       editor.off('component:selected', handleSelect);
@@ -60,6 +73,15 @@ export function RightSidebar() {
             <TraitsProvider>
               {(props) => <TraitsPanel traits={props.traits} />}
             </TraitsProvider>
+          </div>
+        )}
+        {activeTab === 'ai' && AI_ENABLED && (
+          <div
+            id="sidebar-panel-ai"
+            role="tabpanel"
+            aria-labelledby="sidebar-tab-ai"
+          >
+            <AICopilotPanel />
           </div>
         )}
       </div>

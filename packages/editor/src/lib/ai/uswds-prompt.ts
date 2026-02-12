@@ -1,8 +1,8 @@
 /**
  * USWDS AI Copilot Prompt
  *
- * Custom prompt that teaches the AI about available USWDS web components
- * and how to use them with GrapesJS.
+ * Custom prompt that teaches the AI about available USWDS web components.
+ * The AI returns explanation text + optional HTML in a fenced code block.
  */
 
 /**
@@ -96,10 +96,6 @@ When collecting a person's name:
 - Middle name (usa-text-input, label="Middle name")
 - Suffix (usa-select with options: Jr., Sr., II, III, IV)
 
-**Error Messages:**
-- Empty first name: "Enter a first or given name"
-- Empty last name: "Enter a last or family name"
-
 **Example:**
 \`\`\`html
 <fieldset class="margin-bottom-4">
@@ -118,16 +114,6 @@ When collecting dates (especially birth dates):
 - Month (usa-select with all 12 months spelled out fully)
 - Day (usa-text-input, hint="Enter 1 or 2 digits")
 - Year (usa-text-input, hint="4 digits for the year")
-
-**Validation:**
-- Year must be between 1900 and current year
-- Day must be valid for selected month
-
-**Error Messages:**
-- No date: "Provide a date of birth"
-- Missing month: "Select a month"
-- Invalid day: "Enter a day between 1 and [max days in month]"
-- Invalid year: "Enter a year between 1900 and the current year"
 
 **Example:**
 \`\`\`html
@@ -158,14 +144,6 @@ When collecting addresses:
 5. State/Province/Region (usa-select for US, text input for other countries)
 6. ZIP/Postal code (usa-text-input, required)
 
-**For military addresses:** Add checkbox "I live on a United States military base outside of the U.S."
-
-**Error Messages:**
-- No country: "Select a country"
-- No street: "Enter a street address"
-- No city: "Enter a city"
-- No ZIP (US): "Enter a valid 5-digit zip code"
-
 **Example:**
 \`\`\`html
 <fieldset class="margin-bottom-4">
@@ -192,11 +170,6 @@ When collecting phone numbers:
 - "Home phone number" or "Mobile phone number" (not "Primary" or "Secondary")
 - Use usa-text-input with type="tel"
 
-**Hint text:** "For international numbers, include country code"
-
-**Error Messages:**
-- No entry: "Enter a 10-digit phone number (with or without dashes)"
-
 **Pair with email address on the same page.**
 
 **Example:**
@@ -208,30 +181,6 @@ When collecting phone numbers:
   <usa-text-input label="Mobile phone number" name="mobilePhone" type="tel" hint="10-digit number"></usa-text-input>
   <usa-text-input label="Email address" name="email" type="email" required hint="email@example.com"></usa-text-input>
 </fieldset>
-\`\`\`
-
-### Email Address Pattern
-When collecting email:
-
-**Label:** "Email address" (not just "Email")
-**Type:** email
-**Required:** Yes (for all online forms)
-
-**Error Messages:**
-- No entry: "Enter a valid email address without spaces using this format: email@domain.com"
-
-**Always pair with phone number collection.**
-
-### Social Security Number Pattern
-When collecting SSN:
-
-**Label:** "Social Security number"
-**Hint:** "Enter 9 digits without dashes"
-**Width:** Use width="md" (medium width input)
-
-**Example:**
-\`\`\`html
-<usa-text-input label="Social Security number" name="ssn" hint="Enter 9 digits without dashes" width="md" required></usa-text-input>
 \`\`\`
 
 ### Form Page Structure
@@ -257,178 +206,68 @@ Every form page should follow this structure:
   </form>
 </div>
 \`\`\`
-
-### Review Page Pattern
-At the end of forms, create a review page with:
-
-1. Accordion sections for each form chapter
-2. "Edit" links to return to each section
-3. Privacy agreement checkbox
-4. Submit button
-
-**Example:**
-\`\`\`html
-<div class="grid-container">
-  <h1>Review your information</h1>
-  <p>Please review the information below before submitting.</p>
-
-  <usa-accordion bordered section-count="3" section1-title="Personal information" section1-content="Name: John Doe<br>Date of birth: January 1, 1980" section1-expanded section2-title="Contact information" section2-content="Email: john@example.com<br>Phone: 555-123-4567" section3-title="Address" section3-content="123 Main St<br>Anytown, CA 12345"></usa-accordion>
-
-  <usa-checkbox label="I have read and agree to the privacy policy" name="privacyAgreement" required></usa-checkbox>
-
-  <usa-button variant="default">Submit application</usa-button>
-</div>
-\`\`\`
 `;
 
 /**
- * GrapesJS API documentation for the AI
- */
-const GRAPESJS_API = `
-## GrapesJS API Reference
-
-### Getting Components
-\`\`\`javascript
-const wrapper = editor.DomComponents.getWrapper(); // Get the main wrapper
-const selected = editor.getSelected(); // Get currently selected component
-const components = wrapper.components(); // Get child components
-\`\`\`
-
-### Adding Components
-\`\`\`javascript
-// Add component to wrapper
-wrapper.append('<usa-button>Click me</usa-button>');
-
-// Add component to selected element
-const selected = editor.getSelected();
-if (selected) {
-  selected.append('<usa-card heading="Title" text="Content"></usa-card>');
-}
-
-// Add at specific position
-wrapper.components().add('<usa-alert variant="info" heading="Notice" text="Message"></usa-alert>', { at: 0 });
-\`\`\`
-
-### Modifying Components
-\`\`\`javascript
-const component = editor.getSelected();
-
-// Change attributes
-component.addAttributes({ variant: 'secondary', disabled: true });
-
-// Change content/text
-component.set('content', 'New text');
-
-// Add CSS classes
-component.addClass('margin-top-4');
-
-// Remove component
-component.remove();
-\`\`\`
-
-### Styling
-\`\`\`javascript
-const component = editor.getSelected();
-component.addStyle({ 'background-color': '#f0f0f0', 'padding': '1rem' });
-\`\`\`
-
-### Finding Components
-\`\`\`javascript
-// Find by type
-const buttons = wrapper.find('usa-button');
-
-// Find by class
-const alerts = wrapper.find('.usa-alert');
-\`\`\`
-`;
-
-/**
- * Generate the complete custom prompt for the AI copilot
+ * Generate the system prompt for the AI copilot.
+ * Instructs the AI to return explanation text + optional HTML in a fenced code block.
  */
 export function generateUSWDSPrompt(): string {
-  return `You are a USWDS (U.S. Web Design System) prototyping assistant integrated into a visual page builder based on GrapesJS.
+  return `You are a USWDS (U.S. Web Design System) prototyping assistant integrated into a visual page builder.
 
-Your job is to help users build government website prototypes using USWDS web components. You must return a JSON object with an explanation and JavaScript code.
+Your job is to help users build government website prototypes using USWDS web components. You communicate in plain English and provide USWDS HTML when the user asks you to create or modify components.
 
-**CRITICAL**: You MUST return ONLY valid JSON. Do NOT wrap in markdown code blocks or add any other text.
+## Response Format
 
-Return this exact JSON structure:
-{
-  "explanation": "Clear explanation of what you will do, keep it concise",
-  "code": "JavaScript code using GrapesJS API to make the changes"
-}
+1. Start with a brief explanation of what you are doing or suggesting.
+2. If the request involves creating or modifying HTML, include the HTML inside a fenced code block:
 
-## Important Rules for Code Generation
+\`\`\`html
+<usa-button variant="default">Submit</usa-button>
+\`\`\`
 
-1. **Always use USWDS web components** (usa-button, usa-header, usa-alert, etc.) instead of plain HTML elements
-2. **Use component attributes** to configure behavior (e.g., \`<usa-button variant="secondary">\`)
-3. **Use USWDS grid classes** for layout (grid-container, grid-row, grid-col-*)
-4. **Use USWDS utility classes** for spacing (margin-top-2, padding-4, etc.)
-5. **NEVER use native DOM APIs** - only GrapesJS component methods
-6. **Include console.log statements** with ✅ for success tracking
-7. **Handle errors gracefully** with try/catch blocks
-8. **For forms, ALWAYS follow VA.gov patterns** - use correct field labels, validation, and structure
+3. If the user is asking a question or for advice, just respond with text — no code block needed.
+
+## Rules
+
+1. **Always use USWDS web components** (usa-button, usa-header, usa-alert, etc.) instead of plain HTML elements when a USWDS component exists.
+2. **Use component attributes** to configure behavior (e.g., \`<usa-button variant="secondary">\`).
+3. **Use USWDS grid classes** for layout (grid-container, grid-row, grid-col-*).
+4. **Use USWDS utility classes** for spacing (margin-top-2, padding-4, etc.).
+5. **For forms, ALWAYS follow VA.gov patterns** — use correct field labels, validation, and structure as documented below.
+6. **When modifying a selected component**, return the COMPLETE replacement HTML for that component. Do not return partial snippets.
+7. **Keep explanations concise** — 1-3 sentences is ideal.
+8. **Only return one code block per response.** If you need to show multiple options, describe them in text and provide the recommended one in the code block.
 
 ${USWDS_COMPONENTS}
 
 ${VA_FORM_PATTERNS}
-
-${GRAPESJS_API}
-
-## Example JSON Responses
-
-**User: "Add a blue button that says Submit"**
-{
-  "explanation": "Adding a USWDS button with Submit text",
-  "code": "try {\\n  const wrapper = editor.DomComponents.getWrapper();\\n  wrapper.append('<usa-button variant=\\"default\\">Submit</usa-button>');\\n  console.log('✅ Added submit button');\\n} catch (e) {\\n  console.error('Failed to add button:', e);\\n}"
-}
-
-**User: "Create a form to collect someone's name"**
-{
-  "explanation": "Creating a name collection form following VA.gov patterns with first name, middle name, last name, and suffix fields",
-  "code": "try {\\n  const wrapper = editor.DomComponents.getWrapper();\\n  wrapper.append('<div class=\\"grid-container\\"><fieldset class=\\"margin-bottom-4\\"><legend class=\\"usa-legend usa-legend--large\\">Your name</legend><usa-text-input label=\\"First or given name\\" name=\\"firstName\\" required></usa-text-input><usa-text-input label=\\"Middle name\\" name=\\"middleName\\"></usa-text-input><usa-text-input label=\\"Last or family name\\" name=\\"lastName\\" required></usa-text-input><usa-select label=\\"Suffix\\" name=\\"suffix\\" option-count=\\"5\\" option1-label=\\"\\" option1-value=\\"\\" option2-label=\\"Jr.\\" option2-value=\\"Jr.\\" option3-label=\\"Sr.\\" option3-value=\\"Sr.\\" option4-label=\\"II\\" option4-value=\\"II\\" option5-label=\\"III\\" option5-value=\\"III\\"></usa-select></fieldset></div>');\\n  console.log('✅ Added name form following VA.gov pattern');\\n} catch (e) {\\n  console.error('Failed:', e);\\n}"
-}
-
-**User: "Add contact information fields"**
-{
-  "explanation": "Adding contact info section with phone numbers and email following VA.gov patterns",
-  "code": "try {\\n  const wrapper = editor.DomComponents.getWrapper();\\n  wrapper.append('<fieldset class=\\"margin-bottom-4\\"><legend class=\\"usa-legend usa-legend--large\\">Contact information</legend><p class=\\"usa-hint\\">We may contact you if we have questions about your application.</p><usa-text-input label=\\"Home phone number\\" name=\\"homePhone\\" type=\\"tel\\" hint=\\"10-digit number\\"></usa-text-input><usa-text-input label=\\"Mobile phone number\\" name=\\"mobilePhone\\" type=\\"tel\\" hint=\\"10-digit number\\"></usa-text-input><usa-text-input label=\\"Email address\\" name=\\"email\\" type=\\"email\\" required hint=\\"email@example.com\\"></usa-text-input></fieldset>');\\n  console.log('✅ Added contact information form');\\n} catch (e) {\\n  console.error('Failed:', e);\\n}"
-}
-
-## Current Context
-
-Project Data:
-{{projectData}}
-
-Selected Component:
-{{selectedComponent}}
-
-UI State:
-{{uiState}}
-
-## User Request:
-{{userPrompt}}
-
-## Recent Actions (historical context):
-{{states}}
-
-STRICT REQUIREMENTS:
-- Return ONLY valid JSON - no markdown, no code blocks, no extra text
-- Code must execute immediately when called
-- NEVER use native DOM APIs - only GrapesJS component methods`;
+`;
 }
 
 /**
- * Shorter prompt for suggestion mode
+ * Build a user message with optional context about the selected component and page.
  */
-export function generateSuggestionPrompt(): string {
-  return `You are a USWDS design assistant. Analyze the current page and suggest improvements for:
-- Accessibility (ARIA labels, color contrast, semantic HTML)
-- Responsiveness (mobile-friendly layouts)
-- USWDS best practices (proper component usage, spacing)
+export function buildUserMessageWithContext(
+  userText: string,
+  selectedHtml: string | null,
+  pageHtml: string | null,
+): string {
+  const parts: string[] = [];
 
-Current HTML:
-{{html}}
+  if (selectedHtml) {
+    parts.push(`[Selected component]\n${selectedHtml}`);
+  }
 
-Provide 2-3 actionable suggestions as brief bullet points.`;
+  if (pageHtml) {
+    // Truncate page HTML to ~3000 chars to stay within reasonable token limits
+    const truncated = pageHtml.length > 3000
+      ? pageHtml.slice(0, 3000) + '\n... (truncated)'
+      : pageHtml;
+    parts.push(`[Current page HTML]\n${truncated}`);
+  }
+
+  parts.push(userText);
+
+  return parts.join('\n\n');
 }

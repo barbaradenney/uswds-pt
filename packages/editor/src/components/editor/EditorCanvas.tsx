@@ -18,71 +18,11 @@ import 'grapesjs/dist/css/grapes.min.css';
 import { uswdsComponentsPlugin } from '../../lib/grapesjs/plugins';
 import { EditorErrorBoundary } from '../EditorErrorBoundary';
 import { CDN_URLS } from '@uswds-pt/adapter';
-import aiCopilotPlugin from '@silexlabs/grapesjs-ai-copilot';
-import { generateUSWDSPrompt } from '../../lib/ai/uswds-prompt';
-import { createDebugLogger } from '@uswds-pt/shared';
 import { LeftSidebar } from './LeftSidebar';
 import { RightSidebar } from './RightSidebar';
 import { CanvasToolbar } from './CanvasToolbar';
-import '../../styles/ai-copilot.css';
 import '../../styles/grapesjs-overrides.css';
 import '../../styles/editor-layout.css';
-
-const debug = createDebugLogger('AI Copilot');
-
-// AI Copilot configuration
-const AI_API_KEY = import.meta.env.VITE_AI_API_KEY || '';
-const AI_PROVIDER = (import.meta.env.VITE_AI_PROVIDER || 'claude') as 'claude' | 'openai';
-const AI_MODEL = import.meta.env.VITE_AI_MODEL || (AI_PROVIDER === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o');
-const AI_SECRET = import.meta.env.VITE_AI_SECRET || '';
-
-// AI is enabled only if:
-// 1. API key is configured AND
-// 2. Either no secret is set, OR the URL has the correct ?ai=secret parameter
-// Use ?ai=off to explicitly disable
-const checkAiEnabled = (): boolean => {
-  const hasApiKey = !!AI_API_KEY;
-  const hasSecret = !!AI_SECRET;
-
-  // Check URL parameter (before the hash)
-  const urlParams = new URLSearchParams(window.location.search);
-  const aiParam = urlParams.get('ai');
-
-  // Debug logging
-  debug('Checking AI status:', { hasApiKey, hasSecret, aiParam });
-
-  // Explicit disable with ?ai=off
-  if (aiParam === 'off' || aiParam === 'disable') {
-    debug('Disabled: Explicit ?ai=off parameter');
-    sessionStorage.removeItem('uswds_pt_ai_enabled');
-    return false;
-  }
-
-  if (!hasApiKey) {
-    debug('Disabled: No API key configured');
-    return false;
-  }
-
-  if (!hasSecret) {
-    debug('Enabled: No secret required');
-    return true;
-  }
-
-  // Check if secret matches
-  if (aiParam === AI_SECRET) {
-    debug('Enabled: Secret matched, saving to session');
-    sessionStorage.setItem('uswds_pt_ai_enabled', 'true');
-    return true;
-  }
-
-  // Check session storage (persists for browser session only, not permanently)
-  const fromSession = sessionStorage.getItem('uswds_pt_ai_enabled') === 'true';
-  debug('From session:', fromSession);
-  return fromSession;
-};
-
-const AI_ENABLED = checkAiEnabled();
-debug('Final AI_ENABLED:', AI_ENABLED);
 
 import type { EditorInstance } from '../../types/grapesjs';
 
@@ -109,23 +49,6 @@ export interface EditorCanvasProps {
   onGoHome: () => void;
 }
 
-/**
- * AI Copilot plugin configuration
- */
-const AI_COPILOT_CONFIG = {
-  aiProvider: AI_PROVIDER,
-  apiKey: AI_API_KEY,
-  model: AI_MODEL,
-  customPrompt: generateUSWDSPrompt(),
-  // Panel positioning — use a container we place in the layout
-  containerSelector: '.ai-copilot-container',
-  // Update suggestions less frequently to reduce API costs
-  updateInterval: 30000, // 30 seconds
-  minChangesThreshold: 10,
-  // Response limits
-  maxTokens: 2000,
-};
-
 export const EditorCanvas = memo(function EditorCanvas({
   editorKey,
   initialContent,
@@ -148,10 +71,7 @@ export const EditorCanvas = memo(function EditorCanvas({
           canvas: {
             styles: [CDN_URLS.uswdsCss, CDN_URLS.uswdsWcCss],
           },
-          plugins: [
-            uswdsComponentsPlugin,
-            ...(AI_ENABLED ? [(editor: EditorInstance) => aiCopilotPlugin(editor, AI_COPILOT_CONFIG)] : []),
-          ],
+          plugins: [uswdsComponentsPlugin],
           projectData: projectData || {
             pages: [{
               name: 'Prototype',
@@ -171,8 +91,6 @@ export const EditorCanvas = memo(function EditorCanvas({
           </div>
           <RightSidebar />
         </div>
-        {/* AI copilot mount point (used when AI is enabled) */}
-        <div className="ai-copilot-container" />
       </GjsEditor>
     </EditorErrorBoundary>
   );

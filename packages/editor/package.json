@@ -18,11 +18,12 @@
   },
   "dependencies": {
     "@grapesjs/react": "^2.0.0",
-    "@silexlabs/grapesjs-ai-copilot": "^0.0.33",
+    "@anthropic-ai/sdk": "^0.58.0",
     "@uswds-pt/adapter": "workspace:*",
     "@uswds-pt/shared": "workspace:*",
     "diff": "^8.0.3",
     "grapesjs": "^0.22.5",
+    "openai": "^5.12.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.22.0"
