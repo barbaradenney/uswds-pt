@@ -141,16 +141,16 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
         label: 'Select Page',
         type: 'select',
         default: '',
-        // Options are populated dynamically by Editor.tsx
+        // Options are populated dynamically by useGrapesJSSetup.ts
         options: [
-          { id: 'none', label: '-- Select a page --' },
+          { id: '', label: '-- Select a page --' },
         ],
         visible: pageLinkVisible,
         category: { id: 'link', label: 'Link' },
       },
       handler: {
         onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
-          if (value && value !== 'none') {
+          if (value) {
             const href = `#page-${value}`;
             // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);

@@ -16,7 +16,7 @@
  * the Container portal (which renders into a detached element).
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
@@ -294,19 +294,31 @@ function CheckboxGroupField({ trait }: { trait: any }) {
   );
 }
 
-function TraitField({ trait }: { trait: any }) {
+const TraitField = memo(function TraitField({ trait }: { trait: any }) {
   const type = trait.getType();
   const label = trait.getLabel() || trait.getName();
   const [localValue, setLocalValue] = useState(trait.getValue());
+  const isFocusedRef = useRef(false);
 
-  // Sync local state when trait object changes (different component selected)
+  // Sync local state when trait object changes (different component selected).
+  // Skip sync when an input is focused — React re-rendering a controlled <select>
+  // writes to the DOM, which causes browsers to close the native dropdown.
   useEffect(() => {
-    setLocalValue(trait.getValue());
+    if (!isFocusedRef.current) {
+      setLocalValue(trait.getValue());
+    }
   }, [trait]);
 
   const handleChange = (newValue: any) => {
     setLocalValue(newValue);
     trait.set('value', newValue);
+  };
+
+  const handleFocus = () => { isFocusedRef.current = true; };
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    // Sync value on blur in case it changed externally while focused
+    setLocalValue(trait.getValue());
   };
 
   if (type === 'checkbox-group') {
@@ -337,6 +349,8 @@ function TraitField({ trait }: { trait: any }) {
           className="trait-input trait-select"
           value={localValue ?? ''}
           onChange={(e) => handleChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
         >
           {options.map((opt: any) => {
             const optValue = opt.id ?? opt.value ?? '';
@@ -409,4 +423,4 @@ function TraitField({ trait }: { trait: any }) {
       />
     </div>
   );
-}
+});

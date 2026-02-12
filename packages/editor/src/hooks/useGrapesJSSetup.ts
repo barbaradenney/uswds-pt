@@ -533,6 +533,63 @@ function waitForFrameReady(
 }
 
 /**
+ * Build a new-page template by copying header/footer from an existing page.
+ * This keeps the chrome (header style, nav items, footer variant) consistent
+ * across all pages in the prototype instead of falling back to a generic
+ * blank-template that has different header/footer configuration.
+ *
+ * Returns null if no suitable source page is found.
+ */
+function buildTemplateFromExistingPage(editor: EditorInstance): string | null {
+  const HEADER_TAGS = ['usa-banner', 'usa-header'];
+  const FOOTER_TAGS = ['usa-footer', 'usa-identifier'];
+
+  const allPages = editor.Pages?.getAll?.() || [];
+  const currentPageId = editor.Pages?.getSelected?.()?.getId?.();
+
+  // Find a source page (prefer the first page; skip the current empty one)
+  const sourcePage = allPages.find((p: any) => {
+    const pid = p.getId?.() || p.id;
+    return pid !== currentPageId;
+  });
+  if (!sourcePage) return null;
+
+  const sourceWrapper = sourcePage.getMainComponent?.();
+  if (!sourceWrapper) return null;
+
+  // Recursively collect header and footer components from the source page
+  const headerParts: string[] = [];
+  const footerParts: string[] = [];
+
+  const collect = (comp: any) => {
+    const tag = (comp.get?.('tagName') || '').toLowerCase();
+    if (HEADER_TAGS.includes(tag)) {
+      headerParts.push(comp.toHTML());
+    } else if (FOOTER_TAGS.includes(tag)) {
+      footerParts.push(comp.toHTML());
+    }
+    // Recurse — templates wrap everything in a div (e.g., div.signed-in-template)
+    const children = comp.components?.();
+    if (children) {
+      children.forEach((child: any) => collect(child));
+    }
+  };
+  collect(sourceWrapper);
+
+  if (headerParts.length === 0) return null;
+
+  return `<div class="page-template">
+  ${headerParts.join('\n  ')}
+  <main id="main-content" class="grid-container" style="padding: 2rem 0; min-height: 400px;">
+    <div class="grid-row">
+      <div class="grid-col-12"></div>
+    </div>
+  </main>
+  ${footerParts.join('\n  ')}
+</div>`;
+}
+
+/**
  * Set up page event handlers
  */
 function setupPageEventHandlers(
@@ -626,10 +683,18 @@ function setupPageEventHandlers(
             }
 
             if (shouldAddTemplate) {
-              const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
-              if (blankTemplate) {
-                mainComponent.components(blankTemplate);
-                debug('Added default template to new page');
+              // Try to inherit header/footer from an existing page so new pages
+              // have consistent chrome (e.g., same extended header, search, nav).
+              let templateHtml = buildTemplateFromExistingPage(editor);
+
+              if (!templateHtml) {
+                // Fallback to generic blank template
+                templateHtml = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
+              }
+
+              if (templateHtml) {
+                mainComponent.components(templateHtml);
+                debug('Added template to new page');
               }
             }
           }
