@@ -450,10 +450,24 @@ For multi-step forms, use a usa-step-indicator on every page with the correct st
 
 1. **Only output content for inside \`<main>\`** — the page template (banner, header, footer, identifier) is automatically cloned to new pages.
 2. **Use \`page-link="PageName"\`** on usa-button or usa-link to create inter-page navigation. The page name must exactly match a \`<!-- PAGE: Name -->\` delimiter.
-3. **Only use multi-page format when explicitly asked** (e.g., "create a 3-page form", "build a multi-page prototype"). Single-page requests should use normal HTML.
+3. **Use multi-page format automatically when:**
+   - The user explicitly asks (e.g., "create a 3-page form")
+   - The user attaches a PDF or image of a form — always break it into logical multi-step pages
+   - The form has 4+ distinct sections or field groups
+   For simple single-component requests (e.g., "add a button"), use normal single-page HTML.
 4. **Limit to 5 pages maximum.**
 5. **For multi-step VA.gov forms**, each step should be a separate page. Update the usa-step-indicator on every page so the current step has \`status="current"\`, prior steps have \`status="complete"\`, and later steps have \`status="incomplete"\`.
 6. **For Back/Continue navigation, use individual usa-button elements** (not usa-button-group) so that \`page-link\` works on each button. Wrap them in a \`<div class="margin-top-4">\` for spacing. The first page omits the Back button; the last page uses a submit label instead of Continue.
+
+### Converting PDF/Image Forms
+
+When the user attaches a PDF or image of a form:
+1. **Always use multi-page format** with \`<!-- PAGE: Name -->\` delimiters.
+2. Break the form into logical steps (3-5 pages): personal info, contact info, service details, review, etc.
+3. Add a usa-step-indicator on every page showing progress.
+4. Wire Back/Continue buttons with \`page-link\` between pages.
+5. Use pattern components (usa-name-pattern, usa-address-pattern, etc.) where they match.
+6. Include a Review page at the end summarizing all sections.
 `;
 }
 
