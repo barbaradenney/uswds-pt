@@ -9,7 +9,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
 import { sendAIMessage } from '../lib/ai/ai-client';
-import type { AIMessage } from '../lib/ai/ai-client';
+import type { AIMessage, Attachment } from '../lib/ai/ai-client';
 import { generateUSWDSPrompt, buildUserMessageWithContext } from '../lib/ai/uswds-prompt';
 
 export interface ChatMessage {
@@ -21,12 +21,13 @@ export interface ChatMessage {
   hadSelection?: boolean;
   isError?: boolean;
   isLoading?: boolean;
+  attachments?: Attachment[];
 }
 
 export interface UseAICopilotReturn {
   messages: ChatMessage[];
   isLoading: boolean;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, attachments?: Attachment[]) => Promise<void>;
   applyHtml: (messageId: string, mode: 'replace' | 'add') => void;
   clearHistory: () => void;
 }
@@ -42,8 +43,8 @@ export function useAICopilot(): UseAICopilotReturn {
   const abortRef = useRef<AbortController | null>(null);
   const editor = useEditorMaybe();
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isLoading) return;
+  const sendMessage = useCallback(async (text: string, attachments?: Attachment[]) => {
+    if ((!text.trim() && !attachments?.length) || isLoading) return;
 
     // Capture selection context at send time
     const selected = editor?.getSelected?.();
@@ -57,6 +58,7 @@ export function useAICopilot(): UseAICopilotReturn {
       role: 'user',
       content: text.trim(),
       hadSelection,
+      attachments,
     };
 
     // Add loading placeholder
@@ -87,6 +89,7 @@ export function useAICopilot(): UseAICopilotReturn {
     apiMessages.push({
       role: 'user',
       content: buildUserMessageWithContext(text.trim(), selectedHtml, pageHtml),
+      attachments,
     });
 
     try {

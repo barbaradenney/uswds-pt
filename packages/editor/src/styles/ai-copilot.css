@@ -178,6 +178,29 @@
   background: #1a4480;
 }
 
+/* ─── Attachment badges on sent messages ─── */
+
+.ai-msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.ai-msg-attachment-badge {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #1a4480;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ─── Input area ─── */
 
 .ai-panel-input-area {
@@ -188,8 +211,73 @@
   gap: 6px;
 }
 
+/* ─── Attachment chips (pre-send preview) ─── */
+
+.ai-panel-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ai-panel-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e7f2f8;
+  border: 1px solid #b8d4e9;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.6875rem;
+  max-width: 100%;
+}
+
+.ai-panel-attachment-chip-type {
+  font-weight: 600;
+  color: #1a4480;
+  flex-shrink: 0;
+}
+
+.ai-panel-attachment-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1b1b1b;
+}
+
+.ai-panel-attachment-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: #71767a;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.ai-panel-attachment-chip-remove:hover {
+  color: #b50909;
+}
+
+/* ─── File error ─── */
+
+.ai-panel-file-error {
+  font-size: 0.75rem;
+  color: #b50909;
+  padding: 0 2px;
+}
+
+/* ─── Textarea row with attach button ─── */
+
+.ai-panel-textarea-row {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+
 .ai-panel-textarea {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 1px solid #dfe1e2;
   border-radius: 4px;
   padding: 8px 10px;
@@ -202,6 +290,34 @@
   box-sizing: border-box;
   color: #1b1b1b;
   background: #ffffff;
+}
+
+.ai-panel-attach-btn {
+  background: none;
+  border: 1px solid #dfe1e2;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: #71767a;
+  flex-shrink: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.ai-panel-attach-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+  border-color: #a9aeb1;
+  color: #1b1b1b;
+}
+
+.ai-panel-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ai-panel-textarea:focus {

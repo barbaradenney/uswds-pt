@@ -7,9 +7,19 @@
 
 import { AI_API_KEY, AI_PROVIDER, AI_MODEL } from './ai-config';
 
+export interface Attachment {
+  /** File name for display */
+  name: string;
+  /** MIME type (application/pdf, image/png, etc.) */
+  mediaType: string;
+  /** Base64-encoded file data */
+  base64Data: string;
+}
+
 export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;
+  attachments?: Attachment[];
 }
 
 export interface AIResponse {
@@ -65,6 +75,46 @@ export async function sendAIMessage(
   return parseAIResponse(raw);
 }
 
+/* ─── Content builders ─── */
+
+function buildClaudeContent(m: AIMessage): string | any[] {
+  if (!m.attachments?.length) return m.content;
+  const parts: any[] = [];
+  for (const att of m.attachments) {
+    if (att.mediaType === 'application/pdf') {
+      parts.push({
+        type: 'document',
+        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
+      });
+    } else {
+      parts.push({
+        type: 'image',
+        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
+      });
+    }
+  }
+  parts.push({ type: 'text', text: m.content });
+  return parts;
+}
+
+function buildOpenAIContent(m: AIMessage): string | any[] {
+  if (!m.attachments?.length) return m.content;
+  const parts: any[] = [];
+  let textSuffix = '';
+  for (const att of m.attachments) {
+    if (att.mediaType === 'application/pdf') {
+      textSuffix += `\n\n(PDF attachment "${att.name}" not supported with OpenAI provider)`;
+    } else {
+      parts.push({
+        type: 'image_url',
+        image_url: { url: `data:${att.mediaType};base64,${att.base64Data}` },
+      });
+    }
+  }
+  parts.push({ type: 'text', text: m.content + textSuffix });
+  return parts;
+}
+
 /* ─── Claude (Anthropic) ─── */
 
 async function sendClaude(
@@ -85,7 +135,7 @@ async function sendClaude(
       system: systemPrompt,
       messages: messages.map((m) => ({
         role: m.role,
-        content: m.content,
+        content: buildClaudeContent(m),
       })),
     },
     { signal: abortSignal },
@@ -116,7 +166,7 @@ async function sendOpenAI(
         { role: 'system', content: systemPrompt },
         ...messages.map((m) => ({
           role: m.role as 'user' | 'assistant',
-          content: m.content,
+          content: buildOpenAIContent(m),
         })),
       ],
     },
