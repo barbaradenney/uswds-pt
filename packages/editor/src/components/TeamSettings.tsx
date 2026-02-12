@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Role } from '@uswds-pt/shared';
 import { useTeamMembers } from '../hooks/useTeamMembers';
@@ -7,7 +7,6 @@ import { InviteModal } from './InviteModal';
 import { TeamGitHubSettings } from './TeamGitHubSettings';
 import { getRoleBadge } from '../lib/roles';
 import { formatDate } from '../lib/date';
-import { apiGet, API_ENDPOINTS } from '../lib/api';
 
 interface TeamSettingsProps {
   teamId: string;
@@ -24,9 +23,6 @@ export function TeamSettings({
 }: TeamSettingsProps) {
   const navigate = useNavigate();
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showGitHubSettings, setShowGitHubSettings] = useState(false);
-  const [gitHubConnectedRepo, setGitHubConnectedRepo] = useState<string | null>(null);
-  const wasGitHubSettingsOpen = useRef(false);
   const {
     members,
     invitations,
@@ -41,31 +37,6 @@ export function TeamSettings({
 
   const { user } = useAuth();
   const hasGitHubLinked = !!user?.hasGitHubLinked;
-
-  // Fetch team-level GitHub connection status
-  const fetchGitHubConnection = useCallback(async () => {
-    if (!teamId) {
-      setGitHubConnectedRepo(null);
-      return;
-    }
-    const result = await apiGet<{ connected: boolean; repoOwner?: string; repoName?: string }>(
-      API_ENDPOINTS.GITHUB_TEAM_CONNECTION(teamId)
-    );
-    if (result.success && result.data?.connected) {
-      setGitHubConnectedRepo(`${result.data.repoOwner}/${result.data.repoName}`);
-    } else {
-      setGitHubConnectedRepo(null);
-    }
-  }, [teamId]);
-
-  // Refetch when modal closes (to pick up connect/disconnect changes)
-  useEffect(() => {
-    const wasOpen = wasGitHubSettingsOpen.current;
-    wasGitHubSettingsOpen.current = showGitHubSettings;
-    if (!showGitHubSettings && (wasOpen || !gitHubConnectedRepo)) {
-      fetchGitHubConnection();
-    }
-  }, [showGitHubSettings, fetchGitHubConnection, gitHubConnectedRepo]);
 
   const canManageMembers = userRole === 'org_admin' || userRole === 'team_admin';
 
@@ -238,44 +209,9 @@ export function TeamSettings({
         </div>
       )}
 
-      {/* GitHub Integration Section - team_admin and org_admin */}
+      {/* GitHub Integration — inline sections for prototype + handoff repos */}
       {canManageMembers && (
-        <div className="team-settings-section">
-          <h2>GitHub Integration <span style={{ fontWeight: 400, fontSize: '0.875rem', color: 'var(--color-base-light, #71767a)' }}>(optional)</span></h2>
-          <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
-            Connect a GitHub repository to automatically push this team's prototype HTML
-            on every save. Each team can connect to a different repository, so different
-            teams can export to different codebases. This is entirely optional — prototypes
-            save and work normally without it.
-          </p>
-          {gitHubConnectedRepo ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{
-                fontSize: '0.875rem',
-                color: 'var(--color-success-darker, #4d8055)',
-                backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
-                padding: '6px 10px',
-                borderRadius: '4px',
-              }}>
-                Connected to {gitHubConnectedRepo}
-              </span>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowGitHubSettings(true)}
-                style={{ padding: '6px 12px', fontSize: '0.875rem' }}
-              >
-                Manage
-              </button>
-            </div>
-          ) : (
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowGitHubSettings(true)}
-            >
-              Connect Repository
-            </button>
-          )}
-        </div>
+        <TeamGitHubSettings teamId={teamId} hasGitHubLinked={hasGitHubLinked} />
       )}
 
       {/* Invite Modal */}
@@ -286,14 +222,6 @@ export function TeamSettings({
           onClose={() => setShowInviteModal(false)}
         />
       )}
-
-      {/* GitHub Settings Modal */}
-      <TeamGitHubSettings
-        isOpen={showGitHubSettings}
-        onClose={() => setShowGitHubSettings(false)}
-        teamId={teamId}
-        hasGitHubLinked={hasGitHubLinked}
-      />
     </div>
   );
 }

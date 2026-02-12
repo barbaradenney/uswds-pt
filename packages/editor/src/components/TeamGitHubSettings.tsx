@@ -1,11 +1,11 @@
 /**
  * Team-Level GitHub Settings
  *
- * Modal dialog for connecting/disconnecting a team to a GitHub repo.
- * All prototypes in the team auto-push to the connected repo on save.
+ * Inline sections for the Team Settings page — one for the prototype repo
+ * connection and one for the developer handoff repo connection.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_ENDPOINTS, apiGet, apiPost, apiDelete } from '../lib/api';
 
 interface GitHubRepo {
@@ -25,13 +25,11 @@ interface TeamConnection {
 }
 
 interface TeamGitHubSettingsProps {
-  isOpen: boolean;
-  onClose: () => void;
   teamId: string;
   hasGitHubLinked: boolean;
 }
 
-export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }: TeamGitHubSettingsProps) {
+export function TeamGitHubSettings({ teamId, hasGitHubLinked }: TeamGitHubSettingsProps) {
   const [connection, setConnection] = useState<TeamConnection | null>(null);
   const [handoffConnection, setHandoffConnection] = useState<TeamConnection | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -46,7 +44,6 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
   const [selectedHandoffRepo, setSelectedHandoffRepo] = useState<string>('');
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [showHandoffDisconnectConfirm, setShowHandoffDisconnectConfirm] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const fetchConnection = useCallback(async () => {
     setIsLoadingConnection(true);
@@ -91,41 +88,13 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
   }, []);
 
   useEffect(() => {
-    if (isOpen && teamId) {
+    if (teamId) {
       fetchConnection();
       if (hasGitHubLinked) {
         fetchRepos();
       }
     }
-  }, [isOpen, teamId, hasGitHubLinked, fetchConnection, fetchRepos]);
-
-  // Escape key handling
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Focus management
-  useEffect(() => {
-    if (isOpen && contentRef.current) {
-      contentRef.current.focus();
-    }
-  }, [isOpen]);
-
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setError(null);
-      setSelectedRepo('');
-      setSelectedHandoffRepo('');
-      setShowDisconnectConfirm(false);
-      setShowHandoffDisconnectConfirm(false);
-    }
-  }, [isOpen]);
+  }, [teamId, hasGitHubLinked, fetchConnection, fetchRepos]);
 
   const handleConnect = async () => {
     if (!selectedRepo) return;
@@ -211,99 +180,110 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
     setIsDisconnectingHandoff(false);
   };
 
-  if (!isOpen) return null;
+  const errorBanner = error && (
+    <div style={{
+      padding: '8px 12px',
+      backgroundColor: '#fce4e4',
+      borderRadius: '4px',
+      color: '#b50909',
+      fontSize: '0.875rem',
+      marginBottom: '12px',
+    }}>
+      {error}
+    </div>
+  );
+
+  const notLinkedMessage = !hasGitHubLinked && (
+    <div style={{
+      padding: '16px',
+      backgroundColor: 'var(--color-base-lightest, #f0f0f0)',
+      borderRadius: '4px',
+      textAlign: 'center',
+    }}>
+      <p style={{ margin: '0 0 8px', fontWeight: 600 }}>GitHub account not linked</p>
+      <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-base-light)' }}>
+        Sign in with GitHub first to connect a repository.
+      </p>
+    </div>
+  );
+
+  const repoSelect = (
+    id: string,
+    value: string,
+    onChange: (v: string) => void,
+    disabled: boolean,
+  ) => (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      style={{
+        width: '100%',
+        padding: '8px 12px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        fontSize: '0.875rem',
+        marginBottom: '12px',
+      }}
+    >
+      <option value="">
+        {isLoadingRepos ? 'Loading repositories...' : '-- Choose a repo --'}
+      </option>
+      {repos.filter(repo => !repo.private).map(repo => (
+        <option key={repo.fullName} value={repo.fullName}>
+          {repo.fullName}
+        </option>
+      ))}
+    </select>
+  );
 
   return (
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="github-settings-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        ref={contentRef}
-        tabIndex={-1}
-        className="modal-content"
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          padding: '24px',
-          maxWidth: '480px',
-          width: '90%',
-          maxHeight: '80vh',
-          overflow: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 id="github-settings-title" style={{ margin: 0, fontSize: '1.25rem' }}>GitHub Integration</h2>
-          <button
-            className="btn"
-            onClick={onClose}
-            aria-label="Close"
-            style={{ padding: '4px 8px', minWidth: 'auto' }}
-          >
-            &times;
-          </button>
-        </div>
-
-        <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '16px' }}>
-          Connect a GitHub repository to automatically push your prototype HTML
-          to your team's codebase every time you save. Each team can connect to a
-          different repository. Developers can then review changes, open pull requests,
-          and merge production-ready USWDS markup directly into their project. Each
-          prototype pushes to its own branch ({`uswds-pt/<name>`}).
+    <>
+      {/* Prototype Repository Section */}
+      <div className="team-settings-section">
+        <h2>
+          Prototype Repository{' '}
+          <span style={{ fontWeight: 400, fontSize: '0.875rem', color: 'var(--color-base-light, #71767a)' }}>
+            (optional)
+          </span>
+        </h2>
+        <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
+          Push full prototype data (HTML + GrapesJS project) to GitHub on every save.
+          Each prototype pushes to its own <code>uswds-pt/&lt;name&gt;</code> branch.
         </p>
 
-        {error && (
-          <div style={{
-            padding: '8px 12px',
-            backgroundColor: '#fce4e4',
-            borderRadius: '4px',
-            color: '#b50909',
-            fontSize: '0.875rem',
-            marginBottom: '12px',
-          }}>
-            {error}
-          </div>
-        )}
+        {errorBanner}
 
         {isLoadingConnection ? (
           <div style={{ textAlign: 'center', padding: '24px' }}>
             <div className="loading-spinner" />
-            <p style={{ color: 'var(--color-base-light)', marginTop: '8px' }}>Loading...</p>
           </div>
         ) : connection?.connected ? (
           <div>
             <div style={{
-              padding: '12px 16px',
-              backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
-              borderRadius: '4px',
-              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px',
             }}>
-              <div style={{ fontWeight: 600, marginBottom: '4px' }}>Connected</div>
-              <div style={{ fontSize: '0.875rem' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-success-darker, #4d8055)',
+                backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+                padding: '6px 10px',
+                borderRadius: '4px',
+              }}>
+                Connected to{' '}
                 <a
                   href={`https://github.com/${connection.repoOwner}/${connection.repoName}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: 'var(--color-primary)' }}
+                  style={{ color: 'inherit', textDecoration: 'underline' }}
                 >
                   {connection.repoOwner}/{connection.repoName}
                 </a>
-                <span style={{ color: 'var(--color-base-light)', marginLeft: '8px' }}>
-                  (default: {connection.defaultBranch})
-                </span>
-              </div>
+              </span>
             </div>
             {showDisconnectConfirm ? (
               <div style={{
@@ -312,14 +292,14 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
                 borderRadius: '4px',
               }}>
                 <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#b50909' }}>
-                  Disconnect GitHub? Prototypes will no longer auto-push.
+                  Disconnect? Prototypes will no longer push to this repo.
                 </p>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     className="btn btn-secondary"
                     onClick={handleDisconnect}
                     disabled={isDisconnecting}
-                    style={{ flex: 1, color: '#b50909', borderColor: '#b50909' }}
+                    style={{ color: '#b50909', borderColor: '#b50909' }}
                   >
                     {isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
                   </button>
@@ -327,7 +307,6 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
                     className="btn btn-secondary"
                     onClick={() => setShowDisconnectConfirm(false)}
                     disabled={isDisconnecting}
-                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
@@ -337,25 +316,12 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowDisconnectConfirm(true)}
-                style={{ width: '100%' }}
               >
                 Disconnect Repository
               </button>
             )}
           </div>
-        ) : !hasGitHubLinked ? (
-          <div style={{
-            padding: '16px',
-            backgroundColor: 'var(--color-base-lightest, #f0f0f0)',
-            borderRadius: '4px',
-            textAlign: 'center',
-          }}>
-            <p style={{ margin: '0 0 8px', fontWeight: 600 }}>GitHub account not linked</p>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-base-light)' }}>
-              Sign in with GitHub first to connect a repository.
-            </p>
-          </div>
-        ) : (
+        ) : notLinkedMessage || (
           <div>
             <label
               htmlFor="repo-select"
@@ -363,155 +329,116 @@ export function TeamGitHubSettings({ isOpen, onClose, teamId, hasGitHubLinked }:
             >
               Select a repository
             </label>
-            <select
-              id="repo-select"
-              value={selectedRepo}
-              onChange={(e) => setSelectedRepo(e.target.value)}
-              disabled={isLoadingRepos || isConnecting}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-                marginBottom: '12px',
-              }}
-            >
-              <option value="">
-                {isLoadingRepos ? 'Loading repositories...' : '-- Choose a repo --'}
-              </option>
-              {repos.filter(repo => !repo.private).map(repo => (
-                <option key={repo.fullName} value={repo.fullName}>
-                  {repo.fullName}
-                </option>
-              ))}
-            </select>
+            {repoSelect('repo-select', selectedRepo, setSelectedRepo, isLoadingRepos || isConnecting)}
             <button
               className="btn btn-primary"
               onClick={handleConnect}
               disabled={!selectedRepo || isConnecting}
-              style={{ width: '100%' }}
             >
               {isConnecting ? 'Connecting...' : 'Connect Repository'}
             </button>
           </div>
         )}
+      </div>
 
-        {/* Developer Handoff Repository Section */}
-        {!isLoadingConnection && hasGitHubLinked && (
-          <>
-            <hr style={{ border: 'none', borderTop: '1px solid var(--color-base-lighter)', margin: '20px 0' }} />
-            <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Developer Handoff Repository</h3>
-            <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '16px' }}>
-              Prototypes will be handed off as clean HTML to branches in this repo.
-              Each prototype pushes to its own <code>handoff/&lt;name&gt;</code> branch.
-            </p>
+      {/* Developer Handoff Repository Section */}
+      <div className="team-settings-section">
+        <h2>
+          Developer Handoff Repository{' '}
+          <span style={{ fontWeight: 400, fontSize: '0.875rem', color: 'var(--color-base-light, #71767a)' }}>
+            (optional)
+          </span>
+        </h2>
+        <p style={{ color: 'var(--color-base-light, #71767a)', fontSize: '0.875rem', marginBottom: '12px' }}>
+          Hand off clean, production-ready HTML (no editor metadata) to a separate repo.
+          Each prototype pushes to its own <code>handoff/&lt;name&gt;</code> branch.
+        </p>
 
-            {handoffConnection?.connected ? (
-              <div>
-                <div style={{
-                  padding: '12px 16px',
-                  backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
-                  borderRadius: '4px',
-                  marginBottom: '16px',
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>Connected</div>
-                  <div style={{ fontSize: '0.875rem' }}>
-                    <a
-                      href={`https://github.com/${handoffConnection.repoOwner}/${handoffConnection.repoName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'var(--color-primary)' }}
-                    >
-                      {handoffConnection.repoOwner}/{handoffConnection.repoName}
-                    </a>
-                    <span style={{ color: 'var(--color-base-light)', marginLeft: '8px' }}>
-                      (default: {handoffConnection.defaultBranch})
-                    </span>
-                  </div>
-                </div>
-                {showHandoffDisconnectConfirm ? (
-                  <div style={{
-                    padding: '12px',
-                    backgroundColor: '#fce4e4',
-                    borderRadius: '4px',
-                  }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#b50909' }}>
-                      Disconnect handoff repo? You will no longer be able to hand off prototypes.
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={handleHandoffDisconnect}
-                        disabled={isDisconnectingHandoff}
-                        style={{ flex: 1, color: '#b50909', borderColor: '#b50909' }}
-                      >
-                        {isDisconnectingHandoff ? 'Disconnecting...' : 'Yes, Disconnect'}
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setShowHandoffDisconnectConfirm(false)}
-                        disabled={isDisconnectingHandoff}
-                        style={{ flex: 1 }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+        {isLoadingConnection ? (
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <div className="loading-spinner" />
+          </div>
+        ) : handoffConnection?.connected ? (
+          <div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px',
+            }}>
+              <span style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-success-darker, #4d8055)',
+                backgroundColor: 'var(--color-success-lighter, #ecf3ec)',
+                padding: '6px 10px',
+                borderRadius: '4px',
+              }}>
+                Connected to{' '}
+                <a
+                  href={`https://github.com/${handoffConnection.repoOwner}/${handoffConnection.repoName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'inherit', textDecoration: 'underline' }}
+                >
+                  {handoffConnection.repoOwner}/{handoffConnection.repoName}
+                </a>
+              </span>
+            </div>
+            {showHandoffDisconnectConfirm ? (
+              <div style={{
+                padding: '12px',
+                backgroundColor: '#fce4e4',
+                borderRadius: '4px',
+              }}>
+                <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#b50909' }}>
+                  Disconnect? You will no longer be able to hand off prototypes to this repo.
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     className="btn btn-secondary"
-                    onClick={() => setShowHandoffDisconnectConfirm(true)}
-                    style={{ width: '100%' }}
+                    onClick={handleHandoffDisconnect}
+                    disabled={isDisconnectingHandoff}
+                    style={{ color: '#b50909', borderColor: '#b50909' }}
                   >
-                    Disconnect Handoff Repository
+                    {isDisconnectingHandoff ? 'Disconnecting...' : 'Yes, Disconnect'}
                   </button>
-                )}
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowHandoffDisconnectConfirm(false)}
+                    disabled={isDisconnectingHandoff}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
-              <div>
-                <label
-                  htmlFor="handoff-repo-select"
-                  style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px' }}
-                >
-                  Select a repository
-                </label>
-                <select
-                  id="handoff-repo-select"
-                  value={selectedHandoffRepo}
-                  onChange={(e) => setSelectedHandoffRepo(e.target.value)}
-                  disabled={isLoadingRepos || isConnectingHandoff}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <option value="">
-                    {isLoadingRepos ? 'Loading repositories...' : '-- Choose a repo --'}
-                  </option>
-                  {repos.filter(repo => !repo.private).map(repo => (
-                    <option key={repo.fullName} value={repo.fullName}>
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleHandoffConnect}
-                  disabled={!selectedHandoffRepo || isConnectingHandoff}
-                  style={{ width: '100%' }}
-                >
-                  {isConnectingHandoff ? 'Connecting...' : 'Connect Handoff Repository'}
-                </button>
-              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowHandoffDisconnectConfirm(true)}
+              >
+                Disconnect Handoff Repository
+              </button>
             )}
-          </>
+          </div>
+        ) : notLinkedMessage || (
+          <div>
+            <label
+              htmlFor="handoff-repo-select"
+              style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px' }}
+            >
+              Select a repository
+            </label>
+            {repoSelect('handoff-repo-select', selectedHandoffRepo, setSelectedHandoffRepo, isLoadingRepos || isConnectingHandoff)}
+            <button
+              className="btn btn-primary"
+              onClick={handleHandoffConnect}
+              disabled={!selectedHandoffRepo || isConnectingHandoff}
+            >
+              {isConnectingHandoff ? 'Connecting...' : 'Connect Handoff Repository'}
+            </button>
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
