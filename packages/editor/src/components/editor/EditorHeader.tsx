@@ -207,7 +207,7 @@ export const EditorHeader = memo(function EditorHeader({
                 {autosaveStatus === 'saving' && 'Saving...'}
                 {autosaveStatus === 'saved' && 'Saved'}
                 {autosaveStatus === 'error' && 'Save failed'}
-                {autosaveStatus === 'idle' && (lastSavedAt ? `Saved ${formatLastSaved(lastSavedAt)}` : 'Autosave on')}
+                {autosaveStatus === 'idle' && lastSavedAt && `Saved ${formatLastSaved(lastSavedAt)}`}
                 {autosaveStatus === 'pending' && 'Unsaved changes'}
               </span>
             </div>

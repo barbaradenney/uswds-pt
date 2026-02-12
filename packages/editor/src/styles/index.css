@@ -212,6 +212,7 @@ body {
 .editor-header-undo-redo {
   display: flex;
   gap: 6px;
+  margin-right: 6px;
 }
 
 /* Connection status badges */

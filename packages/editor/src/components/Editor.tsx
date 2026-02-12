@@ -130,9 +130,10 @@ export function Editor() {
    */
   const stableAutosaveOnSave = useCallback(() => saveCallRef.current('autosave'), []);
 
-  // Autosave hook - enabled when we have a prototype (new or existing)
+  // Autosave disabled — save only via Save button or Cmd+S.
+  // Crash recovery (IndexedDB) and dirty tracking (beforeunload) still active.
   const autosave = useEditorAutosave({
-    enabled: !isDemoMode && !!stateMachine.state.prototype,
+    enabled: false,
     stateMachine,
     onSave: stableAutosaveOnSave,
     debounceMs: 5000,
