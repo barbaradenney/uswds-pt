@@ -202,6 +202,19 @@ export function PrototypeList() {
     setVisibleCount(PAGE_SIZE);
   }, [searchQuery, sortBy]);
 
+  if (isLoading) {
+    return (
+      <div className="prototype-list-container">
+        <div className="loading-screen" style={{ height: '60vh' }}>
+          <div className="loading-spinner" />
+          <p style={{ marginTop: '16px', color: 'var(--color-base-light)', textAlign: 'center' }}>
+            Loading prototypes...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="prototype-list-container">
       {/* Pending Invitations */}
@@ -276,7 +289,7 @@ export function PrototypeList() {
       )}
 
       {/* No teams banner */}
-      {hasNoTeams && !isLoading && (
+      {hasNoTeams && (
         <div
           style={{
             backgroundColor: '#fef3cd',
@@ -306,7 +319,7 @@ export function PrototypeList() {
       )}
 
       {/* Search and Sort Controls */}
-      {!isLoading && prototypes.length > 0 && (
+      {prototypes.length > 0 && (
         <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
           <input
             type="text"
@@ -342,17 +355,7 @@ export function PrototypeList() {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="loading-screen" style={{ height: '300px' }}>
-          <div className="loading-spinner" />
-          <p style={{ marginTop: '16px', color: 'var(--color-base-light)', textAlign: 'center' }}>
-            Loading prototypes...
-          </p>
-          <p style={{ marginTop: '8px', color: 'var(--color-base-lighter)', fontSize: '14px', textAlign: 'center' }}>
-            If the database was paused, it may take 5-7 minutes to restart.
-          </p>
-        </div>
-      ) : prototypes.length === 0 ? (
+      {prototypes.length === 0 ? (
         <div
           className="card"
           style={{ textAlign: 'center', padding: '48px 24px' }}
