@@ -6,7 +6,6 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import fp from 'fastify-plugin';
 
 /* ─── Types ─── */
 
@@ -136,7 +135,7 @@ const MAX_BASE64_LENGTH = 7_000_000; // ~5MB binary
 
 /* ─── Routes ─── */
 
-async function aiRoutesPlugin(app: FastifyInstance): Promise<void> {
+export async function aiRoutes(app: FastifyInstance) {
   app.post<{ Body: ChatRequestBody }>(
     '/chat',
     {
@@ -211,5 +210,3 @@ async function aiRoutesPlugin(app: FastifyInstance): Promise<void> {
     },
   );
 }
-
-export const aiRoutes = fp(aiRoutesPlugin, { name: 'ai-routes' });

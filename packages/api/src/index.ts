@@ -130,6 +130,13 @@ async function main() {
   // Register auth plugin
   await app.register(authPlugin);
 
+  // Set default cache-control headers for API responses
+  app.addHook('onSend', async (_request, reply) => {
+    if (!reply.hasHeader('cache-control')) {
+      reply.header('cache-control', 'private, no-store');
+    }
+  });
+
   // Register error handler plugin
   await app.register(errorHandler, {
     includeStackTrace: !isProduction,
@@ -150,7 +157,8 @@ async function main() {
   await app.register(aiRoutes, { prefix: '/api/ai' });
 
   // Health check endpoint with database status (exempt from rate limiting)
-  app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async () => {
+  app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async (_request, reply) => {
+    reply.header('cache-control', 'public, max-age=30');
     const dbHealth = await checkDatabaseHealth(db, sql);
 
     return {

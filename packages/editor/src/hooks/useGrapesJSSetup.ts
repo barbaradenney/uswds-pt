@@ -502,6 +502,7 @@ function waitForFrameReady(
     const onFrameLoad = () => {
       if (resolved) return;
       resolved = true;
+      signal?.removeEventListener('abort', onAbort);
       cleanup();
       debug('Frame ready (event)');
       resolve();
@@ -516,6 +517,12 @@ function waitForFrameReady(
     };
     signal?.addEventListener('abort', onAbort, { once: true });
 
+    // Full cleanup helper that also removes the abort listener
+    const cleanupAll = () => {
+      signal?.removeEventListener('abort', onAbort);
+      cleanup();
+    };
+
     // Listen for frame load event
     editor.on('canvas:frame:load', onFrameLoad);
 
@@ -523,8 +530,7 @@ function waitForFrameReady(
     timeoutId = setTimeout(() => {
       if (resolved) return;
       resolved = true;
-      signal?.removeEventListener('abort', onAbort);
-      cleanup();
+      cleanupAll();
       debug('Frame ready (timeout fallback)');
       resolve();
     }, timeoutMs);
@@ -534,8 +540,7 @@ function waitForFrameReady(
     if (frame?.loaded || editor.Canvas?.getDocument?.()) {
       if (!resolved) {
         resolved = true;
-        signal?.removeEventListener('abort', onAbort);
-        cleanup();
+        cleanupAll();
         debug('Frame already ready');
         resolve();
       }

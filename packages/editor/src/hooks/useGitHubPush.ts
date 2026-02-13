@@ -71,13 +71,13 @@ export function useGitHubPush({ slug, teamId, enabled }: UseGitHubPushOptions): 
       if (!cancelled && result.success && result.data?.connected) {
         setHasConnection(true);
       }
-    });
+    }).catch(() => { /* Connection check is best-effort */ });
 
     apiGet<TeamConnection>(API_ENDPOINTS.GITHUB_TEAM_HANDOFF(teamId)).then((result) => {
       if (!cancelled && result.success && result.data?.connected) {
         setHasHandoffConnection(true);
       }
-    });
+    }).catch(() => { /* Connection check is best-effort */ });
 
     return () => { cancelled = true; };
   }, [enabled, teamId]);

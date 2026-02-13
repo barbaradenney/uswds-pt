@@ -251,9 +251,26 @@ export async function prototypeRoutes(app: FastifyInstance) {
           .from(prototypes)
           .where(whereClause);
 
-        // Get paginated team prototypes
+        // Get paginated team prototypes (exclude large payload fields for list view)
+        const listColumns = {
+          id: prototypes.id,
+          slug: prototypes.slug,
+          name: prototypes.name,
+          description: prototypes.description,
+          teamId: prototypes.teamId,
+          createdBy: prototypes.createdBy,
+          createdAt: prototypes.createdAt,
+          updatedAt: prototypes.updatedAt,
+          isPublic: prototypes.isPublic,
+          version: prototypes.version,
+          contentChecksum: prototypes.contentChecksum,
+          branchSlug: prototypes.branchSlug,
+          lastGithubPushAt: prototypes.lastGithubPushAt,
+          lastGithubCommitSha: prototypes.lastGithubCommitSha,
+        };
+
         const items = await db
-          .select()
+          .select(listColumns)
           .from(prototypes)
           .where(whereClause)
           .orderBy(desc(prototypes.updatedAt))
@@ -285,9 +302,26 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .from(prototypes)
         .where(whereClause);
 
-      // Get paginated items
+      // Get paginated items (exclude large payload fields for list view)
+      const listColumns = {
+        id: prototypes.id,
+        slug: prototypes.slug,
+        name: prototypes.name,
+        description: prototypes.description,
+        teamId: prototypes.teamId,
+        createdBy: prototypes.createdBy,
+        createdAt: prototypes.createdAt,
+        updatedAt: prototypes.updatedAt,
+        isPublic: prototypes.isPublic,
+        version: prototypes.version,
+        contentChecksum: prototypes.contentChecksum,
+        branchSlug: prototypes.branchSlug,
+        lastGithubPushAt: prototypes.lastGithubPushAt,
+        lastGithubCommitSha: prototypes.lastGithubCommitSha,
+      };
+
       const items = await db
-        .select()
+        .select(listColumns)
         .from(prototypes)
         .where(whereClause)
         .orderBy(desc(prototypes.updatedAt))
