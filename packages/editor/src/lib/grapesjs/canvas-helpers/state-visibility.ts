@@ -8,6 +8,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../../types/grapesjs';
+import { EDITOR_EVENTS, EDITOR_PROPS, DATA_ATTRS, CSS_CLASSES } from '../../contracts';
 
 const debug = createDebugLogger('Canvas');
 
@@ -25,27 +26,27 @@ export function applyStateVisibility(editor: EditorInstance, activeStateId: stri
   const wrapper = editor.DomComponents?.getWrapper?.();
   if (!wrapper) return;
 
-  const activeUserId: string | null = (editor as any).__activeUserId ?? null;
+  const activeUserId: string | null = (editor as any)[EDITOR_PROPS.ACTIVE_USER_ID] ?? null;
 
   const walkComponent = (comp: any) => {
     const el = comp.getEl?.();
     const attrs = comp.getAttributes?.() || {};
 
     // State pass
-    const dataStates = attrs['data-states'] || '';
+    const dataStates = attrs[DATA_ATTRS.STATES] || '';
     const statePass = activeStateId === null || !dataStates ||
       dataStates.split(',').map((s: string) => s.trim()).includes(activeStateId);
 
     // User pass
-    const dataUsers = attrs['data-users'] || '';
+    const dataUsers = attrs[DATA_ATTRS.USERS] || '';
     const userPass = activeUserId === null || !dataUsers ||
       dataUsers.split(',').map((s: string) => s.trim()).includes(activeUserId);
 
     if (el?.classList) {
       if (statePass && userPass) {
-        el.classList.remove('gjs-state-dimmed');
+        el.classList.remove(CSS_CLASSES.STATE_DIMMED);
       } else {
-        el.classList.add('gjs-state-dimmed');
+        el.classList.add(CSS_CLASSES.STATE_DIMMED);
       }
     }
 
@@ -72,21 +73,21 @@ export function setupStateVisibilityWatcher(
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
-      const activeStateId = (editor as any).__activeStateId ?? null;
+      const activeStateId = (editor as any)[EDITOR_PROPS.ACTIVE_STATE_ID] ?? null;
       applyStateVisibility(editor, activeStateId);
     }, 150);
   };
 
   // Re-apply when active state changes
-  registerListener('state:select', () => {
+  registerListener(EDITOR_EVENTS.STATE_SELECT, () => {
     // Immediate apply for state switch (no debounce)
-    const activeStateId = (editor as any).__activeStateId ?? null;
+    const activeStateId = (editor as any)[EDITOR_PROPS.ACTIVE_STATE_ID] ?? null;
     applyStateVisibility(editor, activeStateId);
   });
 
   // Re-apply when active user changes
-  registerListener('user:select', () => {
-    const activeStateId = (editor as any).__activeStateId ?? null;
+  registerListener(EDITOR_EVENTS.USER_SELECT, () => {
+    const activeStateId = (editor as any)[EDITOR_PROPS.ACTIVE_STATE_ID] ?? null;
     applyStateVisibility(editor, activeStateId);
   });
 

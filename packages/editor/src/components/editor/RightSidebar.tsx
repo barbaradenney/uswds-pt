@@ -32,7 +32,7 @@ const TABS = AI_ENABLED
   ? [...BASE_TABS, { id: 'ai', label: 'AI' }]
   : BASE_TABS;
 
-export function RightSidebar() {
+export const RightSidebar = memo(function RightSidebar() {
   const [activeTab, setActiveTab] = useState('components');
   const editor = useEditorMaybe();
 
@@ -87,7 +87,7 @@ export function RightSidebar() {
       </div>
     </div>
   );
-}
+});
 
 /* ============================================
    Blocks Panel

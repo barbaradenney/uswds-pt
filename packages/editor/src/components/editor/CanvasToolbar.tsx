@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
 import { useOrganization } from '../../hooks/useOrganization';
+import { EDITOR_EVENTS, EDITOR_PROPS } from '../../lib/contracts';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
 
@@ -75,16 +76,16 @@ export function CanvasToolbar() {
   const handleSetActiveState = useCallback((id: string | null) => {
     setActiveStateId(id);
     if (editor) {
-      (editor as any).__activeStateId = id;
-      editor.trigger('state:select', id);
+      (editor as any)[EDITOR_PROPS.ACTIVE_STATE_ID] = id;
+      editor.trigger(EDITOR_EVENTS.STATE_SELECT, id);
     }
   }, [editor]);
 
   const handleSetActiveUser = useCallback((id: string | null) => {
     setActiveUserId(id);
     if (editor) {
-      (editor as any).__activeUserId = id;
-      editor.trigger('user:select', id);
+      (editor as any)[EDITOR_PROPS.ACTIVE_USER_ID] = id;
+      editor.trigger(EDITOR_EVENTS.USER_SELECT, id);
     }
   }, [editor]);
 

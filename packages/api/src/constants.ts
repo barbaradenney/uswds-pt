@@ -11,7 +11,7 @@ export const JWT_EXPIRY = '7d';
 /**
  * Password hashing configuration
  */
-export const BCRYPT_SALT_ROUNDS = 10;
+export const BCRYPT_SALT_ROUNDS = 12;
 
 /**
  * Default JWT secret (should be overridden in production via JWT_SECRET env var)

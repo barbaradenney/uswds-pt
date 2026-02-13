@@ -104,12 +104,15 @@ export async function githubAuthRoutes(app: FastifyInstance) {
         .find((c) => c.startsWith(`${STATE_COOKIE}=`))
         ?.substring(`${STATE_COOKIE}=`.length);
 
-      const stateBuf = state ? Buffer.from(state) : Buffer.alloc(0);
-      const cookieBuf = stateCookie ? Buffer.from(stateCookie) : Buffer.alloc(0);
-      if (!state || !stateCookie || stateBuf.length !== cookieBuf.length || !crypto.timingSafeEqual(
-        stateBuf,
-        cookieBuf,
-      )) {
+      // Constant-time state comparison: hash both values to fixed-length
+      // buffers so length differences don't leak via timing side-channels
+      const stateHash = state
+        ? crypto.createHash('sha256').update(state).digest()
+        : Buffer.alloc(32);
+      const cookieHash = stateCookie
+        ? crypto.createHash('sha256').update(stateCookie).digest()
+        : Buffer.alloc(32);
+      if (!state || !stateCookie || !crypto.timingSafeEqual(stateHash, cookieHash)) {
         app.log.warn('OAuth state mismatch — possible CSRF attempt');
         return reply.redirect(`${frontendUrl}/#/login?error=oauth_failed`);
       }

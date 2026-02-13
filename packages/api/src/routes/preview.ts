@@ -6,7 +6,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
-import { db, prototypes, teams, organizations } from '../db/index.js';
+import { db, prototypes, teams, organizations, teamMemberships } from '../db/index.js';
 
 interface PreviewParams {
   slug: string;
@@ -45,7 +45,8 @@ export async function previewRoutes(app: FastifyInstance) {
         .where(and(eq(prototypes.slug, slug), eq(prototypes.isPublic, true)))
         .limit(1);
 
-      // If not public but user is authenticated, check if they created it
+      // If not public but user is authenticated, check team membership
+      // (not just createdBy — users removed from a team should lose access)
       if (!prototype && userId) {
         [prototype] = await db
           .select({
@@ -56,7 +57,11 @@ export async function previewRoutes(app: FastifyInstance) {
             teamId: prototypes.teamId,
           })
           .from(prototypes)
-          .where(and(eq(prototypes.slug, slug), eq(prototypes.createdBy, userId)))
+          .innerJoin(teamMemberships, and(
+            eq(teamMemberships.teamId, prototypes.teamId),
+            eq(teamMemberships.userId, userId),
+          ))
+          .where(eq(prototypes.slug, slug))
           .limit(1);
       }
 

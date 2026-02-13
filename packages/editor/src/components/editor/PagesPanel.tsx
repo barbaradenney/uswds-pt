@@ -5,10 +5,10 @@
  * Uses PagesProvider from @grapesjs/react for page operations (add/select/rename/delete).
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { PagesProvider } from '@grapesjs/react';
 
-export function PagesPanel() {
+export const PagesPanel = memo(function PagesPanel() {
   return (
     <PagesProvider>
       {({ pages, selected, select, add, remove }) => (
@@ -22,7 +22,7 @@ export function PagesPanel() {
       )}
     </PagesProvider>
   );
-}
+});
 
 interface PagesPanelInnerProps {
   pages: any[];

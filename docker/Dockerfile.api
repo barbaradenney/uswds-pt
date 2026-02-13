@@ -28,6 +28,9 @@ RUN cd packages/api && pnpm build
 # Production image
 FROM node:20-alpine AS runner
 
+# Run as non-root user for security
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+
 WORKDIR /app
 
 # Copy built files
@@ -38,6 +41,10 @@ COPY --from=builder /app/packages/shared/package.json ./node_modules/@uswds-pt/s
 
 # Install production dependencies only
 RUN npm install -g pnpm && pnpm install --prod
+
+# Set ownership and switch to non-root user
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 # Set environment
 ENV NODE_ENV=production

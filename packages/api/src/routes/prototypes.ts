@@ -345,18 +345,27 @@ export async function prototypeRoutes(app: FastifyInstance) {
       const { slug } = request.params;
       const userId = getAuthUser(request).id;
 
-      const [prototype] = await db
-        .select()
+      // Single query: fetch prototype + check team membership via JOIN
+      const [result] = await db
+        .select({
+          prototype: prototypes,
+          memberRole: teamMemberships.role,
+        })
         .from(prototypes)
+        .leftJoin(teamMemberships, and(
+          eq(teamMemberships.teamId, prototypes.teamId),
+          eq(teamMemberships.userId, userId),
+        ))
         .where(eq(prototypes.slug, slug))
         .limit(1);
 
-      if (!prototype) {
+      if (!result) {
         return reply.status(404).send({ message: 'Prototype not found' });
       }
 
-      // Check access
-      if (!(await canAccessPrototype(userId, prototype))) {
+      // Check access: team member, or creator of legacy (no-team) prototype
+      const { prototype, memberRole } = result;
+      if (!memberRole && !(prototype.teamId === null && prototype.createdBy === userId)) {
         return reply.status(403).send({ message: 'Access denied' });
       }
 

@@ -10,7 +10,7 @@
  * the `root` component data instead of using the Container portal.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { LayersProvider, useEditorMaybe } from '@grapesjs/react';
 import { SidebarTabs } from './SidebarTabs';
 import { PagesPanel } from './PagesPanel';
@@ -20,7 +20,7 @@ const TABS = [
   { id: 'layers', label: 'Layers' },
 ];
 
-export function LeftSidebar() {
+export const LeftSidebar = memo(function LeftSidebar() {
   const [activeTab, setActiveTab] = useState('pages');
 
   return (
@@ -50,7 +50,7 @@ export function LeftSidebar() {
       </div>
     </div>
   );
-}
+});
 
 /* ============================================
    Layers Panel

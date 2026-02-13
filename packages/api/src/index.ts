@@ -36,9 +36,9 @@ declare module 'fastify' {
 async function main() {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Fail fast if JWT_SECRET is not set in production
-  if (isProduction && !process.env.JWT_SECRET) {
-    console.error('FATAL: JWT_SECRET environment variable must be set in production');
+  // Fail fast if JWT_SECRET is not set or is the weak default in production
+  if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'development-secret-change-in-production')) {
+    console.error('FATAL: JWT_SECRET must be set to a secure value in production');
     process.exit(1);
   }
 
@@ -112,11 +112,12 @@ async function main() {
         fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
         connectSrc: ["'self'"],
         frameSrc: ["'none'"],
+        frameAncestors: ["'none'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
       },
     },
-    hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true } : false,
+    hsts: isProduction ? { maxAge: 63072000, includeSubDomains: true, preload: true } : false,
     frameguard: { action: 'deny' },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   });

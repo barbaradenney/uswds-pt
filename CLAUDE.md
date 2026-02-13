@@ -78,7 +78,17 @@ Key tables in `packages/api/src/db/schema.ts`:
 
 ### Authentication
 
-JWT-based auth. Routes in `packages/api/src/routes/auth.ts`. Tokens stored in localStorage on frontend.
+JWT-based auth with optional GitHub OAuth. Routes in `packages/api/src/routes/auth.ts` and `github-auth.ts`. Tokens stored in localStorage on frontend. GitHub OAuth users may have no password (`passwordHash` nullable).
+
+### Security
+
+- **@fastify/helmet** — CSP, X-Frame-Options (DENY), HSTS (2-year, preload), Referrer-Policy
+- **@fastify/rate-limit** — 100/min global, 5/min login, 3/min register, 10/min AI chat
+- **Input validation** — `htmlContent` max 2MB, `grapesData` max 5MB, `additionalProperties: false`
+- **Optimistic concurrency** — `version` column + `If-Match` header + atomic transactions
+- **Preview sandbox** — `<iframe sandbox="allow-scripts" srcdoc={...}>` prevents stored XSS
+- **OAuth state** — SHA-256 hashed before `timingSafeEqual` to prevent timing side-channel
+- **Docker** — API runs as non-root user (`appuser:appgroup`)
 
 ## Environment Variables
 
@@ -90,6 +100,8 @@ The API package has its own `.env` file at `packages/api/.env`. Key variables:
 - `AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI) — server-side only
 - `AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)
 - `AI_MODEL` - (Optional) AI model name (default: claude-sonnet-4-20250514 or gpt-4o)
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_CALLBACK_URL` - (Optional) GitHub OAuth — all three required if any set
+- `ENCRYPTION_KEY` - (Required when GitHub OAuth is configured) AES-256-GCM key for token encryption
 
 The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config:
 - `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
