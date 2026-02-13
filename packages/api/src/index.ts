@@ -6,6 +6,7 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
@@ -17,6 +18,7 @@ import { invitationRoutes } from './routes/invitations.js';
 import { symbolRoutes } from './routes/symbols.js';
 import { githubAuthRoutes } from './routes/github-auth.js';
 import { githubRoutes, githubTeamRoutes } from './routes/github.js';
+import { aiRoutes } from './routes/ai.js';
 import { errorHandler, checkDatabaseHealth } from './lib/error-handler.js';
 import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
@@ -99,6 +101,26 @@ async function main() {
     credentials: true,
   });
 
+  // Register security headers
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        imgSrc: ["'self'", "data:", "https://cdn.jsdelivr.net"],
+        fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+      },
+    },
+    hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true } : false,
+    frameguard: { action: 'deny' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  });
+
   // Register global rate limiting: 100 requests per minute per IP
   await app.register(rateLimit, {
     max: 100,
@@ -125,6 +147,7 @@ async function main() {
   await app.register(githubAuthRoutes, { prefix: '/api/auth' });
   await app.register(githubRoutes, { prefix: '/api/github' });
   await app.register(githubTeamRoutes, { prefix: '/api/teams' });
+  await app.register(aiRoutes, { prefix: '/api/ai' });
 
   // Health check endpoint with database status (exempt from rate limiting)
   app.get('/api/health', { config: { rateLimit: false } as Record<string, unknown> }, async () => {

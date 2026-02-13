@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { parseMultiPageHtml, parseAIResponse, autoSplitFormHtml } from './ai-client';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { parseMultiPageHtml, parseAIResponse, autoSplitFormHtml, sendAIMessage } from './ai-client';
+
+// Mock authFetch
+const mockAuthFetch = vi.fn();
+vi.mock('../../hooks/useAuth', () => ({
+  authFetch: (...args: any[]) => mockAuthFetch(...args),
+}));
 
 describe('parseMultiPageHtml', () => {
   it('returns null when no delimiters are found', () => {
@@ -363,5 +369,88 @@ describe('autoSplitFormHtml', () => {
     for (const page of result) {
       expect(page.html).toContain('step-count="3"');
     }
+  });
+});
+
+describe('sendAIMessage', () => {
+  beforeEach(() => {
+    mockAuthFetch.mockReset();
+  });
+
+  it('sends system prompt and messages to API proxy', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ text: 'Here is a button:\n\n```html\n<usa-button text="OK"></usa-button>\n```' }),
+    });
+
+    const result = await sendAIMessage('system prompt', [
+      { role: 'user', content: 'make a button' },
+    ]);
+
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: 'system prompt',
+        messages: [{ role: 'user', content: 'make a button' }],
+      }),
+      signal: undefined,
+    });
+
+    expect(result.html).toBe('<usa-button text="OK"></usa-button>');
+    expect(result.explanation).toContain('Here is a button:');
+  });
+
+  it('throws on non-ok response with server message', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ message: 'AI service is not configured' }),
+    });
+
+    await expect(
+      sendAIMessage('sys', [{ role: 'user', content: 'hi' }]),
+    ).rejects.toThrow('AI service is not configured');
+  });
+
+  it('throws with status code fallback when no message', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => { throw new Error('bad json'); },
+    });
+
+    await expect(
+      sendAIMessage('sys', [{ role: 'user', content: 'hi' }]),
+    ).rejects.toThrow('AI request failed (502)');
+  });
+
+  it('passes abort signal to authFetch', async () => {
+    const controller = new AbortController();
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ text: 'hello' }),
+    });
+
+    await sendAIMessage('sys', [{ role: 'user', content: 'hi' }], controller.signal);
+
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      '/api/ai/chat',
+      expect.objectContaining({ signal: controller.signal }),
+    );
+  });
+
+  it('parses multi-page responses correctly', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        text: 'Two pages:\n\n```html\n<!-- PAGE: Home -->\n<div>Home</div>\n<!-- PAGE: About -->\n<div>About</div>\n```',
+      }),
+    });
+
+    const result = await sendAIMessage('sys', [{ role: 'user', content: 'two pages' }]);
+    expect(result.pages).toHaveLength(2);
+    expect(result.pages![0].name).toBe('Home');
+    expect(result.pages![1].name).toBe('About');
   });
 });

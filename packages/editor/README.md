@@ -46,7 +46,7 @@ pnpm --filter @uswds-pt/editor test:watch   # Watch mode
 pnpm --filter @uswds-pt/editor test:e2e     # Playwright end-to-end tests
 ```
 
-Requires `packages/editor/.env` with `VITE_API_URL` (default `http://localhost:3001`). Optional: `VITE_AI_API_KEY` for AI copilot.
+Requires `packages/editor/.env` with `VITE_API_URL` (default `http://localhost:3001`). Optional: `VITE_AI_ENABLED=true` for AI copilot (API key configured server-side).
 
 ## Monorepo Dependencies
 

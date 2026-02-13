@@ -1,11 +1,13 @@
 /**
- * AI Client Wrapper
+ * AI Client
  *
- * Thin wrapper around Anthropic / OpenAI SDKs.
- * Parses AI responses into explanation text + optional HTML code block.
+ * Sends messages to the server-side AI proxy and parses responses
+ * into explanation text + optional HTML code block.
+ *
+ * AI SDK calls happen server-side — this module only does HTTP + parsing.
  */
 
-import { AI_API_KEY, AI_PROVIDER, AI_MODEL } from './ai-config';
+import { authFetch } from '../../hooks/useAuth';
 
 export interface Attachment {
   /** File name for display */
@@ -227,121 +229,25 @@ function splitOnFieldset(html: string): PageDefinition[] | null {
 }
 
 /**
- * Send a message to the configured AI provider and get a parsed response.
+ * Send a message to the AI via the server-side proxy.
  */
 export async function sendAIMessage(
   systemPrompt: string,
   messages: AIMessage[],
   abortSignal?: AbortSignal,
 ): Promise<AIResponse> {
-  if (!AI_API_KEY) {
-    throw new Error('AI API key is not configured');
-  }
-
-  const raw = AI_PROVIDER === 'claude'
-    ? await sendClaude(systemPrompt, messages, abortSignal)
-    : await sendOpenAI(systemPrompt, messages, abortSignal);
-
-  return parseAIResponse(raw);
-}
-
-/* ─── Content builders ─── */
-
-function buildClaudeContent(m: AIMessage): string | any[] {
-  if (!m.attachments?.length) return m.content;
-  const parts: any[] = [];
-  for (const att of m.attachments) {
-    if (att.mediaType === 'application/pdf') {
-      parts.push({
-        type: 'document',
-        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
-      });
-    } else {
-      parts.push({
-        type: 'image',
-        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
-      });
-    }
-  }
-  parts.push({ type: 'text', text: m.content });
-  return parts;
-}
-
-function buildOpenAIContent(m: AIMessage): string | any[] {
-  if (!m.attachments?.length) return m.content;
-  const parts: any[] = [];
-  let textSuffix = '';
-  for (const att of m.attachments) {
-    if (att.mediaType === 'application/pdf') {
-      textSuffix += `\n\n(PDF attachment "${att.name}" not supported with OpenAI provider)`;
-    } else {
-      parts.push({
-        type: 'image_url',
-        image_url: { url: `data:${att.mediaType};base64,${att.base64Data}` },
-      });
-    }
-  }
-  parts.push({ type: 'text', text: m.content + textSuffix });
-  return parts;
-}
-
-/* ─── Claude (Anthropic) ─── */
-
-async function sendClaude(
-  systemPrompt: string,
-  messages: AIMessage[],
-  abortSignal?: AbortSignal,
-): Promise<string> {
-  const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({
-    apiKey: AI_API_KEY,
-    dangerouslyAllowBrowser: true,
+  const response = await authFetch('/api/ai/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: systemPrompt, messages }),
+    signal: abortSignal,
   });
 
-  const response = await client.messages.create(
-    {
-      model: AI_MODEL,
-      max_tokens: 8192,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: buildClaudeContent(m),
-      })),
-    },
-    { signal: abortSignal },
-  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `AI request failed (${response.status})`);
+  }
 
-  const textBlock = response.content.find((b: any) => b.type === 'text');
-  return textBlock ? (textBlock as any).text : '';
-}
-
-/* ─── OpenAI ─── */
-
-async function sendOpenAI(
-  systemPrompt: string,
-  messages: AIMessage[],
-  abortSignal?: AbortSignal,
-): Promise<string> {
-  const { default: OpenAI } = await import('openai');
-  const client = new OpenAI({
-    apiKey: AI_API_KEY,
-    dangerouslyAllowBrowser: true,
-  });
-
-  const response = await client.chat.completions.create(
-    {
-      model: AI_MODEL,
-      max_tokens: 8192,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: buildOpenAIContent(m),
-        })),
-      ],
-    },
-    { signal: abortSignal },
-  );
-
-  return response.choices[0]?.message?.content || '';
+  const data = await response.json();
+  return parseAIResponse(data.text);
 }

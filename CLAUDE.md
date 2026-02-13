@@ -87,30 +87,37 @@ The API package has its own `.env` file at `packages/api/.env`. Key variables:
 - `JWT_SECRET` - Auth token signing
 - `FRONTEND_URL` - CORS allowed origin (default: http://localhost:3000)
 - `PORT` - API server port (default: 3001)
+- `AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI) — server-side only
+- `AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)
+- `AI_MODEL` - (Optional) AI model name (default: claude-sonnet-4-20250514 or gpt-4o)
 
 The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config:
 - `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
-- `VITE_AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI)
-- `VITE_AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)
-- `VITE_AI_MODEL` - (Optional) AI model name (default: claude-sonnet-4-20250514 or gpt-4o)
+- `VITE_AI_ENABLED` - (Optional) Set to "true" to enable AI copilot UI
 
 ## AI Copilot Feature
 
-The editor includes an optional AI assistant powered by the `@silexlabs/grapesjs-ai-copilot` plugin. When enabled, users can describe what they want to build in natural language and the AI will generate GrapesJS code to create USWDS components.
+The editor includes an optional AI assistant. Users describe what they want in natural language and the AI generates USWDS HTML. AI SDK calls are proxied through the API server so API keys are never exposed in the browser bundle.
 
 ### Enabling AI Copilot
 
-Add these environment variables to `packages/editor/.env`:
+1. Add the AI API key to `packages/api/.env` (server-side):
 ```bash
-VITE_AI_API_KEY=your-api-key-here
-VITE_AI_PROVIDER=claude  # or "openai"
-VITE_AI_MODEL=claude-sonnet-4-20250514  # optional, uses default for provider
+AI_API_KEY=your-api-key-here
+AI_PROVIDER=claude  # or "openai"
+AI_MODEL=claude-sonnet-4-20250514  # optional, uses default for provider
+```
+
+2. Enable the AI UI in `packages/editor/.env`:
+```bash
+VITE_AI_ENABLED=true
 ```
 
 ### How It Works
 
+- The editor sends conversation context to `POST /api/ai/chat` (authenticated, rate-limited: 10 req/min)
+- The API server calls the AI provider SDK (Anthropic or OpenAI) with the server-side API key
 - The AI is trained on all USWDS web components through a custom prompt (`src/lib/ai/uswds-prompt.ts`)
-- It generates JavaScript code that uses the GrapesJS API to add/modify components
 - Users can request things like "add a contact form" or "make this card have a warning style"
 - The AI knows about usa-button, usa-header, usa-card, usa-alert, and all other USWDS components
 
