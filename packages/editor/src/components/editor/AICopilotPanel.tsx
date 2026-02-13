@@ -33,7 +33,7 @@ function formatFileType(mediaType: string): string {
 }
 
 export function AICopilotPanel() {
-  const { messages, isLoading, sendMessage, applyHtml, clearHistory } = useAICopilot();
+  const { messages, isLoading, sendMessage, applyHtml, applyMultiPage, clearHistory } = useAICopilot();
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -112,6 +112,7 @@ export function AICopilotPanel() {
             key={msg.id}
             message={msg}
             onApply={applyHtml}
+            onApplyMultiPage={applyMultiPage}
           />
         ))}
 
@@ -198,9 +199,11 @@ export function AICopilotPanel() {
 function MessageBubble({
   message,
   onApply,
+  onApplyMultiPage,
 }: {
   message: ChatMessage;
   onApply: (id: string, mode: 'replace' | 'add') => void;
+  onApplyMultiPage: (id: string) => void;
 }) {
   const [showHtml, setShowHtml] = useState(false);
 
@@ -254,20 +257,31 @@ function MessageBubble({
           )}
 
           <div className="ai-msg-actions">
-            {message.hadSelection && (
+            {message.pages && message.pages.length > 1 ? (
               <button
                 className="ai-msg-action-btn ai-msg-action-btn--primary"
-                onClick={() => onApply(message.id, 'replace')}
+                onClick={() => onApplyMultiPage(message.id)}
               >
-                Replace Selected
+                Create {message.pages.length} Pages
               </button>
+            ) : (
+              <>
+                {message.hadSelection && (
+                  <button
+                    className="ai-msg-action-btn ai-msg-action-btn--primary"
+                    onClick={() => onApply(message.id, 'replace')}
+                  >
+                    Replace Selected
+                  </button>
+                )}
+                <button
+                  className="ai-msg-action-btn"
+                  onClick={() => onApply(message.id, 'add')}
+                >
+                  Add to Page
+                </button>
+              </>
             )}
-            <button
-              className="ai-msg-action-btn"
-              onClick={() => onApply(message.id, 'add')}
-            >
-              Add to Page
-            </button>
           </div>
         </>
       )}

@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
-import { sendAIMessage } from '../lib/ai/ai-client';
+import { sendAIMessage, autoSplitFormHtml } from '../lib/ai/ai-client';
 import type { AIMessage, Attachment, PageDefinition } from '../lib/ai/ai-client';
 import { generateUSWDSPrompt, buildUserMessageWithContext } from '../lib/ai/uswds-prompt';
 import { syncPageLinkHrefs } from '../lib/grapesjs/canvas-helpers';
@@ -110,6 +110,13 @@ export function useAICopilot(): UseAICopilotReturn {
         abortRef.current.signal,
       );
 
+      // Fallback: if AI didn't use PAGE delimiters but attachments were present,
+      // try client-side auto-splitting on headings / fieldsets.
+      let pages = response.pages;
+      if (!pages && attachments?.length && response.html) {
+        pages = autoSplitFormHtml(response.html);
+      }
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadingId
@@ -117,7 +124,7 @@ export function useAICopilot(): UseAICopilotReturn {
                 ...m,
                 content: response.explanation,
                 html: response.html || undefined,
-                pages: response.pages || undefined,
+                pages: pages || undefined,
                 isLoading: false,
               }
             : m,

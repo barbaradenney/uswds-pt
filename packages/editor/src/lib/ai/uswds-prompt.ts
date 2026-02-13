@@ -487,7 +487,21 @@ export function buildUserMessageWithContext(
 
   if (hasAttachments) {
     parts.push(
-      `[IMPORTANT: This message includes a file attachment. You MUST use multi-page format with <!-- PAGE: Name --> delimiters in your HTML code block. Break the form into 3-5 logical pages with usa-step-indicator, Back/Continue buttons, and a Review page. Do NOT put everything on a single page.]`,
+      `[IMPORTANT: This message includes a file attachment. You MUST use multi-page format with <!-- PAGE: Name --> delimiters in your HTML code block. Break the form into 3-5 logical pages with usa-step-indicator, Back/Continue buttons, and a Review page. Do NOT put everything on a single page.
+
+Example of the REQUIRED format inside your \`\`\`html code fence:
+<!-- PAGE: Personal Info -->
+<div style="max-width: 40rem;">
+  <usa-step-indicator step-count="3" show-labels step1-label="Personal Info" step1-status="current" step2-label="Contact" step2-status="incomplete" step3-label="Review" step3-status="incomplete"></usa-step-indicator>
+  <h1>Personal information</h1>
+  <!-- fields here -->
+  <div class="margin-top-4"><usa-button text="Continue" page-link="Contact"></usa-button></div>
+</div>
+
+<!-- PAGE: Contact -->
+...more pages...
+
+You MUST follow this exact delimiter format.]`,
     );
   }
 
