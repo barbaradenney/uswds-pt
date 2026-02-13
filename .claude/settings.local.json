@@ -52,7 +52,8 @@
       "Bash(cd /Users/barbaramiles/Library/Mobile\\\\ Documents/com~apple~CloudDocs/Documents/Github/uswds-pt/packages/editor && npm run lint:*)",
       "Bash(npm run lint)",
       "WebFetch(domain:data.jsdelivr.com)",
-      "Bash(pnpm release:publish:*)"
+      "Bash(pnpm release:publish:*)",
+      "WebFetch(domain:design.va.gov)"
     ],
     "deny": [],
     "ask": []
