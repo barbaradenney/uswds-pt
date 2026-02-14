@@ -6,7 +6,7 @@
  * unpushed changes, and provides a push() function to trigger a push.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
 
 interface TeamConnection {
@@ -53,6 +53,7 @@ export function useGitHubPush({ slug, teamId, enabled }: UseGitHubPushOptions): 
   const [hasConnection, setHasConnection] = useState(false);
   const [hasHandoffConnection, setHasHandoffConnection] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
+  const isPushingRef = useRef(false);
   const [hasUnpushedChanges, setHasUnpushedChanges] = useState(false);
   const [lastPushResult, setLastPushResult] = useState<{ commitUrl: string; branch: string } | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,8 +96,9 @@ export function useGitHubPush({ slug, teamId, enabled }: UseGitHubPushOptions): 
   }, []);
 
   const push = useCallback(async () => {
-    if (!slug || isPushing) return;
+    if (!slug || isPushingRef.current) return;
 
+    isPushingRef.current = true;
     setIsPushing(true);
     try {
       const result = await apiPost<PushResult>(
@@ -120,13 +122,15 @@ export function useGitHubPush({ slug, teamId, enabled }: UseGitHubPushOptions): 
         }, 8000);
       }
     } finally {
+      isPushingRef.current = false;
       setIsPushing(false);
     }
-  }, [slug, isPushing]);
+  }, [slug]);
 
   const pushHandoff = useCallback(async (cleanHtml: string) => {
-    if (!slug || isPushing) return;
+    if (!slug || isPushingRef.current) return;
 
+    isPushingRef.current = true;
     setIsPushing(true);
     try {
       const result = await apiPost<PushResult>(
@@ -148,9 +152,10 @@ export function useGitHubPush({ slug, teamId, enabled }: UseGitHubPushOptions): 
         }, 8000);
       }
     } finally {
+      isPushingRef.current = false;
       setIsPushing(false);
     }
-  }, [slug, isPushing]);
+  }, [slug]);
 
   // Cleanup timer on unmount
   useEffect(() => {

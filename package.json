@@ -28,6 +28,11 @@
     "packages/shared/src/**/*.ts": "eslint --config packages/shared/eslint.config.js --no-warn-ignored"
   },
   "packageManager": "pnpm@9.0.0",
+  "pnpm": {
+    "overrides": {
+      "tar": ">=7.5.7"
+    }
+  },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"

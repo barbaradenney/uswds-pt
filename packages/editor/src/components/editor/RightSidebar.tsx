@@ -18,6 +18,7 @@
 
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
+import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
 import { AICopilotPanel } from './AICopilotPanel';
@@ -197,7 +198,7 @@ function BlockCategory({
             >
               <div
                 className="custom-block-media"
-                dangerouslySetInnerHTML={{ __html: block.getMedia() }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.getMedia()) }}
               />
               <div className="custom-block-label">{block.getLabel()}</div>
             </div>

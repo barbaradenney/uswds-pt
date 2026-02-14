@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
 import { authFetch } from '../hooks/useAuth';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
@@ -43,7 +43,7 @@ const debug = createDebugLogger('Editor');
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
+    localStorage.getItem(DEBUG_STORAGE_KEY) === 'true');
 
 export function Editor() {
   const { slug: routeSlug } = useParams<{ slug: string }>();
@@ -1037,26 +1037,31 @@ export function Editor() {
 }
 
 /**
+ * Static mapping from block-panel category name to the component tag names
+ * it contains. Hoisted to module scope so it is allocated once (not on every
+ * call to getCategoryForComponent).
+ */
+const CATEGORY_MAP: Record<string, string[]> = {
+  'Basics': ['heading', 'text'],
+  'Containers': ['form-container', 'section-container', 'fieldset'],
+  'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
+  'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider', 'usa-character-count', 'usa-memorable-date'],
+  'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link', 'usa-in-page-navigation', 'usa-language-selector'],
+  'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
+  'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
+  'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
+  'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
+  'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
+  'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
+};
+
+/**
  * Maps a component tag name (e.g., "usa-button") to its block-panel category
  * (e.g., "Actions"). Falls back to "Components" for any unrecognized tag.
  * Used by the blocks useMemo to organize the drag-and-drop panel.
  */
 function getCategoryForComponent(tagName: string): string {
-  const categoryMap: Record<string, string[]> = {
-    'Basics': ['heading', 'text'],
-    'Containers': ['form-container', 'section-container', 'fieldset'],
-    'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
-    'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider', 'usa-character-count', 'usa-memorable-date'],
-    'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link', 'usa-in-page-navigation', 'usa-language-selector'],
-    'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
-    'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
-    'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
-    'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
-    'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
-    'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
-  };
-
-  for (const [category, components] of Object.entries(categoryMap)) {
+  for (const [category, components] of Object.entries(CATEGORY_MAP)) {
     if (components.includes(tagName)) {
       return category;
     }

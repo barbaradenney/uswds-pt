@@ -129,22 +129,30 @@ export const invitations = pgTable(
 /**
  * Users table
  */
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).unique().notNull(),
-  passwordHash: varchar('password_hash', { length: 255 }),
-  name: varchar('name', { length: 255 }),
-  organizationId: uuid('organization_id').references(() => organizations.id),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  // GitHub OAuth fields
-  githubId: integer('github_id').unique(),
-  githubUsername: varchar('github_username', { length: 255 }),
-  githubAccessToken: text('github_access_token'),
-  githubTokenExpiresAt: timestamp('github_token_expires_at', { withTimezone: true }),
-  avatarUrl: varchar('avatar_url', { length: 500 }),
-});
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 255 }).unique().notNull(),
+    passwordHash: varchar('password_hash', { length: 255 }),
+    name: varchar('name', { length: 255 }),
+    organizationId: uuid('organization_id').references(() => organizations.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    // GitHub OAuth fields
+    githubId: integer('github_id').unique(),
+    githubUsername: varchar('github_username', { length: 255 }),
+    githubAccessToken: text('github_access_token'),
+    githubTokenExpiresAt: timestamp('github_token_expires_at', { withTimezone: true }),
+    avatarUrl: varchar('avatar_url', { length: 500 }),
+  },
+  (table) => ({
+    emailIdx: index('users_email_idx').on(table.email),
+    orgIdx: index('users_organization_idx').on(table.organizationId),
+    githubIdIdx: index('users_github_id_idx').on(table.githubId),
+  })
+);
 
 // ============================================================================
 // Relations

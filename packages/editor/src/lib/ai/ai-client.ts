@@ -8,6 +8,7 @@
  */
 
 import { authFetch } from '../../hooks/useAuth';
+import { parseJsonSafely } from '../api';
 
 export interface Attachment {
   /** File name for display */
@@ -244,8 +245,8 @@ export async function sendAIMessage(
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.message || `AI request failed (${response.status})`);
+    const err = await parseJsonSafely(response);
+    throw new Error((err.message as string) || `AI request failed (${response.status})`);
   }
 
   const data = await response.json();

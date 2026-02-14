@@ -3,7 +3,7 @@
  * Generate full HTML documents with USWDS imports for export and preview
  */
 
-import { createDebugLogger, escapeHtml } from '@uswds-pt/shared';
+import { createDebugLogger, escapeHtml, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
 import { CDN_URLS, CONDITIONAL_FIELDS_SCRIPT, STATE_VISIBILITY_SCRIPT } from '@uswds-pt/adapter';
 import { BLOB_URL_REVOKE_DELAY_MS } from '../constants';
 
@@ -52,7 +52,7 @@ function generateSupplementalCSS(): string {
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
+    localStorage.getItem(DEBUG_STORAGE_KEY) === 'true');
 
 // Use the shared CDN URLs from adapter
 const PREVIEW_CDN_URLS = CDN_URLS;

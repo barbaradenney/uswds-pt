@@ -36,9 +36,8 @@ export interface UseAICopilotReturn {
   clearHistory: () => void;
 }
 
-let nextId = 1;
 function genId(): string {
-  return `msg-${nextId++}`;
+  return `msg-${crypto.randomUUID()}`;
 }
 
 export function useAICopilot(): UseAICopilotReturn {

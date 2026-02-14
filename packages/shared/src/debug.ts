@@ -7,7 +7,7 @@
  * - localStorage: uswds_pt_debug=true
  */
 
-const DEBUG_STORAGE_KEY = 'uswds_pt_debug';
+export const DEBUG_STORAGE_KEY = 'uswds_pt_debug';
 const DEBUG_PARAM = 'debug';
 
 /**

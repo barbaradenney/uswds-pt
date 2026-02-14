@@ -18,14 +18,16 @@ afterEach(() => {
 });
 
 /**
- * Helper: call initializeUSWDSComponents and advance past the 5s timeout
+ * Helper: call initializeUSWDSComponents and flush all pending timers.
+ *
+ * The init function uses `await`-based retry loops (waitAndRetry) where each
+ * iteration creates a new setTimeout only after the previous one resolves.
+ * `vi.runAllTimersAsync()` properly interleaves microtask flushing with timer
+ * advancement so every chained setTimeout is resolved.
  */
 async function initWithTimeout(container: HTMLElement | Document = document) {
   const promise = initializeUSWDSComponents(container);
-  // Advance past the 5000ms timeout for whenDefined
-  vi.advanceTimersByTime(5100);
-  // Also advance past setTimeout calls used inside the function (150, 200, 300, 500ms)
-  vi.advanceTimersByTime(600);
+  await vi.runAllTimersAsync();
   await promise;
 }
 

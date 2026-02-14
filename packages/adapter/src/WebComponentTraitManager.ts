@@ -11,6 +11,36 @@ import { createDebugLogger } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('WebComponentTraitManager');
 
+// ── Minimal GrapesJS interfaces ─────────────────────────────────────────
+// The adapter package does not depend on the `grapesjs` npm package, so
+// we define the narrowest possible structural types for the Editor and
+// Component surfaces that WebComponentTraitManager actually touches.
+
+/** Minimal GrapesJS component model used by the trait manager. */
+export interface GjsComponentModel {
+  get(key: string): unknown;
+  set?(key: string, value: unknown): void;
+  getId(): string;
+  getEl(): HTMLElement | undefined;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  off(event: string, handler: (...args: unknown[]) => void): void;
+  previous?(key: string): unknown;
+  getAttributes?(): Record<string, string>;
+}
+
+/** Minimal GrapesJS trait model used by trait update listeners. */
+export interface GjsTraitModel {
+  get(key: string): unknown;
+  getValue?(): unknown;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+}
+
+/** Minimal GrapesJS editor surface used by the trait manager. */
+export interface GjsEditorLike {
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  off?(event: string, handler: (...args: unknown[]) => void): void;
+}
+
 export interface TraitHandler {
   /**
    * Called when a trait value changes in GrapesJS
@@ -19,17 +49,17 @@ export interface TraitHandler {
    * @param oldValue - The previous value (optional)
    * @param component - The GrapesJS component (optional, for advanced handlers)
    */
-  onChange: (element: HTMLElement, value: any, oldValue?: any, component?: any) => void;
+  onChange: (element: HTMLElement, value: unknown, oldValue?: unknown, component?: GjsComponentModel) => void;
 
   /**
    * Optional: Read the current value from the web component
    */
-  getValue?: (element: HTMLElement) => any;
+  getValue?: (element: HTMLElement) => unknown;
 
   /**
    * Optional: Initialize the trait when component is first created
    */
-  onInit?: (element: HTMLElement, defaultValue: any) => void;
+  onInit?: (element: HTMLElement, defaultValue: unknown) => void;
 }
 
 export interface ComponentConfig {
@@ -45,11 +75,11 @@ export interface ComponentConfig {
 }
 
 export class WebComponentTraitManager {
-  private editor: any;
+  private editor: GjsEditorLike;
   private componentConfigs: Map<string, ComponentConfig> = new Map();
   private activeListeners: Map<string, Function> = new Map();
 
-  constructor(editor: any) {
+  constructor(editor: GjsEditorLike) {
     this.editor = editor;
     this.setupGlobalListeners();
   }
@@ -90,23 +120,23 @@ export class WebComponentTraitManager {
    */
   private setupGlobalListeners(): void {
     // Listen for component selection
-    this.editor.on('component:selected', (component: any) => {
-      this.handleComponentSelected(component);
+    this.editor.on('component:selected', (...args: unknown[]) => {
+      this.handleComponentSelected(args[0] as GjsComponentModel);
     });
 
     // Listen for component deselection
-    this.editor.on('component:deselected', (component: any) => {
-      this.handleComponentDeselected(component);
+    this.editor.on('component:deselected', (...args: unknown[]) => {
+      this.handleComponentDeselected(args[0] as GjsComponentModel);
     });
 
     // Listen for component mount (when added to canvas)
-    this.editor.on('component:mount', (component: any) => {
-      this.handleComponentMount(component);
+    this.editor.on('component:mount', (...args: unknown[]) => {
+      this.handleComponentMount(args[0] as GjsComponentModel);
     });
 
     // Listen for component removal (unmount) - critical for cleanup
-    this.editor.on('component:remove', (component: any) => {
-      this.handleComponentRemove(component);
+    this.editor.on('component:remove', (...args: unknown[]) => {
+      this.handleComponentRemove(args[0] as GjsComponentModel);
     });
 
     // Listen for editor destroy to clean up all resources
@@ -120,8 +150,8 @@ export class WebComponentTraitManager {
   /**
    * Handle component selection - set up trait listeners
    */
-  private handleComponentSelected(component: any): void {
-    const tagName = component.get('tagName')?.toLowerCase();
+  private handleComponentSelected(component: GjsComponentModel): void {
+    const tagName = (component.get('tagName') as string | undefined)?.toLowerCase();
     if (!tagName) return;
 
     const handlers = this.getTraitHandlers(tagName);
@@ -136,14 +166,14 @@ export class WebComponentTraitManager {
   /**
    * Handle component deselection - clean up listeners
    */
-  private handleComponentDeselected(component: any): void {
+  private handleComponentDeselected(component: GjsComponentModel): void {
     const componentId = component.getId();
     const listenerId = `${componentId}-traits`;
 
     // Remove trait change listener
     const listener = this.activeListeners.get(listenerId);
     if (listener) {
-      component.off('change:attributes', listener);
+      component.off('change:attributes', listener as (...args: unknown[]) => void);
       this.activeListeners.delete(listenerId);
     }
 
@@ -164,9 +194,9 @@ export class WebComponentTraitManager {
    * Handle component removal - clean up all resources including intervals
    * This is critical for preventing memory leaks
    */
-  private handleComponentRemove(component: any): void {
+  private handleComponentRemove(component: GjsComponentModel): void {
     const componentId = component.getId();
-    const tagName = component.get('tagName')?.toLowerCase();
+    const tagName = (component.get('tagName') as string | undefined)?.toLowerCase();
 
     debug(`Removing component ${tagName} (${componentId})`);
 
@@ -199,8 +229,8 @@ export class WebComponentTraitManager {
   /**
    * Handle component mount - initialize traits
    */
-  private handleComponentMount(component: any): void {
-    const tagName = component.get('tagName')?.toLowerCase();
+  private handleComponentMount(component: GjsComponentModel): void {
+    const tagName = (component.get('tagName') as string | undefined)?.toLowerCase();
     if (!tagName) return;
 
     const handlers = this.getTraitHandlers(tagName);
@@ -222,9 +252,9 @@ export class WebComponentTraitManager {
    * Initialize traits with their default values
    * This ensures that default values are applied even when not explicitly set
    */
-  private initializeTraits(component: any, element: HTMLElement, handlers: Record<string, TraitHandler>): void {
-    const attributes = component.get('attributes') || {};
-    const tagName = component.get('tagName')?.toLowerCase();
+  private initializeTraits(component: GjsComponentModel, element: HTMLElement, handlers: Record<string, TraitHandler>): void {
+    const attributes = (component.get('attributes') as Record<string, unknown>) || {};
+    const tagName = (component.get('tagName') as string | undefined)?.toLowerCase();
 
     // Get trait defaults from registry
     const traitDefaults = tagName ? componentRegistry.getTraitDefaults(tagName) : {};
@@ -266,7 +296,7 @@ export class WebComponentTraitManager {
    * Set up MutationObserver to watch for attribute and nested element changes
    * USWDS-WC uses Light DOM, so we need to observe the subtree for changes
    */
-  private setupAttributeObservers(component: any, element: HTMLElement, tagName: string, handlers: Record<string, TraitHandler>): void {
+  private setupAttributeObservers(component: GjsComponentModel, element: HTMLElement, tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
 
     // Debounce flag to prevent rapid-fire mutations from causing loops
@@ -350,14 +380,14 @@ export class WebComponentTraitManager {
   /**
    * Set up listeners for trait changes
    */
-  private setupTraitListeners(component: any, tagName: string, handlers: Record<string, TraitHandler>): void {
+  private setupTraitListeners(component: GjsComponentModel, _tagName: string, handlers: Record<string, TraitHandler>): void {
     const componentId = component.getId();
     const listenerId = `${componentId}-traits`;
 
     // Remove old listener if exists
     const oldListener = this.activeListeners.get(listenerId);
     if (oldListener) {
-      component.off('change:attributes', oldListener);
+      component.off('change:attributes', oldListener as (...args: unknown[]) => void);
     }
 
     // Create new listener for attribute changes
@@ -372,8 +402,8 @@ export class WebComponentTraitManager {
     // Listen for trait value updates directly from the Trait Manager
     // This catches all trait changes including when values are reset to defaults
     const traitUpdateListenerId = `${componentId}-trait-update`;
-    const traitUpdateListener = (trait: any) => {
-      const traitName = trait.get('name');
+    const traitUpdateListener = (trait: GjsTraitModel) => {
+      const traitName = trait.get('name') as string;
       const handler = handlers[traitName];
       if (!handler) return;
 
@@ -386,8 +416,12 @@ export class WebComponentTraitManager {
 
       try {
         handler.onChange(element, value, undefined, component);
-        if (typeof (element as any).requestUpdate === 'function') {
-          (element as any).requestUpdate();
+        // Trigger web component update if it uses Lit or similar
+        // The requestUpdate method is not part of the standard HTMLElement
+        // interface but is present on Lit-based custom elements.
+        const litElement = element as HTMLElement & { requestUpdate?: () => void };
+        if (typeof litElement.requestUpdate === 'function') {
+          litElement.requestUpdate();
         }
       } catch (error) {
         debug(`Error handling trait '${traitName}':`, error);
@@ -397,9 +431,11 @@ export class WebComponentTraitManager {
     this.activeListeners.set(traitUpdateListenerId, traitUpdateListener);
 
     // Listen for trait value changes on the component's traits
-    const traits = component.get('traits');
+    const traits = component.get('traits') as
+      | { forEach(fn: (trait: GjsTraitModel) => void): void }
+      | undefined;
     if (traits) {
-      traits.forEach((trait: any) => {
+      traits.forEach((trait: GjsTraitModel) => {
         trait.on('change:value', () => traitUpdateListener(trait));
       });
     }
@@ -408,15 +444,15 @@ export class WebComponentTraitManager {
   /**
    * Handle trait value changes
    */
-  private handleTraitChanges(component: any, handlers: Record<string, TraitHandler>): void {
+  private handleTraitChanges(component: GjsComponentModel, handlers: Record<string, TraitHandler>): void {
     const element = component.getEl();
     if (!element) {
       debug('No element found for component');
       return;
     }
 
-    const attributes = component.get('attributes') || {};
-    const previousAttributes = component.previous('attributes') || {};
+    const attributes = (component.get('attributes') as Record<string, unknown>) || {};
+    const previousAttributes = (component.previous?.('attributes') as Record<string, unknown>) || {};
 
     debug('All attributes:', JSON.stringify(attributes));
     debug('Previous attributes:', JSON.stringify(previousAttributes));
@@ -436,8 +472,11 @@ export class WebComponentTraitManager {
           handler.onChange(element, newValue, oldValue, component);
 
           // Trigger web component update if it uses Lit or similar
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          // The requestUpdate method is not part of the standard HTMLElement
+          // interface but is present on Lit-based custom elements.
+          const litEl = element as HTMLElement & { requestUpdate?: () => void };
+          if (typeof litEl.requestUpdate === 'function') {
+            litEl.requestUpdate();
           }
         } catch (error) {
           debug(`Error handling trait '${traitName}':`, error);
@@ -449,14 +488,14 @@ export class WebComponentTraitManager {
   /**
    * Helper: Update a property on the web component
    */
-  static setProperty(element: HTMLElement, propertyName: string, value: any): void {
-    (element as any)[propertyName] = value;
+  static setProperty(element: HTMLElement, propertyName: string, value: unknown): void {
+    (element as unknown as Record<string, unknown>)[propertyName] = value;
   }
 
   /**
    * Helper: Update an attribute on the web component
    */
-  static setAttribute(element: HTMLElement, attributeName: string, value: any): void {
+  static setAttribute(element: HTMLElement, attributeName: string, value: unknown): void {
     if (value === null || value === undefined || value === false) {
       element.removeAttribute(attributeName);
     } else if (value === true) {

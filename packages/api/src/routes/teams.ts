@@ -326,59 +326,72 @@ export async function teamRoutes(app: FastifyInstance) {
         return reply.status(403).send({ message: 'Cannot assign a role higher than your own' });
       }
 
-      // Check if user exists and is in the same organization
-      const [team] = await db
-        .select({ organizationId: teams.organizationId })
-        .from(teams)
-        .where(eq(teams.id, teamId))
-        .limit(1);
+      // Wrap validation + insert in a single transaction to reduce round-trips
+      let result;
+      try {
+        result = await db.transaction(async (tx) => {
+          // Single query: validate team and user exist, fetch both organizationIds
+          const [team] = await tx
+            .select({
+              teamOrgId: teams.organizationId,
+              userOrgId: users.organizationId,
+              userId: users.id,
+            })
+            .from(teams)
+            .leftJoin(users, eq(users.id, userId))
+            .where(eq(teams.id, teamId))
+            .limit(1);
 
-      if (!team) {
-        return reply.status(404).send({ message: 'Team not found' });
+          if (!team) {
+            throw { statusCode: 404, message: 'Team not found' };
+          }
+
+          if (!team.userId) {
+            throw { statusCode: 404, message: 'User not found' };
+          }
+
+          if (team.userOrgId !== team.teamOrgId) {
+            throw { statusCode: 400, message: 'User must be in the same organization' };
+          }
+
+          // Check existing membership and insert in the same transaction
+          const [existingMembership] = await tx
+            .select({ teamId: teamMemberships.teamId })
+            .from(teamMemberships)
+            .where(
+              and(
+                eq(teamMemberships.teamId, teamId),
+                eq(teamMemberships.userId, userId)
+              )
+            )
+            .limit(1);
+
+          if (existingMembership) {
+            throw { statusCode: 400, message: 'User is already a member of this team' };
+          }
+
+          // Add member
+          const [membership] = await tx
+            .insert(teamMemberships)
+            .values({
+              teamId,
+              userId,
+              role,
+              invitedBy: authUser.id,
+            })
+            .returning();
+
+          return membership;
+        });
+      } catch (err: unknown) {
+        const httpErr = err as { statusCode?: number; message?: string };
+        if (httpErr?.statusCode) {
+          return reply.status(httpErr.statusCode).send({ message: httpErr.message });
+        }
+        throw err;
       }
 
-      const [targetUser] = await db
-        .select({ organizationId: users.organizationId })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (!targetUser) {
-        return reply.status(404).send({ message: 'User not found' });
-      }
-
-      if (targetUser.organizationId !== team.organizationId) {
-        return reply.status(400).send({ message: 'User must be in the same organization' });
-      }
-
-      // Check if already a member
-      const [existingMembership] = await db
-        .select()
-        .from(teamMemberships)
-        .where(
-          and(
-            eq(teamMemberships.teamId, teamId),
-            eq(teamMemberships.userId, userId)
-          )
-        )
-        .limit(1);
-
-      if (existingMembership) {
-        return reply.status(400).send({ message: 'User is already a member of this team' });
-      }
-
-      // Add member
-      const [membership] = await db
-        .insert(teamMemberships)
-        .values({
-          teamId,
-          userId,
-          role,
-          invitedBy: authUser.id,
-        })
-        .returning();
-
-      return membership;
+      return result;
     }
   );
 

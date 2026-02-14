@@ -4,7 +4,7 @@
  * Exposes debug helpers to window for console debugging when debug mode is active.
  */
 
-import { createDebugLogger } from '@uswds-pt/shared';
+import { createDebugLogger, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../../types/grapesjs';
 import { scheduleCanvasUpdate } from './canvas-events';
 
@@ -14,7 +14,7 @@ const debug = createDebugLogger('Canvas');
 const DEBUG =
   typeof window !== 'undefined' &&
   (new URLSearchParams(window.location.search).get('debug') === 'true' ||
-    localStorage.getItem('uswds_pt_debug') === 'true');
+    localStorage.getItem(DEBUG_STORAGE_KEY) === 'true');
 
 /**
  * Expose debug helpers to window for console debugging

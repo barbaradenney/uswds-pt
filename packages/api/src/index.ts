@@ -6,6 +6,7 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import compress from '@fastify/compress';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { authPlugin } from './plugins/auth.js';
@@ -36,9 +37,9 @@ declare module 'fastify' {
 async function main() {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Fail fast if JWT_SECRET is not set or is the weak default in production
-  if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'development-secret-change-in-production')) {
-    console.error('FATAL: JWT_SECRET must be set to a secure value in production');
+  // Fail fast if JWT_SECRET is not set in production
+  if (isProduction && !process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable is required in production');
     process.exit(1);
   }
 
@@ -75,6 +76,9 @@ async function main() {
     // Allow large payloads for htmlContent (2MB) + grapesData (5MB)
     bodyLimit: 8 * 1024 * 1024, // 8MB
   });
+
+  // Register response compression (gzip/brotli)
+  await app.register(compress, { global: true });
 
   // Register CORS - allow frontend URLs
   // CORS_ORIGINS can be a comma-separated list of allowed origins

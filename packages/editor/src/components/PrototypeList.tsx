@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
@@ -16,6 +16,148 @@ type SortOption = 'updated' | 'name-asc' | 'name-desc' | 'oldest';
 
 const debug = createDebugLogger('PrototypeList');
 const PAGE_SIZE = 20;
+
+/** Props for the memoized PrototypeCard component. */
+interface PrototypeCardProps {
+  prototype: Prototype;
+  confirmDeleteSlug: string | null;
+  gitHubConnection: { repoOwner: string; repoName: string } | null;
+  onDelete: (slug: string, e: React.MouseEvent) => void;
+  onConfirmDelete: (slug: string) => void;
+  onCancelDelete: () => void;
+  onDuplicate: (slug: string, e: React.MouseEvent) => void;
+}
+
+/**
+ * Renders a single prototype card in the grid. Memoized so that cards whose
+ * props have not changed skip re-rendering when sibling cards update (e.g.,
+ * when a different card enters confirm-delete state or a new card is added).
+ */
+const PrototypeCard = React.memo(function PrototypeCard({
+  prototype,
+  confirmDeleteSlug,
+  gitHubConnection,
+  onDelete,
+  onConfirmDelete,
+  onCancelDelete,
+  onDuplicate,
+}: PrototypeCardProps) {
+  const templateLabel = inferTemplateLabel(prototype.htmlContent);
+  const isConfirmingDelete = confirmDeleteSlug === prototype.slug;
+
+  return (
+    <div className="prototype-card">
+      {templateLabel && (
+        <div className="prototype-card-template-row">
+          <span className="prototype-card-template">
+            {templateLabel}
+          </span>
+        </div>
+      )}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
+        <h3 className="prototype-card-title">
+          <Link to={`/edit/${prototype.slug}`}>
+            {prototype.name}
+          </Link>
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {isConfirmingDelete ? (
+            <>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.875rem',
+                  color: '#b50909',
+                }}
+                onClick={(e) => { e.stopPropagation(); onConfirmDelete(prototype.slug); }}
+                aria-label={`Confirm delete ${prototype.name}`}
+              >
+                Confirm Delete?
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.875rem',
+                  color: 'var(--color-base-light)',
+                }}
+                onClick={(e) => { e.stopPropagation(); onCancelDelete(); }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.875rem',
+                  color: 'var(--color-base-light)',
+                }}
+                onClick={(e) => onDelete(prototype.slug, e)}
+                aria-label={`Delete ${prototype.name}`}
+              >
+                Delete
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.875rem',
+                  color: 'var(--color-base-light)',
+                }}
+                onClick={(e) => onDuplicate(prototype.slug, e)}
+                aria-label={`Duplicate ${prototype.name}`}
+              >
+                Duplicate
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      {prototype.description && (
+        <p
+          style={{
+            color: 'var(--color-base-light)',
+            marginBottom: '12px',
+          }}
+        >
+          {prototype.description}
+        </p>
+      )}
+      <div className="prototype-card-meta">
+        <span>Updated {formatDate(prototype.updatedAt)}</span>
+        <span
+          className={`prototype-card-branch${gitHubConnection && prototype.lastGithubPushAt ? '' : ' prototype-card-branch--pending'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z" />
+          </svg>
+          {gitHubConnection && prototype.lastGithubPushAt ? (
+            <a
+              href={`https://github.com/${gitHubConnection.repoOwner}/${gitHubConnection.repoName}/tree/uswds-pt/${prototype.branchSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              uswds-pt/{prototype.branchSlug}
+            </a>
+          ) : (
+            <span>uswds-pt/{prototype.branchSlug}</span>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+});
 
 export function PrototypeList() {
   const [prototypes, setPrototypes] = useState<Prototype[]>([]);
@@ -84,12 +226,12 @@ export function PrototypeList() {
       });
   }, [currentTeam]);
 
-  function handleDelete(slug: string, e: React.MouseEvent) {
+  const handleDelete = useCallback((slug: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmDeleteSlug(slug);
-  }
+  }, []);
 
-  async function confirmDelete(slug: string) {
+  const confirmDeleteHandler = useCallback(async (slug: string) => {
     try {
       const response = await authFetch(`/api/prototypes/${slug}`, {
         method: 'DELETE',
@@ -105,9 +247,13 @@ export function PrototypeList() {
       setError(err instanceof Error ? err.message : 'Failed to delete');
       setConfirmDeleteSlug(null);
     }
-  }
+  }, []);
 
-  async function handleDuplicate(slug: string, e: React.MouseEvent) {
+  const cancelDelete = useCallback(() => {
+    setConfirmDeleteSlug(null);
+  }, []);
+
+  const handleDuplicate = useCallback(async (slug: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
     try {
@@ -125,7 +271,7 @@ export function PrototypeList() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to duplicate');
     }
-  }
+  }, []);
 
   async function handleAcceptInvitation(token: string) {
     setAcceptingToken(token);
@@ -386,124 +532,18 @@ export function PrototypeList() {
         </div>
       ) : (
         <div className="prototype-grid">
-          {visiblePrototypes.map((prototype) => {
-            const templateLabel = inferTemplateLabel(prototype.htmlContent);
-            return (
-            <div
+          {visiblePrototypes.map((prototype) => (
+            <PrototypeCard
               key={prototype.id}
-              className="prototype-card"
-            >
-              {templateLabel && (
-                <div className="prototype-card-template-row">
-                  <span className="prototype-card-template">
-                    {templateLabel}
-                  </span>
-                </div>
-              )}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <h3 className="prototype-card-title">
-                  <Link to={`/edit/${prototype.slug}`}>
-                    {prototype.name}
-                  </Link>
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {confirmDeleteSlug === prototype.slug ? (
-                    <>
-                      <button
-                        className="btn"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '0.875rem',
-                          color: '#b50909',
-                        }}
-                        onClick={(e) => { e.stopPropagation(); confirmDelete(prototype.slug); }}
-                        aria-label={`Confirm delete ${prototype.name}`}
-                      >
-                        Confirm Delete?
-                      </button>
-                      <button
-                        className="btn"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '0.875rem',
-                          color: 'var(--color-base-light)',
-                        }}
-                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteSlug(null); }}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="btn"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '0.875rem',
-                          color: 'var(--color-base-light)',
-                        }}
-                        onClick={(e) => handleDelete(prototype.slug, e)}
-                        aria-label={`Delete ${prototype.name}`}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        className="btn"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '0.875rem',
-                          color: 'var(--color-base-light)',
-                        }}
-                        onClick={(e) => handleDuplicate(prototype.slug, e)}
-                        aria-label={`Duplicate ${prototype.name}`}
-                      >
-                        Duplicate
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-              {prototype.description && (
-                <p
-                  style={{
-                    color: 'var(--color-base-light)',
-                    marginBottom: '12px',
-                  }}
-                >
-                  {prototype.description}
-                </p>
-              )}
-              <div className="prototype-card-meta">
-                <span>Updated {formatDate(prototype.updatedAt)}</span>
-                <span
-                  className={`prototype-card-branch${gitHubConnection && prototype.lastGithubPushAt ? '' : ' prototype-card-branch--pending'}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z" />
-                  </svg>
-                  {gitHubConnection && prototype.lastGithubPushAt ? (
-                    <a
-                      href={`https://github.com/${gitHubConnection.repoOwner}/${gitHubConnection.repoName}/tree/uswds-pt/${prototype.branchSlug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      uswds-pt/{prototype.branchSlug}
-                    </a>
-                  ) : (
-                    <span>uswds-pt/{prototype.branchSlug}</span>
-                  )}
-                </span>
-              </div>
-            </div>
-            );
-          })}
+              prototype={prototype}
+              confirmDeleteSlug={confirmDeleteSlug}
+              gitHubConnection={gitHubConnection}
+              onDelete={handleDelete}
+              onConfirmDelete={confirmDeleteHandler}
+              onCancelDelete={cancelDelete}
+              onDuplicate={handleDuplicate}
+            />
+          ))}
         </div>
       )}
 

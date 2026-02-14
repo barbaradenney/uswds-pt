@@ -8,14 +8,14 @@ import fastifyJwt from '@fastify/jwt';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db, users, type User } from '../db/index.js';
-import { BCRYPT_SALT_ROUNDS, DEFAULT_JWT_SECRET } from '../constants.js';
+import { BCRYPT_SALT_ROUNDS, DEFAULT_JWT_SECRET_DEV } from '../constants.js';
 import { normalizeEmail } from '../lib/email.js';
 
 
 async function authPluginImpl(app: FastifyInstance) {
   // Register JWT plugin
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET,
+    secret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET_DEV,
   });
 
   // Authenticate decorator

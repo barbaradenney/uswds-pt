@@ -175,7 +175,7 @@ describe('Preview Routes', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['cache-control']).toBe(
-        'public, max-age=300, stale-while-revalidate=60'
+        'public, max-age=60, must-revalidate'
       );
     });
   });

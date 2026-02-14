@@ -8,9 +8,14 @@
  */
 
 export type {
+  GjsEditor,
+  GjsComponent,
+  GjsTrait,
   GrapesComponent,
   GrapesComponentCollection,
   GrapesTrait,
+  GrapesTraitCollection,
+  GrapesTraitManager,
   GrapesPage,
   GrapesPagesManager,
   GrapesCanvas,

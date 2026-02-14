@@ -77,6 +77,18 @@ export const API_ENDPOINTS = {
 const debug = createDebugLogger('API');
 
 /**
+ * Safely parse a JSON response body, returning a fallback on failure.
+ * Replaces the common `response.json().catch(() => ({}))` pattern.
+ */
+export async function parseJsonSafely(response: Response, fallback: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  try {
+    return await response.json();
+  } catch {
+    return fallback;
+  }
+}
+
+/**
  * Result type for API operations
  */
 export interface ApiResult<T> {
@@ -119,10 +131,10 @@ export async function apiRequest<T>(
     const response = await authFetch(endpoint, init);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await parseJsonSafely(response);
       return {
         success: false,
-        error: errorData.message || defaultError,
+        error: (errorData.message as string) || defaultError,
       };
     }
 

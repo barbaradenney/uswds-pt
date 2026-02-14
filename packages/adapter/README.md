@@ -12,7 +12,9 @@ Converts USWDS Web Components into GrapesJS block and component registrations. T
 | `components/data-components.ts` | Data display: card, table, tag, list, collection |
 | `components/feedback-components.ts` | Feedback: alert, banner, modal, tooltip |
 | `components/layout-components.ts` | Layout: accordion, step-indicator, prose |
-| `components/navigation-components.ts` | Navigation: header, footer, breadcrumb, side-nav |
+| `components/navigation-components.ts` | Navigation barrel: delegates to header/footer, plus breadcrumb, side-nav |
+| `components/header-components.ts` | Header: usa-header with nav, search, skip link, logo |
+| `components/footer-components.ts` | Footer: usa-footer with agency info, sections, contact |
 | `components/structure-components.ts` | Structural layout: grid, container |
 | `components/ui-components.ts` | UI elements: identifier, language-selector |
 | `components/shared-utils.ts` | Trait factories, boolean coercion, common types |

@@ -8,8 +8,19 @@
 import { createDebugLogger } from '@uswds-pt/shared';
 import { collectTargetableComponents } from './component-ids';
 import type { EditorInstance, RegisterListener } from './types';
+import type {
+  GrapesComponent,
+  GrapesTrait,
+  GrapesTraitCollection,
+} from '../../../types/grapesjs';
 
 const debug = createDebugLogger('GrapesJSSetup');
+
+/** Payload delivered by the `trait:value` editor event. */
+interface TraitValuePayload {
+  trait: GrapesTrait | undefined;
+  component: GrapesComponent | undefined;
+}
 
 /**
  * Set up spacing trait for all components
@@ -30,7 +41,7 @@ export function setupSpacingTrait(
     { id: 'margin-top-10', label: '80px (10 units)' },
   ];
 
-  const updateSpacingClass = (component: any, newClass: string) => {
+  const updateSpacingClass = (component: GrapesComponent, newClass: string) => {
     const el = component.getEl();
     if (!el) return;
     const currentClasses = component.getClasses();
@@ -41,8 +52,9 @@ export function setupSpacingTrait(
     if (newClass) component.addClass(newClass);
   };
 
-  registerListener(editor, 'component:selected', (component: any) => {
-    const traits = component.get('traits');
+  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+    const component = args[0] as GrapesComponent;
+    const traits = component.get('traits') as GrapesTraitCollection;
     const hasSpacingTrait = traits.where({ name: 'top-spacing' }).length > 0;
 
     if (!hasSpacingTrait) {
@@ -62,10 +74,11 @@ export function setupSpacingTrait(
     }
   });
 
-  registerListener(editor, 'trait:value', ({ trait, component }: any) => {
+  registerListener(editor, 'trait:value', (...args: unknown[]) => {
+    const { trait, component } = args[0] as TraitValuePayload;
     if (trait?.get('name') !== 'top-spacing') return;
     if (!component) return;
-    const value = trait.getValue?.() ?? trait.get('value') ?? '';
+    const value = (trait.getValue?.() ?? trait.get('value') ?? '') as string;
     updateSpacingClass(component, value);
   });
 }
@@ -77,14 +90,16 @@ export function setupConditionalShowHideTrait(
   editor: EditorInstance,
   registerListener: RegisterListener
 ): void {
-  const updateConditionalTraits = (component: any) => {
+  const updateConditionalTraits = (component: GrapesComponent) => {
     if (!component) return;
 
-    const tagName = component.get?.('tagName')?.toLowerCase() || '';
+    const tagName = (component.get('tagName') as string | undefined)?.toLowerCase() || '';
     if (tagName !== 'usa-checkbox' && tagName !== 'usa-radio') return;
 
     // Remove IDs from trigger components to prevent USWDS duplicate ID issues
-    const currentId = component.getAttributes?.()?.id || component.get?.('attributes')?.id;
+    const currentId =
+      (component.getAttributes?.() as Record<string, unknown> | undefined)?.id ||
+      (component.get('attributes') as Record<string, unknown> | undefined)?.id;
     if (currentId) {
       component.removeAttributes(['id']);
       const el = component.getEl?.();
@@ -107,8 +122,8 @@ export function setupConditionalShowHideTrait(
     debug('Updated conditional traits with', targetables.length, 'targetable components');
   };
 
-  registerListener(editor, 'component:selected', (component: any) => {
-    updateConditionalTraits(component);
+  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+    updateConditionalTraits(args[0] as GrapesComponent);
   });
 
   registerListener(editor, 'component:add', () => {
@@ -152,10 +167,11 @@ export function setupVisibilityTrait(
     checkboxGroupRegistered = true;
 
     editor.TraitManager.addType('checkbox-group', {
-      createInput({ trait }: { trait: any }) {
+      createInput({ trait }: { trait: GrapesTrait }) {
         const el = document.createElement('div');
         el.className = 'trait-checkbox-group';
-        const options: Array<{ id: string; label: string }> = trait.get('options') || [];
+        const options: Array<{ id: string; label: string }> =
+          (trait.get('options') as Array<{ id: string; label: string }>) || [];
 
         options.forEach((opt: { id: string; label: string }) => {
           const label = document.createElement('label');
@@ -178,8 +194,8 @@ export function setupVisibilityTrait(
         return el;
       },
 
-      onEvent({ elInput, component, trait }: { elInput: HTMLElement; component: any; trait: any }) {
-        const dataAttr = trait.get?.('dataAttribute') || 'data-states';
+      onEvent({ elInput, component, trait }: { elInput: HTMLElement; component: GrapesComponent; trait: GrapesTrait }) {
+        const dataAttr = (trait.get?.('dataAttribute') as string) || 'data-states';
         const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
         const checkedIds: string[] = [];
         checkboxes.forEach((cb) => {
@@ -187,15 +203,16 @@ export function setupVisibilityTrait(
         });
 
         if (checkedIds.length === 0) {
-          component.removeAttributes?.([dataAttr]);
+          component.removeAttributes([dataAttr]);
         } else {
-          component.addAttributes?.({ [dataAttr]: checkedIds.join(',') });
+          component.addAttributes({ [dataAttr]: checkedIds.join(',') });
         }
       },
 
-      onUpdate({ elInput, component, trait }: { elInput: HTMLElement; component: any; trait: any }) {
-        const dataAttr = trait.get?.('dataAttribute') || 'data-states';
-        const dataValue = component.getAttributes?.()[dataAttr] || '';
+      onUpdate({ elInput, component, trait }: { elInput: HTMLElement; component: GrapesComponent; trait: GrapesTrait }) {
+        const dataAttr = (trait.get?.('dataAttribute') as string) || 'data-states';
+        const attrs = component.getAttributes() as Record<string, string>;
+        const dataValue = attrs[dataAttr] || '';
         const activeIds = dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
         const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
         checkboxes.forEach((cb) => {
@@ -205,13 +222,16 @@ export function setupVisibilityTrait(
     });
   }
 
-  const addVisibilityTrait = (component: any) => {
+  const addVisibilityTrait = (component: GrapesComponent) => {
     if (!component) return;
 
     const items: Array<{ id: string; name: string }> = (() => {
       try {
         const instanceKey = config.dataKey === 'states' ? '__projectStates' : '__projectUsers';
-        const instanceArr = (editor as any)[instanceKey];
+        // The editor stores custom project arrays as dynamic properties.
+        // Since EditorInstance is typed as `any` for SDK compatibility,
+        // this access is intentionally unchecked.
+        const instanceArr = (editor as Record<string, unknown>)[instanceKey];
         if (Array.isArray(instanceArr)) return instanceArr;
         const data = editor.getProjectData?.();
         const arr = data?.[config.dataKey];
@@ -222,15 +242,15 @@ export function setupVisibilityTrait(
     })();
 
     if (items.length === 0) {
-      const traits = component.get('traits');
+      const traits = component.get('traits') as GrapesTraitCollection;
       const existing = traits.where({ name: config.traitName });
       if (existing.length > 0) {
-        existing.forEach((t: any) => traits.remove(t));
+        existing.forEach((t: GrapesTrait) => traits.remove(t));
       }
       return;
     }
 
-    const traits = component.get('traits');
+    const traits = component.get('traits') as GrapesTraitCollection;
     const hasTrait = traits.where({ name: config.traitName }).length > 0;
 
     if (hasTrait) {
@@ -251,8 +271,8 @@ export function setupVisibilityTrait(
     });
   };
 
-  registerListener(editor, 'component:selected', (component: any) => {
-    addVisibilityTrait(component);
+  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+    addVisibilityTrait(args[0] as GrapesComponent);
   });
 
   registerListener(editor, config.selectEvent, () => {

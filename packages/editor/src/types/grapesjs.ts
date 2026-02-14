@@ -6,8 +6,33 @@
  * Expand as needed when using new GrapesJS features.
  */
 
+import type { Editor, Component, Trait } from 'grapesjs';
+
+// ── Re-exports of vendor types ──────────────────────────────────────────
+// These give downstream code a single import location for common GrapesJS
+// types without coupling to the `grapesjs` package directly.
+
+/** Re-export of the GrapesJS Editor class. */
+export type GjsEditor = Editor;
+
+/** Re-export of the GrapesJS Component class. */
+export type GjsComponent = Component;
+
+/** Re-export of the GrapesJS Trait class. */
+export type GjsTrait = Trait;
+
+// ── Supplementary interfaces ────────────────────────────────────────────
+// These interfaces capture the subset of GrapesJS APIs that this project
+// uses, providing documentation and allowing code that cannot depend on
+// the `grapesjs` package (e.g. the adapter) to program against a
+// structural contract.
+
 /**
- * GrapesJS Component Model
+ * GrapesJS Component Model (structural interface)
+ *
+ * Describes the Component API surface used throughout the editor package.
+ * Prefer the `GjsComponent` type alias (backed by the real grapesjs
+ * `Component` class) when you have access to the vendor types.
  */
 export interface GrapesComponent {
   get(key: string): unknown;
@@ -19,7 +44,16 @@ export interface GrapesComponent {
   getTrait(name: string): GrapesTrait | undefined;
   get attributes(): Record<string, unknown>;
   addAttributes(attrs: Record<string, unknown>): void;
+  removeAttributes(attrs: string | string[]): void;
+  getAttributes(): Record<string, unknown>;
   components(): GrapesComponentCollection;
+  getId(): string;
+  getName(): string;
+  toHTML(): string;
+  find(selector: string): GrapesComponent[];
+  append(content: string): void;
+  parent(): GrapesComponent | undefined;
+  remove(): void;
 }
 
 /**
@@ -33,15 +67,30 @@ export interface GrapesComponentCollection {
   map<T>(fn: (comp: GrapesComponent) => T): T[];
   filter(fn: (comp: GrapesComponent) => boolean): GrapesComponent[];
   at?(index: number): GrapesComponent | undefined;
+  add(content: string, opts?: { at?: number }): void;
 }
 
 /**
- * GrapesJS Trait
+ * GrapesJS Trait (structural interface)
  */
 export interface GrapesTrait {
+  get(key: string): unknown;
   getValue(): unknown;
   setValue(value: unknown): void;
   set(key: string, value: unknown): void;
+  on?(event: string, handler: (...args: unknown[]) => void): void;
+}
+
+/**
+ * GrapesJS Trait collection (structural interface)
+ *
+ * Represents the Backbone collection returned by `component.get('traits')`.
+ */
+export interface GrapesTraitCollection {
+  where(attrs: Record<string, unknown>): GrapesTrait[];
+  add(trait: Record<string, unknown>): void;
+  remove(trait: GrapesTrait): void;
+  forEach(fn: (trait: GrapesTrait) => void): void;
 }
 
 /**
@@ -109,6 +158,16 @@ export interface GrapesModal {
 }
 
 /**
+ * GrapesJS Trait Manager (structural interface)
+ *
+ * Describes the TraitManager surface used in this project.
+ */
+export interface GrapesTraitManager {
+  addType(name: string, methods: Record<string, unknown>): void;
+  getType?(name: string): unknown;
+}
+
+/**
  * GrapesJS Project Data (for save/load)
  */
 export interface GrapesProjectData {
@@ -124,6 +183,7 @@ export interface GrapesProjectData {
   }>;
   styles?: unknown[];
   assets?: unknown[];
+  [key: string]: unknown;
 }
 
 /**
@@ -146,6 +206,7 @@ export interface GrapesEditor {
   Commands?: GrapesCommands;
   Modal?: GrapesModal;
   CssComposer?: { clear(): void };
+  TraitManager: GrapesTraitManager;
 
   // Methods
   getHtml(): string;
@@ -185,4 +246,5 @@ export function isGrapesEditor(obj: unknown): obj is GrapesEditor {
  * For type-safe code, use the `GrapesEditor` interface directly when the
  * full interface is needed, or use `isGrapesEditor()` type guard.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EditorInstance = any;

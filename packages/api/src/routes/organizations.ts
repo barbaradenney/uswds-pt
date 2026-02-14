@@ -34,22 +34,11 @@ export async function organizationRoutes(app: FastifyInstance) {
       const authUser = getAuthUser(request);
       const { teamName } = request.body;
 
-      // Get user's current organization
-      const [user] = await db
-        .select({ organizationId: users.organizationId, email: users.email })
-        .from(users)
-        .where(eq(users.id, authUser.id))
-        .limit(1);
-
-      if (!user) {
-        return reply.status(404).send({ message: 'User not found' });
-      }
-
       // Wrap entire setup in a transaction to prevent duplicate creation on concurrent requests
       let result;
       try {
         result = await db.transaction(async (tx) => {
-        // Re-read user inside transaction for consistency
+        // Read user inside transaction for consistency
         const [freshUser] = await tx
           .select({ organizationId: users.organizationId, email: users.email })
           .from(users)

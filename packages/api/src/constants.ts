@@ -14,9 +14,10 @@ export const JWT_EXPIRY = '7d';
 export const BCRYPT_SALT_ROUNDS = 12;
 
 /**
- * Default JWT secret (should be overridden in production via JWT_SECRET env var)
+ * Fallback JWT secret for local development only.
+ * In production, JWT_SECRET env var is required (enforced in index.ts).
  */
-export const DEFAULT_JWT_SECRET = 'development-secret-change-in-production';
+export const DEFAULT_JWT_SECRET_DEV = 'dev-only-jwt-secret-do-not-use-in-prod';
 
 /**
  * API version (for future use)

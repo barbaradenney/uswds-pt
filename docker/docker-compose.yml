@@ -6,15 +6,15 @@ services:
     image: postgres:16-alpine
     container_name: uswds-pt-db
     environment:
-      POSTGRES_USER: ${DB_USER:-uswds_pt}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-uswds_pt}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-uswds_pt} -d ${DB_NAME:-uswds_pt}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -28,8 +28,8 @@ services:
       dockerfile: docker/Dockerfile.api
     container_name: uswds-pt-api
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-uswds_pt}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-uswds_pt}
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      DATABASE_URL: postgresql://${DB_USER:?DB_USER is required}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-uswds_pt}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       PORT: 3001
       NODE_ENV: production

@@ -96,9 +96,10 @@ export async function previewRoutes(app: FastifyInstance) {
         }
       }
 
-      // Only cache public prototypes
+      // Public prototypes: short cache with revalidation so newly-private prototypes are re-checked
+      // Authenticated user's own prototypes: no caching
       if (!userId || prototype.createdBy !== userId) {
-        reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        reply.header('Cache-Control', 'public, max-age=60, must-revalidate');
       } else {
         reply.header('Cache-Control', 'private, no-cache');
       }

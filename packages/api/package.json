@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.58.0",
+    "@fastify/compress": "^8.3.1",
     "@fastify/cors": "^9.0.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/jwt": "^8.0.0",
@@ -30,8 +31,8 @@
     "bcrypt": "^5.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.33.0",
-    "fastify": "^4.28.0",
-    "fastify-plugin": "^5.1.0",
+    "fastify": "^4.29.1",
+    "fastify-plugin": "^4.5.1",
     "nanoid": "^5.0.0",
     "openai": "^5.12.0",
     "postgres": "^3.4.0"

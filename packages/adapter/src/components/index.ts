@@ -43,6 +43,8 @@ export { registerUIComponents } from './ui-components.js';
 export { registerDataComponents } from './data-components.js';
 export { registerFeedbackComponents } from './feedback-components.js';
 export { registerLayoutComponents } from './layout-components.js';
+export { registerHeaderComponents } from './header-components.js';
+export { registerFooterComponents } from './footer-components.js';
 export { registerNavigationComponents } from './navigation-components.js';
 export {
   registerPatternComponents,

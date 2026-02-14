@@ -21,15 +21,17 @@
     "@uswds-pt/adapter": "workspace:*",
     "@uswds-pt/shared": "workspace:*",
     "diff": "^8.0.3",
+    "dompurify": "^3.3.1",
     "grapesjs": "^0.22.5",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "react-router-dom": "^6.22.0"
+    "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
+    "@types/dompurify": "^3.2.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^8.53.0",

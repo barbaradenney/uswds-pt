@@ -11,6 +11,37 @@ import { rebuildAllPatterns } from '@uswds-pt/adapter';
 
 const debug = createDebugLogger('USWDSInit');
 
+/**
+ * Retry a function up to `maxAttempts` times with `intervalMs` between attempts.
+ * If `fn` returns `false`, the retry loop continues; any other return (including
+ * `undefined` / `void`) is treated as success and stops the loop (unless
+ * `stopOnSuccess` is set to `false`).
+ *
+ * This replaces the fragile pattern of scheduling multiple independent
+ * `setTimeout` calls at staggered delays (100 ms, 200 ms, 500 ms, etc.)
+ * which all fire regardless of whether an earlier attempt already succeeded.
+ *
+ * @param fn           - The function to call on each attempt.
+ * @param maxAttempts  - Total number of times to call `fn` (default 3).
+ * @param intervalMs   - Delay between attempts in milliseconds (default 150).
+ * @param stopOnSuccess - If true (default), stop retrying once `fn` returns a
+ *                        truthy/void value.  Set to false when every attempt
+ *                        should run regardless (e.g. "insurance" re-applies).
+ */
+async function waitAndRetry(
+  fn: () => boolean | void,
+  { maxAttempts = 3, intervalMs = 150, stopOnSuccess = true }:
+    { maxAttempts?: number; intervalMs?: number; stopOnSuccess?: boolean } = {}
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const result = fn();
+    if (stopOnSuccess && result !== false) return;
+    if (i < maxAttempts - 1) {
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+  }
+}
+
 // Preset option lists for usa-select
 const SELECT_PRESETS: Record<string, Array<{ value: string; text: string }>> = {
   'us-states': [
@@ -172,8 +203,10 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
     const href = resolveHref(button);
     const linkType = button.getAttribute('link-type');
 
-    // Convert button to anchor if href is set
-    const convertToAnchor = () => {
+    // Convert button to anchor if href is set.
+    // Returns false if the inner element hasn't rendered yet so retry logic
+    // knows to wait.
+    const convertToAnchor = (): boolean | void => {
       if (href && href !== '#' && linkType && linkType !== 'none') {
         const innerButton = button.querySelector('button');
         const innerAnchor = button.querySelector('a');
@@ -191,6 +224,9 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
           if (textAttr) {
             innerAnchor.textContent = textAttr;
           }
+        } else {
+          // Inner element not rendered yet
+          return false;
         }
       } else {
         // No link - just apply text as fallback if inner content is empty
@@ -200,13 +236,15 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
           if (!currentText && textAttr) {
             inner.textContent = textAttr;
           }
+        } else {
+          // Inner element not rendered yet
+          return false;
         }
       }
     };
 
-    // Try immediately and also after delays
-    setTimeout(convertToAnchor, 150);
-    setTimeout(convertToAnchor, 300);
+    // Try immediately, then retry with delays until the inner element renders
+    waitAndRetry(convertToAnchor, { maxAttempts: 3, intervalMs: 150 });
 
     if (href && href !== '#') {
       button.href = href;
@@ -411,14 +449,14 @@ export async function initializeUSWDSComponents(container: HTMLElement | Documen
   };
 
   container.querySelectorAll('usa-button-group').forEach((buttonGroup: Element) => {
-    // Try immediately
-    if (!initButtonGroup(buttonGroup)) {
-      // If no buttons found, wait for render
-      setTimeout(() => initButtonGroup(buttonGroup), 100);
-    }
-    // Also run again after a delay to ensure web component hasn't overwritten
-    setTimeout(() => initButtonGroup(buttonGroup), 200);
-    setTimeout(() => initButtonGroup(buttonGroup), 500);
+    // Try immediately, then retry with delays.  Use stopOnSuccess: false so
+    // every attempt runs — later passes act as "insurance" in case the web
+    // component overwrites values after its initial render.
+    waitAndRetry(() => initButtonGroup(buttonGroup), {
+      maxAttempts: 4,
+      intervalMs: 150,
+      stopOnSuccess: false,
+    });
   });
 
   // Initialize conditional show/hide fields
@@ -467,8 +505,10 @@ function initializeSelectOptions(select: HTMLElement): void {
     }
   }
 
-  // Wait for the component to render, then populate the internal select
-  const populateOptions = () => {
+  // Wait for the component to render, then populate the internal select.
+  // Returns false if the internal <select> hasn't appeared yet so retry
+  // logic can wait for the web component to finish rendering.
+  const populateOptions = (): boolean | void => {
     const internalSelect = select.querySelector('select');
     if (internalSelect) {
       // Clear existing options
@@ -487,19 +527,23 @@ function initializeSelectOptions(select: HTMLElement): void {
         opt.textContent = text;
         internalSelect.appendChild(opt);
       });
-    } else {
-      // Fallback: set the options property on the web component
+      return; // success
+    }
+    // Internal <select> not rendered yet — signal retry
+    return false;
+  };
+
+  // Try immediately, then retry with delays until the internal <select> renders.
+  // If all retries exhaust without finding it, fall back to the property API.
+  waitAndRetry(populateOptions, { maxAttempts: 3, intervalMs: 150 }).then(() => {
+    // After retries, if the <select> still isn't there, use the fallback
+    if (!select.querySelector('select')) {
       (select as any).options = options;
       if (typeof (select as any).requestUpdate === 'function') {
         (select as any).requestUpdate();
       }
     }
-  };
-
-  // Try immediately, then retry with delays if needed
-  populateOptions();
-  setTimeout(populateOptions, 100);
-  setTimeout(populateOptions, 300);
+  });
 }
 
 /**

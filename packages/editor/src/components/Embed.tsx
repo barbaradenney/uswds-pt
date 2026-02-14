@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
 
@@ -216,7 +217,7 @@ export function Embed() {
 
   return (
     <>
-      <div style={containerStyle} dangerouslySetInnerHTML={{ __html: cleanedHtml }} />
+      <div style={containerStyle} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(cleanedHtml) }} />
       {showCopyButton && (
         <button
           style={copyButtonStyle}
