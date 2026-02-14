@@ -28,6 +28,7 @@ import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
+import { isDemoMode, API_ENDPOINTS } from '../lib/api';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
@@ -55,9 +56,6 @@ export function Editor() {
   // the prototype's slug so downstream hooks see the slug without a route change.
   const [savedSlug, setSavedSlug] = useState<string | undefined>(undefined);
   const slug = routeSlug || savedSlug;
-
-  // Check if we're in demo mode (no API URL configured)
-  const isDemoMode = !import.meta.env.VITE_API_URL;
 
   // Organization context
   const { organization, currentTeam, isLoading: isLoadingTeam } = useOrganization();
@@ -458,6 +456,8 @@ export function Editor() {
    * restores the original page selection, and passes the full PageData array
    * to the modal for download/copy.
    */
+  const handleToggleHistory = useCallback(() => setShowVersionHistory(prev => !prev), []);
+
   const handleExport = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) {
@@ -639,7 +639,7 @@ export function Editor() {
         }
 
         // 3. Fetch the restored prototype directly (NOT persistence.load)
-        const response = await authFetch(`/api/prototypes/${slug}`);
+        const response = await authFetch(API_ENDPOINTS.PROTOTYPE(slug));
         if (!response.ok) {
           stateMachine.restoreVersionFailed('Failed to load restored prototype');
           return false;
@@ -912,7 +912,7 @@ export function Editor() {
         onPreview={handlePreview}
         onExport={handleExport}
         onSave={handleSave}
-        onToggleHistory={() => setShowVersionHistory(prev => !prev)}
+        onToggleHistory={handleToggleHistory}
         showVersionHistory={showVersionHistory}
         showHistoryButton={!isDemoMode && !!slug}
         showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}

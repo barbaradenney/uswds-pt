@@ -21,6 +21,7 @@ vi.mock('../db/index.js', () => {
     limit: mockLimit,
     orderBy: vi.fn().mockReturnThis(),
     innerJoin: vi.fn().mockReturnThis(),
+    leftJoin: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn().mockResolvedValue([]),
@@ -34,8 +35,22 @@ vi.mock('../db/index.js', () => {
       slug: 'slug',
       name: 'name',
       htmlContent: 'htmlContent',
-      grapesData: 'grapesData',
       isPublic: 'isPublic',
+      teamId: 'teamId',
+      createdBy: 'createdBy',
+    },
+    teams: {
+      id: 'id',
+      organizationId: 'organizationId',
+    },
+    organizations: {
+      id: 'id',
+      stateDefinitions: 'stateDefinitions',
+      userDefinitions: 'userDefinitions',
+    },
+    teamMemberships: {
+      teamId: 'teamId',
+      userId: 'userId',
     },
   };
 });
@@ -81,7 +96,9 @@ describe('Preview Routes', () => {
         {
           name: 'Test Prototype',
           htmlContent: '<div>Hello World</div>',
-          grapesData: { pages: [{ component: {} }] },
+          createdBy: 'user-1',
+          stateDefinitions: [],
+          userDefinitions: [],
         },
       ]);
 
@@ -94,7 +111,29 @@ describe('Preview Routes', () => {
       const body = JSON.parse(response.payload);
       expect(body.name).toBe('Test Prototype');
       expect(body.htmlContent).toBe('<div>Hello World</div>');
-      expect(body.gjsData).toBeDefined();
+    });
+
+    it('should not return grapesData or gjsData in preview response', async () => {
+      const { db } = await import('../db/index.js');
+      vi.mocked(db.limit).mockResolvedValueOnce([
+        {
+          name: 'Test Prototype',
+          htmlContent: '<div>Hello World</div>',
+          createdBy: 'user-1',
+          stateDefinitions: [],
+          userDefinitions: [],
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/preview/test-slug',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.payload);
+      expect(body.gjsData).toBeUndefined();
+      expect(body.grapesData).toBeUndefined();
     });
 
     it('should not require authentication', async () => {
@@ -103,7 +142,9 @@ describe('Preview Routes', () => {
         {
           name: 'Public Prototype',
           htmlContent: '<p>Public content</p>',
-          grapesData: null,
+          createdBy: 'user-1',
+          stateDefinitions: null,
+          userDefinitions: null,
         },
       ]);
 
@@ -118,33 +159,40 @@ describe('Preview Routes', () => {
       expect(body.name).toBe('Public Prototype');
     });
 
-    it('should return undefined gjsData when grapesData is null', async () => {
+    it('should return stateDefinitions and userDefinitions from org', async () => {
       const { db } = await import('../db/index.js');
+      const mockStates = [{ id: 's1', name: 'Active' }];
+      const mockUsers = [{ id: 'u1', name: 'Admin' }];
       vi.mocked(db.limit).mockResolvedValueOnce([
         {
-          name: 'No GJS Data',
+          name: 'Org Prototype',
           htmlContent: '<p>Content</p>',
-          grapesData: null,
+          createdBy: 'user-1',
+          stateDefinitions: mockStates,
+          userDefinitions: mockUsers,
         },
       ]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/api/preview/test-slug',
+        url: '/api/preview/org-slug',
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.payload);
-      expect(body.gjsData).toBeUndefined();
+      expect(body.stateDefinitions).toEqual(mockStates);
+      expect(body.userDefinitions).toEqual(mockUsers);
     });
 
-    it('should return undefined gjsData when grapesData is empty object', async () => {
+    it('should default stateDefinitions and userDefinitions to empty arrays when null', async () => {
       const { db } = await import('../db/index.js');
       vi.mocked(db.limit).mockResolvedValueOnce([
         {
-          name: 'Empty GJS Data',
+          name: 'No Org Prototype',
           htmlContent: '<p>Content</p>',
-          grapesData: {},
+          createdBy: 'user-1',
+          stateDefinitions: null,
+          userDefinitions: null,
         },
       ]);
 
@@ -155,7 +203,8 @@ describe('Preview Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.payload);
-      expect(body.gjsData).toBeUndefined();
+      expect(body.stateDefinitions).toEqual([]);
+      expect(body.userDefinitions).toEqual([]);
     });
 
     it('should set Cache-Control header on successful response', async () => {
@@ -164,7 +213,9 @@ describe('Preview Routes', () => {
         {
           name: 'Cached Prototype',
           htmlContent: '<p>Cached</p>',
-          grapesData: null,
+          createdBy: 'user-1',
+          stateDefinitions: null,
+          userDefinitions: null,
         },
       ]);
 
@@ -177,6 +228,20 @@ describe('Preview Routes', () => {
       expect(response.headers['cache-control']).toBe(
         'public, max-age=60, must-revalidate'
       );
+    });
+
+    it('should use a single query with LEFT JOINs', async () => {
+      const { db } = await import('../db/index.js');
+      vi.mocked(db.limit).mockResolvedValueOnce([]);
+
+      await app.inject({
+        method: 'GET',
+        url: '/api/preview/test-slug',
+      });
+
+      // Verify the query uses leftJoin (not multiple separate queries)
+      expect(db.select).toHaveBeenCalledTimes(1);
+      expect(db.leftJoin).toHaveBeenCalled();
     });
   });
 });

@@ -4,12 +4,10 @@ import { cleanExport, generateFullDocument, generateMultiPageDocument } from '..
 import type { PageData } from '../lib/export';
 import { getPrototype } from '../lib/localStorage';
 import { getAuthToken } from '../contexts/AuthContext';
+import { isDemoMode, API_URL, API_ENDPOINTS } from '../lib/api';
 import { escapeHtml, createDebugLogger } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('Preview');
-
-// Check if we're in demo mode
-const isDemoMode = !import.meta.env.VITE_API_URL;
 
 interface PreviewData {
   name: string;
@@ -185,13 +183,12 @@ export function Preview() {
       }
 
       // Use the preview API endpoint (sends auth token if available for non-public prototypes)
-      const apiUrl = import.meta.env.VITE_API_URL || '';
       const headers: Record<string, string> = {};
       const token = getAuthToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`, { headers });
+      const response = await fetch(`${API_URL}${API_ENDPOINTS.PREVIEW(prototypeSlug)}`, { headers });
 
       if (!response.ok) {
         if (response.status === 404) {

@@ -1,7 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { API_URL, API_ENDPOINTS } from '../lib/api';
 
 // GitHub OAuth SVG icon
 const GitHubIcon = () => (
@@ -17,7 +16,7 @@ export function Login() {
 
   const handleGitHubLogin = () => {
     clearError();
-    window.location.href = `${API_URL}/api/auth/github`;
+    window.location.href = `${API_URL}${API_ENDPOINTS.AUTH_GITHUB}`;
   };
 
   const oauthErrorMessages: Record<string, string> = {

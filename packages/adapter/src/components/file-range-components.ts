@@ -10,6 +10,7 @@ import {
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 import { createFormHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
 
 /**
@@ -138,7 +139,7 @@ registry.register({
           const minValue = isNaN(parsed) ? 0 : parsed;
 
           // Set property directly on web component (Lit reactive property)
-          (element as any).min = minValue;
+          (element as USWDSElement).min = minValue;
 
           // Also set attribute for persistence
           element.setAttribute('min', String(minValue));
@@ -155,18 +156,18 @@ registry.register({
 
             // Update both input and web component
             input.value = String(clampedValue);
-            (element as any).value = clampedValue;
+            (element as USWDSElement).value = clampedValue;
           }
 
           // Force Lit to re-render
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
           // Read from Lit property first
-          if ((element as any).min !== undefined) {
-            return (element as any).min;
+          if ((element as USWDSElement).min !== undefined) {
+            return (element as USWDSElement).min;
           }
           const attr = element.getAttribute('min');
           if (attr !== null) return parseFloat(attr) || 0;
@@ -190,7 +191,7 @@ registry.register({
           const maxValue = isNaN(parsed) ? 100 : parsed;
 
           // Set property directly on web component (Lit reactive property)
-          (element as any).max = maxValue;
+          (element as USWDSElement).max = maxValue;
 
           // Also set attribute for persistence
           element.setAttribute('max', String(maxValue));
@@ -207,18 +208,18 @@ registry.register({
 
             // Update both input and web component
             input.value = String(clampedValue);
-            (element as any).value = clampedValue;
+            (element as USWDSElement).value = clampedValue;
           }
 
           // Force Lit to re-render
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
           // Read from Lit property first
-          if ((element as any).max !== undefined) {
-            return (element as any).max;
+          if ((element as USWDSElement).max !== undefined) {
+            return (element as USWDSElement).max;
           }
           const attr = element.getAttribute('max');
           if (attr !== null) return parseFloat(attr) || 100;

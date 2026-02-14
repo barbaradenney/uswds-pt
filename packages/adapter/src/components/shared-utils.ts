@@ -57,6 +57,7 @@
 
 import type { GrapesTrait } from '../types.js';
 import { createDebugLogger } from '@uswds-pt/shared';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('ComponentRegistry');
 
@@ -312,7 +313,7 @@ export function cleanupAllIntervals(): void {
  * @param value - The raw trait value from GrapesJS (boolean, string, or any)
  * @returns `true` if the value represents an enabled boolean attribute, `false` otherwise
  */
-export function coerceBoolean(value: any): boolean {
+export function coerceBoolean(value: unknown): boolean {
   if (value === true || value === 'true' || value === '') {
     return true;
   }
@@ -520,12 +521,13 @@ export function createBooleanTrait(
         if (config.syncToInternal) {
           const internal = element.querySelector(config.syncToInternal);
           if (internal instanceof HTMLElement) {
+            const uswdsInternal = internal as USWDSElement;
             if (isEnabled) {
               internal.setAttribute(traitName, '');
-              (internal as any)[traitName] = true;
+              uswdsInternal[traitName] = true;
             } else {
               internal.removeAttribute(traitName);
-              (internal as any)[traitName] = false;
+              uswdsInternal[traitName] = false;
             }
           }
         }
@@ -636,7 +638,7 @@ export function createInternalSyncTrait(
 
       const internal = element.querySelector(config.internalSelector);
       if (internal instanceof HTMLElement) {
-        (internal as any)[config.syncProperty] = value;
+        (internal as USWDSElement)[config.syncProperty] = value;
         return true;
       }
       return false;
@@ -674,14 +676,15 @@ export function createInternalSyncTrait(
     handler: {
       onChange: (element, value) => {
         const textValue = value || '';
+        const el = element as USWDSElement;
 
         element.setAttribute(traitName, textValue);
-        (element as any)[traitName] = textValue;
+        el[traitName] = textValue;
 
-        if (typeof (element as any).requestUpdate === 'function') {
-          (element as any).requestUpdate();
+        if (typeof el.requestUpdate === 'function') {
+          el.requestUpdate();
 
-          const updateComplete = (element as any).updateComplete;
+          const { updateComplete } = el;
           if (updateComplete instanceof Promise) {
             updateComplete
               .then(() => {
@@ -697,7 +700,7 @@ export function createInternalSyncTrait(
         syncWithRetry(element, textValue);
       },
       getValue: (element) => {
-        const propValue = (element as any)[traitName];
+        const propValue = (element as USWDSElement)[traitName];
         if (propValue !== undefined && propValue !== null) {
           return propValue;
         }

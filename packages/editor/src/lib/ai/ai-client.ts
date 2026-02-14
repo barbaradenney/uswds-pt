@@ -8,7 +8,7 @@
  */
 
 import { authFetch } from '../../hooks/useAuth';
-import { parseJsonSafely } from '../api';
+import { parseJsonSafely, API_ENDPOINTS } from '../api';
 
 export interface Attachment {
   /** File name for display */
@@ -237,7 +237,7 @@ export async function sendAIMessage(
   messages: AIMessage[],
   abortSignal?: AbortSignal,
 ): Promise<AIResponse> {
-  const response = await authFetch('/api/ai/chat', {
+  const response = await authFetch(API_ENDPOINTS.AI_CHAT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ system: systemPrompt, messages }),

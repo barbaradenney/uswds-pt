@@ -24,6 +24,7 @@ export async function organizationRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['teamName'],
+          additionalProperties: false,
           properties: {
             teamName: { type: 'string', minLength: 1, maxLength: 255 },
           },

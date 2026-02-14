@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch, useAuth } from '../hooks/useAuth';
+import { API_ENDPOINTS } from '../lib/api';
 import { formatDate } from '../lib/date';
 import { inferTemplateLabel } from '../lib/template-utils';
 import { useOrganization } from '../hooks/useOrganization';
@@ -184,8 +185,8 @@ export function PrototypeList() {
     try {
       setIsLoading(true);
       const url = currentTeam
-        ? `/api/prototypes?teamId=${currentTeam.id}`
-        : '/api/prototypes';
+        ? `${API_ENDPOINTS.PROTOTYPES}?teamId=${currentTeam.id}`
+        : API_ENDPOINTS.PROTOTYPES;
       const response = await authFetch(url);
 
       if (!response.ok) {
@@ -211,7 +212,7 @@ export function PrototypeList() {
       setGitHubConnection(null);
       return;
     }
-    authFetch(`/api/teams/${currentTeam.id}/github`)
+    authFetch(API_ENDPOINTS.GITHUB_TEAM_CONNECTION(currentTeam.id))
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.repoOwner && data?.repoName) {
@@ -233,7 +234,7 @@ export function PrototypeList() {
 
   const confirmDeleteHandler = useCallback(async (slug: string) => {
     try {
-      const response = await authFetch(`/api/prototypes/${slug}`, {
+      const response = await authFetch(API_ENDPOINTS.PROTOTYPE(slug), {
         method: 'DELETE',
       });
 
@@ -257,7 +258,7 @@ export function PrototypeList() {
     e.stopPropagation();
 
     try {
-      const response = await authFetch(`/api/prototypes/${slug}/duplicate`, {
+      const response = await authFetch(API_ENDPOINTS.PROTOTYPE_DUPLICATE(slug), {
         method: 'POST',
       });
 

@@ -9,6 +9,7 @@ import type { ComponentRegistration } from './shared-utils.js';
 import {
   coerceBoolean,
 } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Registry interface to avoid circular imports.
@@ -48,13 +49,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const variant = value || 'info';
           element.setAttribute('variant', variant);
-          (element as any).variant = variant;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).variant = variant;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).variant || element.getAttribute('variant') || 'info';
+          return (element as USWDSElement).variant || element.getAttribute('variant') || 'info';
         },
       },
     },
@@ -71,13 +72,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('heading', text);
-          (element as any).heading = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).heading = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).heading || element.getAttribute('heading') || '';
+          return (element as USWDSElement).heading || element.getAttribute('heading') || '';
         },
       },
     },
@@ -94,13 +95,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('text', text);
-          (element as any).text = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).text = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).text || element.getAttribute('text') || '';
+          return (element as USWDSElement).text || element.getAttribute('text') || '';
         },
       },
     },
@@ -121,13 +122,13 @@ registry.register({
           } else {
             element.removeAttribute('slim');
           }
-          (element as any).slim = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).slim = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).slim || element.hasAttribute('slim');
+          return (element as USWDSElement).slim || element.hasAttribute('slim');
         },
       },
     },
@@ -148,13 +149,13 @@ registry.register({
           } else {
             element.removeAttribute('no-icon');
           }
-          (element as any).noIcon = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).noIcon = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).noIcon || element.hasAttribute('no-icon');
+          return (element as USWDSElement).noIcon || element.hasAttribute('no-icon');
         },
       },
     },
@@ -183,13 +184,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'An official website of the United States government';
           element.setAttribute('header-text', text);
-          (element as any).headerText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).headerText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headerText || element.getAttribute('header-text') || 'An official website of the United States government';
+          return (element as USWDSElement).headerText || element.getAttribute('header-text') || 'An official website of the United States government';
         },
       },
     },
@@ -206,13 +207,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || "Here's how you know";
           element.setAttribute('action-text', text);
-          (element as any).actionText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).actionText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).actionText || element.getAttribute('action-text') || "Here's how you know";
+          return (element as USWDSElement).actionText || element.getAttribute('action-text') || "Here's how you know";
         },
       },
     },
@@ -233,13 +234,13 @@ registry.register({
           } else {
             element.removeAttribute('expanded');
           }
-          (element as any).expanded = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).expanded = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).expanded || element.hasAttribute('expanded');
+          return (element as USWDSElement).expanded || element.hasAttribute('expanded');
         },
       },
     },
@@ -272,13 +273,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const type = value || 'info';
           element.setAttribute('type', type);
-          (element as any).type = type;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).type = type;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).type || element.getAttribute('type') || 'info';
+          return (element as USWDSElement).type || element.getAttribute('type') || 'info';
         },
       },
     },
@@ -295,13 +296,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('heading', text);
-          (element as any).heading = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).heading = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).heading || element.getAttribute('heading') || '';
+          return (element as USWDSElement).heading || element.getAttribute('heading') || '';
         },
       },
     },
@@ -318,13 +319,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('content', text);
-          (element as any).content = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).content = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).content || element.getAttribute('content') || '';
+          return (element as USWDSElement).content || element.getAttribute('content') || '';
         },
       },
     },
@@ -345,13 +346,13 @@ registry.register({
           } else {
             element.removeAttribute('slim');
           }
-          (element as any).slim = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).slim = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).slim || element.hasAttribute('slim');
+          return (element as USWDSElement).slim || element.hasAttribute('slim');
         },
       },
     },
@@ -400,13 +401,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('heading', text);
-          (element as any).heading = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).heading = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).heading || element.getAttribute('heading') || '';
+          return (element as USWDSElement).heading || element.getAttribute('heading') || '';
         },
       },
     },
@@ -423,13 +424,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('description', text);
-          (element as any).description = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).description = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).description || element.getAttribute('description') || '';
+          return (element as USWDSElement).description || element.getAttribute('description') || '';
         },
       },
     },
@@ -451,13 +452,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const type = value || 'button';
           element.setAttribute('trigger-type', type);
-          (element as any).triggerType = type;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).triggerType = type;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).triggerType || element.getAttribute('trigger-type') || 'button';
+          return (element as USWDSElement).triggerType || element.getAttribute('trigger-type') || 'button';
         },
       },
     },
@@ -474,13 +475,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Open Modal';
           element.setAttribute('trigger-text', text);
-          (element as any).triggerText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).triggerText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).triggerText || element.getAttribute('trigger-text') || 'Open Modal';
+          return (element as USWDSElement).triggerText || element.getAttribute('trigger-text') || 'Open Modal';
         },
       },
     },
@@ -506,13 +507,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const icon = value || 'info';
           element.setAttribute('trigger-icon', icon);
-          (element as any).triggerIcon = icon;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).triggerIcon = icon;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).triggerIcon || element.getAttribute('trigger-icon') || 'info';
+          return (element as USWDSElement).triggerIcon || element.getAttribute('trigger-icon') || 'info';
         },
       },
     },
@@ -533,13 +534,13 @@ registry.register({
           } else {
             element.removeAttribute('show-trigger');
           }
-          (element as any).showTrigger = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).showTrigger = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).showTrigger !== false;
+          return (element as USWDSElement).showTrigger !== false;
         },
       },
     },
@@ -560,13 +561,13 @@ registry.register({
           } else {
             element.removeAttribute('large');
           }
-          (element as any).large = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).large = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).large || element.hasAttribute('large');
+          return (element as USWDSElement).large || element.hasAttribute('large');
         },
       },
     },
@@ -587,13 +588,13 @@ registry.register({
           } else {
             element.removeAttribute('force-action');
           }
-          (element as any).forceAction = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).forceAction = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).forceAction || element.hasAttribute('force-action');
+          return (element as USWDSElement).forceAction || element.hasAttribute('force-action');
         },
       },
     },
@@ -610,13 +611,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Continue';
           element.setAttribute('primary-button-text', text);
-          (element as any).primaryButtonText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).primaryButtonText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).primaryButtonText || 'Continue';
+          return (element as USWDSElement).primaryButtonText || 'Continue';
         },
       },
     },
@@ -633,13 +634,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Cancel';
           element.setAttribute('secondary-button-text', text);
-          (element as any).secondaryButtonText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).secondaryButtonText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).secondaryButtonText || 'Cancel';
+          return (element as USWDSElement).secondaryButtonText || 'Cancel';
         },
       },
     },
@@ -660,13 +661,13 @@ registry.register({
           } else {
             element.removeAttribute('show-secondary-button');
           }
-          (element as any).showSecondaryButton = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).showSecondaryButton = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).showSecondaryButton !== false;
+          return (element as USWDSElement).showSecondaryButton !== false;
         },
       },
     },
@@ -695,13 +696,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('text', text);
-          (element as any).text = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).text = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).text || element.getAttribute('text') || '';
+          return (element as USWDSElement).text || element.getAttribute('text') || '';
         },
       },
     },
@@ -724,13 +725,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const type = value || 'text';
           element.setAttribute('trigger-type', type);
-          (element as any).triggerType = type;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).triggerType = type;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).triggerType || element.getAttribute('trigger-type') || 'text';
+          return (element as USWDSElement).triggerType || element.getAttribute('trigger-type') || 'text';
         },
       },
     },
@@ -747,13 +748,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Hover me';
           element.setAttribute('label', text);
-          (element as any).label = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).label = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).label || element.getAttribute('label') || 'Hover me';
+          return (element as USWDSElement).label || element.getAttribute('label') || 'Hover me';
         },
       },
     },
@@ -778,13 +779,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const icon = value || 'info';
           element.setAttribute('trigger-icon', icon);
-          (element as any).triggerIcon = icon;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).triggerIcon = icon;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).triggerIcon || element.getAttribute('trigger-icon') || 'info';
+          return (element as USWDSElement).triggerIcon || element.getAttribute('trigger-icon') || 'info';
         },
       },
     },
@@ -807,13 +808,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const position = value || 'top';
           element.setAttribute('position', position);
-          (element as any).position = position;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).position = position;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).position || element.getAttribute('position') || 'top';
+          return (element as USWDSElement).position || element.getAttribute('position') || 'top';
         },
       },
     },

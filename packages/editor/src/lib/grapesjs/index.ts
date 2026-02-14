@@ -28,5 +28,5 @@ export {
   isExtractingPerPageHtml,
   hasActualContent,
   type ExtractionResult,
-  type GrapesProjectData,
 } from './data-extractor';
+export type { GrapesProjectData } from '@uswds-pt/shared';

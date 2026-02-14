@@ -127,6 +127,9 @@ export function useGrapesJSSetup({
   const onContentChangeRef = useRef(onContentChange);
   onContentChangeRef.current = onContentChange;
 
+  // Track retry timeouts for cleanup on unmount
+  const retryTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
   // Helper to register editor event listeners with automatic tracking
   const registerListener = useCallback(
     (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => {
@@ -150,6 +153,9 @@ export function useGrapesJSSetup({
       debug('Cleaned up', listenersRef.current.length, 'editor event listeners');
     }
     listenersRef.current = [];
+    // Cancel any pending resource-loading retries
+    retryTimeoutsRef.current.forEach(clearTimeout);
+    retryTimeoutsRef.current = [];
     // Clean up all canvas helpers (timeouts, document listeners, debug helpers)
     cleanupCanvasHelpers();
     editorRef.current = null;
@@ -306,6 +312,7 @@ export function useGrapesJSSetup({
       });
 
       // Try immediately, then retry with increasing delays if canvas isn't ready
+      const retryTimeouts: ReturnType<typeof setTimeout>[] = [];
       const tryLoadResources = (attempt: number) => {
         const doc = editor.Canvas?.getDocument();
         if (doc) {
@@ -319,10 +326,12 @@ export function useGrapesJSSetup({
           addStateDimmingCSS(editor);
         } else if (attempt < 10) {
           debug(`Canvas document not ready, retrying (attempt ${attempt + 1})...`);
-          setTimeout(() => tryLoadResources(attempt + 1), 200);
+          retryTimeouts.push(setTimeout(() => tryLoadResources(attempt + 1), 200));
         }
       };
       tryLoadResources(0);
+      // Store cleanup so unmount can cancel pending retries
+      retryTimeoutsRef.current = retryTimeouts;
 
       exposeDebugHelpers(editor);
 

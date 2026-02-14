@@ -6,6 +6,7 @@
  */
 
 import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Registry interface to avoid circular imports.
@@ -40,10 +41,10 @@ function rebuildFooterSections(element: HTMLElement, count: number): void {
   }
 
   // Set the sections property on the Lit component
-  (element as any).sections = sections;
+  (element as USWDSElement).sections = sections;
 
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -61,7 +62,7 @@ function initFooterSections(element: HTMLElement): void {
 
   const trySetSections = (attempt: number = 0): void => {
     // Check if the component is ready (has requestUpdate method)
-    if (typeof (element as any).requestUpdate === 'function') {
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
       rebuildFooterSections(element, count);
     } else if (attempt < 20) {
       // Retry up to 20 times with 50ms delay (1 second total)
@@ -193,13 +194,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const variant = value || 'medium';
           element.setAttribute('variant', variant);
-          (element as any).variant = variant;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).variant = variant;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).variant || element.getAttribute('variant') || 'medium';
+          return (element as USWDSElement).variant || element.getAttribute('variant') || 'medium';
         },
       },
     },
@@ -216,13 +217,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const name = value || 'Agency Name';
           element.setAttribute('agency-name', name);
-          (element as any).agencyName = name;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).agencyName = name;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).agencyName || element.getAttribute('agency-name') || 'Agency Name';
+          return (element as USWDSElement).agencyName || element.getAttribute('agency-name') || 'Agency Name';
         },
       },
     },
@@ -240,13 +241,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const url = value || '#';
           element.setAttribute('agency-url', url);
-          (element as any).agencyUrl = url;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).agencyUrl = url;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).agencyUrl || element.getAttribute('agency-url') || '#';
+          return (element as USWDSElement).agencyUrl || element.getAttribute('agency-url') || '#';
         },
       },
     },
@@ -264,17 +265,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('logo-src', value);
-            (element as any).logoSrc = value;
+            (element as USWDSElement).logoSrc = value;
           } else {
             element.removeAttribute('logo-src');
-            (element as any).logoSrc = '';
+            (element as USWDSElement).logoSrc = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoSrc || element.getAttribute('logo-src') || '';
+          return (element as USWDSElement).logoSrc || element.getAttribute('logo-src') || '';
         },
       },
     },
@@ -292,17 +293,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('logo-alt', value);
-            (element as any).logoAlt = value;
+            (element as USWDSElement).logoAlt = value;
           } else {
             element.removeAttribute('logo-alt');
-            (element as any).logoAlt = '';
+            (element as USWDSElement).logoAlt = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoAlt || element.getAttribute('logo-alt') || '';
+          return (element as USWDSElement).logoAlt || element.getAttribute('logo-alt') || '';
         },
       },
     },
@@ -320,17 +321,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('contact-phone', value);
-            (element as any).contactPhone = value;
+            (element as USWDSElement).contactPhone = value;
           } else {
             element.removeAttribute('contact-phone');
-            (element as any).contactPhone = '';
+            (element as USWDSElement).contactPhone = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).contactPhone || element.getAttribute('contact-phone') || '';
+          return (element as USWDSElement).contactPhone || element.getAttribute('contact-phone') || '';
         },
       },
     },
@@ -348,17 +349,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('contact-email', value);
-            (element as any).contactEmail = value;
+            (element as USWDSElement).contactEmail = value;
           } else {
             element.removeAttribute('contact-email');
-            (element as any).contactEmail = '';
+            (element as USWDSElement).contactEmail = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).contactEmail || element.getAttribute('contact-email') || '';
+          return (element as USWDSElement).contactEmail || element.getAttribute('contact-email') || '';
         },
       },
     },

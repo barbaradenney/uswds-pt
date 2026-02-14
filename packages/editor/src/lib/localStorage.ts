@@ -17,12 +17,12 @@ export interface LocalPrototype {
   updatedAt: string;
 }
 
-export interface StorageError {
+interface StorageError {
   type: 'quota_exceeded' | 'storage_unavailable' | 'parse_error' | 'unknown';
   message: string;
 }
 
-export interface StorageResult<T> {
+interface StorageResult<T> {
   success: boolean;
   data?: T;
   error?: StorageError;
@@ -35,7 +35,7 @@ const MAX_STORAGE_SIZE_BYTES = MAX_STORAGE_SIZE_MB * 1024 * 1024;
 /**
  * Check if localStorage is available
  */
-export function isStorageAvailable(): boolean {
+function isStorageAvailable(): boolean {
   try {
     const test = '__storage_test__';
     localStorage.setItem(test, test);
@@ -57,7 +57,7 @@ function getDataSize(data: string): number {
 /**
  * Get current storage usage
  */
-export function getStorageUsage(): { used: number; available: number; percentage: number } {
+function getStorageUsage(): { used: number; available: number; percentage: number } {
   try {
     let used = 0;
     for (let i = 0; i < localStorage.length; i++) {
@@ -264,35 +264,3 @@ export function deletePrototype(id: string): boolean {
   return true;
 }
 
-/**
- * Clear all prototypes
- */
-export function clearAllPrototypes(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (error) {
-    debug('Error: Failed to clear prototypes:', error);
-  }
-}
-
-/**
- * Check if a prototype can be saved (has enough space)
- */
-export function canSavePrototype(htmlContent: string, gjsData?: string): StorageResult<void> {
-  const estimatedSize = getDataSize(
-    JSON.stringify({ htmlContent, gjsData, overhead: 500 })
-  );
-  const usage = getStorageUsage();
-
-  if (estimatedSize > usage.available) {
-    return {
-      success: false,
-      error: {
-        type: 'quota_exceeded',
-        message: `Prototype is too large (${(estimatedSize / 1024).toFixed(1)}KB). Available: ${(usage.available / 1024).toFixed(1)}KB`,
-      },
-    };
-  }
-
-  return { success: true };
-}

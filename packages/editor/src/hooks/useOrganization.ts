@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Organization, Team, Role } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
@@ -34,6 +34,9 @@ export function useOrganization(): UseOrganizationReturn {
     isLoading: true,
     error: null,
   });
+
+  // Guard against concurrent initial fetches (React Strict Mode double-mount)
+  const initialFetchStartedRef = useRef(false);
 
   // Load organization data
   const refreshOrganization = useCallback(async () => {
@@ -79,20 +82,29 @@ export function useOrganization(): UseOrganizationReturn {
     }
   }, []);
 
-  // Initial load
+  // Initial load — guarded against React Strict Mode double-mount
   useEffect(() => {
-    let mounted = true;
+    // Skip if initial fetch already started (prevents double-fetch in Strict Mode)
+    if (initialFetchStartedRef.current) {
+      debug('Initial fetch already in progress, skipping duplicate');
+      return;
+    }
+    initialFetchStartedRef.current = true;
+
+    let cancelled = false;
 
     const loadData = async () => {
-      if (mounted) {
-        setState((prev) => ({ ...prev, isLoading: true }));
-      }
+      setState((prev) => ({ ...prev, isLoading: true }));
       await Promise.all([refreshOrganization(), refreshTeams()]);
+      // If effect was cleaned up while fetching, don't update state
+      if (cancelled) {
+        debug('Initial load completed after unmount, discarding results');
+      }
     };
     loadData();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, [refreshOrganization, refreshTeams]);
 

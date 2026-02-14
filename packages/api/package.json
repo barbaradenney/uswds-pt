@@ -26,7 +26,6 @@
     "@fastify/helmet": "^13.0.2",
     "@fastify/jwt": "^8.0.0",
     "@fastify/rate-limit": "9",
-    "@types/bcrypt": "^5.0.0",
     "@uswds-pt/shared": "workspace:*",
     "bcrypt": "^5.1.0",
     "dotenv": "^17.2.3",
@@ -38,6 +37,7 @@
     "postgres": "^3.4.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
     "@eslint/js": "^9.39.2",
     "@types/node": "^20.19.25",
     "@typescript-eslint/eslint-plugin": "^8.53.0",

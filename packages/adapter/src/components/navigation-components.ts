@@ -9,6 +9,7 @@
  */
 
 import type { ComponentRegistration } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 import { registerHeaderComponents } from './header-components.js';
 import { registerFooterComponents } from './footer-components.js';
 
@@ -49,13 +50,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'On this page';
           element.setAttribute('nav-title', text);
-          (element as any).navTitle = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).navTitle = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).navTitle || element.getAttribute('nav-title') || 'On this page';
+          return (element as USWDSElement).navTitle || element.getAttribute('nav-title') || 'On this page';
         },
       },
     },
@@ -76,13 +77,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const level = value || 'h2';
           element.setAttribute('heading-level', level);
-          (element as any).headingLevel = level;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).headingLevel = level;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headingLevel || element.getAttribute('heading-level') || 'h2';
+          return (element as USWDSElement).headingLevel || element.getAttribute('heading-level') || 'h2';
         },
       },
     },
@@ -114,13 +115,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const variant = value || 'default';
           element.setAttribute('variant', variant);
-          (element as any).variant = variant;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).variant = variant;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).variant || element.getAttribute('variant') || 'default';
+          return (element as USWDSElement).variant || element.getAttribute('variant') || 'default';
         },
       },
     },
@@ -141,8 +142,8 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('lang-count', value || '3');
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -154,42 +155,42 @@ registry.register({
     'lang1-label': {
       definition: { name: 'lang1-label', label: 'Language 1 Label', type: 'text', default: 'English' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-label', value || 'English'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-label', value || 'English'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-label') || 'English',
       },
     },
     'lang1-value': {
       definition: { name: 'lang1-value', label: 'Language 1 Value', type: 'text', default: 'en' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-value', value || 'en'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang1-value', value || 'en'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-value') || 'en',
       },
     },
     'lang2-label': {
       definition: { name: 'lang2-label', label: 'Language 2 Label', type: 'text', default: 'Español' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-label', value || 'Español'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-label', value || 'Español'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-label') || 'Español',
       },
     },
     'lang2-value': {
       definition: { name: 'lang2-value', label: 'Language 2 Value', type: 'text', default: 'es' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-value', value || 'es'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang2-value', value || 'es'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-value') || 'es',
       },
     },
     'lang3-label': {
       definition: { name: 'lang3-label', label: 'Language 3 Label', type: 'text', default: 'Français' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-label', value || 'Français'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-label', value || 'Français'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-label') || 'Français',
       },
     },
     'lang3-value': {
       definition: { name: 'lang3-value', label: 'Language 3 Value', type: 'text', default: 'fr' },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-value', value || 'fr'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang3-value', value || 'fr'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-value') || 'fr',
       },
     },
@@ -202,7 +203,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-label', value || '中文'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-label', value || '中文'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-label') || '中文',
       },
     },
@@ -214,7 +215,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-value', value || 'zh'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang4-value', value || 'zh'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-value') || 'zh',
       },
     },
@@ -226,7 +227,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-label', value || 'العربية'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-label', value || 'العربية'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-label') || 'العربية',
       },
     },
@@ -238,7 +239,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-value', value || 'ar'); if (typeof (element as any).requestUpdate === 'function') { (element as any).requestUpdate(); } },
+        onChange: (element: HTMLElement, value: any) => { element.setAttribute('lang5-value', value || 'ar'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-value') || 'ar',
       },
     },
@@ -266,13 +267,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Message';
           element.setAttribute('label', text);
-          (element as any).label = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).label = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).label || element.getAttribute('label') || 'Message';
+          return (element as USWDSElement).label || element.getAttribute('label') || 'Message';
         },
       },
     },
@@ -288,9 +289,9 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const maxlen = parseInt(value, 10) || 200;
           element.setAttribute('maxlength', String(maxlen));
-          (element as any).maxlength = maxlen;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).maxlength = maxlen;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -309,7 +310,7 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('name', value || '');
-          (element as any).name = value || '';
+          (element as USWDSElement).name = value || '';
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('name') || '';
@@ -327,13 +328,13 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('hint', value || '');
-          (element as any).hint = value || '';
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).hint = value || '';
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).hint || element.getAttribute('hint') || '';
+          return (element as USWDSElement).hint || element.getAttribute('hint') || '';
         },
       },
     },
@@ -361,13 +362,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Date of birth';
           element.setAttribute('legend', text);
-          (element as any).legend = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).legend = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).legend || element.getAttribute('legend') || 'Date of birth';
+          return (element as USWDSElement).legend || element.getAttribute('legend') || 'Date of birth';
         },
       },
     },
@@ -383,13 +384,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('hint', text);
-          (element as any).hint = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).hint = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).hint || element.getAttribute('hint') || '';
+          return (element as USWDSElement).hint || element.getAttribute('hint') || '';
         },
       },
     },

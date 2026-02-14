@@ -12,6 +12,7 @@ import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger, computeContentChecksum } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
 import { useOrganization } from './useOrganization';
+import { API_ENDPOINTS } from '../lib/api';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import {
   getPrototype,
@@ -298,8 +299,8 @@ export function useEditorPersistence({
           }
 
           const url = isUpdate
-            ? `/api/prototypes/${prototypeSlug}`
-            : '/api/prototypes';
+            ? API_ENDPOINTS.PROTOTYPE(prototypeSlug!)
+            : API_ENDPOINTS.PROTOTYPES;
           const method = isUpdate ? 'PUT' : 'POST';
 
           const body: Record<string, unknown> = {
@@ -509,7 +510,7 @@ export function useEditorPersistence({
           return prototype;
         } else {
           // Load from API
-          const response = await authFetch(`/api/prototypes/${prototypeSlug}`);
+          const response = await authFetch(API_ENDPOINTS.PROTOTYPE(prototypeSlug));
 
           if (!response.ok) {
             if (response.status === 404) {
@@ -569,7 +570,7 @@ export function useEditorPersistence({
     try {
       const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
 
-      const response = await authFetch('/api/prototypes', {
+      const response = await authFetch(API_ENDPOINTS.PROTOTYPES, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

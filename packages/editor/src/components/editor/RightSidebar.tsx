@@ -16,13 +16,18 @@
  * the Container portal (which renders into a detached element).
  */
 
-import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import { useState, useEffect, useMemo, useRef, memo, lazy, Suspense } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
 import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
-import { AICopilotPanel } from './AICopilotPanel';
-import '../../styles/ai-copilot.css';
+
+// Lazy-load the AI copilot panel so it is code-split into its own chunk.
+// The AI feature is optional (controlled by VITE_AI_ENABLED), so the
+// component, its hook, prompt template, and CSS should not be in the main bundle.
+const LazyAICopilotPanel = lazy(() =>
+  import('./AICopilotPanel').then((mod) => ({ default: mod.AICopilotPanel }))
+);
 
 const BASE_TABS = [
   { id: 'components', label: 'Components' },
@@ -82,7 +87,9 @@ export const RightSidebar = memo(function RightSidebar() {
             role="tabpanel"
             aria-labelledby="sidebar-tab-ai"
           >
-            <AICopilotPanel />
+            <Suspense fallback={<div className="ai-panel-loading">Loading AI assistant...</div>}>
+              <LazyAICopilotPanel />
+            </Suspense>
           </div>
         )}
       </div>

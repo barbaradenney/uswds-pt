@@ -6,6 +6,7 @@
  */
 
 import type { UnifiedTrait } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Helper to convert button's inner element to anchor or back to button.
@@ -154,7 +155,7 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
             const href = `#page-${value}`;
             // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);
-            (element as any).href = href;
+            (element as USWDSElement).href = href;
             element.setAttribute('page-link', value);
 
             // CRITICAL: Also update GrapesJS component model so getHtml() includes href
@@ -172,12 +173,12 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
             }
 
             // Trigger web component update
-            if (typeof (element as any).requestUpdate === 'function') {
-              (element as any).requestUpdate();
+            if (typeof (element as USWDSElement).requestUpdate === 'function') {
+              (element as USWDSElement).requestUpdate?.();
             }
           } else {
             element.removeAttribute('href');
-            (element as any).href = undefined;
+            (element as USWDSElement).href = undefined;
             element.removeAttribute('page-link');
             // Also update GrapesJS component model
             if (component?.addAttributes) {
@@ -219,7 +220,7 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
 
             // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);
-            (element as any).href = href;
+            (element as USWDSElement).href = href;
 
             // Also update GrapesJS component model
             if (component?.addAttributes) {
@@ -236,12 +237,12 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
             }
 
             // Trigger web component update
-            if (typeof (element as any).requestUpdate === 'function') {
-              (element as any).requestUpdate();
+            if (typeof (element as USWDSElement).requestUpdate === 'function') {
+              (element as USWDSElement).requestUpdate?.();
             }
           } else {
             element.removeAttribute('href');
-            (element as any).href = undefined;
+            (element as USWDSElement).href = undefined;
             // Also update GrapesJS component model
             if (component?.addAttributes) {
               component.addAttributes({ href: '' });

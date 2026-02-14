@@ -30,6 +30,7 @@
  */
 
 import { createDebugLogger } from '@uswds-pt/shared';
+import type { GrapesProjectData } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../types/grapesjs';
 import { syncPageLinkHrefs } from './canvas-helpers';
 
@@ -61,23 +62,13 @@ export interface ExtractionResult {
 }
 
 /**
- * GrapesJS project data structure
+ * Narrowed variant of GrapesProjectData where top-level arrays are guaranteed
+ * to be present.  The data-extractor always normalises data before returning
+ * it, so callers can rely on these fields being non-undefined.
+ *
+ * The canonical (storage-level) definition lives in @uswds-pt/shared.
  */
-export interface GrapesProjectData {
-  pages: Array<{
-    id: string;
-    name: string;
-    frames: Array<{
-      component: {
-        type: string;
-        components?: unknown[];
-        [key: string]: unknown;
-      };
-    }>;
-  }>;
-  styles: unknown[];
-  assets: unknown[];
-}
+type NormalizedGrapesProjectData = Required<Pick<GrapesProjectData, 'pages' | 'styles' | 'assets'>> & GrapesProjectData;
 
 /**
  * Validate that editor is ready for data extraction
@@ -135,9 +126,9 @@ function extractProjectDataPrimary(editor: EditorInstance): { data: GrapesProjec
 /**
  * Extract project data by reconstructing from editor state (fallback)
  */
-function extractProjectDataFromState(editor: EditorInstance): { data: GrapesProjectData; warning?: string } {
+function extractProjectDataFromState(editor: EditorInstance): { data: NormalizedGrapesProjectData; warning?: string } {
   const warnings: string[] = [];
-  const projectData: GrapesProjectData = {
+  const projectData: NormalizedGrapesProjectData = {
     pages: [],
     styles: [],
     assets: [],
@@ -230,7 +221,7 @@ function extractProjectDataFromState(editor: EditorInstance): { data: GrapesProj
  *
  * Ensures the project data has all required fields with valid values.
  */
-function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): GrapesProjectData {
+function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): NormalizedGrapesProjectData {
   const normalized = { ...data };
 
   // Ensure pages array exists and is valid
@@ -269,7 +260,8 @@ function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): 
   if (!normalized.styles) normalized.styles = [];
   if (!normalized.assets) normalized.assets = [];
 
-  return normalized;
+  // At this point pages, styles, and assets are all guaranteed to be present
+  return normalized as NormalizedGrapesProjectData;
 }
 
 /**
@@ -282,7 +274,7 @@ function normalizeProjectData(data: GrapesProjectData, editor: EditorInstance): 
  *
  * The original page selection is restored in the finally block.
  */
-export function extractPerPageHtml(editor: EditorInstance, projectData: GrapesProjectData): void {
+export function extractPerPageHtml(editor: EditorInstance, projectData: NormalizedGrapesProjectData): void {
   const pages = editor.Pages?.getAll?.();
   if (!pages || pages.length <= 1) return;
 
@@ -368,13 +360,13 @@ export function extractEditorData(
     warnings.push(htmlResult.warning);
   }
 
-  // Extract project data
-  let projectData: GrapesProjectData;
+  // Extract project data (raw, before normalization)
+  let rawProjectData: GrapesProjectData;
 
   // Try primary extraction first
   const primaryResult = extractProjectDataPrimary(editor);
   if (primaryResult.data) {
-    projectData = primaryResult.data;
+    rawProjectData = primaryResult.data;
     if (primaryResult.warning) {
       warnings.push(primaryResult.warning);
     }
@@ -384,14 +376,14 @@ export function extractEditorData(
       warnings.push(primaryResult.warning);
     }
     const fallbackResult = extractProjectDataFromState(editor);
-    projectData = fallbackResult.data;
+    rawProjectData = fallbackResult.data;
     if (fallbackResult.warning) {
       warnings.push(fallbackResult.warning);
     }
   }
 
-  // Normalize the project data
-  projectData = normalizeProjectData(projectData, editor);
+  // Normalize the project data (guarantees pages/styles/assets are present)
+  const projectData = normalizeProjectData(rawProjectData, editor);
 
   // Extract per-page HTML for reliable multi-page preview
   try {

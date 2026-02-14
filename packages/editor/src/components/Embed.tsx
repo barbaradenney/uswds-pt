@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
+import { isDemoMode, API_URL, API_ENDPOINTS } from '../lib/api';
 
 // CDN URLs for USWDS resources
 const USWDS_VERSION = '3.8.1';
@@ -13,9 +14,6 @@ const EMBED_CDN_URLS = {
   uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
   uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
 };
-
-// Check if we're in demo mode
-const isDemoMode = !import.meta.env.VITE_API_URL;
 
 interface EmbedData {
   name: string;
@@ -125,8 +123,7 @@ export function Embed() {
         }
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/preview/${prototypeSlug}`);
+      const response = await fetch(`${API_URL}${API_ENDPOINTS.PREVIEW(prototypeSlug)}`);
 
       if (!response.ok) {
         if (response.status === 404) {

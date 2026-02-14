@@ -18,12 +18,14 @@ import { getAuthUser } from '../middleware/permissions.js';
 import { normalizeEmail } from '../lib/email.js';
 
 /**
- * Get user with organization and team memberships
+ * Get user with organization and team memberships in a single JOIN query.
+ * LEFT JOINs organizations, teamMemberships, and teams so one round-trip
+ * returns all the data the /me endpoint needs.
  */
 export async function getUserWithOrgAndTeams(userId: string) {
-  // Get user with organization
-  const [user] = await db
+  const rows = await db
     .select({
+      // User fields
       id: users.id,
       email: users.email,
       name: users.name,
@@ -32,44 +34,53 @@ export async function getUserWithOrgAndTeams(userId: string) {
       isActive: users.isActive,
       avatarUrl: users.avatarUrl,
       githubUsername: users.githubUsername,
-    })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  if (!user) return null;
-
-  // Get organization if user has one
-  let organization = null;
-  if (user.organizationId) {
-    const [org] = await db
-      .select({
-        id: organizations.id,
-        name: organizations.name,
-        slug: organizations.slug,
-      })
-      .from(organizations)
-      .where(eq(organizations.id, user.organizationId))
-      .limit(1);
-    organization = org || null;
-  }
-
-  // Get team memberships
-  const memberships = await db
-    .select({
-      teamId: teamMemberships.teamId,
+      // Organization fields (nullable via LEFT JOIN)
+      orgId: organizations.id,
+      orgName: organizations.name,
+      orgSlug: organizations.slug,
+      // Team membership fields (nullable via LEFT JOIN)
+      membershipTeamId: teamMemberships.teamId,
+      membershipRole: teamMemberships.role,
+      membershipJoinedAt: teamMemberships.joinedAt,
       teamName: teams.name,
       teamSlug: teams.slug,
-      role: teamMemberships.role,
-      joinedAt: teamMemberships.joinedAt,
     })
-    .from(teamMemberships)
-    .innerJoin(teams, eq(teamMemberships.teamId, teams.id))
-    .where(eq(teamMemberships.userId, userId));
+    .from(users)
+    .leftJoin(organizations, eq(users.organizationId, organizations.id))
+    .leftJoin(teamMemberships, eq(teamMemberships.userId, users.id))
+    .leftJoin(teams, eq(teamMemberships.teamId, teams.id))
+    .where(eq(users.id, userId));
+
+  if (rows.length === 0) return null;
+
+  // All rows share the same user + org data; extract from the first row
+  const first = rows[0];
+
+  const organization = first.orgId
+    ? { id: first.orgId, name: first.orgName!, slug: first.orgSlug! }
+    : null;
+
+  // Collect team memberships from the joined rows (skip nulls when user has no memberships)
+  const memberships = rows
+    .filter((r) => r.membershipTeamId !== null)
+    .map((r) => ({
+      teamId: r.membershipTeamId!,
+      teamName: r.teamName!,
+      teamSlug: r.teamSlug!,
+      role: r.membershipRole!,
+      joinedAt: r.membershipJoinedAt!,
+    }));
 
   return {
-    ...user,
-    hasGitHubLinked: !!user.githubUsername,
+    id: first.id,
+    email: first.email,
+    name: first.name,
+    organizationId: first.organizationId,
+    createdAt: first.createdAt,
+    isActive: first.isActive,
+    avatarUrl: first.avatarUrl,
+    githubUsername: first.githubUsername,
+    hasGitHubLinked: !!first.githubUsername,
     organization,
     teamMemberships: memberships,
   };

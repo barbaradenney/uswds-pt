@@ -10,6 +10,7 @@
 
 import { useState } from 'react';
 import { STARTER_TEMPLATES } from '@uswds-pt/adapter';
+import DOMPurify from 'dompurify';
 import { toBranchSlug } from '@uswds-pt/shared';
 
 interface TemplateChooserProps {
@@ -128,7 +129,7 @@ export function TemplateChooser({ onSelect, onBack }: TemplateChooserProps) {
               >
                 <div
                   style={{ width: '40px', height: '40px', color: 'var(--color-base, #565c65)' }}
-                  dangerouslySetInnerHTML={{ __html: template.icon }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(template.icon) }}
                 />
               </div>
               <h3 className="prototype-card-title" style={{ margin: '0 0 4px' }}>

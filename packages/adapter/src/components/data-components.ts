@@ -12,6 +12,7 @@ import {
   createBooleanTrait,
 } from './shared-utils.js';
 import { escapeHtml } from '@uswds-pt/shared';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Registry interface to avoid circular imports.
@@ -45,13 +46,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('heading', text);
-          (element as any).heading = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).heading = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).heading || element.getAttribute('heading') || '';
+          return (element as USWDSElement).heading || element.getAttribute('heading') || '';
         },
       },
     },
@@ -68,13 +69,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('text', text);
-          (element as any).text = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).text = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).text || element.getAttribute('text') || '';
+          return (element as USWDSElement).text || element.getAttribute('text') || '';
         },
       },
     },
@@ -99,13 +100,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const level = value || '3';
           element.setAttribute('heading-level', level);
-          (element as any).headingLevel = level;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).headingLevel = level;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headingLevel || element.getAttribute('heading-level') || '3';
+          return (element as USWDSElement).headingLevel || element.getAttribute('heading-level') || '3';
         },
       },
     },
@@ -127,28 +128,28 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const mediaType = value || 'none';
           element.setAttribute('media-type', mediaType);
-          (element as any).mediaType = mediaType;
+          (element as USWDSElement).mediaType = mediaType;
 
           // Auto-set placeholder media when switching to image/video if no src set
           const currentSrc = element.getAttribute('media-src') || '';
           if (mediaType === 'image' && !currentSrc) {
             const placeholderImage = 'https://picsum.photos/800/450';
             element.setAttribute('media-src', placeholderImage);
-            (element as any).mediaSrc = placeholderImage;
+            (element as USWDSElement).mediaSrc = placeholderImage;
             element.setAttribute('media-alt', 'Placeholder image');
-            (element as any).mediaAlt = 'Placeholder image';
+            (element as USWDSElement).mediaAlt = 'Placeholder image';
           } else if (mediaType === 'video' && !currentSrc) {
             // Use a public domain sample video
             const placeholderVideo = 'https://www.w3schools.com/html/mov_bbb.mp4';
             element.setAttribute('media-src', placeholderVideo);
-            (element as any).mediaSrc = placeholderVideo;
+            (element as USWDSElement).mediaSrc = placeholderVideo;
             element.setAttribute('media-alt', 'Sample video');
-            (element as any).mediaAlt = 'Sample video';
+            (element as USWDSElement).mediaAlt = 'Sample video';
           }
 
           // Trigger re-render
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -169,9 +170,9 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('media-src', value || '');
-          (element as any).mediaSrc = value || '';
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).mediaSrc = value || '';
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -192,9 +193,9 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('media-alt', value || '');
-          (element as any).mediaAlt = value || '';
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).mediaAlt = value || '';
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -220,13 +221,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const position = value || 'inset';
           element.setAttribute('media-position', position);
-          (element as any).mediaPosition = position;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).mediaPosition = position;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).mediaPosition || element.getAttribute('media-position') || 'inset';
+          return (element as USWDSElement).mediaPosition || element.getAttribute('media-position') || 'inset';
         },
       },
     },
@@ -247,13 +248,13 @@ registry.register({
           } else {
             element.removeAttribute('flag-layout');
           }
-          (element as any).flagLayout = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).flagLayout = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).flagLayout || element.hasAttribute('flag-layout');
+          return (element as USWDSElement).flagLayout || element.hasAttribute('flag-layout');
         },
       },
     },
@@ -274,13 +275,13 @@ registry.register({
           } else {
             element.removeAttribute('header-first');
           }
-          (element as any).headerFirst = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).headerFirst = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headerFirst || element.hasAttribute('header-first');
+          return (element as USWDSElement).headerFirst || element.hasAttribute('header-first');
         },
       },
     },
@@ -298,13 +299,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('footer-text', text);
-          (element as any).footerText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).footerText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).footerText || element.getAttribute('footer-text') || '';
+          return (element as USWDSElement).footerText || element.getAttribute('footer-text') || '';
         },
       },
     },
@@ -325,13 +326,13 @@ registry.register({
           } else {
             element.removeAttribute('actionable');
           }
-          (element as any).actionable = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).actionable = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).actionable || element.hasAttribute('actionable');
+          return (element as USWDSElement).actionable || element.hasAttribute('actionable');
         },
       },
     },
@@ -353,13 +354,13 @@ registry.register({
           } else {
             element.removeAttribute('href');
           }
-          (element as any).href = url;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).href = url;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).href || element.getAttribute('href') || '';
+          return (element as USWDSElement).href || element.getAttribute('href') || '';
         },
       },
     },
@@ -384,13 +385,13 @@ registry.register({
           } else {
             element.removeAttribute('target');
           }
-          (element as any).target = target;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).target = target;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).target || element.getAttribute('target') || '_self';
+          return (element as USWDSElement).target || element.getAttribute('target') || '_self';
         },
       },
     },
@@ -419,13 +420,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Tag';
           element.setAttribute('text', text);
-          (element as any).text = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).text = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).text || element.getAttribute('text') || 'Tag';
+          return (element as USWDSElement).text || element.getAttribute('text') || 'Tag';
         },
       },
     },
@@ -446,13 +447,13 @@ registry.register({
           } else {
             element.removeAttribute('big');
           }
-          (element as any).big = isEnabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).big = isEnabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).big || element.hasAttribute('big');
+          return (element as USWDSElement).big || element.hasAttribute('big');
         },
       },
     },
@@ -896,13 +897,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const name = value || 'info';
           element.setAttribute('name', name);
-          (element as any).name = name;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).name = name;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).name || element.getAttribute('name') || 'info';
+          return (element as USWDSElement).name || element.getAttribute('name') || 'info';
         },
       },
     },
@@ -933,13 +934,13 @@ registry.register({
           } else {
             element.removeAttribute('size');
           }
-          (element as any).size = value || '';
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).size = value || '';
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).size || element.getAttribute('size') || '';
+          return (element as USWDSElement).size || element.getAttribute('size') || '';
         },
       },
     },
@@ -962,13 +963,13 @@ registry.register({
           } else {
             element.removeAttribute('aria-label');
           }
-          (element as any).ariaLabel = label;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).ariaLabel = label;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).ariaLabel || element.getAttribute('aria-label') || '';
+          return (element as USWDSElement).ariaLabel || element.getAttribute('aria-label') || '';
         },
       },
     },
@@ -990,9 +991,9 @@ registry.register({
           } else {
             element.removeAttribute('decorative');
           }
-          (element as any).decorative = isDecorative ? 'true' : '';
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).decorative = isDecorative ? 'true' : '';
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
@@ -1020,8 +1021,8 @@ function rebuildListItems(element: HTMLElement, count: number): void {
   const list = element.querySelector(listTag);
   if (!list) {
     // Try to trigger initial render
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
     return;
   }
@@ -1112,8 +1113,8 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           element.setAttribute('type', value || 'unordered');
           // Trigger re-render to switch list type
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
           // Rebuild items after type change
           setTimeout(() => {
@@ -1199,11 +1200,11 @@ function rebuildCollectionItems(element: HTMLElement, count: number): void {
   }
 
   // Update the web component's items property
-  (element as any).items = items;
+  (element as USWDSElement).items = items;
 
   // Trigger Lit component re-render
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -1322,13 +1323,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Key Information';
           element.setAttribute('heading', text);
-          (element as any).heading = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).heading = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).heading || element.getAttribute('heading') || 'Key Information';
+          return (element as USWDSElement).heading || element.getAttribute('heading') || 'Key Information';
         },
       },
     },
@@ -1345,13 +1346,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || '';
           element.setAttribute('content', text);
-          (element as any).content = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).content = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).content || element.getAttribute('content') || '';
+          return (element as USWDSElement).content || element.getAttribute('content') || '';
         },
       },
     },
@@ -1376,13 +1377,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const level = value || 'h3';
           element.setAttribute('heading-level', level);
-          (element as any).headingLevel = level;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).headingLevel = level;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).headingLevel || element.getAttribute('heading-level') || 'h3';
+          return (element as USWDSElement).headingLevel || element.getAttribute('heading-level') || 'h3';
         },
       },
     },

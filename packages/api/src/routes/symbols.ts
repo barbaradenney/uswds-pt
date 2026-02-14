@@ -11,6 +11,7 @@ import { ROLES } from '../db/roles.js';
 import {
   getAuthUser,
   requireTeamMember,
+  requireTeamRole,
 } from '../middleware/permissions.js';
 
 interface CreateSymbolBody {
@@ -61,7 +62,7 @@ export async function symbolRoutes(app: FastifyInstance) {
   app.post<{ Params: { teamId: string }; Body: CreateSymbolBody }>(
     '/:teamId/symbols',
     {
-      preHandler: [app.authenticate, requireTeamMember('teamId')],
+      preHandler: [app.authenticate, requireTeamMember('teamId'), requireTeamRole(ROLES.TEAM_MEMBER)],
       schema: {
         body: {
           type: 'object',
@@ -126,7 +127,7 @@ export async function symbolRoutes(app: FastifyInstance) {
   app.put<{ Params: { teamId: string; symbolId: string }; Body: UpdateSymbolBody }>(
     '/:teamId/symbols/:symbolId',
     {
-      preHandler: [app.authenticate, requireTeamMember('teamId')],
+      preHandler: [app.authenticate, requireTeamMember('teamId'), requireTeamRole(ROLES.TEAM_MEMBER)],
       schema: {
         body: {
           type: 'object',
@@ -187,7 +188,7 @@ export async function symbolRoutes(app: FastifyInstance) {
   app.delete<{ Params: { teamId: string; symbolId: string } }>(
     '/:teamId/symbols/:symbolId',
     {
-      preHandler: [app.authenticate, requireTeamMember('teamId')],
+      preHandler: [app.authenticate, requireTeamMember('teamId'), requireTeamRole(ROLES.TEAM_MEMBER)],
     },
     async (request, reply) => {
       const authUser = getAuthUser(request);

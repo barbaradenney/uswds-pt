@@ -5,7 +5,7 @@
  * This ensures auth state is shared across all components rather than duplicated.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { UserWithOrgAndTeams } from '@uswds-pt/shared';
 
 // ============================================================================
@@ -33,6 +33,8 @@ interface AuthContextValue extends AuthState {
 
 const TOKEN_KEY = 'uswds_pt_token';
 const USER_KEY = 'uswds_pt_user';
+// AuthContext defines its own API_URL to avoid circular imports (api.ts imports authFetch from here).
+// The canonical API_URL and API_ENDPOINTS live in lib/api.ts — all other files should use those.
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 // ============================================================================
@@ -181,13 +183,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const value: AuthContextValue = {
+  const value: AuthContextValue = useMemo(() => ({
     ...state,
     loginWithToken,
     logout,
     clearError,
     refreshUser,
-  };
+  }), [state, loginWithToken, logout, clearError, refreshUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

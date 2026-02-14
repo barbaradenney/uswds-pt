@@ -9,6 +9,7 @@ import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
 import {
   coerceBoolean,
 } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Registry interface to avoid circular imports.
@@ -41,8 +42,8 @@ function updateWithFallback(
   callback: () => void
 ): void {
   // First, try to update via Lit
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 
   // Then, perform direct DOM manipulation as a fallback
@@ -51,8 +52,8 @@ function updateWithFallback(
 
   // Schedule another requestUpdate in case the component becomes responsive
   setTimeout(() => {
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
   }, 50);
 }
@@ -110,10 +111,10 @@ function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
   }
 
   // Set the navItems property on the Lit component
-  (element as any).navItems = navItems;
+  (element as USWDSElement).navItems = navItems;
 
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -135,15 +136,16 @@ function initHeaderNavItems(element: HTMLElement): void {
 
   const trySetNavItems = (attempt: number = 0): void => {
     // Set navItems property directly
-    (element as any).navItems = navItems;
+    (element as USWDSElement).navItems = navItems;
 
     // Also try to trigger update if available
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
 
     // If component isn't ready yet, retry
-    if (!(element as any).navItems?.length && attempt < 30) {
+    const currentNavItems = (element as USWDSElement).navItems;
+    if (!(Array.isArray(currentNavItems) && currentNavItems.length) && attempt < 30) {
       setTimeout(() => trySetNavItems(attempt + 1), 100);
     }
   };
@@ -153,10 +155,11 @@ function initHeaderNavItems(element: HTMLElement): void {
 
   // Also try after a longer delay to catch late initialization
   setTimeout(() => {
-    if (!(element as any).navItems?.length) {
-      (element as any).navItems = navItems;
-      if (typeof (element as any).requestUpdate === 'function') {
-        (element as any).requestUpdate();
+    const lateNavItems = (element as USWDSElement).navItems;
+    if (!(Array.isArray(lateNavItems) && lateNavItems.length)) {
+      (element as USWDSElement).navItems = navItems;
+      if (typeof (element as USWDSElement).requestUpdate === 'function') {
+        (element as USWDSElement).requestUpdate?.();
       }
     }
   }, 500);
@@ -246,10 +249,10 @@ function rebuildHeaderSecondaryLinks(element: HTMLElement, count: number): void 
     links.push({ label, href });
   }
 
-  (element as any).secondaryLinks = links;
+  (element as USWDSElement).secondaryLinks = links;
 
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -268,13 +271,14 @@ function initHeaderSecondaryLinks(element: HTMLElement): void {
   }
 
   const trySetLinks = (attempt: number = 0): void => {
-    (element as any).secondaryLinks = links;
+    (element as USWDSElement).secondaryLinks = links;
 
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
 
-    if (!(element as any).secondaryLinks?.length && attempt < 30) {
+    const currentLinks = (element as USWDSElement).secondaryLinks;
+    if (!(Array.isArray(currentLinks) && currentLinks.length) && attempt < 30) {
       setTimeout(() => trySetLinks(attempt + 1), 100);
     }
   };
@@ -282,10 +286,11 @@ function initHeaderSecondaryLinks(element: HTMLElement): void {
   trySetLinks();
 
   setTimeout(() => {
-    if (!(element as any).secondaryLinks?.length) {
-      (element as any).secondaryLinks = links;
-      if (typeof (element as any).requestUpdate === 'function') {
-        (element as any).requestUpdate();
+    const lateLinks = (element as USWDSElement).secondaryLinks;
+    if (!(Array.isArray(lateLinks) && lateLinks.length)) {
+      (element as USWDSElement).secondaryLinks = links;
+      if (typeof (element as USWDSElement).requestUpdate === 'function') {
+        (element as USWDSElement).requestUpdate?.();
       }
     }
   }, 500);
@@ -446,18 +451,18 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Site Name';
           element.setAttribute('logo-text', text);
-          (element as any).logoText = text;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).logoText = text;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoText || element.getAttribute('logo-text') || 'Site Name';
+          return (element as USWDSElement).logoText || element.getAttribute('logo-text') || 'Site Name';
         },
         // Also initialize nav items and secondary links when logo-text initializes (backup entry point)
         onInit: (element: HTMLElement, value: any) => {
           const text = value || 'Site Name';
-          (element as any).logoText = text;
+          (element as USWDSElement).logoText = text;
           // Initialize nav items and secondary links as well
           initHeaderNavItems(element);
           initHeaderSecondaryLinks(element);
@@ -478,13 +483,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const href = value || '/';
           element.setAttribute('logo-href', href);
-          (element as any).logoHref = href;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).logoHref = href;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoHref || element.getAttribute('logo-href') || '/';
+          return (element as USWDSElement).logoHref || element.getAttribute('logo-href') || '/';
         },
       },
     },
@@ -502,17 +507,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('logo-image-src', value);
-            (element as any).logoImageSrc = value;
+            (element as USWDSElement).logoImageSrc = value;
           } else {
             element.removeAttribute('logo-image-src');
-            (element as any).logoImageSrc = '';
+            (element as USWDSElement).logoImageSrc = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoImageSrc || element.getAttribute('logo-image-src') || '';
+          return (element as USWDSElement).logoImageSrc || element.getAttribute('logo-image-src') || '';
         },
       },
     },
@@ -530,17 +535,17 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           if (value) {
             element.setAttribute('logo-image-alt', value);
-            (element as any).logoImageAlt = value;
+            (element as USWDSElement).logoImageAlt = value;
           } else {
             element.removeAttribute('logo-image-alt');
-            (element as any).logoImageAlt = '';
+            (element as USWDSElement).logoImageAlt = '';
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).logoImageAlt || element.getAttribute('logo-image-alt') || '';
+          return (element as USWDSElement).logoImageAlt || element.getAttribute('logo-image-alt') || '';
         },
       },
     },
@@ -561,7 +566,7 @@ registry.register({
           } else {
             element.removeAttribute('extended');
           }
-          (element as any).extended = isExtended;
+          (element as USWDSElement).extended = isExtended;
 
           // Use workaround helper for header DOM updates
           updateWithFallback(element, () => {
@@ -573,7 +578,7 @@ registry.register({
           });
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).extended || element.hasAttribute('extended');
+          return (element as USWDSElement).extended || element.hasAttribute('extended');
         },
       },
     },
@@ -596,20 +601,20 @@ registry.register({
             element.removeAttribute('show-search');
           }
           // Set the Lit property directly to trigger re-render
-          (element as any).showSearch = showSearch;
+          (element as USWDSElement).showSearch = showSearch;
           // Request an update from the Lit component
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).showSearch || element.hasAttribute('show-search');
+          return (element as USWDSElement).showSearch || element.hasAttribute('show-search');
         },
         onInit: (element: HTMLElement, value: any) => {
           const showSearch = coerceBoolean(value);
-          (element as any).showSearch = showSearch;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).showSearch = showSearch;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
       },
@@ -628,13 +633,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const placeholder = value || 'Search';
           element.setAttribute('search-placeholder', placeholder);
-          (element as any).searchPlaceholder = placeholder;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).searchPlaceholder = placeholder;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).searchPlaceholder || element.getAttribute('search-placeholder') || 'Search';
+          return (element as USWDSElement).searchPlaceholder || element.getAttribute('search-placeholder') || 'Search';
         },
       },
     },

@@ -14,6 +14,18 @@ import type {
 } from '@uswds-pt/shared';
 
 /**
+ * Base API URL derived from the VITE_API_URL environment variable.
+ * Empty string when not configured (demo mode).
+ */
+export const API_URL = import.meta.env.VITE_API_URL || '';
+
+/**
+ * Whether the editor is running in demo mode (no API URL configured).
+ * In demo mode, prototypes are stored in localStorage and auth is skipped.
+ */
+export const isDemoMode = !import.meta.env.VITE_API_URL;
+
+/**
  * API endpoint constants
  */
 export const API_ENDPOINTS = {
@@ -21,6 +33,7 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: '/api/auth/login',
   AUTH_REGISTER: '/api/auth/register',
   AUTH_ME: '/api/auth/me',
+  AUTH_GITHUB: '/api/auth/github',
 
   // Organizations
   ORGANIZATIONS: '/api/organizations',
@@ -43,6 +56,7 @@ export const API_ENDPOINTS = {
   // Prototypes
   PROTOTYPES: '/api/prototypes',
   PROTOTYPE: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}`,
+  PROTOTYPE_DUPLICATE: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/duplicate`,
 
   // Prototype Actions
   PROTOTYPE_PUSH: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/push`,
@@ -72,6 +86,12 @@ export const API_ENDPOINTS = {
 
   // Prototype Actions — Handoff
   PROTOTYPE_PUSH_HANDOFF: (slug: string) => `/api/prototypes/${encodeURIComponent(slug)}/push-handoff`,
+
+  // Preview (public, no auth required)
+  PREVIEW: (slug: string) => `/api/preview/${encodeURIComponent(slug)}`,
+
+  // AI Copilot
+  AI_CHAT: '/api/ai/chat',
 } as const;
 
 const debug = createDebugLogger('API');

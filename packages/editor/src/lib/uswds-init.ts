@@ -543,7 +543,7 @@ function initializeSelectOptions(select: HTMLElement): void {
         (select as any).requestUpdate();
       }
     }
-  });
+  }).catch(() => { /* select population failed — non-critical */ });
 }
 
 /**

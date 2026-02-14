@@ -7,6 +7,7 @@
  */
 
 import type { Editor, Component, Trait } from 'grapesjs';
+import type { GrapesProjectData } from '@uswds-pt/shared';
 
 // ── Re-exports of vendor types ──────────────────────────────────────────
 // These give downstream code a single import location for common GrapesJS
@@ -167,24 +168,9 @@ export interface GrapesTraitManager {
   getType?(name: string): unknown;
 }
 
-/**
- * GrapesJS Project Data (for save/load)
- */
-export interface GrapesProjectData {
-  pages?: Array<{
-    id?: string;
-    name?: string;
-    frames?: Array<{
-      component?: {
-        type?: string;
-        components?: unknown[];
-      };
-    }>;
-  }>;
-  styles?: unknown[];
-  assets?: unknown[];
-  [key: string]: unknown;
-}
+// GrapesProjectData: re-exported from @uswds-pt/shared (canonical definition).
+// The import at the top of this file brings it into scope for GrapesEditor below.
+export type { GrapesProjectData };
 
 /**
  * GrapesJS Editor Instance

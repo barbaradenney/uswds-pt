@@ -11,6 +11,7 @@ import {
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 import { createFormHintTrait, createRadioHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
 import {
   rebuildSelectOptionsFromSource,
@@ -35,9 +36,9 @@ function rebuildComboBoxOptions(element: HTMLElement, count: number): void {
     const value = element.getAttribute(`option${i}-value`) || `option${i}`;
     options.push({ value, label });
   }
-  (element as any).options = options;
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  (element as USWDSElement).options = options;
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -619,13 +620,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const label = value || 'Select an option';
           element.setAttribute('label', label);
-          (element as any).label = label;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).label = label;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).label || element.getAttribute('label') || 'Select an option';
+          return (element as USWDSElement).label || element.getAttribute('label') || 'Select an option';
         },
       },
     },
@@ -642,13 +643,13 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const name = value || 'combo-box';
           element.setAttribute('name', name);
-          (element as any).name = name;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).name = name;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).name || element.getAttribute('name') || 'combo-box';
+          return (element as USWDSElement).name || element.getAttribute('name') || 'combo-box';
         },
       },
     },
@@ -669,13 +670,13 @@ registry.register({
           } else {
             element.removeAttribute('placeholder');
           }
-          (element as any).placeholder = placeholder;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).placeholder = placeholder;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).placeholder || element.getAttribute('placeholder') || '';
+          return (element as USWDSElement).placeholder || element.getAttribute('placeholder') || '';
         },
       },
     },
@@ -697,13 +698,13 @@ registry.register({
           } else {
             element.removeAttribute('hint');
           }
-          (element as any).hint = hint;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).hint = hint;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).hint || element.getAttribute('hint') || '';
+          return (element as USWDSElement).hint || element.getAttribute('hint') || '';
         },
       },
     },
@@ -792,13 +793,13 @@ registry.register({
           } else {
             element.removeAttribute('disable-filtering');
           }
-          (element as any).disableFiltering = isDisabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).disableFiltering = isDisabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).disableFiltering || element.hasAttribute('disable-filtering');
+          return (element as USWDSElement).disableFiltering || element.hasAttribute('disable-filtering');
         },
       },
     },
@@ -819,13 +820,13 @@ registry.register({
           } else {
             element.removeAttribute('required');
           }
-          (element as any).required = isRequired;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).required = isRequired;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).required || element.hasAttribute('required');
+          return (element as USWDSElement).required || element.hasAttribute('required');
         },
       },
     },
@@ -855,13 +856,13 @@ registry.register({
           } else {
             element.removeAttribute('disabled');
           }
-          (element as any).disabled = isDisabled;
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          (element as USWDSElement).disabled = isDisabled;
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).disabled || element.hasAttribute('disabled');
+          return (element as USWDSElement).disabled || element.hasAttribute('disabled');
         },
       },
     },

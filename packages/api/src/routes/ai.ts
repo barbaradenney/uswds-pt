@@ -155,7 +155,7 @@ export async function aiRoutes(app: FastifyInstance) {
                 required: ['role', 'content'],
                 properties: {
                   role: { type: 'string', enum: ['user', 'assistant'] },
-                  content: { type: 'string' },
+                  content: { type: 'string', maxLength: 50000 },
                   attachments: {
                     type: 'array',
                     maxItems: MAX_ATTACHMENTS,

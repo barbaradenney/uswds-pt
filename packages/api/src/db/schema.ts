@@ -405,27 +405,6 @@ export const githubHandoffConnectionsRelations = relations(githubHandoffConnecti
 }));
 
 /**
- * Audit logs table (for future use)
- */
-export const auditLogs = pgTable(
-  'audit_logs',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id').references(() => users.id),
-    action: varchar('action', { length: 50 }).notNull(),
-    resourceType: varchar('resource_type', { length: 50 }).notNull(),
-    resourceId: uuid('resource_id'),
-    metadata: jsonb('metadata'),
-    ipAddress: varchar('ip_address', { length: 45 }),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  },
-  (table) => ({
-    userIdx: index('audit_user_idx').on(table.userId),
-    createdAtIdx: index('audit_created_at_idx').on(table.createdAt),
-  })
-);
-
-/**
  * Type exports
  */
 export type Organization = typeof organizations.$inferSelect;
@@ -448,9 +427,6 @@ export type NewPrototype = typeof prototypes.$inferInsert;
 
 export type PrototypeVersion = typeof prototypeVersions.$inferSelect;
 export type NewPrototypeVersion = typeof prototypeVersions.$inferInsert;
-
-export type AuditLog = typeof auditLogs.$inferSelect;
-export type NewAuditLog = typeof auditLogs.$inferInsert;
 
 export type GitHubTeamConnection = typeof githubTeamConnections.$inferSelect;
 export type NewGitHubTeamConnection = typeof githubTeamConnections.$inferInsert;

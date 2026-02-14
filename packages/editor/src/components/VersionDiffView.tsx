@@ -55,7 +55,7 @@ export function VersionDiffView({
       }
 
       const { version1: v1Data, version2: v2Data } = result.data;
-      const lines = computeHtmlDiff(
+      const lines = await computeHtmlDiff(
         v1Data.htmlContent || '',
         v2Data.htmlContent || ''
       );

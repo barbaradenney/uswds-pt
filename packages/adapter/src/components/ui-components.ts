@@ -12,6 +12,7 @@ import {
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Registry interface to avoid circular imports.
@@ -44,8 +45,8 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
   // If no ul exists yet, the component may need to render first
   if (!ul) {
     // Try to trigger initial render and retry
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
     // Retry after a delay to wait for web component to render
     setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
@@ -526,18 +527,18 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Search';
-          (element as any).placeholder = text;
+          (element as USWDSElement).placeholder = text;
           // Also update the internal input
           const input = element.querySelector('.usa-search__input') as HTMLInputElement;
           if (input) {
             input.placeholder = text;
           }
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).placeholder || 'Search';
+          return (element as USWDSElement).placeholder || 'Search';
         },
       },
     },
@@ -562,19 +563,19 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const text = value || 'Search';
           // Set the Lit property directly
-          (element as any).buttonText = text;
+          (element as USWDSElement).buttonText = text;
           // Also update the internal button text
           const buttonSpan = element.querySelector('.usa-search__submit-text');
           if (buttonSpan) {
             buttonSpan.textContent = text;
           }
           // Trigger re-render
-          if (typeof (element as any).requestUpdate === 'function') {
-            (element as any).requestUpdate();
+          if (typeof (element as USWDSElement).requestUpdate === 'function') {
+            (element as USWDSElement).requestUpdate?.();
           }
         },
         getValue: (element: HTMLElement) => {
-          return (element as any).buttonText || 'Search';
+          return (element as USWDSElement).buttonText || 'Search';
         },
       },
     },
@@ -611,11 +612,11 @@ function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
   }
 
   // Update the web component's items property
-  (element as any).items = items;
+  (element as USWDSElement).items = items;
 
   // Trigger Lit component re-render
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 
@@ -751,7 +752,7 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const page = parseInt(value, 10) || 1;
           element.setAttribute('current-page', String(page));
-          (element as any).currentPage = page;
+          (element as USWDSElement).currentPage = page;
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('current-page') || '1';
@@ -779,7 +780,7 @@ registry.register({
         onChange: (element: HTMLElement, value: any) => {
           const pages = parseInt(value, 10) || 5;
           element.setAttribute('total-pages', String(pages));
-          (element as any).totalPages = pages;
+          (element as USWDSElement).totalPages = pages;
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('total-pages') || '5';
@@ -813,11 +814,11 @@ function rebuildSideNavItems(element: HTMLElement, count: number): void {
   }
 
   // Update the web component's items property
-  (element as any).items = items;
+  (element as USWDSElement).items = items;
 
   // Trigger Lit component re-render
-  if (typeof (element as any).requestUpdate === 'function') {
-    (element as any).requestUpdate();
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
   }
 }
 

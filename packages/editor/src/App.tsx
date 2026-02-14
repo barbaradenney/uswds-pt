@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { isDemoMode } from './lib/api';
 
 // Lazy load components for code splitting
 const Editor = lazy(() => import('./components/Editor').then(m => ({ default: m.Editor })));
@@ -23,9 +24,6 @@ function LoadingFallback() {
     </div>
   );
 }
-
-// Check if we're in demo mode (no API URL configured)
-const isDemoMode = !import.meta.env.VITE_API_URL;
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();

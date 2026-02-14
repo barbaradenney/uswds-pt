@@ -11,7 +11,7 @@ USWDS-PT is a visual drag-and-drop prototyping tool for building web interfaces 
 This is a pnpm workspace monorepo using Turborepo. Four packages in `packages/`:
 
 - **@uswds-pt/editor** - React frontend with GrapesJS visual editor (Vite)
-- **@uswds-pt/api** - Fastify REST API with JWT auth (tsx for dev)
+- **@uswds-pt/api** - Fastify REST API with GitHub OAuth + JWT session tokens (tsx for dev)
 - **@uswds-pt/adapter** - Converts Custom Elements Manifest to GrapesJS blocks/components
 - **@uswds-pt/shared** - Shared TypeScript types (CEM, prototypes, editor manifest)
 
@@ -58,54 +58,117 @@ pnpm --filter @uswds-pt/api db:studio  # Open Drizzle Studio
 2. User drags components onto canvas, edits properties via traits panel
 3. On save, editor sends `grapesData` (GrapesJS state) and `htmlContent` to **API**
 4. API stores in PostgreSQL with version history
-5. Export cleans HTML (removes GrapesJS artifacts) for developer handoff
+5. If a GitHub repo is connected, prototype data is pushed automatically on save
+6. Export cleans HTML (removes GrapesJS artifacts) for developer handoff
 
 ### Key Concepts
 
-**Component Registration**: The adapter's `component-registry-v2.ts` contains the `ComponentRegistry` class and wiring. Individual component registrations are split across focused files in `packages/adapter/src/components/` (form-components.ts, data-components.ts, feedback-components.ts, layout-components.ts, navigation-components.ts, etc.) with a barrel `index.ts`. Components use Light DOM (no Shadow DOM), making GrapesJS integration straightforward.
+**Component Registration**: The adapter's `component-registry-v2.ts` contains the `ComponentRegistry` class and wiring. Individual component registrations are split across focused files in `packages/adapter/src/components/`:
+- `button-components.ts`, `form-components.ts`, `form-input-components.ts`, `text-input-components.ts`
+- `selection-components.ts`, `date-time-components.ts`, `file-range-components.ts`
+- `data-components.ts`, `feedback-components.ts`, `ui-components.ts`
+- `layout-components.ts`, `structure-components.ts`
+- `header-components.ts`, `footer-components.ts`, `navigation-components.ts`
+- `pattern-components.ts` (multi-field USWDS patterns: name, address, phone, email, DOB, SSN)
+- Helper modules: `shared-utils.ts`, `select-helpers.ts`, `page-link-traits.ts`, `form-trait-factories.ts`
+- Barrel: `index.ts`
+
+Components use Light DOM (no Shadow DOM), making GrapesJS integration straightforward.
 
 **Trait System**: Properties are edited via GrapesJS traits. `WebComponentTraitManager.ts` handles syncing between DOM attributes and the editor. Some components (usa-header, usa-footer) require JavaScript initialization after render.
 
 **Export**: `packages/editor/src/lib/export/` contains export utilities split across focused files (clean.ts, document.ts, init-script.ts) with a barrel `index.ts`. These clean GrapesJS artifacts (data-gjs-* attributes, generated IDs) and can generate full HTML documents with USWDS CDN imports.
 
+**Symbols**: Reusable component groups shared across prototypes within a team. Stored in the `symbols` table as GrapesJS symbol structures. CRUD operations via `packages/api/src/routes/symbols.ts` at `/api/teams/:teamId/symbols`. Any team member can create symbols; only the creator or a team/org admin can edit or delete them.
+
 ### Database Schema (Drizzle ORM)
 
-Key tables in `packages/api/src/db/schema.ts`:
-- `organizations` / `teams` - Multi-tenant hierarchy
-- `team_memberships` - Users belong to teams with roles
-- `prototypes` - Stores htmlContent and grapesData (JSONB)
-- `prototype_versions` - Version history snapshots
+Tables in `packages/api/src/db/schema.ts`:
+- `organizations` - Top-level tenant grouping (agencies/companies); has `stateDefinitions` and `userDefinitions` JSONB columns
+- `teams` - Subdivisions within organizations (unique slug per org)
+- `team_memberships` - Join table: users to teams with roles (`org_admin`, `team_admin`, `team_member`)
+- `invitations` - Pending invitations for users to join teams (token-based, with expiry and status)
+- `users` - User accounts; includes GitHub OAuth fields (`githubId`, `githubUsername`, `githubAccessToken` encrypted)
+- `prototypes` - Stores `htmlContent`, `grapesData` (JSONB), `branchSlug`, GitHub push tracking (`lastGithubPushAt`, `lastGithubCommitSha`)
+- `prototype_versions` - Version history snapshots with `contentChecksum`
+- `symbols` - Team-scoped reusable symbol components (`symbolData` JSONB)
+- `github_team_connections` - Links a team to a GitHub repo for push-on-save (one connection per team)
+- `github_handoff_connections` - Links a team to a separate GitHub repo for clean HTML developer handoff
+- `audit_logs` - Audit trail (for future use)
 
 ### Authentication
 
-JWT-based auth with optional GitHub OAuth. Routes in `packages/api/src/routes/auth.ts` and `github-auth.ts`. Tokens stored in localStorage on frontend. GitHub OAuth users may have no password (`passwordHash` nullable).
+**GitHub OAuth only.** Email/password login and registration endpoints (`POST /api/auth/login`, `POST /api/auth/register`) return `410 Gone` and direct users to GitHub sign-in. Routes in `packages/api/src/routes/auth.ts` and `github-auth.ts`.
+
+OAuth flow:
+1. `GET /api/auth/github` redirects to GitHub with CSRF state cookie
+2. `GET /api/auth/github/callback` exchanges code for access token, creates/links user, issues JWT
+3. JWT returned via hash fragment redirect to frontend (`/#/auth/callback?token=...`)
+4. JWT stored in localStorage on frontend for subsequent API calls
+
+GitHub access tokens are encrypted with AES-256-GCM (via `ENCRYPTION_KEY`) before storage. The `passwordHash` column is nullable (all users are OAuth-only now).
+
+### GitHub Repository Integration
+
+Teams can connect to GitHub repositories for automatic prototype syncing. Managed via `packages/api/src/routes/github.ts`.
+
+**Push-on-save connection** (`github_team_connections`): When a team is connected to a repo, saving a prototype pushes its GrapesJS data to a branch named after the prototype's `branchSlug`. Endpoints:
+- `GET /api/teams/:teamId/github` - Connection status
+- `POST /api/teams/:teamId/github/connect` - Connect repo (team/org admin only)
+- `DELETE /api/teams/:teamId/github/disconnect` - Remove connection
+
+**Developer handoff connection** (`github_handoff_connections`): A separate repo connection for clean HTML output (no GrapesJS metadata). Pushed to `handoff/{branchSlug}` branches. Endpoints:
+- `GET /api/teams/:teamId/github/handoff` - Handoff connection status
+- `POST /api/teams/:teamId/github/handoff/connect` - Connect handoff repo
+- `DELETE /api/teams/:teamId/github/handoff/disconnect` - Remove handoff connection
+
+**Listing repos**: `GET /api/github/repos` lists repositories accessible to the authenticated user's GitHub token.
+
+Push implementation is in `packages/api/src/lib/github-push.ts` (multi-file atomic commits via Git Data API).
 
 ### Security
 
-- **@fastify/helmet** — CSP, X-Frame-Options (DENY), HSTS (2-year, preload), Referrer-Policy
-- **@fastify/rate-limit** — 100/min global, 5/min login, 3/min register, 10/min AI chat
-- **Input validation** — `htmlContent` max 2MB, `grapesData` max 5MB, `additionalProperties: false`
-- **Optimistic concurrency** — `version` column + `If-Match` header + atomic transactions
-- **Preview sandbox** — `<iframe sandbox="allow-scripts" srcdoc={...}>` prevents stored XSS
-- **OAuth state** — SHA-256 hashed before `timingSafeEqual` to prevent timing side-channel
-- **Docker** — API runs as non-root user (`appuser:appgroup`)
+- **@fastify/helmet** -- CSP, X-Frame-Options (DENY), HSTS (2-year, preload in production), Referrer-Policy
+- **@fastify/rate-limit** -- 100/min global, 5/min login (410), 3/min register (410), 10/min GitHub callback, 10/min AI chat
+- **Input validation** -- `htmlContent` max 2MB, `grapesData` max 5MB, body limit 8MB, `additionalProperties: false`
+- **Optimistic concurrency** -- `version` column + `If-Match` header + atomic transactions
+- **Preview sandbox** -- `<iframe sandbox="allow-scripts" srcdoc={...}>` prevents stored XSS
+- **OAuth state** -- SHA-256 hashed before `timingSafeEqual` to prevent timing side-channel
+- **Token encryption** -- GitHub access tokens encrypted with AES-256-GCM before DB storage
+- **Docker** -- API runs as non-root user (`appuser:appgroup`)
 
 ## Environment Variables
 
-The API package has its own `.env` file at `packages/api/.env`. Key variables:
-- `DATABASE_URL` - PostgreSQL connection string (required)
-- `JWT_SECRET` - Auth token signing
-- `FRONTEND_URL` - CORS allowed origin (default: http://localhost:3000)
-- `PORT` - API server port (default: 3001)
-- `AI_API_KEY` - (Optional) API key for AI copilot (Claude or OpenAI) — server-side only
-- `AI_PROVIDER` - (Optional) AI provider: "claude" or "openai" (default: claude)
-- `AI_MODEL` - (Optional) AI model name (default: claude-sonnet-4-20250514 or gpt-4o)
-- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_CALLBACK_URL` - (Optional) GitHub OAuth — all three required if any set
-- `ENCRYPTION_KEY` - (Required when GitHub OAuth is configured) AES-256-GCM key for token encryption
+See `packages/api/.env.example` and `packages/editor/.env.example` for full documentation with defaults.
 
-The editor package has its own `.env` file at `packages/editor/.env` for frontend-specific config:
-- `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
-- `VITE_AI_ENABLED` - (Optional) Set to "true" to enable AI copilot UI
+### API (`packages/api/.env`)
+
+Required:
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Auth token signing (required in production; dev fallback exists)
+
+GitHub OAuth (all required if any are set):
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_CALLBACK_URL` - OAuth app credentials
+- `ENCRYPTION_KEY` - AES-256-GCM key for encrypting GitHub access tokens (required when OAuth is configured). Accepts a 32-char raw string or a 64-char hex-encoded string.
+
+Optional server:
+- `PORT` - API server port (default: 3001)
+- `HOST` - Bind address (default: 0.0.0.0)
+- `NODE_ENV` - `development` or `production`
+- `FRONTEND_URL` - CORS allowed origin (default: http://localhost:3000)
+- `CORS_ORIGINS` - Additional CORS origins, comma-separated
+- `LOG_LEVEL` - Pino log level (default: info)
+
+Optional AI:
+- `AI_API_KEY` - API key for AI copilot (Claude or OpenAI) -- server-side only
+- `AI_PROVIDER` - `claude` or `openai` (default: claude)
+- `AI_MODEL` - Model name (default: claude-sonnet-4-20250514 or gpt-4o)
+
+### Editor (`packages/editor/.env`)
+
+- `VITE_API_URL` - Backend API URL (default: empty = demo mode with no backend)
+- `VITE_AI_ENABLED` - Set to `true` to enable AI copilot UI
+- `VITE_AI_SECRET` - (Optional) Gate AI access via URL parameter `?ai=<secret>`; when set, AI copilot requires this URL param to activate
 
 ## AI Copilot Feature
 
@@ -130,6 +193,7 @@ VITE_AI_ENABLED=true
 - The editor sends conversation context to `POST /api/ai/chat` (authenticated, rate-limited: 10 req/min)
 - The API server calls the AI provider SDK (Anthropic or OpenAI) with the server-side API key
 - The AI is trained on all USWDS web components through a custom prompt (`src/lib/ai/uswds-prompt.ts`)
+- Supports image and PDF attachments (Claude only for PDFs)
 - Users can request things like "add a contact form" or "make this card have a warning style"
 - The AI knows about usa-button, usa-header, usa-card, usa-alert, and all other USWDS components
 
@@ -185,7 +249,7 @@ Uses Vitest. Tests colocated with source files or in `__tests__/` directories. T
 
 ## USWDS Web Components
 
-The tool uses these CDN versions (defined in adapter constants and export utilities). Adapter constants are split across `packages/adapter/src/constants/` (categories.ts, icons.ts, templates.ts, cdn.ts, scripts.ts) with a barrel `index.ts`. CDN versions:
+The tool uses these CDN versions (defined in `packages/adapter/src/constants/cdn.ts`). Adapter constants are split across `packages/adapter/src/constants/` (categories.ts, icons.ts, templates.ts, cdn.ts, scripts.ts) with a barrel `index.ts`. CDN versions:
 - USWDS CSS: 3.8.1
 - USWDS Web Components Bundle: 2.5.15
 
@@ -200,3 +264,5 @@ Components render Light DOM content, so standard DOM manipulation works. Complex
 | API not responding | Server not running | Run `pnpm dev` |
 | CORS errors | Wrong FRONTEND_URL | Update `packages/api/.env` |
 | "Failed to fetch" in editor | API URL mismatch | Check `packages/editor/.env` |
+| "Email/password login removed" | 410 Gone from auth | Use GitHub OAuth sign-in instead |
+| GitHub push fails | Token expired or no connection | Re-authenticate via GitHub OAuth; check team connection |

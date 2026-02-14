@@ -6,6 +6,7 @@
  */
 
 import type { UnifiedTrait } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 // Preset option lists
 export const SELECT_PRESETS: Record<string, Array<{ value: string; text: string }>> = {
@@ -118,9 +119,9 @@ export function renderSelectOptions(element: HTMLElement, options: Array<{ value
     });
   } else {
     // Fallback: set the options property
-    (element as any).options = options;
-    if (typeof (element as any).requestUpdate === 'function') {
-      (element as any).requestUpdate();
+    (element as USWDSElement).options = options;
+    if (typeof (element as USWDSElement).requestUpdate === 'function') {
+      (element as USWDSElement).requestUpdate?.();
     }
   }
 }

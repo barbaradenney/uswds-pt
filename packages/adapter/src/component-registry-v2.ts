@@ -83,7 +83,7 @@ class ComponentRegistry {
 
     return Object.entries(component.traits).map(([name, trait]) => {
       // Create a clean copy of the definition without function properties
-      const cleanDefinition: Record<string, any> = { name };
+      const cleanDefinition: Record<string, unknown> = { name };
 
       for (const [key, value] of Object.entries(trait.definition)) {
         // Skip function-based properties that can't be serialized
@@ -92,7 +92,7 @@ class ComponentRegistry {
         }
       }
 
-      return cleanDefinition as GrapesTrait;
+      return cleanDefinition as unknown as GrapesTrait;
     });
   }
 
@@ -113,11 +113,11 @@ class ComponentRegistry {
   /**
    * Extract trait default values (for initialization)
    */
-  getTraitDefaults(tagName: string): Record<string, any> {
+  getTraitDefaults(tagName: string): Record<string, unknown> {
     const component = this.components.get(tagName);
     if (!component) return {};
 
-    const defaults: Record<string, any> = {};
+    const defaults: Record<string, unknown> = {};
     for (const [name, trait] of Object.entries(component.traits)) {
       if (trait.definition.default !== undefined) {
         defaults[name] = trait.definition.default;

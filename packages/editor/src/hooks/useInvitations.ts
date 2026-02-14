@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Role, InvitationWithTeam } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
+import { API_ENDPOINTS } from '../lib/api';
 
 const debug = createDebugLogger('Invitations');
 
@@ -33,7 +34,7 @@ export function useInvitations(): UseInvitationsReturn {
   const refreshInvitations = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
-      const response = await authFetch('/api/invitations');
+      const response = await authFetch(API_ENDPOINTS.INVITATIONS);
       if (response.ok) {
         const data = await response.json();
         setState({
@@ -66,7 +67,7 @@ export function useInvitations(): UseInvitationsReturn {
   // Accept an invitation
   const acceptInvitation = useCallback(async (token: string): Promise<boolean> => {
     try {
-      const response = await authFetch(`/api/invitations/${token}/accept`, {
+      const response = await authFetch(API_ENDPOINTS.INVITATION_ACCEPT(token), {
         method: 'POST',
       });
 
@@ -99,7 +100,7 @@ export function useInvitations(): UseInvitationsReturn {
   // Decline an invitation
   const declineInvitation = useCallback(async (token: string): Promise<boolean> => {
     try {
-      const response = await authFetch(`/api/invitations/${token}/decline`, {
+      const response = await authFetch(API_ENDPOINTS.INVITATION_DECLINE(token), {
         method: 'POST',
       });
 
@@ -154,7 +155,7 @@ export async function acceptInvitationByToken(token: string): Promise<{
   role?: Role;
 }> {
   try {
-    const response = await authFetch(`/api/invitations/${token}/accept`, {
+    const response = await authFetch(API_ENDPOINTS.INVITATION_ACCEPT(token), {
       method: 'POST',
     });
 

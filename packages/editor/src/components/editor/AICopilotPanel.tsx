@@ -10,6 +10,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAICopilot } from '../../hooks/useAICopilot';
 import type { ChatMessage } from '../../hooks/useAICopilot';
 import type { Attachment } from '../../lib/ai/ai-client';
+import '../../styles/ai-copilot.css';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.gif,.webp';

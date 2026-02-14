@@ -6,6 +6,7 @@
  */
 
 import type { UnifiedTrait } from './shared-utils.js';
+import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
  * Create a hint trait for form inputs (text-input, textarea, select, etc.)
@@ -29,8 +30,8 @@ export function createFormHintTrait(): UnifiedTrait {
           element.removeAttribute('hint');
         }
         // The web component should handle rendering the hint
-        if (typeof (element as any).requestUpdate === 'function') {
-          (element as any).requestUpdate();
+        if (typeof (element as USWDSElement).requestUpdate === 'function') {
+          (element as USWDSElement).requestUpdate?.();
         }
       },
       getValue: (element: HTMLElement) => {
@@ -117,8 +118,8 @@ export function createErrorMessageTrait(): UnifiedTrait {
           element.removeAttribute('error-message');
         }
         // The web component should handle rendering the error message
-        if (typeof (element as any).requestUpdate === 'function') {
-          (element as any).requestUpdate();
+        if (typeof (element as USWDSElement).requestUpdate === 'function') {
+          (element as USWDSElement).requestUpdate?.();
         }
       },
       getValue: (element: HTMLElement) => {

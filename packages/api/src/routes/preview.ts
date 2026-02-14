@@ -5,7 +5,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { db, prototypes, teams, organizations, teamMemberships } from '../db/index.js';
 
 interface PreviewParams {
@@ -17,6 +17,9 @@ export async function previewRoutes(app: FastifyInstance) {
    * GET /api/preview/:slug
    * Get a prototype for preview. Public prototypes need no auth;
    * authenticated users can preview their own non-public prototypes.
+   *
+   * Uses a single query with LEFT JOINs to fetch the prototype along with
+   * its team's organization-level state/user definitions.
    */
   app.get<{ Params: PreviewParams }>(
     '/:slug',
@@ -32,87 +35,57 @@ export async function previewRoutes(app: FastifyInstance) {
         // No valid token — proceed as unauthenticated
       }
 
-      // First try public access (no auth needed)
-      let [prototype] = await db
+      // Single query: fetch prototype + team + organization via LEFT JOINs.
+      // Access check: prototype must be public OR the user must be an
+      // authenticated team member (innerJoin on teamMemberships handles
+      // the membership check when userId is present).
+      const accessCondition = userId
+        ? and(
+            eq(prototypes.slug, slug),
+            or(
+              eq(prototypes.isPublic, true),
+              eq(teamMemberships.userId, userId),
+            ),
+          )
+        : and(eq(prototypes.slug, slug), eq(prototypes.isPublic, true));
+
+      const [result] = await db
         .select({
           name: prototypes.name,
           htmlContent: prototypes.htmlContent,
-          grapesData: prototypes.grapesData,
           createdBy: prototypes.createdBy,
-          teamId: prototypes.teamId,
+          stateDefinitions: organizations.stateDefinitions,
+          userDefinitions: organizations.userDefinitions,
         })
         .from(prototypes)
-        .where(and(eq(prototypes.slug, slug), eq(prototypes.isPublic, true)))
+        .leftJoin(teams, eq(teams.id, prototypes.teamId))
+        .leftJoin(organizations, eq(organizations.id, teams.organizationId))
+        .leftJoin(teamMemberships, userId
+          ? and(
+              eq(teamMemberships.teamId, prototypes.teamId),
+              eq(teamMemberships.userId, userId),
+            )
+          : sql`false`)
+        .where(accessCondition)
         .limit(1);
 
-      // If not public but user is authenticated, check team membership
-      // (not just createdBy — users removed from a team should lose access)
-      if (!prototype && userId) {
-        [prototype] = await db
-          .select({
-            name: prototypes.name,
-            htmlContent: prototypes.htmlContent,
-            grapesData: prototypes.grapesData,
-            createdBy: prototypes.createdBy,
-            teamId: prototypes.teamId,
-          })
-          .from(prototypes)
-          .innerJoin(teamMemberships, and(
-            eq(teamMemberships.teamId, prototypes.teamId),
-            eq(teamMemberships.userId, userId),
-          ))
-          .where(eq(prototypes.slug, slug))
-          .limit(1);
-      }
-
-      if (!prototype) {
+      if (!result) {
         return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Look up org-level state/user definitions via prototype → team → organization
-      let stateDefinitions: unknown[] = [];
-      let userDefinitions: unknown[] = [];
-      if (prototype.teamId) {
-        const [team] = await db
-          .select({ organizationId: teams.organizationId })
-          .from(teams)
-          .where(eq(teams.id, prototype.teamId))
-          .limit(1);
-
-        if (team?.organizationId) {
-          const [org] = await db
-            .select({
-              stateDefinitions: organizations.stateDefinitions,
-              userDefinitions: organizations.userDefinitions,
-            })
-            .from(organizations)
-            .where(eq(organizations.id, team.organizationId))
-            .limit(1);
-
-          if (org) {
-            stateDefinitions = org.stateDefinitions as unknown[] || [];
-            userDefinitions = org.userDefinitions as unknown[] || [];
-          }
-        }
       }
 
       // Public prototypes: short cache with revalidation so newly-private prototypes are re-checked
       // Authenticated user's own prototypes: no caching
-      if (!userId || prototype.createdBy !== userId) {
+      if (!userId || result.createdBy !== userId) {
         reply.header('Cache-Control', 'public, max-age=60, must-revalidate');
       } else {
         reply.header('Cache-Control', 'private, no-cache');
       }
 
-      // Return with gjsData key for frontend compatibility
       return {
-        name: prototype.name,
-        htmlContent: prototype.htmlContent,
-        gjsData: prototype.grapesData && typeof prototype.grapesData === 'object' && Object.keys(prototype.grapesData as object).length > 0
-          ? JSON.stringify(prototype.grapesData)
-          : undefined,
-        stateDefinitions,
-        userDefinitions,
+        name: result.name,
+        htmlContent: result.htmlContent,
+        stateDefinitions: (result.stateDefinitions as unknown[]) || [],
+        userDefinitions: (result.userDefinitions as unknown[]) || [],
       };
     }
   );
