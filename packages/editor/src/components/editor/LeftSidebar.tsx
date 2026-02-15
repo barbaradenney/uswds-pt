@@ -10,16 +10,26 @@
  * the `root` component data instead of using the Container portal.
  */
 
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, lazy, Suspense } from 'react';
 import { LayersProvider, useEditorMaybe } from '@grapesjs/react';
 import { GJS_EVENTS } from '../../lib/contracts';
 import { SidebarTabs } from './SidebarTabs';
 import { PagesPanel } from './PagesPanel';
+import { AI_ENABLED } from '../../lib/ai/ai-config';
 
-const TABS = [
+// Lazy-load the AI copilot panel so it is code-split into its own chunk.
+const LazyAICopilotPanel = lazy(() =>
+  import('./AICopilotPanel').then((mod) => ({ default: mod.AICopilotPanel }))
+);
+
+const BASE_TABS = [
   { id: 'pages', label: 'Pages' },
   { id: 'layers', label: 'Layers' },
 ];
+
+const TABS = AI_ENABLED
+  ? [...BASE_TABS, { id: 'ai', label: 'AI' }]
+  : BASE_TABS;
 
 export const LeftSidebar = memo(function LeftSidebar() {
   const [activeTab, setActiveTab] = useState('pages');
@@ -46,6 +56,17 @@ export const LeftSidebar = memo(function LeftSidebar() {
             <LayersProvider>
               {(props) => <LayersPanel root={props.root} />}
             </LayersProvider>
+          </div>
+        )}
+        {activeTab === 'ai' && AI_ENABLED && (
+          <div
+            id="sidebar-panel-ai"
+            role="tabpanel"
+            aria-labelledby="sidebar-tab-ai"
+          >
+            <Suspense fallback={<div className="ai-panel-loading">Loading AI assistant...</div>}>
+              <LazyAICopilotPanel />
+            </Suspense>
           </div>
         )}
       </div>

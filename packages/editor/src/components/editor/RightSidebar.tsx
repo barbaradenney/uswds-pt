@@ -1,14 +1,14 @@
 /**
  * RightSidebar Component
  *
- * Tabbed sidebar with Components (blocks), Properties (traits), and
- * optionally AI assistant panels.
+ * Tabbed sidebar with Components (blocks), Properties (traits),
+ * and Symbols panels.
  * - Components tab: Custom block grid using BlocksProvider data
  * - Properties tab: Custom trait forms using TraitsProvider data
- * - AI tab: Chat panel for AI-assisted prototyping (when enabled)
+ * - Symbols tab: Browse, rename, delete, promote reusable symbols (API mode only)
  *
  * Auto-switches to Properties tab when a component is selected,
- * unless the AI tab is currently active.
+ * unless the Symbols tab is currently active.
  *
  * Note: Provider components set `custom: true` on their GrapesJS managers,
  * which prevents default UI rendering. We render our own React UI using the
@@ -21,7 +21,6 @@ import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react'
 import { GJS_EVENTS } from '../../lib/contracts';
 import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
-import { AI_ENABLED } from '../../lib/ai/ai-config';
 import { isDemoMode } from '../../lib/api';
 
 /**
@@ -40,13 +39,6 @@ function cachedSanitize(html: string): string {
   return clean;
 }
 
-// Lazy-load the AI copilot panel so it is code-split into its own chunk.
-// The AI feature is optional (controlled by VITE_AI_ENABLED), so the
-// component, its hook, prompt template, and CSS should not be in the main bundle.
-const LazyAICopilotPanel = lazy(() =>
-  import('./AICopilotPanel').then((mod) => ({ default: mod.AICopilotPanel }))
-);
-
 // Lazy-load the Symbols panel (only used in API mode, not demo mode)
 const LazySymbolsPanel = lazy(() =>
   import('./SymbolsPanel').then((mod) => ({ default: mod.SymbolsPanel }))
@@ -61,9 +53,6 @@ function buildTabs() {
   const tabs = [...BASE_TABS];
   if (!isDemoMode) {
     tabs.push({ id: 'symbols', label: 'Symbols' });
-  }
-  if (AI_ENABLED) {
-    tabs.push({ id: 'ai', label: 'AI' });
   }
   return tabs;
 }
@@ -80,7 +69,7 @@ export const RightSidebar = memo(function RightSidebar() {
     if (!editor) return;
     const handleSelect = () => {
       setActiveTab((current) =>
-        current === 'ai' || current === 'symbols' ? current : 'properties'
+        current === 'symbols' ? current : 'properties'
       );
     };
     editor.on(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
@@ -123,17 +112,6 @@ export const RightSidebar = memo(function RightSidebar() {
           >
             <Suspense fallback={<div className="symbols-loading"><div className="loading-spinner" /><span>Loading symbols...</span></div>}>
               <LazySymbolsPanel />
-            </Suspense>
-          </div>
-        )}
-        {activeTab === 'ai' && AI_ENABLED && (
-          <div
-            id="sidebar-panel-ai"
-            role="tabpanel"
-            aria-labelledby="sidebar-tab-ai"
-          >
-            <Suspense fallback={<div className="ai-panel-loading">Loading AI assistant...</div>}>
-              <LazyAICopilotPanel />
             </Suspense>
           </div>
         )}
