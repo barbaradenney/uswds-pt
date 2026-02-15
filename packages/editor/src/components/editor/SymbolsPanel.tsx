@@ -122,7 +122,10 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
           wrapper?.append?.(components);
         }
       } else {
-        wrapper?.append?.(components);
+        // Nothing selected — append into <main> content area, or wrapper as fallback
+        const mainComps = wrapper?.find?.('main') || [];
+        const target = mainComps[0] || wrapper;
+        target?.append?.(components);
       }
     } finally {
       um?.stop?.();
@@ -436,7 +439,7 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
       id: symbol.symbolData.id || symbol.id,
       label: symbol.symbolData.label || symbol.name,
       icon: json.icon,
-      components: json.components || [],
+      components: [json],
     };
 
     const result = await update(symbol.id, { symbolData: newSymbolData });

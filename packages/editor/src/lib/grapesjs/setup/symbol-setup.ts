@@ -44,7 +44,7 @@ export function setupSymbolCreationHandler(
         id: `symbol-${Date.now()}`,
         label: selected.getName?.() || selected.get?.('name') || 'New Symbol',
         icon: json.icon,
-        components: json.components || [],
+        components: [json],
       };
 
       onSymbolCreate(symbolData, selected);
