@@ -39,6 +39,14 @@ export const GJS_EVENTS = {
 
   // Devices
   DEVICE_SELECT: 'device:select',
+
+  // Symbols (native GrapesJS symbol system)
+  SYMBOL_MAIN_ADD: 'symbol:main:add',
+  SYMBOL_MAIN_UPDATE: 'symbol:main:update',
+  SYMBOL_MAIN_REMOVE: 'symbol:main:remove',
+  SYMBOL_INSTANCE_ADD: 'symbol:instance:add',
+  SYMBOL_INSTANCE_REMOVE: 'symbol:instance:remove',
+  SYMBOL: 'symbol',
 } as const;
 
 // ============================================================================

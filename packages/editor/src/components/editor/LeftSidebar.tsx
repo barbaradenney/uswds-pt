@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback, useRef, memo, lazy, Suspense } from 'react';
 import { LayersProvider, useEditorMaybe } from '@grapesjs/react';
 import { GJS_EVENTS } from '../../lib/contracts';
+import { getSymbolInfo } from '../../lib/grapesjs/symbol-utils';
 import { SidebarTabs } from './SidebarTabs';
 import { PagesPanel } from './PagesPanel';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
@@ -134,6 +135,7 @@ function LayersPanel({ root }: { root: any }) {
           selected={selected}
           onSelect={handleSelectComponent}
           dragRef={dragRef}
+          editor={editor}
         />
       ))}
     </div>
@@ -157,12 +159,14 @@ function LayerItem({
   selected,
   onSelect,
   dragRef,
+  editor,
 }: {
   component: any;
   level: number;
   selected: any;
   onSelect: (comp: any) => void;
   dragRef: React.MutableRefObject<any>;
+  editor: any;
 }) {
   const [expanded, setExpanded] = useState(level < 2);
   const [dropPosition, setDropPosition] = useState<DropPosition>(null);
@@ -172,6 +176,11 @@ function LayerItem({
   const isSelected = selected === component;
   const name =
     component.getName?.() || component.get?.('tagName') || 'Component';
+
+  // Symbol detection for visual indicators
+  const symbolInfo = editor ? getSymbolInfo(editor, component) : null;
+  const isInstance = !!symbolInfo?.isInstance;
+  const isMain = !!symbolInfo?.isMain;
 
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
@@ -244,7 +253,8 @@ function LayerItem({
   };
 
   const nodeClass = `layer-node${dropPosition ? ` layer-node--drop-${dropPosition}` : ''}`;
-  const itemClass = `layer-item${isSelected ? ' layer-item--selected' : ''}${isDragging ? ' layer-item--dragging' : ''}`;
+  const symbolClass = isInstance ? ' layer-item--symbol-instance' : isMain ? ' layer-item--symbol-main' : '';
+  const itemClass = `layer-item${isSelected ? ' layer-item--selected' : ''}${isDragging ? ' layer-item--dragging' : ''}${symbolClass}`;
 
   return (
     <div className={nodeClass}>
@@ -276,8 +286,13 @@ function LayerItem({
         ) : (
           <span className="layer-toggle-spacer" />
         )}
+        {(isInstance || isMain) && (
+          <span className="layer-symbol-badge" aria-hidden="true">
+            {isInstance ? '\u25C6' : '\u25C7'}
+          </span>
+        )}
         <span className="layer-name" title={name}>
-          {name}
+          {isInstance ? `${name} (symbol instance)` : isMain ? `${name} (symbol main)` : name}
         </span>
       </div>
       {hasChildren && expanded && (
@@ -290,6 +305,7 @@ function LayerItem({
               selected={selected}
               onSelect={onSelect}
               dragRef={dragRef}
+              editor={editor}
             />
           ))}
         </div>

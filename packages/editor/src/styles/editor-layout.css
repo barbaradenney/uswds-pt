@@ -650,6 +650,27 @@
   font-weight: 500;
 }
 
+/* Symbol indicators in layers */
+.layer-symbol-badge {
+  color: #8b5cf6;
+  font-size: 0.625rem;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.layer-item--symbol-instance .layer-name {
+  color: #8b5cf6;
+}
+
+.layer-item--symbol-instance.layer-item--selected .layer-name {
+  color: #7c3aed;
+}
+
+.layer-item--symbol-main .layer-name {
+  color: #8b5cf6;
+  font-style: italic;
+}
+
 /* Drag state on the item being dragged */
 .layer-item--dragging {
   opacity: 0.4;

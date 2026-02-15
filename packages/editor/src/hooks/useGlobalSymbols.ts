@@ -346,8 +346,12 @@ export function useGlobalSymbols({
 }
 
 /**
- * Merge global symbols into GrapesJS project data
- * Call this before loading project data into the editor
+ * Merge global symbols into GrapesJS project data.
+ * Call this before loading project data into the editor.
+ *
+ * For symbols that exist in both prototype data AND API, prefer the API
+ * version (it may have been updated via "Save to Library" from another
+ * prototype). Replaces by ID match instead of just appending.
  */
 export function mergeGlobalSymbols(
   projectData: GrapesProjectData,
@@ -358,40 +362,74 @@ export function mergeGlobalSymbols(
   }
 
   const existingSymbols = projectData.symbols || [];
-  const existingIds = new Set(existingSymbols.map((s: unknown) => (s as { id?: string }).id));
 
-  const newSymbols = globalSymbols.filter((s) => !existingIds.has(s.id));
+  // Build a map of API symbols by ID for fast lookup
+  const apiSymbolMap = new Map<string, GrapesJSSymbol>();
+  for (const s of globalSymbols) {
+    apiSymbolMap.set(s.id, s);
+  }
 
-  debug('Merging', newSymbols.length, 'symbols into project data');
+  // Replace existing symbols with API versions where IDs match
+  const merged: unknown[] = existingSymbols.map((existing: unknown) => {
+    const id = (existing as { id?: string }).id;
+    if (id && apiSymbolMap.has(id)) {
+      const apiVersion = apiSymbolMap.get(id)!;
+      apiSymbolMap.delete(id); // consumed
+      return apiVersion;
+    }
+    return existing;
+  });
+
+  // Append any API symbols not already in the prototype data
+  for (const s of apiSymbolMap.values()) {
+    merged.push(s);
+  }
+
+  debug('Merged symbols:', merged.length, '(existing:', existingSymbols.length, ', API:', globalSymbols.length, ')');
 
   return {
     ...projectData,
-    symbols: [...existingSymbols, ...newSymbols],
+    symbols: merged,
   };
 }
 
 /**
  * Extract managed symbols from GrapesJS project data.
- * Filters out all scope-prefixed symbols so only truly local ones are saved with the prototype.
+ *
+ * Native-format managed symbols (from addSymbol) are KEPT in projectData
+ * because GrapesJS needs them in `projectData.symbols` to reconnect
+ * instances on load. Only legacy-format managed symbols (the old
+ * `{ id, label, components }` wrapper) are stripped.
+ *
+ * Detection: native symbols have component-level props (`tagName`/`type`)
+ * at the top level; legacy ones have `components[]` + `label`.
  */
 export function extractManagedSymbols(projectData: GrapesProjectData): GrapesProjectData {
   if (!projectData?.symbols) {
     return projectData;
   }
 
-  const localSymbols = projectData.symbols.filter(
+  const filteredSymbols = projectData.symbols.filter(
     (s: unknown) => {
-      const id = (s as { id?: string }).id;
+      const data = s as Record<string, unknown>;
+      const id = data.id as string | undefined;
       if (!id) return true;
-      return !MANAGED_PREFIXES.some((p) => id.startsWith(p));
+
+      const isManaged = MANAGED_PREFIXES.some((p) => id.startsWith(p));
+      if (!isManaged) return true; // local symbol, keep
+
+      // Managed symbol: keep if native format (needed for instance linking),
+      // strip if legacy wrapper format
+      const isNative = !!(data.tagName || data.type);
+      return isNative;
     }
   );
 
-  debug('Extracted', localSymbols.length, 'local symbols from', projectData.symbols.length, 'total');
+  debug('Filtered symbols:', filteredSymbols.length, 'from', projectData.symbols.length, 'total (kept native, stripped legacy)');
 
   return {
     ...projectData,
-    symbols: localSymbols,
+    symbols: filteredSymbols,
   };
 }
 

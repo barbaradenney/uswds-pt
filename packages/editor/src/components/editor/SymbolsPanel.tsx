@@ -25,6 +25,7 @@ import type { UseGlobalSymbolsReturn } from '../../hooks/useGlobalSymbols';
 import { useEditorMaybe } from '@grapesjs/react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useOrganizationContext } from '../../contexts/OrganizationContext';
+import { isNativeSymbolData, findMainByGrapesId, serializeMainSymbol } from '../../lib/grapesjs/symbol-utils';
 import '../../styles/symbols-panel.css';
 
 // ============================================================================
@@ -94,7 +95,36 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
   const handleDragStart = useCallback((symbol: GlobalSymbol, e: React.MouseEvent) => {
     if (!editor || e.button !== 0) return;
 
-    const components = symbol.symbolData?.components;
+    const symbolData = symbol.symbolData;
+    if (!symbolData) return;
+
+    // Native symbol: check if the main exists in the editor
+    if (isNativeSymbolData(symbolData)) {
+      const scopedId = symbolData.id;
+      const main = findMainByGrapesId(editor, scopedId);
+      if (main) {
+        // Drag a new instance by adding the symbol content which includes the
+        // __symbol reference. GrapesJS will auto-create linked instances on drop.
+        const mainJson = main.toJSON();
+        const tempId = `__symbol-drag-${symbol.id}`;
+        editor.Blocks.add(tempId, {
+          label: symbol.name,
+          content: mainJson,
+          category: '__symbol-drag__',
+        });
+        const block = editor.Blocks.get(tempId);
+        if (block) {
+          editor.Blocks.startDrag(block, e.nativeEvent);
+          editor.once('block:drag:stop', () => {
+            editor.Blocks.remove(tempId);
+          });
+        }
+        return;
+      }
+    }
+
+    // Legacy fallback: paste raw component JSON
+    const components = symbolData?.components;
     if (!components || components.length === 0) return;
 
     const tempId = `__symbol-drag-${symbol.id}`;
@@ -115,8 +145,8 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
   const handleInsert = useCallback((symbol: GlobalSymbol) => {
     if (!editor) return;
 
-    const components = symbol.symbolData?.components;
-    if (!components || components.length === 0) return;
+    const symbolData = symbol.symbolData;
+    if (!symbolData) return;
 
     const um = (editor as any).UndoManager;
     um?.start?.();
@@ -125,28 +155,56 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
       const selected = (editor as any).getSelected?.();
       const wrapper = (editor as any).DomComponents?.getWrapper();
 
+      // Determine insertion target and position
+      let target: any;
+      let atIndex: number | undefined;
+
       if (selected) {
         const parent = selected.parent?.();
         if (parent) {
+          target = parent;
           const children = parent.components();
           const models = children.models || [];
-          let index = models.length;
           for (let i = 0; i < models.length; i++) {
             if (models[i] === selected) {
-              index = i + 1;
+              atIndex = i + 1;
               break;
             }
           }
-          children.add(components, { at: index });
+          if (atIndex === undefined) atIndex = models.length;
         } else {
-          // Selected is the wrapper itself — append inside it
-          wrapper?.append?.(components);
+          target = wrapper;
         }
       } else {
-        // Nothing selected — append into <main> content area, or wrapper as fallback
         const mainComps = wrapper?.find?.('main') || [];
-        const target = mainComps[0] || wrapper;
-        target?.append?.(components);
+        target = mainComps[0] || wrapper;
+      }
+
+      if (!target) return;
+
+      // Native symbol: find the main and create a linked instance
+      if (isNativeSymbolData(symbolData)) {
+        const scopedId = symbolData.id;
+        const main = findMainByGrapesId(editor, scopedId);
+        if (main) {
+          // addSymbol on an existing main creates a new linked instance
+          const instance = editor.Components.addSymbol(main);
+          if (instance) {
+            // Move instance to the desired position
+            instance.move(target, { at: atIndex });
+          }
+          return;
+        }
+      }
+
+      // Legacy fallback: raw paste (no linking)
+      const components = symbolData?.components;
+      if (!components || components.length === 0) return;
+
+      if (atIndex !== undefined) {
+        target.components().add(components, { at: atIndex });
+      } else {
+        target.append?.(components);
       }
     } finally {
       um?.stop?.();
@@ -348,7 +406,7 @@ function SymbolScopeGroup({
 // SymbolListItem
 // ============================================================================
 
-type ItemAction = 'none' | 'menu' | 'rename' | 'delete' | 'promote' | 'update';
+type ItemAction = 'none' | 'menu' | 'rename' | 'delete' | 'promote' | 'saveToLibrary';
 
 const SCOPE_BADGE_LETTER: Record<SymbolScope, string> = {
   prototype: 'P',
@@ -447,33 +505,40 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
     [symbol.id, promote, showError],
   );
 
-  const handleUpdate = useCallback(async () => {
+  const handleSaveToLibrary = useCallback(async () => {
     if (!editor) {
       showError('Editor not available');
       return;
     }
 
-    const selected = editor.getSelected?.();
-    if (!selected) {
-      showError('Select a component on the canvas first');
+    // Find the main symbol in GrapesJS matching this API symbol
+    const scopedId = symbol.symbolData?.id;
+    const main = scopedId ? findMainByGrapesId(editor, scopedId) : null;
+
+    if (!main) {
+      showError('Insert this symbol first to edit it');
+      return;
+    }
+
+    const serialized = serializeMainSymbol(main);
+    if (!serialized) {
+      showError('Failed to read symbol data');
       return;
     }
 
     setIsActing(true);
-    const json = selected.toJSON?.() || {};
     const newSymbolData = {
-      id: symbol.symbolData.id || symbol.id,
-      label: symbol.symbolData.label || symbol.name,
-      icon: json.icon,
-      components: [json],
+      ...serialized,
+      id: scopedId || symbol.id,
+      label: symbol.name,
     };
 
-    const result = await update(symbol.id, { symbolData: newSymbolData });
+    const result = await update(symbol.id, { symbolData: newSymbolData as any });
     setIsActing(false);
     if (result) {
       setAction('none');
     } else {
-      showError('Failed to update symbol');
+      showError('Failed to save symbol to library');
     }
   }, [editor, symbol.id, symbol.symbolData, symbol.name, update, showError]);
 
@@ -558,9 +623,9 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
           </button>
           <button
             className="symbols-item-action-btn"
-            onClick={() => setAction('update')}
+            onClick={() => setAction('saveToLibrary')}
           >
-            Update
+            Save to Library
           </button>
           <button
             className="symbols-item-action-btn symbols-item-action-btn--danger"
@@ -615,9 +680,9 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
         </div>
       )}
 
-      {action === 'update' && (
+      {action === 'saveToLibrary' && (
         <div className="symbols-confirm-update" role="alert">
-          <span className="symbols-confirm-update-label">Replace symbol content with selected component?</span>
+          <span className="symbols-confirm-update-label">Save current symbol state to the library? Other prototypes will get this version on next load.</span>
           <button
             className="symbols-item-action-btn"
             onClick={() => setAction('none')}
@@ -627,10 +692,10 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
           </button>
           <button
             className="symbols-item-action-btn symbols-item-action-btn--primary"
-            onClick={handleUpdate}
+            onClick={handleSaveToLibrary}
             disabled={isActing}
           >
-            Update
+            Save
           </button>
         </div>
       )}

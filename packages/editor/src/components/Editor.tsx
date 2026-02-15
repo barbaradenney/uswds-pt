@@ -75,7 +75,8 @@ export function Editor() {
   // State for symbol scope dialog
   const [showSymbolDialog, setShowSymbolDialog] = useState(false);
   const [pendingSymbolData, setPendingSymbolData] = useState<GrapesJSSymbol | null>(null);
-  const pendingSymbolComponentRef = useRef<Record<string, unknown> | null>(null);
+  // Ref to the native GrapesJS main symbol component (for cancel/undo)
+  const pendingMainSymbolRef = useRef<any>(null);
 
   // Local state for UI
   const [name, setName] = useState('Untitled Prototype');
@@ -310,10 +311,12 @@ export function Editor() {
    * happens in handleSymbolScopeConfirm after the user chooses a scope.
    */
   const handleSymbolCreate = useCallback(
-    (symbolData: GrapesJSSymbol, selectedComponent: any) => {
-      debug('Symbol creation requested:', symbolData);
-      setPendingSymbolData(symbolData);
-      pendingSymbolComponentRef.current = selectedComponent;
+    (symbolData: GrapesJSSymbol, mainComponent: any) => {
+      debug('Symbol creation requested (native):', symbolData);
+      // symbolData is the serialized main from main.toJSON()
+      // mainComponent is the live GrapesJS main symbol component
+      setPendingSymbolData(symbolData as any);
+      pendingMainSymbolRef.current = mainComponent;
       setShowSymbolDialog(true);
     },
     []
@@ -420,9 +423,19 @@ export function Editor() {
       if (!pendingSymbolData) return;
 
       debug('Creating symbol:', name, 'scope:', scope);
+
+      // For native symbols, pendingSymbolData is the serialized main (from main.toJSON()).
+      // Wrap it with id/label for the API, preserving native GrapesJS linking data.
+      const mainId = pendingMainSymbolRef.current?.getId?.() || `symbol-${Date.now()}`;
+      const symbolDataForApi: GrapesJSSymbol = {
+        ...(pendingSymbolData as any),
+        id: mainId,
+        label: name,
+      };
+
       const created = await globalSymbols.create(
         name,
-        { ...pendingSymbolData, label: name },
+        symbolDataForApi,
         scope,
       );
       if (created) {
@@ -431,7 +444,7 @@ export function Editor() {
 
       // Reset pending state
       setPendingSymbolData(null);
-      pendingSymbolComponentRef.current = null;
+      pendingMainSymbolRef.current = null;
     },
     [pendingSymbolData, globalSymbols]
   );
@@ -1025,9 +1038,20 @@ export function Editor() {
         <SymbolScopeDialog
           isOpen={showSymbolDialog}
           onClose={() => {
+            // If user cancels, undo the native symbol creation.
+            // Removing the main symbol auto-detaches all instances.
+            const main = pendingMainSymbolRef.current;
+            if (main) {
+              try {
+                debug('Cancelling symbol creation — removing main');
+                main.remove();
+              } catch (err) {
+                debug('Failed to remove main on cancel:', err);
+              }
+            }
             setShowSymbolDialog(false);
             setPendingSymbolData(null);
-            pendingSymbolComponentRef.current = null;
+            pendingMainSymbolRef.current = null;
           }}
           onConfirm={handleSymbolScopeConfirm}
           pendingSymbol={pendingSymbolData}
