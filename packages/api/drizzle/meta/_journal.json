@@ -15,13 +15,6 @@
       "when": 1770705450321,
       "tag": "0002_add-github-org-connections",
       "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1739638800000,
-      "tag": "0003_add-multi-scope-symbols-and-handoff",
-      "breakpoints": true
     }
   ]
 }

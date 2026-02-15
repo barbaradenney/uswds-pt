@@ -390,11 +390,6 @@ body {
   text-decoration: underline;
 }
 
-.prototype-card-branch--pending {
-  background: var(--color-base-lightest);
-  color: var(--color-base-lighter);
-}
-
 
 /* Login Page */
 .login-container {
