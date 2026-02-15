@@ -100,7 +100,7 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
     const tempId = `__symbol-drag-${symbol.id}`;
     editor.Blocks.add(tempId, {
       label: symbol.name,
-      content: components,
+      content: components as any,
       category: '__symbol-drag__',
     });
     const block = editor.Blocks.get(tempId);

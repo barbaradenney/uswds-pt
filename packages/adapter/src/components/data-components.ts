@@ -1171,6 +1171,14 @@ registry.register({
         },
       },
     },
+
+    // Individual list item text traits
+    item1: _createListItemTrait(1),
+    item2: _createListItemTrait(2),
+    item3: _createListItemTrait(3),
+    item4: _createListItemTrait(4),
+    item5: _createListItemTrait(5),
+    item6: _createListItemTrait(6),
   },
 });
 
@@ -1306,6 +1314,28 @@ registry.register({
         },
       },
     },
+
+    // Individual collection item traits (title, description, href, date for each item)
+    'item1-title': _createCollectionItemTrait(1, 'title'),
+    'item1-description': _createCollectionItemTrait(1, 'description'),
+    'item1-href': _createCollectionItemTrait(1, 'href'),
+    'item1-date': _createCollectionItemTrait(1, 'date'),
+    'item2-title': _createCollectionItemTrait(2, 'title'),
+    'item2-description': _createCollectionItemTrait(2, 'description'),
+    'item2-href': _createCollectionItemTrait(2, 'href'),
+    'item2-date': _createCollectionItemTrait(2, 'date'),
+    'item3-title': _createCollectionItemTrait(3, 'title'),
+    'item3-description': _createCollectionItemTrait(3, 'description'),
+    'item3-href': _createCollectionItemTrait(3, 'href'),
+    'item3-date': _createCollectionItemTrait(3, 'date'),
+    'item4-title': _createCollectionItemTrait(4, 'title'),
+    'item4-description': _createCollectionItemTrait(4, 'description'),
+    'item4-href': _createCollectionItemTrait(4, 'href'),
+    'item4-date': _createCollectionItemTrait(4, 'date'),
+    'item5-title': _createCollectionItemTrait(5, 'title'),
+    'item5-description': _createCollectionItemTrait(5, 'description'),
+    'item5-href': _createCollectionItemTrait(5, 'href'),
+    'item5-date': _createCollectionItemTrait(5, 'date'),
   },
 });
 

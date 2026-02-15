@@ -278,7 +278,7 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
           const hintText = String(value ?? '').trim() || '';
-          let hint = element.querySelector('.usa-hint');
+          let hint = element.querySelector('.usa-hint:not(.usa-hint--required)');
           const legend = element.querySelector('legend');
 
           if (hintText) {
@@ -302,7 +302,7 @@ registry.register({
           }
         },
         getValue: (element: HTMLElement) => {
-          const hint = element.querySelector('.usa-hint');
+          const hint = element.querySelector('.usa-hint:not(.usa-hint--required)');
           return hint?.textContent || '';
         },
       },
