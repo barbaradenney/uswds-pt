@@ -332,7 +332,7 @@ export function useGlobalSymbols({
     [state.symbols]
   );
 
-  return {
+  return useMemo((): UseGlobalSymbolsReturn => ({
     ...state,
     refresh,
     create,
@@ -342,7 +342,7 @@ export function useGlobalSymbols({
     getGrapesJSSymbols,
     isManagedSymbol,
     getByGrapesId,
-  };
+  }), [state, refresh, create, update, remove, promote, getGrapesJSSymbols, isManagedSymbol, getByGrapesId]);
 }
 
 /**

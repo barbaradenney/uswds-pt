@@ -22,6 +22,7 @@ import { GJS_EVENTS } from '../../lib/contracts';
 import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
+import { isDemoMode } from '../../lib/api';
 
 /**
  * Module-level cache for DOMPurify.sanitize results on block media (SVG icons).
@@ -46,25 +47,41 @@ const LazyAICopilotPanel = lazy(() =>
   import('./AICopilotPanel').then((mod) => ({ default: mod.AICopilotPanel }))
 );
 
+// Lazy-load the Symbols panel (only used in API mode, not demo mode)
+const LazySymbolsPanel = lazy(() =>
+  import('./SymbolsPanel').then((mod) => ({ default: mod.SymbolsPanel }))
+);
+
 const BASE_TABS = [
   { id: 'components', label: 'Components' },
   { id: 'properties', label: 'Properties' },
 ];
 
-const TABS = AI_ENABLED
-  ? [...BASE_TABS, { id: 'ai', label: 'AI' }]
-  : BASE_TABS;
+function buildTabs() {
+  const tabs = [...BASE_TABS];
+  if (!isDemoMode) {
+    tabs.push({ id: 'symbols', label: 'Symbols' });
+  }
+  if (AI_ENABLED) {
+    tabs.push({ id: 'ai', label: 'AI' });
+  }
+  return tabs;
+}
+
+const TABS = buildTabs();
 
 export const RightSidebar = memo(function RightSidebar() {
   const [activeTab, setActiveTab] = useState('components');
   const editor = useEditorMaybe();
 
   // Auto-switch to Properties tab when a component is selected,
-  // but don't switch away from the AI tab
+  // but don't switch away from the AI or Symbols tabs
   useEffect(() => {
     if (!editor) return;
     const handleSelect = () => {
-      setActiveTab((current) => current === 'ai' ? 'ai' : 'properties');
+      setActiveTab((current) =>
+        current === 'ai' || current === 'symbols' ? current : 'properties'
+      );
     };
     editor.on(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
     return () => {
@@ -96,6 +113,17 @@ export const RightSidebar = memo(function RightSidebar() {
             <TraitsProvider>
               {(props) => <TraitsPanel traits={props.traits} />}
             </TraitsProvider>
+          </div>
+        )}
+        {activeTab === 'symbols' && !isDemoMode && (
+          <div
+            id="sidebar-panel-symbols"
+            role="tabpanel"
+            aria-labelledby="sidebar-tab-symbols"
+          >
+            <Suspense fallback={<div className="symbols-loading"><div className="loading-spinner" /><span>Loading symbols...</span></div>}>
+              <LazySymbolsPanel />
+            </Suspense>
           </div>
         )}
         {activeTab === 'ai' && AI_ENABLED && (

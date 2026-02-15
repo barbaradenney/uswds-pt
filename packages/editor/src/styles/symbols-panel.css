@@ -1,0 +1,367 @@
+/* ============================================
+   Symbols Panel (right sidebar)
+   ============================================ */
+
+.symbols-panel {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ============================================
+   Filter Bar
+   ============================================ */
+
+.symbols-filter {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-base-lightest);
+  display: flex;
+  gap: 6px;
+}
+
+.symbols-filter-scope {
+  width: 90px;
+  padding: 5px 4px;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  background: var(--color-white);
+  color: var(--color-base);
+  outline: none;
+  flex-shrink: 0;
+}
+
+.symbols-filter-scope:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+.symbols-filter-search {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  background: var(--color-white);
+  color: var(--color-base);
+  outline: none;
+}
+
+.symbols-filter-search:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+/* ============================================
+   Scope Groups (collapsible)
+   ============================================ */
+
+.symbols-scope-group {
+  border-bottom: 1px solid var(--color-base-lightest);
+}
+
+.symbols-scope-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: var(--color-base-lightest);
+  color: var(--color-base);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.symbols-scope-group-title:hover {
+  background: var(--color-base-lighter);
+}
+
+.symbols-scope-group-caret {
+  font-size: 0.625rem;
+  color: var(--color-base-light);
+  width: 10px;
+  text-align: center;
+}
+
+.symbols-scope-group-name {
+  flex: 1;
+}
+
+.symbols-scope-group-count {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--color-base-light);
+  background: var(--color-white);
+  padding: 0 5px;
+  border-radius: 8px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.symbols-scope-group-items {
+  padding: 4px 0;
+}
+
+/* ============================================
+   Symbol List Items
+   ============================================ */
+
+.symbols-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  transition: background 0.1s;
+}
+
+.symbols-item:hover {
+  background: var(--color-base-lightest);
+}
+
+.symbols-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.symbols-item-name {
+  font-size: 0.8125rem;
+  color: var(--color-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.symbols-item-date {
+  font-size: 0.6875rem;
+  color: var(--color-base-light);
+}
+
+/* ============================================
+   Scope Badges
+   ============================================ */
+
+.symbols-scope-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.symbols-scope-badge--prototype {
+  background: #e8f0fe;
+  color: #0050d8;
+}
+
+.symbols-scope-badge--team {
+  background: #ecf3ec;
+  color: #2e8540;
+}
+
+.symbols-scope-badge--organization {
+  background: #f0e8f5;
+  color: #54278f;
+}
+
+/* ============================================
+   Item Actions (overflow menu)
+   ============================================ */
+
+.symbols-item-actions {
+  flex-shrink: 0;
+}
+
+.symbols-item-menu-btn {
+  background: none;
+  border: none;
+  color: var(--color-base-lighter);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 4px;
+  border-radius: var(--border-radius);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.symbols-item:hover .symbols-item-menu-btn {
+  opacity: 1;
+}
+
+.symbols-item-menu-btn:hover {
+  color: var(--color-base);
+  background: var(--color-base-lighter);
+}
+
+.symbols-item-menu-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Inline action row shown when menu is open */
+.symbols-item-action-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px 6px 36px;
+  flex-wrap: wrap;
+}
+
+.symbols-item-action-btn {
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border: 1px solid var(--color-base-lighter);
+  border-radius: var(--border-radius);
+  background: var(--color-white);
+  color: var(--color-base);
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.symbols-item-action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.symbols-item-action-btn--danger {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.symbols-item-action-btn--danger:hover {
+  background: #fef2f2;
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+/* ============================================
+   Inline Rename
+   ============================================ */
+
+.symbols-rename-input {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.8125rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  outline: none;
+  background: var(--color-white);
+  color: var(--color-base);
+  margin: 4px 10px 4px 36px;
+  box-sizing: border-box;
+  max-width: calc(100% - 46px);
+}
+
+.symbols-rename-input:focus {
+  box-shadow: 0 0 0 2px rgba(0, 94, 162, 0.2);
+}
+
+/* ============================================
+   Inline Delete Confirmation
+   ============================================ */
+
+.symbols-confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 6px 36px;
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+.symbols-confirm-delete-label {
+  font-weight: 500;
+}
+
+/* ============================================
+   Inline Promote Options
+   ============================================ */
+
+.symbols-promote-options {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px 6px 36px;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   Action Error (inline)
+   ============================================ */
+
+.symbols-action-error {
+  padding: 2px 10px 4px 36px;
+  font-size: 0.6875rem;
+  color: var(--color-error);
+}
+
+/* ============================================
+   Empty, Loading, Error States
+   ============================================ */
+
+.symbols-empty {
+  padding: 24px 16px;
+  color: var(--color-base-light);
+  font-size: 0.8125rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.symbols-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  gap: 12px;
+  color: var(--color-base-light);
+  font-size: 0.8125rem;
+}
+
+.symbols-loading .loading-spinner {
+  width: 24px;
+  height: 24px;
+}
+
+.symbols-error {
+  padding: 16px;
+  margin: 8px;
+  background: #fef2f2;
+  color: var(--color-error);
+  border-radius: var(--border-radius);
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.symbols-error-retry {
+  align-self: flex-start;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--color-error);
+  border-radius: var(--border-radius);
+  background: var(--color-white);
+  color: var(--color-error);
+  cursor: pointer;
+}
+
+.symbols-error-retry:hover {
+  background: #fef2f2;
+}

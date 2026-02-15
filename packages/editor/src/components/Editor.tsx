@@ -24,6 +24,7 @@ import { EditorHeader } from './editor/EditorHeader';
 import { EditorCanvas } from './editor/EditorCanvas';
 import { RecoveryBanner } from './RecoveryBanner';
 import { SymbolScopeDialog } from './SymbolScopeDialog';
+import { SymbolsContext } from './editor/SymbolsPanel';
 import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
@@ -911,136 +912,138 @@ export function Editor() {
   }
 
   return (
-    <div className="editor-container">
-      <EditorHeader
-        name={name}
-        onBack={handleBack}
-        onPreview={handlePreview}
-        onExport={handleExport}
-        onSave={handleSave}
-        onToggleHistory={handleToggleHistory}
-        showVersionHistory={showVersionHistory}
-        showHistoryButton={!isDemoMode && !!slug}
-        showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
-        autosaveStatus={autosave.status}
-        lastSavedAt={autosave.lastSavedAt}
-        isSaving={persistence.isSaving}
-        isSaveDisabled={persistence.isSaving || (!isDemoMode && !stateMachine.state.prototype && isLoadingTeam)}
-        error={stateMachine.state.error}
-        showConnectionStatus={!isDemoMode}
-        lastSnapshotAt={crashRecovery.lastSnapshotAt}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onShowShortcuts={() => setShowShortcuts(true)}
-        canPush={gitHubPush.canPush}
-        canHandoff={gitHubPush.canHandoff}
-        isPushing={gitHubPush.isPushing}
-        hasUnpushedChanges={gitHubPush.hasUnpushedChanges}
-        onPush={gitHubPush.push}
-        onPushHandoff={handlePushHandoff}
-        lastPushResult={gitHubPush.lastPushResult}
-        onDismissPushResult={gitHubPush.dismissResult}
-      />
-
-      {/* Recovery Banner */}
-      {crashRecovery.recoveryAvailable && crashRecovery.recoveryTimestamp && (
-        <RecoveryBanner
-          timestamp={crashRecovery.recoveryTimestamp}
-          onRestore={crashRecovery.restoreRecovery}
-          onDismiss={crashRecovery.dismissRecovery}
-        />
-      )}
-
-      {/* Main Editor */}
-      <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
-        <EditorCanvas
-          editorKey={editorKey}
-          initialContent={initialContentCacheRef.current.content}
-          projectData={projectDataCacheRef.current.data}
-          blocks={blocks}
-          onReady={stableOnReady}
-          onRetry={stableOnRetry}
-          onGoHome={stableOnGoHome}
+    <SymbolsContext.Provider value={globalSymbols}>
+      <div className="editor-container">
+        <EditorHeader
+          name={name}
+          onBack={handleBack}
+          onPreview={handlePreview}
+          onExport={handleExport}
+          onSave={handleSave}
+          onToggleHistory={handleToggleHistory}
+          showVersionHistory={showVersionHistory}
+          showHistoryButton={!isDemoMode && !!slug}
+          showAutosaveIndicator={!isDemoMode && !!stateMachine.state.prototype}
+          autosaveStatus={autosave.status}
+          lastSavedAt={autosave.lastSavedAt}
+          isSaving={persistence.isSaving}
+          isSaveDisabled={persistence.isSaving || (!isDemoMode && !stateMachine.state.prototype && isLoadingTeam)}
+          error={stateMachine.state.error}
+          showConnectionStatus={!isDemoMode}
+          lastSnapshotAt={crashRecovery.lastSnapshotAt}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onShowShortcuts={() => setShowShortcuts(true)}
+          canPush={gitHubPush.canPush}
+          canHandoff={gitHubPush.canHandoff}
+          isPushing={gitHubPush.isPushing}
+          hasUnpushedChanges={gitHubPush.hasUnpushedChanges}
+          onPush={gitHubPush.push}
+          onPushHandoff={handlePushHandoff}
+          lastPushResult={gitHubPush.lastPushResult}
+          onDismissPushResult={gitHubPush.dismissResult}
         />
 
-        {/* Saving overlay — manual saves only (autosaves use the non-invasive header indicator) */}
-        {persistence.isManualSaving && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-            zIndex: 10,
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '24px 32px',
-              backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            }}>
-              <div className="loading-spinner" />
-              <span style={{ fontSize: '14px', color: '#1b1b1b' }}>Saving prototype...</span>
-            </div>
-          </div>
-        )}
-
-        {/* Version History Sidebar */}
-        {showVersionHistory && !isDemoMode && slug && (
-          <VersionHistoryPanel
-            slug={slug}
-            versions={versions}
-            isLoading={versionsLoading}
-            isRestoring={isRestoring}
-            error={versionError}
-            onRestore={handleVersionRestore}
-            onUpdateLabel={updateLabel}
-            onRefresh={fetchVersions}
-            onClose={() => setShowVersionHistory(false)}
+        {/* Recovery Banner */}
+        {crashRecovery.recoveryAvailable && crashRecovery.recoveryTimestamp && (
+          <RecoveryBanner
+            timestamp={crashRecovery.recoveryTimestamp}
+            onRestore={crashRecovery.restoreRecovery}
+            onDismiss={crashRecovery.dismissRecovery}
           />
         )}
-      </div>
 
-      {/* Modals */}
-      {showExport && (
-        <ExportModal
-          htmlContent={htmlContent}
-          pages={exportPages.length > 0 ? exportPages : undefined}
-          prototypeId={slug || localPrototype?.id}
-          onClose={() => setShowExport(false)}
+        {/* Main Editor */}
+        <div className="editor-main" style={{ flex: 1, position: 'relative' }}>
+          <EditorCanvas
+            editorKey={editorKey}
+            initialContent={initialContentCacheRef.current.content}
+            projectData={projectDataCacheRef.current.data}
+            blocks={blocks}
+            onReady={stableOnReady}
+            onRetry={stableOnRetry}
+            onGoHome={stableOnGoHome}
+          />
+
+          {/* Saving overlay — manual saves only (autosaves use the non-invasive header indicator) */}
+          {persistence.isManualSaving && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              zIndex: 10,
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '24px 32px',
+                backgroundColor: '#ffffff',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              }}>
+                <div className="loading-spinner" />
+                <span style={{ fontSize: '14px', color: '#1b1b1b' }}>Saving prototype...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Version History Sidebar */}
+          {showVersionHistory && !isDemoMode && slug && (
+            <VersionHistoryPanel
+              slug={slug}
+              versions={versions}
+              isLoading={versionsLoading}
+              isRestoring={isRestoring}
+              error={versionError}
+              onRestore={handleVersionRestore}
+              onUpdateLabel={updateLabel}
+              onRefresh={fetchVersions}
+              onClose={() => setShowVersionHistory(false)}
+            />
+          )}
+        </div>
+
+        {/* Modals */}
+        {showExport && (
+          <ExportModal
+            htmlContent={htmlContent}
+            pages={exportPages.length > 0 ? exportPages : undefined}
+            prototypeId={slug || localPrototype?.id}
+            onClose={() => setShowExport(false)}
+          />
+        )}
+
+        {/* Symbol Scope Dialog */}
+        <SymbolScopeDialog
+          isOpen={showSymbolDialog}
+          onClose={() => {
+            setShowSymbolDialog(false);
+            setPendingSymbolData(null);
+            pendingSymbolComponentRef.current = null;
+          }}
+          onConfirm={handleSymbolScopeConfirm}
+          pendingSymbol={pendingSymbolData}
+          isDemoMode={isDemoMode}
+          hasTeam={!!currentTeam}
+          hasOrganization={!!organization}
+          hasOrgAdmin={hasOrgAdmin}
         />
-      )}
 
-      {/* Symbol Scope Dialog */}
-      <SymbolScopeDialog
-        isOpen={showSymbolDialog}
-        onClose={() => {
-          setShowSymbolDialog(false);
-          setPendingSymbolData(null);
-          pendingSymbolComponentRef.current = null;
-        }}
-        onConfirm={handleSymbolScopeConfirm}
-        pendingSymbol={pendingSymbolData}
-        isDemoMode={isDemoMode}
-        hasTeam={!!currentTeam}
-        hasOrganization={!!organization}
-        hasOrgAdmin={hasOrgAdmin}
-      />
-
-      {/* Keyboard Shortcuts Dialog */}
-      <KeyboardShortcutsDialog
-        isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
-      />
-    </div>
+        {/* Keyboard Shortcuts Dialog */}
+        <KeyboardShortcutsDialog
+          isOpen={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+        />
+      </div>
+    </SymbolsContext.Provider>
   );
 }
 
