@@ -5,12 +5,12 @@
  * and view toggle buttons (outline, code view, fullscreen).
  *
  * Uses useEditorMaybe() from @grapesjs/react to access the editor instance.
- * State/user dropdowns read org-level definitions via useOrganization.
+ * State/user dropdowns read org-level definitions via useOrganizationContext.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
-import { useOrganization } from '../../hooks/useOrganization';
+import { useOrganizationContext } from '../../contexts/OrganizationContext';
 import { EDITOR_EVENTS, EDITOR_PROPS } from '../../lib/contracts';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
@@ -63,7 +63,7 @@ const TOGGLE_COMMANDS: ToggleCommand[] = [
 
 export function CanvasToolbar() {
   const editor = useEditorMaybe();
-  const { organization } = useOrganization();
+  const { organization } = useOrganizationContext();
 
   const states = organization?.stateDefinitions || [];
   const users = organization?.userDefinitions || [];

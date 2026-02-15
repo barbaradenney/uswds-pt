@@ -12,6 +12,8 @@ import rateLimit from '@fastify/rate-limit';
 import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { prototypeRoutes } from './routes/prototypes.js';
+import { prototypeVersionRoutes } from './routes/prototype-versions.js';
+import { prototypePushRoutes } from './routes/prototype-push.js';
 import { previewRoutes } from './routes/preview.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { teamRoutes } from './routes/teams.js';
@@ -151,6 +153,8 @@ async function main() {
   // Register routes
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
+  await app.register(prototypeVersionRoutes, { prefix: '/api/prototypes' });
+  await app.register(prototypePushRoutes, { prefix: '/api/prototypes' });
   await app.register(previewRoutes, { prefix: '/api/preview' });
   await app.register(organizationRoutes, { prefix: '/api/organizations' });
   await app.register(teamRoutes, { prefix: '/api/teams' });

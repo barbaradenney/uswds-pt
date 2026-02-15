@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
-import { useOrganization } from '../hooks/useOrganization';
+import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
 import { useEditorPersistence } from '../hooks/useEditorPersistence';
@@ -57,7 +57,7 @@ export function Editor() {
   const slug = routeSlug || savedSlug;
 
   // Organization context
-  const { organization, currentTeam, isLoading: isLoadingTeam } = useOrganization();
+  const { organization, currentTeam, isLoading: isLoadingTeam } = useOrganizationContext();
 
   // Editor state machine
   const stateMachine = useEditorStateMachine();

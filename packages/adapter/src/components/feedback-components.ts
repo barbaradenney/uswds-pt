@@ -5,7 +5,7 @@
  * usa-alert, usa-banner, usa-site-alert, usa-modal, usa-tooltip
  */
 
-import type { ComponentRegistration } from './shared-utils.js';
+import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
 } from './shared-utils.js';
@@ -46,7 +46,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const variant = value || 'info';
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
@@ -69,7 +69,7 @@ registry.register({
         default: 'Alert heading',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
@@ -92,7 +92,7 @@ registry.register({
         default: 'This is an alert message.',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
@@ -115,7 +115,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('slim', '');
@@ -142,7 +142,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('no-icon', '');
@@ -181,7 +181,7 @@ registry.register({
         default: 'An official website of the United States government',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'An official website of the United States government';
           element.setAttribute('header-text', text);
           (element as USWDSElement).headerText = text;
@@ -204,7 +204,7 @@ registry.register({
         default: "Here's how you know",
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || "Here's how you know";
           element.setAttribute('action-text', text);
           (element as USWDSElement).actionText = text;
@@ -227,7 +227,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('expanded', '');
@@ -270,7 +270,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const type = value || 'info';
           element.setAttribute('type', type);
           (element as USWDSElement).type = type;
@@ -293,7 +293,7 @@ registry.register({
         default: 'Site Alert',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
@@ -316,7 +316,7 @@ registry.register({
         default: 'This is a site-wide alert message.',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('content', text);
           (element as USWDSElement).content = text;
@@ -339,7 +339,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('slim', '');
@@ -379,7 +379,7 @@ registry.register({
         placeholder: 'Unique ID for the modal',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const id = value || 'my-modal';
           element.id = id;
         },
@@ -398,7 +398,7 @@ registry.register({
         default: 'Modal Title',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
@@ -421,7 +421,7 @@ registry.register({
         default: 'Modal content goes here.',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('description', text);
           (element as USWDSElement).description = text;
@@ -449,7 +449,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const type = value || 'button';
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
@@ -472,7 +472,7 @@ registry.register({
         default: 'Open Modal',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Open Modal';
           element.setAttribute('trigger-text', text);
           (element as USWDSElement).triggerText = text;
@@ -504,7 +504,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const icon = value || 'info';
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
@@ -527,7 +527,7 @@ registry.register({
         default: true,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('show-trigger', '');
@@ -554,7 +554,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('large', '');
@@ -581,7 +581,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('force-action', '');
@@ -608,7 +608,7 @@ registry.register({
         default: 'Continue',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Continue';
           element.setAttribute('primary-button-text', text);
           (element as USWDSElement).primaryButtonText = text;
@@ -631,7 +631,7 @@ registry.register({
         default: 'Cancel',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Cancel';
           element.setAttribute('secondary-button-text', text);
           (element as USWDSElement).secondaryButtonText = text;
@@ -654,7 +654,7 @@ registry.register({
         default: true,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('show-secondary-button', '');
@@ -693,7 +693,7 @@ registry.register({
         default: 'Helpful information',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
@@ -722,7 +722,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const type = value || 'text';
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
@@ -745,7 +745,7 @@ registry.register({
         default: 'Hover me',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Hover me';
           element.setAttribute('label', text);
           (element as USWDSElement).label = text;
@@ -776,7 +776,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const icon = value || 'info';
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
@@ -805,7 +805,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const position = value || 'top';
           element.setAttribute('position', position);
           (element as USWDSElement).position = position;

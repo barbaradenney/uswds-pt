@@ -10,20 +10,27 @@ import { db, users, type User } from '../db/index.js';
 import { DEFAULT_JWT_SECRET_DEV } from '../constants.js';
 import { normalizeEmail } from '../lib/email.js';
 
-/** Shared select/returning fields for user queries (excludes sensitive fields) */
-const USER_PUBLIC_FIELDS = {
-  id: users.id,
-  email: users.email,
-  name: users.name,
-  organizationId: users.organizationId,
-  createdAt: users.createdAt,
-  updatedAt: users.updatedAt,
-  isActive: users.isActive,
-  githubId: users.githubId,
-  githubUsername: users.githubUsername,
-  githubTokenExpiresAt: users.githubTokenExpiresAt,
-  avatarUrl: users.avatarUrl,
-} as const;
+/**
+ * Shared select/returning fields for user queries (excludes sensitive fields).
+ * Built as a function so `users` column references are resolved at call time,
+ * not at module-load time — which avoids breakage when tests mock `../db/index.js`
+ * without exporting the `users` table object.
+ */
+function userPublicFields() {
+  return {
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    organizationId: users.organizationId,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+    isActive: users.isActive,
+    githubId: users.githubId,
+    githubUsername: users.githubUsername,
+    githubTokenExpiresAt: users.githubTokenExpiresAt,
+    avatarUrl: users.avatarUrl,
+  } as const;
+}
 
 
 async function authPluginImpl(app: FastifyInstance) {
@@ -56,7 +63,7 @@ export const authPlugin = fastifyPlugin(authPluginImpl);
 export async function findUserByEmail(email: string): Promise<Omit<User, 'githubAccessToken'> | null> {
   const [user] = await db
     .select({
-      ...USER_PUBLIC_FIELDS,
+      ...userPublicFields(),
       passwordHash: users.passwordHash,
     })
     .from(users)
@@ -73,7 +80,7 @@ export async function findUserById(
   id: string
 ): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
   const [user] = await db
-    .select(USER_PUBLIC_FIELDS)
+    .select(userPublicFields())
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
@@ -86,7 +93,7 @@ export async function findUserById(
  */
 export async function findUserByGithubId(githubId: number): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
   const [user] = await db
-    .select(USER_PUBLIC_FIELDS)
+    .select(userPublicFields())
     .from(users)
     .where(eq(users.githubId, githubId))
     .limit(1);
@@ -115,7 +122,7 @@ export async function createOAuthUser(
       githubAccessToken,
       avatarUrl,
     })
-    .returning(USER_PUBLIC_FIELDS);
+    .returning(userPublicFields());
 
   return user;
 }

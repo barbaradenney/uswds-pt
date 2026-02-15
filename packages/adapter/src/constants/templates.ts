@@ -1,13 +1,19 @@
 /**
  * Default content templates for drag-and-drop.
  *
- * Values prefixed with `__FULL_HTML__` represent complete HTML fragments that
- * should be rendered directly into the canvas rather than treated as the
- * inner content of a wrapping custom element.  The prefix is stripped at
- * render time; its sole purpose is to act as a signal checked by the
- * component registry, block registration, and canvas rendering logic
- * (8+ files across the adapter and editor packages) so they can distinguish
- * full-document/fragment content from simple component slot content.
+ * **`__FULL_HTML__` prefix convention**
+ *
+ * Templates whose value starts with `__FULL_HTML__` contain complete HTML
+ * fragments that should be used as-is -- they are NOT wrapped inside a
+ * custom-element tag the way normal slot content is.  The prefix itself is
+ * purely a signal; consumers must strip it before rendering:
+ *
+ *   content.replace('__FULL_HTML__', '')
+ *
+ * This convention is checked by the component registry, block registration,
+ * and canvas rendering logic (8+ files across the adapter and editor
+ * packages) to distinguish full-document/fragment content from simple
+ * component slot content.
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Basic Elements (wrapped in usa-prose so USWDS typography applies)

@@ -26,10 +26,13 @@ function resolveSSL(): boolean | object | undefined {
 }
 
 // Create postgres client with explicit pool configuration
+const poolSize = parseInt(process.env.DB_POOL_SIZE || '20', 10);
+
 export const client = postgres(connectionString, {
-  max: 20,
+  max: poolSize,
   idle_timeout: 20,
   connect_timeout: 10,
+  max_lifetime: 1800,
   ssl: resolveSSL(),
 });
 

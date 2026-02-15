@@ -84,13 +84,4 @@ export interface CreateInvitationBody {
   role?: string;
 }
 
-// ============================================================================
-// Common Response Types
-// ============================================================================
-
-export interface ApiError {
-  error: string;
-  message?: string;
-  statusCode?: number;
-}
 

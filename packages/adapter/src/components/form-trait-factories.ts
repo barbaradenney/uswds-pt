@@ -5,7 +5,7 @@
  * such as hint text, error messages, and radio hint text.
  */
 
-import type { UnifiedTrait } from './shared-utils.js';
+import type { UnifiedTrait, TraitValue } from './shared-utils.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
@@ -22,8 +22,8 @@ export function createFormHintTrait(): UnifiedTrait {
       placeholder: 'Optional help text',
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        const hintText = value?.trim() || '';
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        const hintText = String(value ?? '').trim() || '';
         if (hintText) {
           element.setAttribute('hint', hintText);
         } else {
@@ -54,8 +54,8 @@ export function createRadioHintTrait(): UnifiedTrait {
       placeholder: 'Optional help text',
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        const hintText = value?.trim() || '';
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        const hintText = String(value ?? '').trim() || '';
         element.setAttribute('hint', hintText);
 
         // Find the label inside the radio
@@ -79,8 +79,8 @@ export function createRadioHintTrait(): UnifiedTrait {
       getValue: (element: HTMLElement) => {
         return element.getAttribute('hint') || '';
       },
-      onInit: (element: HTMLElement, value: any) => {
-        const hintText = value?.trim() || element.getAttribute('hint') || '';
+      onInit: (element: HTMLElement, value: TraitValue) => {
+        const hintText = String(value ?? '').trim() || element.getAttribute('hint') || '';
         if (hintText) {
           setTimeout(() => {
             const label = element.querySelector('.usa-radio__label');
@@ -110,8 +110,8 @@ export function createErrorMessageTrait(): UnifiedTrait {
       placeholder: 'Error message to display',
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        const errorMsg = value?.trim() || '';
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        const errorMsg = String(value ?? '').trim() || '';
         if (errorMsg) {
           element.setAttribute('error-message', errorMsg);
         } else {

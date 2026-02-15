@@ -5,7 +5,7 @@ import { createDebugLogger } from '@uswds-pt/shared';
 import { useAuth } from '../hooks/useAuth';
 import { API_ENDPOINTS, apiGet, apiDelete, apiPost } from '../lib/api';
 import { formatDate } from '../lib/date';
-import { useOrganization } from '../hooks/useOrganization';
+import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { useInvitations } from '../hooks/useInvitations';
 import { TeamSwitcher } from './TeamSwitcher';
 import { InvitationBannerList } from './InvitationBanner';
@@ -165,7 +165,7 @@ export function PrototypeList() {
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam, setupOrganization, error: orgError } = useOrganization();
+  const { organization, teams, currentTeam, setCurrentTeam, refreshTeams, createTeam, setupOrganization, error: orgError } = useOrganizationContext();
   const { invitations, acceptInvitation, declineInvitation } = useInvitations();
 
   // Check if user is org_admin (can create teams)

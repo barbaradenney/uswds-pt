@@ -5,7 +5,8 @@
  * usa-button-group, usa-search, usa-breadcrumb, usa-pagination, usa-side-navigation
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import {
   coerceBoolean,
   hasAttributeTrue,
@@ -199,10 +200,10 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
   const attrName = `btn${index}-${type}`;
 
   // Base visibility - only show if index <= btn-count
-  const baseVisibleFn = (component: any) => {
+  const baseVisibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['btn-count'] || '2', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check button group link base visibility:', e);
@@ -211,10 +212,10 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
   };
 
   // Additional visibility for page-link (only when link-type is 'page')
-  const pageLinkVisibleFn = (component: any) => {
+  const pageLinkVisibleFn = (component: GrapesComponentModel) => {
     if (!baseVisibleFn(component)) return false;
     try {
-      const attrs = component.get?.('attributes') || {};
+      const attrs = (component.get?.('attributes') as Record<string, string> | undefined) || {};
       return attrs[`btn${index}-link-type`] === 'page';
     } catch (e) {
       debug('Failed to check button group page-link visibility:', e);
@@ -223,10 +224,10 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
   };
 
   // Additional visibility for href (only when link-type is 'external')
-  const hrefVisibleFn = (component: any) => {
+  const hrefVisibleFn = (component: GrapesComponentModel) => {
     if (!baseVisibleFn(component)) return false;
     try {
-      const attrs = component.get?.('attributes') || {};
+      const attrs = (component.get?.('attributes') as Record<string, string> | undefined) || {};
       return attrs[`btn${index}-link-type`] === 'external';
     } catch (e) {
       debug('Failed to check button group href visibility:', e);
@@ -249,8 +250,8 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
-          const linkType = value || 'none';
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
+          const linkType = String(value || 'none');
           element.setAttribute(attrName, linkType);
 
           // Clear href when switching to none or page
@@ -292,13 +293,14 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
           if (value && value !== 'none') {
-            const href = `#page-${value}`;
-            element.setAttribute(attrName, value);
+            const pageValue = String(value);
+            const href = `#page-${pageValue}`;
+            element.setAttribute(attrName, pageValue);
             element.setAttribute(`btn${index}-href`, href);
             if (component?.addAttributes) {
-              component.addAttributes({ [attrName]: value, [`btn${index}-href`]: href });
+              component.addAttributes({ [attrName]: pageValue, [`btn${index}-href`]: href });
             }
           } else {
             element.removeAttribute(attrName);
@@ -328,9 +330,9 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
       placeholder: 'https://example.com',
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         if (value) {
-          element.setAttribute(attrName, value);
+          element.setAttribute(attrName, String(value));
         } else {
           element.removeAttribute(attrName);
         }
@@ -351,10 +353,10 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant'): Un
   const defaultValue = isText ? `Button ${index}` : (index === 1 ? 'default' : 'outline');
 
   // Visibility function - only show if index <= btn-count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['btn-count'] || '2', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check button group item trait visibility:', e);
@@ -381,8 +383,8 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant'): Un
       }),
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('btn-count') || '2', 10) || 2;
         rebuildButtonGroupButtons(element, count);
       },
@@ -424,13 +426,13 @@ registry.register({
         ],
       },
       handler: {
-        onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(4, parseInt(value, 10) || 2));
+        onInit: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(4, parseInt(String(value), 10) || 2));
           element.setAttribute('btn-count', String(count));
           setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
         },
-        onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(4, parseInt(value, 10) || 2));
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(4, parseInt(String(value), 10) || 2));
           element.setAttribute('btn-count', String(count));
           rebuildButtonGroupButtons(element, count);
         },
@@ -481,11 +483,12 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: string) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value && value !== 'none') {
-            element.classList.add(value);
+          const v = String(value ?? '');
+          if (v && v !== 'none') {
+            element.classList.add(v);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -532,8 +535,8 @@ registry.register({
         default: 'Search',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const text = value || 'Search';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const text = String(value || 'Search');
           (element as USWDSElement).placeholder = text;
           // Also update the internal input
           const input = element.querySelector('.usa-search__input') as HTMLInputElement;
@@ -567,8 +570,8 @@ registry.register({
         default: 'Search',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const text = value || 'Search';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const text = String(value || 'Search');
           // Set the Lit property directly
           (element as USWDSElement).buttonText = text;
           // Also update the internal button text
@@ -634,10 +637,10 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href'): Unifi
   const defaultValue = isLabel ? (index === 1 ? 'Home' : index === 2 ? 'Section' : 'Current Page') : '#';
 
   // Visibility function - only show if index <= count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['count'] || '3', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check breadcrumb item trait visibility:', e);
@@ -655,8 +658,8 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href'): Unifi
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildBreadcrumbItems(element, count);
       },
@@ -688,13 +691,13 @@ registry.register({
         ],
       },
       handler: {
-        onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
+        onInit: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(6, parseInt(String(value), 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildBreadcrumbItems(element, count), 100);
         },
-        onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(6, parseInt(String(value), 10) || 3));
           element.setAttribute('count', String(count));
           rebuildBreadcrumbItems(element, count);
         },
@@ -757,8 +760,8 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const page = parseInt(value, 10) || 1;
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const page = parseInt(String(value), 10) || 1;
           element.setAttribute('current-page', String(page));
           (element as USWDSElement).currentPage = page;
         },
@@ -785,8 +788,8 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const pages = parseInt(value, 10) || 5;
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const pages = parseInt(String(value), 10) || 5;
           element.setAttribute('total-pages', String(pages));
           (element as USWDSElement).totalPages = pages;
         },
@@ -837,10 +840,10 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
   const isCurrent = type === 'current';
 
   // Visibility function - only show if index <= count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['count'] || '4', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['count'] || '4', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check side nav item trait visibility:', e);
@@ -860,7 +863,7 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
         visible: visibleFn,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isCurrent = coerceBoolean(value);
           if (isCurrent) {
             element.setAttribute(attrName, 'true');
@@ -891,8 +894,8 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('count') || '4', 10) || 4;
         rebuildSideNavItems(element, count);
       },
@@ -931,13 +934,13 @@ registry.register({
         ],
       },
       handler: {
-        onInit: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(8, parseInt(value, 10) || 4));
+        onInit: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(8, parseInt(String(value), 10) || 4));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildSideNavItems(element, count), 100);
         },
-        onChange: (element: HTMLElement, value: any) => {
-          const count = Math.max(1, Math.min(8, parseInt(value, 10) || 4));
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = Math.max(1, Math.min(8, parseInt(String(value), 10) || 4));
           element.setAttribute('count', String(count));
           rebuildSideNavItems(element, count);
         },

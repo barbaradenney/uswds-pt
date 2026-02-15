@@ -5,7 +5,7 @@
  * usa-file-input, usa-range-slider
  */
 
-import type { ComponentRegistration } from './shared-utils.js';
+import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   createAttributeTrait,
   createBooleanTrait,
@@ -133,9 +133,9 @@ registry.register({
         default: 0,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           // Parse value as number, default to 0 for empty/invalid
-          const parsed = parseFloat(value);
+          const parsed = parseFloat(String(value));
           const minValue = isNaN(parsed) ? 0 : parsed;
 
           // Set property directly on web component (Lit reactive property)
@@ -185,9 +185,9 @@ registry.register({
         default: 100,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           // Parse value as number, default to 100 for empty/invalid
-          const parsed = parseFloat(value);
+          const parsed = parseFloat(String(value));
           const maxValue = isNaN(parsed) ? 100 : parsed;
 
           // Set property directly on web component (Lit reactive property)
@@ -237,9 +237,9 @@ registry.register({
         default: 1,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           // Parse value as number, default to 1 for empty/invalid
-          const parsed = parseFloat(value);
+          const parsed = parseFloat(String(value));
           const stepValue = isNaN(parsed) || parsed <= 0 ? 1 : parsed;
 
           // Always set step attribute
@@ -272,9 +272,9 @@ registry.register({
         default: 50,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           // Parse value as number, default to 50 for empty/invalid
-          const parsed = parseFloat(value);
+          const parsed = parseFloat(String(value));
           const numValue = isNaN(parsed) ? 50 : parsed;
 
           // Set attribute on web component

@@ -55,9 +55,22 @@
  *   many representations of boolean values across HTML attributes and JS.
  */
 
-import type { GrapesTrait } from '../types.js';
+import type { GrapesTrait, GrapesComponentModel } from '../types.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
+
+/**
+ * The value type that GrapesJS trait handlers receive.
+ *
+ * Trait values from GrapesJS can be:
+ * - `string` — text, select, textarea, number (as string) trait types
+ * - `boolean` — checkbox trait type
+ * - `undefined` — when no value has been set yet
+ *
+ * Handlers that parse numeric values (e.g., `parseInt(value, 10)`) should
+ * accept this union and coerce internally.
+ */
+export type TraitValue = string | boolean | undefined;
 
 const debug = createDebugLogger('ComponentRegistry');
 
@@ -85,12 +98,12 @@ export interface TraitHandler {
    * `element.removeAttribute(name)` / `element.setAttribute(name, '')` for booleans.
    *
    * @param element - The web component's DOM element in the GrapesJS canvas iframe
-   * @param value - The new trait value (string, boolean, or number depending on trait type)
+   * @param value - The new trait value (string, boolean, or undefined)
    * @param oldValue - The previous trait value, if available (may be undefined on first call)
    * @param component - The GrapesJS component model instance, for advanced handlers
    *   that need to update the model directly (e.g., usa-button text persistence)
    */
-  onChange: (element: HTMLElement, value: any, oldValue?: any, component?: any) => void;
+  onChange: (element: HTMLElement, value: TraitValue, oldValue?: TraitValue, component?: GrapesComponentModel) => void;
 
   /**
    * Reads the current trait value from the DOM element. Called when the user
@@ -103,7 +116,7 @@ export interface TraitHandler {
    * @param element - The web component's DOM element
    * @returns The current value to display in the traits panel
    */
-  getValue?: (element: HTMLElement) => any;
+  getValue?: (element: HTMLElement) => unknown;
 
   /**
    * One-time initialization hook called when the component is first mounted
@@ -117,7 +130,7 @@ export interface TraitHandler {
    * @param element - The web component's DOM element
    * @param defaultValue - The trait's default value from the definition or component attributes
    */
-  onInit?: (element: HTMLElement, defaultValue: any) => void;
+  onInit?: (element: HTMLElement, defaultValue: TraitValue) => void;
 }
 
 /**
@@ -431,7 +444,7 @@ export function createAttributeTrait(
         const shouldRemove =
           value === null ||
           value === undefined ||
-          (config.removeDefaults && config.removeDefaults.includes(value));
+          (config.removeDefaults && typeof value !== 'boolean' && config.removeDefaults.includes(value));
 
         if (shouldRemove) {
           element.removeAttribute(traitName);
@@ -675,7 +688,7 @@ export function createInternalSyncTrait(
     },
     handler: {
       onChange: (element, value) => {
-        const textValue = value || '';
+        const textValue = String(value ?? '');
         const el = element as USWDSElement;
 
         element.setAttribute(traitName, textValue);
@@ -719,3 +732,6 @@ export function createInternalSyncTrait(
  * browser console.
  */
 export { debug };
+
+// Re-export types that component modules need
+export type { GrapesComponentModel } from '../types.js';

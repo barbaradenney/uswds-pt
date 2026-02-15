@@ -3,7 +3,6 @@
  */
 
 // Types
-export * from './types/cem.js';
 export * from './types/prototype.js';
 export * from './types/api.js';
 export * from './types/uswds-element.js';

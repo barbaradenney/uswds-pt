@@ -5,7 +5,8 @@
  * contact details, logo, and section link traits.
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -85,13 +86,13 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
   const defaultValue = `Section ${sectionNum}`;
 
   // Visibility function - only show if sectionNum <= section-count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return false;
-      const variant = component.get?.('attributes')?.['variant'] || 'medium';
+      const variant = (component.get?.('attributes') as Record<string, string> | undefined)?.['variant'] || 'medium';
       // Only 'big' variant shows sections
       if (variant !== 'big') return false;
-      const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['section-count'] || '3', 10);
       return sectionNum <= count;
     } catch (e) {
       debug('Failed to check footer section title trait visibility:', e);
@@ -108,8 +109,8 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('section-count') || '3', 10);
         rebuildFooterSections(element, count);
       },
@@ -133,12 +134,12 @@ function createFooterSectionLinkTrait(
   const defaultValue = isLabel ? (linkNum === 1 ? 'Link 1' : '') : '#';
 
   // Visibility function - only show if sectionNum <= section-count and variant is 'big'
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return false;
-      const variant = component.get?.('attributes')?.['variant'] || 'medium';
+      const variant = (component.get?.('attributes') as Record<string, string> | undefined)?.['variant'] || 'medium';
       if (variant !== 'big') return false;
-      const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['section-count'] || '3', 10);
       return sectionNum <= count;
     } catch (e) {
       debug('Failed to check footer section link trait visibility:', e);
@@ -156,9 +157,9 @@ function createFooterSectionLinkTrait(
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         if (value) {
-          element.setAttribute(attrName, value);
+          element.setAttribute(attrName, String(value));
         } else {
           element.removeAttribute(attrName);
         }
@@ -196,8 +197,8 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const variant = value || 'medium';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const variant = String(value || 'medium');
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -219,8 +220,8 @@ registry.register({
         default: 'Agency Name',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const name = value || 'Agency Name';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const name = String(value || 'Agency Name');
           element.setAttribute('agency-name', name);
           (element as USWDSElement).agencyName = name;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -243,8 +244,8 @@ registry.register({
         placeholder: 'Agency website URL',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const url = value || '#';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const url = String(value || '#');
           element.setAttribute('agency-url', url);
           (element as USWDSElement).agencyUrl = url;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -267,9 +268,9 @@ registry.register({
         placeholder: 'Optional footer logo URL',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('logo-src', value);
+            element.setAttribute('logo-src', String(value));
             (element as USWDSElement).logoSrc = value;
           } else {
             element.removeAttribute('logo-src');
@@ -295,9 +296,9 @@ registry.register({
         placeholder: 'Alt text for logo',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('logo-alt', value);
+            element.setAttribute('logo-alt', String(value));
             (element as USWDSElement).logoAlt = value;
           } else {
             element.removeAttribute('logo-alt');
@@ -323,9 +324,9 @@ registry.register({
         placeholder: '(555) 555-5555',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('contact-phone', value);
+            element.setAttribute('contact-phone', String(value));
             (element as USWDSElement).contactPhone = value;
           } else {
             element.removeAttribute('contact-phone');
@@ -351,9 +352,9 @@ registry.register({
         placeholder: 'contact@agency.gov',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('contact-email', value);
+            element.setAttribute('contact-email', String(value));
             (element as USWDSElement).contactEmail = value;
           } else {
             element.removeAttribute('contact-email');
@@ -382,10 +383,10 @@ registry.register({
           { id: '3', label: '3 Sections' },
           { id: '4', label: '4 Sections' },
         ],
-        visible: (component: any) => {
+        visible: (component: GrapesComponentModel) => {
           try {
             if (!component) return false;
-            const variant = component.get?.('attributes')?.['variant'] || 'medium';
+            const variant = (component.get?.('attributes') as Record<string, string> | undefined)?.['variant'] || 'medium';
             return variant === 'big';
           } catch (e) {
             debug('Failed to check footer section-count visibility:', e);
@@ -394,15 +395,15 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const count = parseInt(value || '3', 10);
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = parseInt(String(value || '3'), 10);
           element.setAttribute('section-count', String(count));
           rebuildFooterSections(element, count);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('section-count') ?? '3';
         },
-        onInit: (element: HTMLElement, _value: any) => {
+        onInit: (element: HTMLElement, _value: TraitValue) => {
           // Use retry logic to wait for Lit component to be ready
           initFooterSections(element);
         },

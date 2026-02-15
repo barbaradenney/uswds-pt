@@ -1,191 +1,33 @@
 /**
  * Prototype Routes
- * Team-scoped prototype management
+ * Team-scoped prototype management (CRUD + duplicate)
+ *
+ * Version and push routes are in separate modules:
+ * - prototype-versions.ts  (version history, restore, compare, label)
+ * - prototype-push.ts      (GitHub push and handoff)
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, ne, desc, and, or, count, sql } from 'drizzle-orm';
+import { eq, desc, and, or, count, ilike } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum, toBranchSlug } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
-import { prototypes, prototypeVersions, teamMemberships, users, githubTeamConnections, githubHandoffConnections } from '../db/schema.js';
+import { prototypes, prototypeVersions, teamMemberships } from '../db/schema.js';
 import { getAuthUser } from '../middleware/permissions.js';
 import { ROLES, hasPermission, Role } from '../db/roles.js';
-import { pushFilesToGitHub, createGitHubBranch } from '../lib/github-push.js';
-
-/**
- * Normalize GrapesJS project data to ensure consistent structure
- * This fixes issues where new prototypes don't have properly initialized pages
- */
-function normalizeGrapesData(data: Record<string, unknown> | undefined): Record<string, unknown> {
-  if (!data || typeof data !== 'object') {
-    return {
-      pages: [],
-      styles: [],
-      assets: [],
-    };
-  }
-
-  const normalized: Record<string, unknown> = { ...data };
-
-  // Ensure pages is always an array
-  if (!normalized.pages || !Array.isArray(normalized.pages)) {
-    normalized.pages = [];
-  }
-
-  // Ensure styles is always an array
-  if (!normalized.styles || !Array.isArray(normalized.styles)) {
-    normalized.styles = [];
-  }
-
-  // Ensure assets is always an array
-  if (!normalized.assets || !Array.isArray(normalized.assets)) {
-    normalized.assets = [];
-  }
-
-  return normalized;
-}
-
-// Max serialized size for grapesData (5MB)
-const MAX_GRAPES_DATA_SIZE = 5 * 1024 * 1024;
-
-/**
- * Validate grapesData shape and size.
- * Uses Fastify's bodyLimit for primary byte-size enforcement;
- * this is a secondary check using Buffer.byteLength for accuracy.
- */
-function validateGrapesData(data: Record<string, unknown> | undefined): string | null {
-  if (!data) return null;
-
-  // Check serialized byte size (accurate for multi-byte chars)
-  const byteSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
-  if (byteSize > MAX_GRAPES_DATA_SIZE) {
-    return `grapesData exceeds maximum size of ${MAX_GRAPES_DATA_SIZE / (1024 * 1024)}MB`;
-  }
-
-  // Validate expected shape: pages should be an array if present
-  if ('pages' in data && !Array.isArray(data.pages)) {
-    return 'grapesData.pages must be an array';
-  }
-
-  return null;
-}
-
-interface PrototypeParams {
-  slug: string;
-}
-
-interface VersionParams extends PrototypeParams {
-  version: string;
-}
-
-interface CompareParams extends PrototypeParams {
-  v1: string;
-  v2: string;
-}
-
-interface ListQuery {
-  teamId?: string;
-  page?: string;
-  limit?: string;
-}
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
-
-/**
- * Check if user is a member of the specified team and get their role
- */
-async function getTeamMembership(userId: string, teamId: string) {
-  const [membership] = await db
-    .select()
-    .from(teamMemberships)
-    .where(
-      and(
-        eq(teamMemberships.userId, userId),
-        eq(teamMemberships.teamId, teamId)
-      )
-    )
-    .limit(1);
-
-  return membership;
-}
-
-/**
- * Check if user can access a prototype (member of its team or creator for legacy)
- */
-async function canAccessPrototype(userId: string, prototype: { teamId: string | null; createdBy: string }) {
-  // Legacy prototypes without team - only creator can access
-  if (!prototype.teamId) {
-    return prototype.createdBy === userId;
-  }
-
-  // Check team membership
-  const membership = await getTeamMembership(userId, prototype.teamId);
-  return !!membership;
-}
-
-/**
- * Check if user can edit a prototype
- */
-async function canEditPrototype(userId: string, prototype: { teamId: string | null; createdBy: string }) {
-  // Legacy prototypes without team - only creator can edit
-  if (!prototype.teamId) {
-    return prototype.createdBy === userId;
-  }
-
-  // Check team membership with at least member role
-  const membership = await getTeamMembership(userId, prototype.teamId);
-  if (!membership) return false;
-
-  // Viewers cannot edit
-  return hasPermission(membership.role as Role, ROLES.TEAM_MEMBER);
-}
-
-/**
- * Check if user can delete a prototype
- */
-async function canDeletePrototype(userId: string, prototype: { teamId: string | null; createdBy: string }) {
-  // Creator can always delete their own prototype
-  if (prototype.createdBy === userId) {
-    return true;
-  }
-
-  // Legacy prototypes without team - only creator can delete
-  if (!prototype.teamId) {
-    return false;
-  }
-
-  // Team admins can delete any team prototype
-  const membership = await getTeamMembership(userId, prototype.teamId);
-  if (!membership) return false;
-
-  return hasPermission(membership.role as Role, ROLES.TEAM_ADMIN);
-}
-
-/**
- * Check if a prototype name is already taken within a team (case-insensitive).
- * Optionally exclude a specific slug (for rename checks).
- */
-async function isNameTaken(
-  teamId: string,
-  name: string,
-  excludeSlug?: string
-): Promise<boolean> {
-  const conditions = [
-    eq(prototypes.teamId, teamId),
-    eq(sql`lower(${prototypes.name})`, name.toLowerCase().trim()),
-  ];
-  if (excludeSlug) {
-    conditions.push(ne(prototypes.slug, excludeSlug));
-  }
-  const [result] = await db
-    .select({ count: count() })
-    .from(prototypes)
-    .where(and(...conditions));
-  return Number(result.count) > 0;
-}
+import {
+  normalizeGrapesData,
+  validateGrapesData,
+  getTeamMembership,
+  canAccessPrototype,
+  canEditPrototype,
+  canDeletePrototype,
+  isNameTaken,
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+} from './prototype-helpers.js';
+import type { PrototypeParams, ListQuery } from './prototype-helpers.js';
 
 export async function prototypeRoutes(app: FastifyInstance) {
   /**
@@ -638,349 +480,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
   );
 
   /**
-   * GET /api/prototypes/:slug/versions
-   * Get version history for a prototype
-   */
-  app.get<{ Params: PrototypeParams; Querystring: { page?: string; limit?: string } }>(
-    '/:slug/versions',
-    {
-      preHandler: [app.authenticate],
-    },
-    async (request, reply) => {
-      const { slug } = request.params;
-      const userId = getAuthUser(request).id;
-
-      // Parse pagination params
-      const page = Math.max(1, parseInt(request.query.page || '1', 10) || 1);
-      const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(request.query.limit || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE));
-      const offset = (page - 1) * limit;
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check access
-      if (!(await canAccessPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      const whereClause = eq(prototypeVersions.prototypeId, prototype.id);
-
-      // Get total count
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(prototypeVersions)
-        .where(whereClause);
-
-      // Get paginated versions
-      const versions = await db
-        .select({
-          id: prototypeVersions.id,
-          versionNumber: prototypeVersions.versionNumber,
-          label: prototypeVersions.label,
-          contentChecksum: prototypeVersions.contentChecksum,
-          createdAt: prototypeVersions.createdAt,
-        })
-        .from(prototypeVersions)
-        .where(whereClause)
-        .orderBy(desc(prototypeVersions.versionNumber))
-        .limit(limit)
-        .offset(offset);
-
-      return { versions, total: Number(total), page, limit };
-    }
-  );
-
-  /**
-   * POST /api/prototypes/:slug/versions/:version/restore
-   * Restore a prototype to a specific version
-   */
-  app.post<{ Params: VersionParams }>(
-    '/:slug/versions/:version/restore',
-    {
-      preHandler: [app.authenticate],
-    },
-    async (request, reply) => {
-      const { slug, version } = request.params;
-      const userId = getAuthUser(request).id;
-      const versionNumber = parseInt(version, 10);
-
-      if (isNaN(versionNumber)) {
-        return reply.status(400).send({ message: 'Invalid version number' });
-      }
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check edit permission
-      if (!(await canEditPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      // Get the version to restore
-      const [versionData] = await db
-        .select()
-        .from(prototypeVersions)
-        .where(
-          and(
-            eq(prototypeVersions.prototypeId, prototype.id),
-            eq(prototypeVersions.versionNumber, versionNumber)
-          )
-        )
-        .limit(1);
-
-      if (!versionData) {
-        return reply.status(404).send({ message: 'Version not found' });
-      }
-
-      // Wrap in transaction with version check to prevent race conditions
-      let updated;
-      try {
-        // Compute checksum for the restored content
-        const restoredHtml = versionData.htmlContent || '';
-        const restoredData = versionData.grapesData || {};
-        const contentChecksum = await computeContentChecksum(restoredHtml, restoredData);
-
-        updated = await db.transaction(async (tx) => {
-          // Re-read prototype inside transaction to avoid TOCTOU
-          const [fresh] = await tx
-            .select()
-            .from(prototypes)
-            .where(eq(prototypes.id, prototype.id))
-            .limit(1);
-
-          if (!fresh) {
-            throw new Error('CONCURRENT_MODIFICATION');
-          }
-
-          const [lastVersion] = await tx
-            .select({ versionNumber: prototypeVersions.versionNumber })
-            .from(prototypeVersions)
-            .where(eq(prototypeVersions.prototypeId, fresh.id))
-            .orderBy(desc(prototypeVersions.versionNumber))
-            .limit(1);
-
-          await tx.insert(prototypeVersions).values({
-            prototypeId: fresh.id,
-            versionNumber: (lastVersion?.versionNumber || 0) + 1,
-            htmlContent: fresh.htmlContent,
-            grapesData: fresh.grapesData,
-            contentChecksum: fresh.contentChecksum,
-            createdBy: userId,
-          });
-
-          const [result] = await tx
-            .update(prototypes)
-            .set({
-              htmlContent: restoredHtml,
-              grapesData: restoredData,
-              updatedAt: new Date(),
-              version: fresh.version + 1,
-              contentChecksum,
-            })
-            .where(and(eq(prototypes.id, fresh.id), eq(prototypes.version, fresh.version)))
-            .returning();
-
-          if (!result) {
-            throw new Error('CONCURRENT_MODIFICATION');
-          }
-
-          return result;
-        });
-      } catch (err: unknown) {
-        if (err instanceof Error && err.message === 'CONCURRENT_MODIFICATION') {
-          return reply.status(409).send({
-            message: 'This version was modified concurrently. Please reload and try again.',
-          });
-        }
-        throw err;
-      }
-
-      return updated;
-    }
-  );
-
-  /**
-   * GET /api/prototypes/:slug/versions/:v1/compare/:v2
-   * Compare two versions (or a version with current state)
-   */
-  app.get<{ Params: CompareParams }>(
-    '/:slug/versions/:v1/compare/:v2',
-    {
-      preHandler: [app.authenticate],
-    },
-    async (request, reply) => {
-      const { slug, v1, v2 } = request.params;
-      const userId = getAuthUser(request).id;
-
-      const v1Number = parseInt(v1, 10);
-      if (isNaN(v1Number)) {
-        return reply.status(400).send({ message: 'Invalid version number for v1' });
-      }
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check access
-      if (!(await canAccessPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      // Only select the fields needed for diffing (avoids transferring large grapesData)
-      const versionSelect = {
-        versionNumber: prototypeVersions.versionNumber,
-        htmlContent: prototypeVersions.htmlContent,
-      };
-
-      // Fetch version 1
-      const [version1] = await db
-        .select(versionSelect)
-        .from(prototypeVersions)
-        .where(
-          and(
-            eq(prototypeVersions.prototypeId, prototype.id),
-            eq(prototypeVersions.versionNumber, v1Number)
-          )
-        )
-        .limit(1);
-
-      if (!version1) {
-        return reply.status(404).send({ message: `Version ${v1Number} not found` });
-      }
-
-      // Fetch version 2 (or use current prototype state)
-      let version2Data: { versionNumber: number | 'current'; htmlContent: string | null };
-      if (v2 === 'current') {
-        version2Data = {
-          versionNumber: 'current' as const,
-          htmlContent: prototype.htmlContent,
-        };
-      } else {
-        const v2Number = parseInt(v2, 10);
-        if (isNaN(v2Number)) {
-          return reply.status(400).send({ message: 'Invalid version number for v2' });
-        }
-
-        const [version2] = await db
-          .select(versionSelect)
-          .from(prototypeVersions)
-          .where(
-            and(
-              eq(prototypeVersions.prototypeId, prototype.id),
-              eq(prototypeVersions.versionNumber, v2Number)
-            )
-          )
-          .limit(1);
-
-        if (!version2) {
-          return reply.status(404).send({ message: `Version ${v2Number} not found` });
-        }
-
-        version2Data = {
-          versionNumber: version2.versionNumber,
-          htmlContent: version2.htmlContent,
-        };
-      }
-
-      return {
-        version1: {
-          versionNumber: version1.versionNumber,
-          htmlContent: version1.htmlContent,
-        },
-        version2: version2Data,
-      };
-    }
-  );
-
-  /**
-   * PATCH /api/prototypes/:slug/versions/:version
-   * Update a version's label
-   */
-  app.patch<{ Params: VersionParams; Body: { label: string } }>(
-    '/:slug/versions/:version',
-    {
-      preHandler: [app.authenticate],
-      schema: {
-        body: {
-          type: 'object',
-          required: ['label'],
-          additionalProperties: false,
-          properties: {
-            label: { type: 'string', maxLength: 255 },
-          },
-        },
-      },
-    },
-    async (request, reply) => {
-      const { slug, version } = request.params;
-      const { label } = request.body;
-      const userId = getAuthUser(request).id;
-      const versionNumber = parseInt(version, 10);
-
-      if (isNaN(versionNumber)) {
-        return reply.status(400).send({ message: 'Invalid version number' });
-      }
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check edit permission
-      if (!(await canEditPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      // Find and update the version
-      const [updated] = await db
-        .update(prototypeVersions)
-        .set({ label: label || null })
-        .where(
-          and(
-            eq(prototypeVersions.prototypeId, prototype.id),
-            eq(prototypeVersions.versionNumber, versionNumber)
-          )
-        )
-        .returning();
-
-      if (!updated) {
-        return reply.status(404).send({ message: 'Version not found' });
-      }
-
-      return updated;
-    }
-  );
-
-  /**
    * POST /api/prototypes/:slug/duplicate
    * Duplicate a prototype
    */
@@ -1018,15 +517,37 @@ export async function prototypeRoutes(app: FastifyInstance) {
           }
         }
 
-        // Create new slug and name, auto-resolving collisions
+        // Create new slug and name, auto-resolving collisions with a single query
         const newSlug = nanoid(10);
-        let newName = `Copy of ${original.name}`;
-        if (original.teamId && await isNameTaken(original.teamId, newName)) {
-          for (let i = 2; i <= 100; i++) {
-            const candidate = `Copy of ${original.name} (${i})`;
-            if (!(await isNameTaken(original.teamId, candidate))) {
-              newName = candidate;
-              break;
+        const copyPrefix = `Copy of ${original.name}`;
+        let newName = copyPrefix;
+
+        if (original.teamId) {
+          // Fetch all existing names matching "Copy of <name>%" in one query.
+          // Escape LIKE special characters (%, _) in the prefix so they match literally.
+          const escapedPrefix = copyPrefix.replace(/%/g, '\\%').replace(/_/g, '\\_');
+          const existingNames = await db
+            .select({ name: prototypes.name })
+            .from(prototypes)
+            .where(
+              and(
+                eq(prototypes.teamId, original.teamId),
+                ilike(prototypes.name, `${escapedPrefix}%`)
+              )
+            );
+
+          if (existingNames.length > 0) {
+            const lowerNames = new Set(existingNames.map(r => r.name.toLowerCase()));
+
+            if (lowerNames.has(copyPrefix.toLowerCase())) {
+              // "Copy of <name>" is taken; find the next available suffix
+              for (let i = 2; i <= existingNames.length + 2; i++) {
+                const candidate = `${copyPrefix} (${i})`;
+                if (!lowerNames.has(candidate.toLowerCase())) {
+                  newName = candidate;
+                  break;
+                }
+              }
             }
           }
         }
@@ -1056,241 +577,6 @@ export async function prototypeRoutes(app: FastifyInstance) {
         }
         throw error;
       }
-    }
-  );
-
-  /**
-   * POST /api/prototypes/:slug/push
-   * Manually push a prototype to the team's connected GitHub repo
-   */
-  app.post<{ Params: PrototypeParams }>(
-    '/:slug/push',
-    {
-      preHandler: [app.authenticate],
-    },
-    async (request, reply) => {
-      const { slug } = request.params;
-      const userId = getAuthUser(request).id;
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check edit permission
-      if (!(await canEditPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      if (!prototype.teamId) {
-        return reply.status(400).send({ message: 'Prototype must belong to a team' });
-      }
-
-      // Look up team-level GitHub connection
-      const [connection] = await db
-        .select()
-        .from(githubTeamConnections)
-        .where(eq(githubTeamConnections.teamId, prototype.teamId))
-        .limit(1);
-
-      if (!connection) {
-        return reply.status(400).send({ message: 'No GitHub connection for this team' });
-      }
-
-      // Get user's GitHub token
-      const [user] = await db
-        .select({ githubAccessToken: users.githubAccessToken })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (!user?.githubAccessToken) {
-        return reply.status(400).send({ message: 'Your GitHub account is not linked. Connect via Settings.' });
-      }
-
-      // Git branch = uswds-pt/<branchSlug>
-      const gitBranch = `uswds-pt/${prototype.branchSlug}`;
-
-      // Try to create the branch (may already exist)
-      try {
-        await createGitHubBranch({
-          encryptedAccessToken: user.githubAccessToken,
-          owner: connection.repoOwner,
-          repo: connection.repoName,
-          branchName: gitBranch,
-          fromBranch: connection.defaultBranch,
-        });
-      } catch {
-        // Branch may already exist
-      }
-
-      // Build the 3 files for a full prototype backup
-      const grapesData = prototype.grapesData as Record<string, unknown> | null;
-      const states = grapesData && Array.isArray((grapesData as Record<string, unknown>).states)
-        ? (grapesData as Record<string, unknown>).states
-        : [];
-
-      const files = [
-        {
-          path: '.uswds-pt/project-data.json',
-          content: JSON.stringify(grapesData, null, 2),
-        },
-        {
-          path: '.uswds-pt/metadata.json',
-          content: JSON.stringify({
-            name: prototype.name,
-            description: prototype.description,
-            version: prototype.version,
-            branchSlug: prototype.branchSlug,
-            slug: prototype.slug,
-            states,
-            updatedAt: prototype.updatedAt.toISOString(),
-            createdAt: prototype.createdAt.toISOString(),
-            generator: 'uswds-pt',
-          }, null, 2),
-        },
-        {
-          path: 'output/index.html',
-          content: prototype.htmlContent,
-        },
-      ];
-
-      const result = await pushFilesToGitHub({
-        encryptedAccessToken: user.githubAccessToken,
-        owner: connection.repoOwner,
-        repo: connection.repoName,
-        branch: gitBranch,
-        files,
-        commitMessage: `Update ${prototype.name} (v${prototype.version})`,
-      });
-
-      // Update prototype with push metadata
-      await db
-        .update(prototypes)
-        .set({
-          lastGithubPushAt: new Date(),
-          lastGithubCommitSha: result.commitSha,
-        })
-        .where(eq(prototypes.id, prototype.id));
-
-      return {
-        commitSha: result.commitSha,
-        commitUrl: result.htmlUrl,
-        branch: gitBranch,
-      };
-    }
-  );
-
-  /**
-   * POST /api/prototypes/:slug/push-handoff
-   * Push clean HTML to the team's handoff GitHub repo for developer handoff
-   */
-  app.post<{ Params: PrototypeParams; Body: { htmlContent: string } }>(
-    '/:slug/push-handoff',
-    {
-      preHandler: [app.authenticate],
-      schema: {
-        body: {
-          type: 'object',
-          required: ['htmlContent'],
-          properties: {
-            htmlContent: { type: 'string', maxLength: 5 * 1024 * 1024 },
-          },
-          additionalProperties: false,
-        },
-      },
-    },
-    async (request, reply) => {
-      const { slug } = request.params;
-      const userId = getAuthUser(request).id;
-      const { htmlContent } = request.body;
-
-      // Get prototype
-      const [prototype] = await db
-        .select()
-        .from(prototypes)
-        .where(eq(prototypes.slug, slug))
-        .limit(1);
-
-      if (!prototype) {
-        return reply.status(404).send({ message: 'Prototype not found' });
-      }
-
-      // Check edit permission
-      if (!(await canEditPrototype(userId, prototype))) {
-        return reply.status(403).send({ message: 'Access denied' });
-      }
-
-      if (!prototype.teamId) {
-        return reply.status(400).send({ message: 'Prototype must belong to a team' });
-      }
-
-      // Look up team-level handoff connection
-      const [connection] = await db
-        .select()
-        .from(githubHandoffConnections)
-        .where(eq(githubHandoffConnections.teamId, prototype.teamId))
-        .limit(1);
-
-      if (!connection) {
-        return reply.status(400).send({ message: 'No handoff connection for this team' });
-      }
-
-      // Get user's GitHub token
-      const [user] = await db
-        .select({ githubAccessToken: users.githubAccessToken })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (!user?.githubAccessToken) {
-        return reply.status(400).send({ message: 'Your GitHub account is not linked. Connect via Settings.' });
-      }
-
-      // Git branch = handoff/<branchSlug>
-      const gitBranch = `handoff/${prototype.branchSlug}`;
-
-      // Try to create the branch (may already exist)
-      try {
-        await createGitHubBranch({
-          encryptedAccessToken: user.githubAccessToken,
-          owner: connection.repoOwner,
-          repo: connection.repoName,
-          branchName: gitBranch,
-          fromBranch: connection.defaultBranch,
-        });
-      } catch {
-        // Branch may already exist
-      }
-
-      // Push a single clean index.html
-      const files = [
-        {
-          path: 'index.html',
-          content: htmlContent,
-        },
-      ];
-
-      const result = await pushFilesToGitHub({
-        encryptedAccessToken: user.githubAccessToken,
-        owner: connection.repoOwner,
-        repo: connection.repoName,
-        branch: gitBranch,
-        files,
-        commitMessage: `Handoff: ${prototype.name}`,
-      });
-
-      return {
-        commitSha: result.commitSha,
-        commitUrl: result.htmlUrl,
-        branch: gitBranch,
-      };
     }
   );
 }

@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger, computeContentChecksum } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
-import { useOrganization } from './useOrganization';
+import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { API_ENDPOINTS, apiPost } from '../lib/api';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import {
@@ -90,7 +90,7 @@ export function useEditorPersistence({
   onFirstSaveSlug,
 }: UseEditorPersistenceOptions): UseEditorPersistenceReturn {
   const navigate = useNavigate();
-  const { currentTeam, isLoading: isLoadingTeam, teams } = useOrganization();
+  const { currentTeam, isLoading: isLoadingTeam, teams } = useOrganizationContext();
 
   // Track if a create operation is in progress (prevents duplicate calls)
   const isCreatingRef = useRef(false);

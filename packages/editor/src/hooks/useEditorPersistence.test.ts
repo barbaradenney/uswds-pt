@@ -16,10 +16,10 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-// Mock useOrganization
+// Mock OrganizationContext
 const mockUseOrganization = vi.fn();
-vi.mock('./useOrganization', () => ({
-  useOrganization: () => mockUseOrganization(),
+vi.mock('../contexts/OrganizationContext', () => ({
+  useOrganizationContext: () => mockUseOrganization(),
 }));
 
 // Mock useAuth

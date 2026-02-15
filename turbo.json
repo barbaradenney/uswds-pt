@@ -5,7 +5,7 @@
       "dependsOn": ["^build"],
       "inputs": ["src/**", "tsconfig.json", "package.json"],
       "outputs": ["dist/**"],
-      "env": ["VITE_API_URL", "VITE_AI_ENABLED", "VITE_AI_SECRET"]
+      "env": ["VITE_*"]
     },
     "dev": {
       "cache": false,

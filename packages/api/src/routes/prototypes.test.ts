@@ -19,6 +19,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import { authPlugin } from '../plugins/auth.js';
 import { prototypeRoutes } from './prototypes.js';
+import { prototypeVersionRoutes } from './prototype-versions.js';
+import { prototypePushRoutes } from './prototype-push.js';
 import { errorHandler } from '../lib/error-handler.js';
 
 // ---------------------------------------------------------------------------
@@ -188,6 +190,8 @@ describe('Prototype Routes', () => {
       logAllErrors: false,
     });
     await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
+    await app.register(prototypeVersionRoutes, { prefix: '/api/prototypes' });
+    await app.register(prototypePushRoutes, { prefix: '/api/prototypes' });
     await app.ready();
 
     validToken = app.jwt.sign(TEST_USER, { expiresIn: '1h' });

@@ -5,7 +5,8 @@
  * select option lists from presets, custom text, or manual traits.
  */
 
-import type { UnifiedTrait } from './shared-utils.js';
+import type { UnifiedTrait, TraitValue } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 // Preset option lists
@@ -164,7 +165,7 @@ export function createSelectOptionTrait(
   const defaultValue = traitType === 'label' ? `Option ${optionNum}` : `option${optionNum}`;
 
   // Only show in manual mode and when optionNum <= option-count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return false;
       const preset = component.get?.('attributes')?.['options-preset'] || 'manual';
@@ -185,7 +186,7 @@ export function createSelectOptionTrait(
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         rebuildSelectOptionsFromSource(element);
       },

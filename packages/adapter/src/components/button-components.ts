@@ -4,11 +4,12 @@
  * Registers the usa-button component.
  */
 
-import type { ComponentRegistration } from './shared-utils.js';
+import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import { createPageLinkTraits } from './page-link-traits.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 
@@ -47,7 +48,7 @@ registry.register({
         default: 'Click me',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
           const textValue = value || 'Click me';
 
           // Store as attribute for trait panel persistence

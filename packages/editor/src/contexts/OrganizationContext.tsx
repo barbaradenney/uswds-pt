@@ -1,20 +1,24 @@
 /**
- * Organization Hook
+ * Organization Context
  *
- * Re-exports organization functionality from OrganizationContext.
- * When used within OrganizationProvider, delegates to the shared context
- * (single fetch, shared state). Falls back to standalone behavior if the
- * provider is not mounted (e.g., in tests or isolated usage).
+ * Provides centralized organization/team state management using React Context.
+ * This ensures org data is fetched once and shared across all components,
+ * eliminating duplicate API calls when multiple components need org/team data.
+ *
+ * Follows the same pattern as AuthContext.tsx.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import type { Organization, Team, Role } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 import { STORAGE_KEYS } from '../lib/constants';
-import { useOrganizationContextMaybe } from '../contexts/OrganizationContext';
 
-const debug = createDebugLogger('Organization');
+const debug = createDebugLogger('OrganizationContext');
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface OrganizationState {
   organization: Organization | null;
@@ -24,7 +28,7 @@ interface OrganizationState {
   error: string | null;
 }
 
-interface UseOrganizationReturn extends OrganizationState {
+export interface OrganizationContextValue extends OrganizationState {
   setCurrentTeam: (teamId: string | null) => void;
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
@@ -35,29 +39,32 @@ interface UseOrganizationReturn extends OrganizationState {
   deleteTeam: (teamId: string) => Promise<boolean>;
 }
 
+// ============================================================================
+// Constants
+// ============================================================================
+
 const CURRENT_TEAM_KEY = STORAGE_KEYS.CURRENT_TEAM;
 
-/**
- * Access organization data.
- *
- * When called within an OrganizationProvider, returns the shared context
- * (no duplicate API calls). When called outside a provider (e.g., tests),
- * falls back to standalone fetching behavior.
- *
- * All hooks are called unconditionally to satisfy the Rules of Hooks.
- * The standalone hooks become no-ops when the context is available.
- */
-export function useOrganization(): UseOrganizationReturn {
-  // Always call useContext -- returns null if no provider is mounted
-  const contextValue = useOrganizationContextMaybe();
-  const hasContext = contextValue !== null;
+// ============================================================================
+// Context
+// ============================================================================
 
-  // ---------- Standalone state (no-op when context is present) ----------
+const OrganizationContext = createContext<OrganizationContextValue | null>(null);
+
+// ============================================================================
+// Provider
+// ============================================================================
+
+interface OrganizationProviderProps {
+  children: ReactNode;
+}
+
+export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const [state, setState] = useState<OrganizationState>({
     organization: null,
     teams: [],
     currentTeam: null,
-    isLoading: !hasContext, // Not loading if context handles it
+    isLoading: true,
     error: null,
   });
 
@@ -108,11 +115,8 @@ export function useOrganization(): UseOrganizationReturn {
     }
   }, []);
 
-  // Initial load -- only runs when there is no context provider
+  // Initial load -- guarded against React Strict Mode double-mount
   useEffect(() => {
-    // Skip if OrganizationProvider is mounted -- context handles the fetch
-    if (hasContext) return;
-
     // Skip if initial fetch already started (prevents double-fetch in Strict Mode)
     if (initialFetchStartedRef.current) {
       debug('Initial fetch already in progress, skipping duplicate');
@@ -135,17 +139,10 @@ export function useOrganization(): UseOrganizationReturn {
     return () => {
       cancelled = true;
     };
-  }, [hasContext, refreshOrganization, refreshTeams]);
-
-  // ---------- If context is available, return it directly ----------
-  if (contextValue) {
-    return contextValue;
-  }
-
-  // ---------- Standalone return (no provider mounted) ----------
+  }, [refreshOrganization, refreshTeams]);
 
   // Set current team (pass null to show all prototypes)
-  const setCurrentTeam = (teamId: string | null) => {
+  const setCurrentTeam = useCallback((teamId: string | null) => {
     setState((prev) => {
       if (teamId === null) {
         localStorage.removeItem(CURRENT_TEAM_KEY);
@@ -158,10 +155,10 @@ export function useOrganization(): UseOrganizationReturn {
       }
       return prev;
     });
-  };
+  }, []);
 
   // Update organization
-  const updateOrganization = async (
+  const updateOrganization = useCallback(async (
     updates: { name?: string; description?: string; stateDefinitions?: Array<{ id: string; name: string }>; userDefinitions?: Array<{ id: string; name: string }> }
   ): Promise<Organization | null> => {
     if (!state.organization) {
@@ -182,10 +179,10 @@ export function useOrganization(): UseOrganizationReturn {
 
     setState((prev) => ({ ...prev, error: result.error || null }));
     return null;
-  };
+  }, [state.organization]);
 
   // Create a new team
-  const createTeam = async (name: string, description?: string): Promise<Team | null> => {
+  const createTeam = useCallback(async (name: string, description?: string): Promise<Team | null> => {
     const result = await apiPost<Team>(
       API_ENDPOINTS.TEAMS,
       { name, description },
@@ -199,10 +196,10 @@ export function useOrganization(): UseOrganizationReturn {
 
     setState((prev) => ({ ...prev, error: result.error || null }));
     return null;
-  };
+  }, [refreshTeams]);
 
   // Update a team
-  const updateTeam = async (
+  const updateTeam = useCallback(async (
     teamId: string,
     updates: { name?: string; description?: string }
   ): Promise<Team | null> => {
@@ -219,10 +216,10 @@ export function useOrganization(): UseOrganizationReturn {
 
     setState((prev) => ({ ...prev, error: result.error || null }));
     return null;
-  };
+  }, [refreshTeams]);
 
   // Delete a team
-  const deleteTeam = async (teamId: string): Promise<boolean> => {
+  const deleteTeam = useCallback(async (teamId: string): Promise<boolean> => {
     const result = await apiDelete(
       API_ENDPOINTS.TEAM(teamId),
       'Failed to delete team'
@@ -235,10 +232,10 @@ export function useOrganization(): UseOrganizationReturn {
 
     setState((prev) => ({ ...prev, error: result.error || null }));
     return false;
-  };
+  }, [refreshTeams]);
 
   // Set up organization and first team for users without one
-  const setupOrganization = async (teamName: string): Promise<boolean> => {
+  const setupOrganization = useCallback(async (teamName: string): Promise<boolean> => {
     debug('setupOrganization: Creating team:', teamName);
 
     const result = await apiPost<{ organization: Organization; team: Team & { role: Role } }>(
@@ -264,9 +261,9 @@ export function useOrganization(): UseOrganizationReturn {
     debug('setupOrganization: Error:', result.error);
     setState((prev) => ({ ...prev, error: result.error || null }));
     return false;
-  };
+  }, [refreshOrganization, refreshTeams]);
 
-  return {
+  const value: OrganizationContextValue = useMemo(() => ({
     ...state,
     setCurrentTeam,
     refreshOrganization,
@@ -276,15 +273,31 @@ export function useOrganization(): UseOrganizationReturn {
     createTeam,
     updateTeam,
     deleteTeam,
-  };
+  }), [state, setCurrentTeam, refreshOrganization, refreshTeams, setupOrganization, updateOrganization, createTeam, updateTeam, deleteTeam]);
+
+  return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 }
 
-// Re-export context hook for direct usage
-export { useOrganizationContext } from '../contexts/OrganizationContext';
+// ============================================================================
+// Hook
+// ============================================================================
 
 /**
- * Get the current team ID from localStorage
+ * Access organization context.
+ * Must be used within OrganizationProvider.
  */
-export function getCurrentTeamId(): string | null {
-  return localStorage.getItem(CURRENT_TEAM_KEY);
+export function useOrganizationContext(): OrganizationContextValue {
+  const context = useContext(OrganizationContext);
+  if (!context) {
+    throw new Error('useOrganizationContext must be used within OrganizationProvider');
+  }
+  return context;
+}
+
+/**
+ * Try to access organization context, returning null if not within a provider.
+ * Used internally by the useOrganization hook for fallback behavior.
+ */
+export function useOrganizationContextMaybe(): OrganizationContextValue | null {
+  return useContext(OrganizationContext);
 }

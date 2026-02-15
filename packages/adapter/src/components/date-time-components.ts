@@ -5,7 +5,7 @@
  * usa-date-picker, usa-time-picker
  */
 
-import type { ComponentRegistration } from './shared-utils.js';
+import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
   createBooleanTrait,
@@ -43,8 +43,8 @@ registry.register({
         default: 'Date',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const label = value || 'Date';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const label = String(value || 'Date');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -66,8 +66,8 @@ registry.register({
         default: 'date-picker',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const name = value || 'date-picker';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const name = String(value || 'date-picker');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -90,8 +90,8 @@ registry.register({
         placeholder: 'Optional helper text',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const hint = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const hint = String(value ?? '');
           if (hint) {
             element.setAttribute('hint', hint);
           } else {
@@ -118,8 +118,8 @@ registry.register({
         placeholder: 'YYYY-MM-DD',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const minDate = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const minDate = String(value ?? '');
           if (minDate) {
             element.setAttribute('min-date', minDate);
           } else {
@@ -146,8 +146,8 @@ registry.register({
         placeholder: 'YYYY-MM-DD',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const maxDate = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const maxDate = String(value ?? '');
           if (maxDate) {
             element.setAttribute('max-date', maxDate);
           } else {
@@ -173,7 +173,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
@@ -209,7 +209,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');
@@ -256,8 +256,8 @@ registry.register({
         default: 'Time',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const label = value || 'Time';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const label = String(value || 'Time');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -279,8 +279,8 @@ registry.register({
         default: 'time-picker',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const name = value || 'time-picker';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const name = String(value || 'time-picker');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -303,8 +303,8 @@ registry.register({
         placeholder: 'Optional helper text',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const hint = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const hint = String(value ?? '');
           if (hint) {
             element.setAttribute('hint', hint);
           } else {
@@ -331,8 +331,8 @@ registry.register({
         placeholder: 'e.g., 09:00',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const minTime = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const minTime = String(value ?? '');
           if (minTime) {
             element.setAttribute('min-time', minTime);
           } else {
@@ -359,8 +359,8 @@ registry.register({
         placeholder: 'e.g., 17:00',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const maxTime = value || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const maxTime = String(value ?? '');
           if (maxTime) {
             element.setAttribute('max-time', maxTime);
           } else {
@@ -391,8 +391,8 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const step = value || '30';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const step = String(value || '30');
           element.setAttribute('step', step);
           (element as USWDSElement).step = step;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -414,7 +414,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
@@ -450,7 +450,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');

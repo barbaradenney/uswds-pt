@@ -1,11 +1,11 @@
 import { useParams, Navigate } from 'react-router-dom';
-import { useOrganization } from '../hooks/useOrganization';
+import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { useAuth } from '../hooks/useAuth';
 import { TeamSettings } from './TeamSettings';
 
 export function TeamSettingsPage() {
   const { teamId } = useParams<{ teamId: string }>();
-  const { teams, isLoading: teamsLoading } = useOrganization();
+  const { teams, isLoading: teamsLoading } = useOrganizationContext();
   const { user, isLoading: authLoading } = useAuth();
 
   if (authLoading || teamsLoading) {

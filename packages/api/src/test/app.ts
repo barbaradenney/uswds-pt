@@ -10,6 +10,8 @@ import cors from '@fastify/cors';
 import { authPlugin } from '../plugins/auth.js';
 import { authRoutes } from '../routes/auth.js';
 import { prototypeRoutes } from '../routes/prototypes.js';
+import { prototypeVersionRoutes } from '../routes/prototype-versions.js';
+import { prototypePushRoutes } from '../routes/prototype-push.js';
 import { teamRoutes } from '../routes/teams.js';
 import { errorHandler } from '../lib/error-handler.js';
 
@@ -58,6 +60,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Register routes
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(prototypeRoutes, { prefix: '/api/prototypes' });
+  await app.register(prototypeVersionRoutes, { prefix: '/api/prototypes' });
+  await app.register(prototypePushRoutes, { prefix: '/api/prototypes' });
   await app.register(teamRoutes, { prefix: '/api/teams' });
 
   // Health check

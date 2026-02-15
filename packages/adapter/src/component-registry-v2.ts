@@ -14,6 +14,7 @@ import type { GrapesTrait } from './types.js';
 // Import shared utilities from modular components
 import {
   type TraitHandler,
+  type TraitValue,
   type UnifiedTrait,
   type ComponentRegistration,
   type RetryConfig,
@@ -33,7 +34,7 @@ import { registerNavigationComponents } from './components/navigation-components
 import { registerPatternComponents } from './components/pattern-components.js';
 
 // Re-export types for external use
-export type { TraitHandler, UnifiedTrait, ComponentRegistration, RetryConfig };
+export type { TraitHandler, TraitValue, UnifiedTrait, ComponentRegistration, RetryConfig };
 
 // Re-export utilities for external use
 export { coerceBoolean, hasAttributeTrue, createAttributeTrait, createBooleanTrait, createInternalSyncTrait };

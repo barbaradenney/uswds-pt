@@ -9,7 +9,7 @@
  * following the same approach as rebuildTable() in data-components.ts.
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
 import { createAttributeTrait, createBooleanTrait } from './shared-utils.js';
 import { escapeHtml } from '@uswds-pt/shared';
 
@@ -195,7 +195,7 @@ function createPatternAttributeTrait(
   return {
     definition: base.definition,
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         base.handler.onChange(element, value);
         rebuild(element);
       },
@@ -213,12 +213,12 @@ function createPatternBooleanTrait(
   return {
     definition: base.definition,
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         base.handler.onChange(element, value);
         rebuild(element);
       },
       getValue: base.handler.getValue,
-      onInit: (element: HTMLElement, value: any) => {
+      onInit: (element: HTMLElement, value: TraitValue) => {
         if (base.handler.onInit) base.handler.onInit(element, value);
         rebuild(element);
       },

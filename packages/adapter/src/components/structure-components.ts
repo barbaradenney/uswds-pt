@@ -5,12 +5,13 @@
  * form container, section container, fieldset, usa-link
  */
 
-import type { ComponentRegistration } from './shared-utils.js';
+import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import { createPageLinkTraits } from './page-link-traits.js';
 
 /**
@@ -55,7 +56,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('method', value || 'post');
         },
         getValue: (element: HTMLElement) => {
@@ -207,7 +208,7 @@ registry.register({
         default: 'Group Label',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const legendText = value || 'Group Label';
           // Find or create the legend element
           let legend = element.querySelector('legend');
@@ -234,7 +235,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isRequired = coerceBoolean(value);
           const legend = element.querySelector('legend');
 
@@ -272,8 +273,8 @@ registry.register({
         placeholder: 'Optional hint or instructions',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const hintText = value?.trim() || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const hintText = String(value ?? '').trim() || '';
           let hint = element.querySelector('.usa-hint');
           const legend = element.querySelector('legend');
 
@@ -327,7 +328,7 @@ registry.register({
           const count = Math.max(checkboxes.length, radios.length) || 3;
           element.setAttribute('count', String(count));
         },
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
           const targetCount = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
 
           // Find existing checkboxes or radios
@@ -375,7 +376,7 @@ registry.register({
             if (component && component.components) {
               // Use GrapesJS API to remove components
               const children = component.components();
-              const childModels = children.models.filter((m: any) => {
+              const childModels = children.models.filter((m: GrapesComponentModel) => {
                 const tag = m.get('tagName')?.toLowerCase();
                 return tag === 'usa-checkbox' || tag === 'usa-radio';
               });

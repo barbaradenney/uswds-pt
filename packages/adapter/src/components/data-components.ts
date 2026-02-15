@@ -5,12 +5,13 @@
  * usa-card, usa-tag, usa-table, usa-icon, usa-list, usa-collection, usa-summary-box
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
   hasAttributeTrue,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import { escapeHtml, createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -45,7 +46,7 @@ registry.register({
         default: 'Card Title',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
@@ -68,7 +69,7 @@ registry.register({
         default: 'Card content goes here.',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
@@ -99,7 +100,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const level = value || '3';
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
@@ -127,7 +128,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const mediaType = value || 'none';
           element.setAttribute('media-type', mediaType);
           (element as USWDSElement).mediaType = mediaType;
@@ -170,7 +171,7 @@ registry.register({
         placeholder: 'https://example.com/image.jpg',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('media-src', value || '');
           (element as USWDSElement).mediaSrc = value || '';
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -193,7 +194,7 @@ registry.register({
         placeholder: 'Image description',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('media-alt', value || '');
           (element as USWDSElement).mediaAlt = value || '';
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -220,7 +221,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const position = value || 'inset';
           element.setAttribute('media-position', position);
           (element as USWDSElement).mediaPosition = position;
@@ -243,7 +244,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('flag-layout', '');
@@ -270,7 +271,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('header-first', '');
@@ -298,7 +299,7 @@ registry.register({
         placeholder: 'Optional footer content',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('footer-text', text);
           (element as USWDSElement).footerText = text;
@@ -321,7 +322,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('actionable', '');
@@ -349,7 +350,7 @@ registry.register({
         placeholder: 'https://...',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const url = value || '';
           if (url) {
             element.setAttribute('href', url);
@@ -380,7 +381,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const target = value || '_self';
           if (target && target !== '_self') {
             element.setAttribute('target', target);
@@ -419,7 +420,7 @@ registry.register({
         default: 'Tag',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Tag';
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
@@ -442,7 +443,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isEnabled = coerceBoolean(value);
           if (isEnabled) {
             element.setAttribute('big', '');
@@ -518,7 +519,7 @@ function createTableHeaderTrait(colIndex: number): UnifiedTrait {
   const attrName = `header${colIndex}`;
   const defaultValue = `Column ${colIndex}`;
 
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
@@ -538,7 +539,7 @@ function createTableHeaderTrait(colIndex: number): UnifiedTrait {
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         rebuildTable(element);
       },
@@ -554,7 +555,7 @@ function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait 
   const attrName = `row${rowIndex}-col${colIndex}`;
   const defaultValue = '';
 
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
       const colCount = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
@@ -575,7 +576,7 @@ function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait 
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         rebuildTable(element);
       },
@@ -600,7 +601,7 @@ registry.register({
         default: 'Table caption',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('caption', value || '');
           rebuildTable(element);
         },
@@ -619,7 +620,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (coerceBoolean(value)) {
             element.setAttribute('striped', '');
           } else {
@@ -642,7 +643,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (coerceBoolean(value)) {
             element.setAttribute('borderless', '');
           } else {
@@ -665,7 +666,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (coerceBoolean(value)) {
             element.setAttribute('compact', '');
           } else {
@@ -693,7 +694,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('stacked', value || 'none');
           rebuildTable(element);
         },
@@ -718,7 +719,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('col-count', value || '3');
           rebuildTable(element);
         },
@@ -744,7 +745,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('row-count', value || '3');
           rebuildTable(element);
         },
@@ -898,7 +899,7 @@ registry.register({
         category: { id: 'icon', label: 'Icon' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const name = value || 'info';
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
@@ -932,7 +933,7 @@ registry.register({
         category: { id: 'icon', label: 'Icon' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value && value !== '') {
             element.setAttribute('size', value);
           } else {
@@ -960,8 +961,8 @@ registry.register({
         category: { id: 'accessibility', label: 'Accessibility' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const label = value?.trim() || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const label = String(value ?? '').trim() || '';
           if (label) {
             element.setAttribute('aria-label', label);
           } else {
@@ -988,7 +989,7 @@ registry.register({
         category: { id: 'accessibility', label: 'Accessibility' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isDecorative = value === true || value === 'true';
           if (isDecorative) {
             element.setAttribute('decorative', 'true');
@@ -1065,7 +1066,7 @@ function _createListItemTrait(index: number): UnifiedTrait {
   const defaultValue = `List item ${index}`;
 
   // Visibility function - only show if index <= count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
@@ -1085,7 +1086,7 @@ function _createListItemTrait(index: number): UnifiedTrait {
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildListItems(element, count);
@@ -1115,7 +1116,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('type', value || 'unordered');
           // Trigger re-render to switch list type
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -1154,12 +1155,12 @@ registry.register({
         ],
       },
       handler: {
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, value: TraitValue) => {
           const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildListItems(element, count), 100);
         },
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           rebuildListItems(element, count);
@@ -1236,7 +1237,7 @@ function _createCollectionItemTrait(index: number, type: 'title' | 'description'
   const defaultValue = defaults[type];
 
   // Visibility function - only show if index <= count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
@@ -1257,7 +1258,7 @@ function _createCollectionItemTrait(index: number, type: 'title' | 'description'
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildCollectionItems(element, count);
@@ -1289,12 +1290,12 @@ registry.register({
         ],
       },
       handler: {
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, value: TraitValue) => {
           const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildCollectionItems(element, count), 100);
         },
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
           element.setAttribute('count', String(count));
           rebuildCollectionItems(element, count);
@@ -1326,7 +1327,7 @@ registry.register({
         default: 'Key Information',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || 'Key Information';
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
@@ -1349,7 +1350,7 @@ registry.register({
         default: 'Summary content goes here.',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const text = value || '';
           element.setAttribute('content', text);
           (element as USWDSElement).content = text;
@@ -1380,7 +1381,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const level = value || 'h3';
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;

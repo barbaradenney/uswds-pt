@@ -5,12 +5,13 @@
  * usa-checkbox, usa-radio, usa-select, usa-combo-box
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 import { createFormHintTrait, createRadioHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
 import {
@@ -54,7 +55,7 @@ function createComboBoxOptionTrait(
   const defaultValue = traitType === 'label' ? `Option ${optionNum}` : `option${optionNum}`;
 
   // Visibility function - only show if optionNum <= option-count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
@@ -73,7 +74,7 @@ function createComboBoxOptionTrait(
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
+      onChange: (element: HTMLElement, value: TraitValue) => {
         element.setAttribute(attrName, value || '');
         const count = parseInt(element.getAttribute('option-count') || '3', 10);
         if (optionNum <= count) {
@@ -159,8 +160,8 @@ registry.register({
         placeholder: 'Optional help text',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const hintText = value?.trim() || '';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const hintText = String(value ?? '').trim() || '';
           element.setAttribute('hint', hintText);
 
           // Find the label inside the checkbox
@@ -184,8 +185,8 @@ registry.register({
         getValue: (element: HTMLElement) => {
           return element.getAttribute('hint') || '';
         },
-        onInit: (element: HTMLElement, value: any) => {
-          const hintText = value?.trim() || element.getAttribute('hint') || '';
+        onInit: (element: HTMLElement, value: TraitValue) => {
+          const hintText = String(value ?? '').trim() || element.getAttribute('hint') || '';
           if (hintText) {
             // Wait for component to render
             setTimeout(() => {
@@ -446,14 +447,14 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('options-preset', value || 'manual');
           rebuildSelectOptionsFromSource(element);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('options-preset') ?? 'manual';
         },
-        onInit: (element: HTMLElement, _value: any) => {
+        onInit: (element: HTMLElement, _value: TraitValue) => {
           // Wait for the web component to render its internal <select>
           const initOptions = () => {
             rebuildSelectOptionsFromSource(element);
@@ -476,7 +477,7 @@ registry.register({
         label: 'Custom Options (one per line)',
         type: 'text', // GrapesJS doesn't have textarea, but we can style it
         placeholder: 'value|label or just label\nOne option per line',
-        visible: (component: any) => {
+        visible: (component: GrapesComponentModel) => {
           try {
             return component?.get?.('attributes')?.['options-preset'] === 'custom';
           } catch {
@@ -485,7 +486,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('custom-options', value || '');
           rebuildSelectOptionsFromSource(element);
         },
@@ -514,7 +515,7 @@ registry.register({
           { id: '9', label: '9 Options' },
           { id: '10', label: '10 Options' },
         ],
-        visible: (component: any) => {
+        visible: (component: GrapesComponentModel) => {
           try {
             const preset = component?.get?.('attributes')?.['options-preset'] || 'manual';
             return preset === 'manual';
@@ -524,7 +525,7 @@ registry.register({
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           element.setAttribute('option-count', value || '3');
           rebuildSelectOptionsFromSource(element);
         },
@@ -617,7 +618,7 @@ registry.register({
         default: 'Select an option',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const label = value || 'Select an option';
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
@@ -640,7 +641,7 @@ registry.register({
         default: 'combo-box',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const name = value || 'combo-box';
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
@@ -663,7 +664,7 @@ registry.register({
         default: 'Select...',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const placeholder = value || '';
           if (placeholder) {
             element.setAttribute('placeholder', placeholder);
@@ -691,7 +692,7 @@ registry.register({
         placeholder: 'Optional helper text',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const hint = value || '';
           if (hint) {
             element.setAttribute('hint', hint);
@@ -728,7 +729,7 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const count = parseInt(value || '3', 10);
           element.setAttribute('option-count', String(count));
           rebuildComboBoxOptions(element, count);
@@ -736,7 +737,7 @@ registry.register({
         getValue: (element: HTMLElement) => {
           return element.getAttribute('option-count') ?? '3';
         },
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, value: TraitValue) => {
           setTimeout(() => {
             const count = parseInt(value || '3', 10);
             rebuildComboBoxOptions(element, count);
@@ -786,7 +787,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disable-filtering', '');
@@ -813,7 +814,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isRequired = coerceBoolean(value);
           if (isRequired) {
             element.setAttribute('required', '');
@@ -849,7 +850,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isDisabled = coerceBoolean(value);
           if (isDisabled) {
             element.setAttribute('disabled', '');

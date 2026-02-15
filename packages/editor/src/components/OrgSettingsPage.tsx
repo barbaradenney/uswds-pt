@@ -1,10 +1,10 @@
 import { Navigate } from 'react-router-dom';
-import { useOrganization } from '../hooks/useOrganization';
+import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { useAuth } from '../hooks/useAuth';
 import { OrgSettings } from './OrgSettings';
 
 export function OrgSettingsPage() {
-  const { organization, teams, updateOrganization, isLoading: teamsLoading } = useOrganization();
+  const { organization, teams, updateOrganization, isLoading: teamsLoading } = useOrganizationContext();
   const { user, isLoading: authLoading } = useAuth();
 
   if (authLoading || teamsLoading) {

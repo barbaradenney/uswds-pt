@@ -5,7 +5,8 @@
  * logo, and secondary link traits.
  */
 
-import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import {
   coerceBoolean,
 } from './shared-utils.js';
@@ -178,10 +179,10 @@ function createHeaderNavItemTrait(
   const attrName = `nav${index}-${type}`;
 
   // Visibility function - only show if index <= nav-count
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['nav-count'] || '4', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['nav-count'] || '4', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check header nav item trait visibility:', e);
@@ -199,7 +200,7 @@ function createHeaderNavItemTrait(
         visible: visibleFn,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isCurrent = coerceBoolean(value);
           if (isCurrent) {
             element.setAttribute(attrName, '');
@@ -229,8 +230,8 @@ function createHeaderNavItemTrait(
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('nav-count') || '4', 10);
         rebuildHeaderNavItems(element, count);
       },
@@ -309,10 +310,10 @@ function createHeaderSecondaryLinkTrait(
 ): UnifiedTrait {
   const attrName = `sec${index}-${type}`;
 
-  const visibleFn = (component: any) => {
+  const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return false;
-      const count = parseInt(component.get?.('attributes')?.['sec-count'] || '0', 10);
+      const count = parseInt((component.get?.('attributes') as Record<string, string> | undefined)?.['sec-count'] || '0', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check header secondary link trait visibility:', e);
@@ -333,8 +334,8 @@ function createHeaderSecondaryLinkTrait(
       visible: visibleFn,
     },
     handler: {
-      onChange: (element: HTMLElement, value: any) => {
-        element.setAttribute(attrName, value || '');
+      onChange: (element: HTMLElement, value: TraitValue) => {
+        element.setAttribute(attrName, String(value ?? ''));
         const count = parseInt(element.getAttribute('sec-count') || '0', 10);
         rebuildHeaderSecondaryLinks(element, count);
       },
@@ -365,7 +366,7 @@ registry.register({
         category: { id: 'accessibility', label: 'Accessibility' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const showSkipLink = value === true || value === 'true';
           element.setAttribute('show-skip-link', showSkipLink ? 'true' : 'false');
           updateHeaderSkipLink(element);
@@ -374,7 +375,7 @@ registry.register({
           const attr = element.getAttribute('show-skip-link');
           return attr === 'true' || attr === null; // default true
         },
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, value: TraitValue) => {
           const showSkipLink = value === true || value === 'true' || value === undefined;
           if (showSkipLink) {
             // Delay to ensure element is in DOM
@@ -391,11 +392,11 @@ registry.register({
         type: 'text',
         default: 'Skip to main content',
         placeholder: 'Skip to main content',
-        visible: (component: any) => {
+        visible: (component: GrapesComponentModel) => {
           try {
             if (!component) return false;
-            const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
-            return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
+            const showSkipLink = (component.get?.('attributes') as Record<string, string> | undefined)?.['show-skip-link'];
+            return showSkipLink === 'true' || showSkipLink === undefined;
           } catch (e) {
             debug('Failed to check skip-link-text visibility:', e);
             return true;
@@ -404,8 +405,8 @@ registry.register({
         category: { id: 'accessibility', label: 'Accessibility' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const text = value || 'Skip to main content';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const text = String(value || 'Skip to main content');
           element.setAttribute('skip-link-text', text);
           updateHeaderSkipLink(element);
         },
@@ -422,11 +423,11 @@ registry.register({
         type: 'text',
         default: '#main-content',
         placeholder: '#main-content',
-        visible: (component: any) => {
+        visible: (component: GrapesComponentModel) => {
           try {
             if (!component) return false;
-            const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
-            return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
+            const showSkipLink = (component.get?.('attributes') as Record<string, string> | undefined)?.['show-skip-link'];
+            return showSkipLink === 'true' || showSkipLink === undefined;
           } catch (e) {
             debug('Failed to check skip-link-href visibility:', e);
             return true;
@@ -435,8 +436,8 @@ registry.register({
         category: { id: 'accessibility', label: 'Accessibility' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const href = value || '#main-content';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const href = String(value || '#main-content');
           element.setAttribute('skip-link-href', href);
           updateHeaderSkipLink(element);
         },
@@ -455,8 +456,8 @@ registry.register({
         default: 'Site Name',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const text = value || 'Site Name';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const text = String(value || 'Site Name');
           element.setAttribute('logo-text', text);
           (element as USWDSElement).logoText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -467,8 +468,8 @@ registry.register({
           return (element as USWDSElement).logoText || element.getAttribute('logo-text') || 'Site Name';
         },
         // Also initialize nav items and secondary links when logo-text initializes (backup entry point)
-        onInit: (element: HTMLElement, value: any) => {
-          const text = value || 'Site Name';
+        onInit: (element: HTMLElement, value: TraitValue) => {
+          const text = String(value || 'Site Name');
           (element as USWDSElement).logoText = text;
           // Initialize nav items and secondary links as well
           initHeaderNavItems(element);
@@ -487,8 +488,8 @@ registry.register({
         placeholder: 'URL when logo is clicked',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const href = value || '/';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const href = String(value || '/');
           element.setAttribute('logo-href', href);
           (element as USWDSElement).logoHref = href;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -511,9 +512,9 @@ registry.register({
         placeholder: 'Optional image URL',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('logo-image-src', value);
+            element.setAttribute('logo-image-src', String(value));
             (element as USWDSElement).logoImageSrc = value;
           } else {
             element.removeAttribute('logo-image-src');
@@ -539,9 +540,9 @@ registry.register({
         placeholder: 'Alt text for logo image',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           if (value) {
-            element.setAttribute('logo-image-alt', value);
+            element.setAttribute('logo-image-alt', String(value));
             (element as USWDSElement).logoImageAlt = value;
           } else {
             element.removeAttribute('logo-image-alt');
@@ -566,7 +567,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const isExtended = coerceBoolean(value);
           if (isExtended) {
             element.setAttribute('extended', '');
@@ -599,7 +600,7 @@ registry.register({
         default: false,
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
           const showSearch = coerceBoolean(value);
           // Set the attribute (for persistence)
           if (showSearch) {
@@ -617,7 +618,7 @@ registry.register({
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showSearch || element.hasAttribute('show-search');
         },
-        onInit: (element: HTMLElement, value: any) => {
+        onInit: (element: HTMLElement, value: TraitValue) => {
           const showSearch = coerceBoolean(value);
           (element as USWDSElement).showSearch = showSearch;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -637,8 +638,8 @@ registry.register({
         placeholder: 'Search placeholder text',
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const placeholder = value || 'Search';
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const placeholder = String(value || 'Search');
           element.setAttribute('search-placeholder', placeholder);
           (element as USWDSElement).searchPlaceholder = placeholder;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -668,15 +669,15 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const count = parseInt(value || '4', 10);
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = parseInt(String(value || '4'), 10);
           element.setAttribute('nav-count', String(count));
           rebuildHeaderNavItems(element, count);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('nav-count') ?? '4';
         },
-        onInit: (element: HTMLElement, _value: any) => {
+        onInit: (element: HTMLElement, _value: TraitValue) => {
           // Use retry logic to wait for Lit component to be ready
           initHeaderNavItems(element);
         },
@@ -719,15 +720,15 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: any) => {
-          const count = parseInt(value || '0', 10);
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const count = parseInt(String(value || '0'), 10);
           element.setAttribute('sec-count', String(count));
           rebuildHeaderSecondaryLinks(element, count);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('sec-count') ?? '0';
         },
-        onInit: (element: HTMLElement, _value: any) => {
+        onInit: (element: HTMLElement, _value: TraitValue) => {
           initHeaderSecondaryLinks(element);
         },
       },

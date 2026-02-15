@@ -8,7 +8,7 @@
  * Ensures the same data always produces the same string regardless
  * of property insertion order.
  */
-export function stableSerialize(value: unknown): string {
+function stableSerialize(value: unknown): string {
   return JSON.stringify(value, (_key, val) => {
     if (val && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
       return Object.keys(val)
@@ -26,7 +26,7 @@ export function stableSerialize(value: unknown): string {
  * Compute a SHA-256 hex checksum of the given string.
  * Uses crypto.subtle in the browser, crypto.createHash in Node.js.
  */
-export async function computeChecksum(data: string): Promise<string> {
+async function computeChecksum(data: string): Promise<string> {
   // Browser environment
   if (typeof globalThis.crypto?.subtle?.digest === 'function') {
     const encoder = new TextEncoder();

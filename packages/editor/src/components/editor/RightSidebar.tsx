@@ -22,6 +22,22 @@ import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
 
+/**
+ * Module-level cache for DOMPurify.sanitize results on block media (SVG icons).
+ * Block icons are static strings that never change at runtime, so caching them
+ * avoids repeated sanitisation on every render, category collapse/expand, and
+ * BlockCategory re-mount.
+ */
+const sanitizedMediaCache = new Map<string, string>();
+
+function cachedSanitize(html: string): string {
+  const cached = sanitizedMediaCache.get(html);
+  if (cached !== undefined) return cached;
+  const clean = DOMPurify.sanitize(html);
+  sanitizedMediaCache.set(html, clean);
+  return clean;
+}
+
 // Lazy-load the AI copilot panel so it is code-split into its own chunk.
 // The AI feature is optional (controlled by VITE_AI_ENABLED), so the
 // component, its hook, prompt template, and CSS should not be in the main bundle.
@@ -180,9 +196,11 @@ function BlockCategory({
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Memoize sanitized block media HTML — icons are static and don't change
+  // Build a per-render lookup from block ID → sanitized media HTML.
+  // The actual sanitisation is backed by the module-level cachedSanitize() so
+  // identical SVG strings are only processed once across all categories.
   const sanitizedMedia = useMemo(
-    () => new Map(blocks.map((b) => [b.getId(), DOMPurify.sanitize(b.getMedia())])),
+    () => new Map(blocks.map((b) => [b.getId(), cachedSanitize(b.getMedia())])),
     [blocks],
   );
 

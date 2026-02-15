@@ -5,7 +5,8 @@
  * or to external URLs. Used by usa-button, usa-link, and usa-button-group.
  */
 
-import type { UnifiedTrait } from './shared-utils.js';
+import type { UnifiedTrait, TraitValue } from './shared-utils.js';
+import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
@@ -57,10 +58,10 @@ export function updateButtonInnerElement(element: HTMLElement, href: string | nu
  */
 export function createPageLinkTraits(): Record<string, UnifiedTrait> {
   // Visibility for page-link: only when link-type is 'page'
-  const pageLinkVisible = (component: any) => {
+  const pageLinkVisible = (component: GrapesComponentModel) => {
     try {
       if (!component?.get) return false;
-      const attrs = component.get('attributes');
+      const attrs = component.get('attributes') as Record<string, string> | undefined;
       return attrs?.['link-type'] === 'page';
     } catch {
       return false;
@@ -68,10 +69,10 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
   };
 
   // Visibility for href: only when link-type is 'external'
-  const externalLinkVisible = (component: any) => {
+  const externalLinkVisible = (component: GrapesComponentModel) => {
     try {
       if (!component?.get) return false;
-      const attrs = component.get('attributes');
+      const attrs = component.get('attributes') as Record<string, string> | undefined;
       return attrs?.['link-type'] === 'external';
     } catch {
       return false;
@@ -93,8 +94,8 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
-          const linkType = value || 'none';
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
+          const linkType = String(value || 'none');
           element.setAttribute('link-type', linkType);
 
           // Clear conflicting attributes when switching modes
@@ -150,17 +151,18 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
           if (value) {
-            const href = `#page-${value}`;
+            const pageValue = String(value);
+            const href = `#page-${pageValue}`;
             // Set href as both attribute and property on DOM element
             element.setAttribute('href', href);
             (element as USWDSElement).href = href;
-            element.setAttribute('page-link', value);
+            element.setAttribute('page-link', pageValue);
 
             // CRITICAL: Also update GrapesJS component model so getHtml() includes href
             if (component?.addAttributes) {
-              component.addAttributes({ href: href, 'page-link': value });
+              component.addAttributes({ href: href, 'page-link': pageValue });
             }
 
             // Update inner element based on component type
@@ -209,10 +211,10 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
         category: { id: 'link', label: 'Link' },
       },
       handler: {
-        onChange: (element: HTMLElement, value: any, _oldValue?: any, component?: any) => {
+        onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
           if (value) {
             // Normalize URL: add https:// if it looks like a domain but has no protocol
-            let href = value;
+            let href = String(value);
             if (href && !href.startsWith('#') && !href.startsWith('/') && !href.includes('://')) {
               // Looks like a domain without protocol (e.g., "www.google.com" or "google.com")
               href = 'https://' + href;
