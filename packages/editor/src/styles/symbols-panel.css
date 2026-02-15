@@ -179,6 +179,46 @@
 }
 
 /* ============================================
+   Insert Button
+   ============================================ */
+
+.symbols-item-insert-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-base-lighter);
+  color: var(--color-base-light);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: var(--border-radius);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.symbols-item:hover .symbols-item-insert-btn {
+  opacity: 1;
+}
+
+.symbols-item-insert-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: rgba(0, 94, 162, 0.05);
+}
+
+.symbols-item-insert-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* ============================================
    Item Actions (overflow menu)
    ============================================ */
 
@@ -250,6 +290,17 @@
   border-color: var(--color-error);
 }
 
+.symbols-item-action-btn--primary {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.symbols-item-action-btn--primary:hover {
+  background: rgba(0, 94, 162, 0.08);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 /* ============================================
    Inline Rename
    ============================================ */
@@ -287,6 +338,26 @@
 
 .symbols-confirm-delete-label {
   font-weight: 500;
+}
+
+/* ============================================
+   Inline Update Confirmation
+   ============================================ */
+
+.symbols-confirm-update {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 6px 36px;
+  font-size: 0.75rem;
+  color: var(--color-base);
+  flex-wrap: wrap;
+}
+
+.symbols-confirm-update-label {
+  font-weight: 500;
+  flex-basis: 100%;
+  margin-bottom: 2px;
 }
 
 /* ============================================

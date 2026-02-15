@@ -1,7 +1,7 @@
 /**
  * Symbols Panel
  *
- * Browse, rename, delete, and promote reusable symbols.
+ * Browse, insert, rename, update, delete, and promote reusable symbols.
  * Grouped by scope (prototype, team, organization) with
  * filter bar, inline actions, and permission gating.
  *
@@ -22,6 +22,7 @@ import {
 } from 'react';
 import type { GlobalSymbol, SymbolScope, Role } from '@uswds-pt/shared';
 import type { UseGlobalSymbolsReturn } from '../../hooks/useGlobalSymbols';
+import { useEditorMaybe } from '@grapesjs/react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useOrganizationContext } from '../../contexts/OrganizationContext';
 import '../../styles/symbols-panel.css';
@@ -84,10 +85,49 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
   const { symbols, isLoading, error, refresh, update, remove, promote } = useSymbolsContext();
   const { user } = useAuthContext();
   const { organization, currentTeam } = useOrganizationContext();
+  const editor = useEditorMaybe();
 
   const userId = user?.id;
   const role = currentTeam?.role as Role | undefined;
   const hasOrg = !!organization;
+
+  const handleInsert = useCallback((symbol: GlobalSymbol) => {
+    if (!editor) return;
+
+    const components = symbol.symbolData?.components;
+    if (!components || components.length === 0) return;
+
+    const um = (editor as any).UndoManager;
+    um?.start?.();
+
+    try {
+      const selected = (editor as any).getSelected?.();
+      const wrapper = (editor as any).DomComponents?.getWrapper();
+
+      if (selected) {
+        const parent = selected.parent?.();
+        if (parent) {
+          const children = parent.components();
+          const models = children.models || [];
+          let index = models.length;
+          for (let i = 0; i < models.length; i++) {
+            if (models[i] === selected) {
+              index = i + 1;
+              break;
+            }
+          }
+          children.add(components, { at: index });
+        } else {
+          // Selected is the wrapper itself — append inside it
+          wrapper?.append?.(components);
+        }
+      } else {
+        wrapper?.append?.(components);
+      }
+    } finally {
+      um?.stop?.();
+    }
+  }, [editor]);
 
   const [scopeFilter, setScopeFilter] = useState<SymbolScope | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -198,6 +238,8 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
               update={update}
               remove={remove}
               promote={promote}
+              onInsert={handleInsert}
+              editor={editor}
             />
           );
         })}
@@ -219,6 +261,8 @@ interface SymbolScopeGroupProps {
   update: UseGlobalSymbolsReturn['update'];
   remove: UseGlobalSymbolsReturn['remove'];
   promote: UseGlobalSymbolsReturn['promote'];
+  onInsert: (symbol: GlobalSymbol) => void;
+  editor: any;
 }
 
 function SymbolScopeGroup({
@@ -230,6 +274,8 @@ function SymbolScopeGroup({
   update,
   remove,
   promote,
+  onInsert,
+  editor,
 }: SymbolScopeGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -260,6 +306,8 @@ function SymbolScopeGroup({
               update={update}
               remove={remove}
               promote={promote}
+              onInsert={onInsert}
+              editor={editor}
             />
           ))}
         </div>
@@ -272,7 +320,7 @@ function SymbolScopeGroup({
 // SymbolListItem
 // ============================================================================
 
-type ItemAction = 'none' | 'menu' | 'rename' | 'delete' | 'promote';
+type ItemAction = 'none' | 'menu' | 'rename' | 'delete' | 'promote' | 'update';
 
 const SCOPE_BADGE_LETTER: Record<SymbolScope, string> = {
   prototype: 'P',
@@ -288,9 +336,11 @@ interface SymbolListItemProps {
   update: UseGlobalSymbolsReturn['update'];
   remove: UseGlobalSymbolsReturn['remove'];
   promote: UseGlobalSymbolsReturn['promote'];
+  onInsert: (symbol: GlobalSymbol) => void;
+  editor: any;
 }
 
-function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote }: SymbolListItemProps) {
+function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote, onInsert, editor }: SymbolListItemProps) {
   const [action, setAction] = useState<ItemAction>('none');
   const [renameName, setRenameName] = useState(symbol.name);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -368,6 +418,36 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote 
     [symbol.id, promote, showError],
   );
 
+  const handleUpdate = useCallback(async () => {
+    if (!editor) {
+      showError('Editor not available');
+      return;
+    }
+
+    const selected = editor.getSelected?.();
+    if (!selected) {
+      showError('Select a component on the canvas first');
+      return;
+    }
+
+    setIsActing(true);
+    const json = selected.toJSON?.() || {};
+    const newSymbolData = {
+      id: symbol.symbolData.id || symbol.id,
+      label: symbol.symbolData.label || symbol.name,
+      icon: json.icon,
+      components: json.components || [],
+    };
+
+    const result = await update(symbol.id, { symbolData: newSymbolData });
+    setIsActing(false);
+    if (result) {
+      setAction('none');
+    } else {
+      showError('Failed to update symbol');
+    }
+  }, [editor, symbol.id, symbol.symbolData, symbol.name, update, showError]);
+
   const formattedDate = useMemo(() => {
     try {
       return new Date(symbol.createdAt).toLocaleDateString(undefined, {
@@ -404,6 +484,16 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote 
           )}
         </div>
 
+        {/* Insert button */}
+        <button
+          className="symbols-item-insert-btn"
+          onClick={() => onInsert(symbol)}
+          aria-label={`Insert ${symbol.name}`}
+          title="Insert onto canvas"
+        >
+          +
+        </button>
+
         {/* Overflow menu button */}
         {editable && (
           <div className="symbols-item-actions">
@@ -434,6 +524,12 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote 
             }}
           >
             Rename
+          </button>
+          <button
+            className="symbols-item-action-btn"
+            onClick={() => setAction('update')}
+          >
+            Update
           </button>
           <button
             className="symbols-item-action-btn symbols-item-action-btn--danger"
@@ -484,6 +580,26 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote 
             disabled={isActing}
           >
             Delete
+          </button>
+        </div>
+      )}
+
+      {action === 'update' && (
+        <div className="symbols-confirm-update" role="alert">
+          <span className="symbols-confirm-update-label">Replace symbol content with selected component?</span>
+          <button
+            className="symbols-item-action-btn"
+            onClick={() => setAction('none')}
+            disabled={isActing}
+          >
+            Cancel
+          </button>
+          <button
+            className="symbols-item-action-btn symbols-item-action-btn--primary"
+            onClick={handleUpdate}
+            disabled={isActing}
+          >
+            Update
           </button>
         </div>
       )}

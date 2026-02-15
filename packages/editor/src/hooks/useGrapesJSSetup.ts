@@ -130,6 +130,11 @@ export function useGrapesJSSetup({
   // Track retry timeouts for cleanup on unmount
   const retryTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  // Guard: only inject global symbols once during initial load.
+  // Runtime symbol changes (create/delete/promote) are managed via
+  // SymbolsPanel UI and don't need canvas injection.
+  const hasInjectedSymbolsRef = useRef(false);
+
   // Helper to register editor event listeners with automatic tracking
   const registerListener = useCallback(
     (editor: EditorInstance, event: string, handler: (...args: unknown[]) => void) => {
@@ -166,9 +171,12 @@ export function useGrapesJSSetup({
     return cleanup;
   }, [cleanup]);
 
-  // Inject global symbols into editor when they become available
-  // This handles the case where symbols load after the editor is ready
+  // Inject global symbols into editor once during initial load.
+  // Subsequent symbol changes (create/delete/promote) are managed via
+  // the SymbolsPanel UI and don't require a full canvas reload.
   useEffect(() => {
+    if (hasInjectedSymbolsRef.current) return;
+
     const editor = editorRef.current;
     debug('Global symbols effect triggered, count:', globalSymbols.length);
 
@@ -204,6 +212,8 @@ export function useGrapesJSSetup({
         editor.loadProjectData(mergedData);
         debug('Injection complete');
       }
+
+      hasInjectedSymbolsRef.current = true;
     } catch (e) {
       debug('Failed to inject global symbols:', e);
     }
