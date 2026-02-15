@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
+import type { Prototype, SymbolScope, GrapesJSSymbol, GrapesProjectData } from '@uswds-pt/shared';
 import { createDebugLogger, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
 import { useOrganizationContext } from '../contexts/OrganizationContext';
 import { useVersionHistory } from '../hooks/useVersionHistory';
@@ -28,6 +28,7 @@ import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
 import { isDemoMode, API_ENDPOINTS, apiGet } from '../lib/api';
+import { GJS_EVENTS, EDITOR_EVENTS } from '../lib/contracts';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
@@ -250,16 +251,16 @@ export function Editor() {
   // Passed to EditorCanvas → SDK's storage.project so the SDK loads it during init,
   // avoiding manual loadProjectData() calls and timing races in onReady.
   // Also passed to useGrapesJSSetup for safety-net loadProjectData in onReady.
-  const projectDataCacheRef = useRef<{ key: string; data: Record<string, any> | null }>({ key: '', data: null });
+  const projectDataCacheRef = useRef<{ key: string; data: GrapesProjectData | null }>({ key: '', data: null });
   if (projectDataCacheRef.current.key !== editorKey) {
-    let grapesData: Record<string, any> | null = null;
+    let grapesData: GrapesProjectData | null = null;
 
     // Use pendingPrototypeRef (set synchronously in loadPrototypeAndRemount)
     // as the primary source — it's always current regardless of React state timing.
     // Fall back to localPrototype (demo) or stateMachine prototype (API mode).
     const protoData = pendingPrototypeRef.current || stateMachine.state.prototype;
     if (protoData?.grapesData) {
-      grapesData = protoData.grapesData as Record<string, any>;
+      grapesData = protoData.grapesData as GrapesProjectData;
     } else if (isDemoMode && localPrototype?.gjsData) {
       try {
         grapesData = JSON.parse(localPrototype.gjsData);
@@ -709,9 +710,9 @@ export function Editor() {
     updateUndoState();
 
     // Listen for undo manager changes
-    editor.on('change:changesCount', updateUndoState);
+    editor.on(GJS_EVENTS.CHANGES_COUNT, updateUndoState);
     return () => {
-      editor.off('change:changesCount', updateUndoState);
+      editor.off(GJS_EVENTS.CHANGES_COUNT, updateUndoState);
     };
   }, [editorKey, isEditorReady]);
 
@@ -721,14 +722,14 @@ export function Editor() {
     const editor = editorRef.current;
     if (!editor) return;
     (editor as any).__projectStates = orgStates;
-    editor.trigger?.('states:update');
+    editor.trigger?.(EDITOR_EVENTS.STATES_UPDATE);
   }, [orgStates]);
 
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
     (editor as any).__projectUsers = orgUsers;
-    editor.trigger?.('users:update');
+    editor.trigger?.(EDITOR_EVENTS.USERS_UPDATE);
   }, [orgUsers]);
 
   /**
@@ -827,6 +828,16 @@ export function Editor() {
           debug('Unmount save failed:', err instanceof Error ? err.message : String(err));
         });
       }
+    };
+  }, []);
+
+  /**
+   * Destroys the GrapesJS editor instance on unmount to free event listeners,
+   * DOM mutations, and internal state. Runs after the save cleanup above.
+   */
+  useEffect(() => {
+    return () => {
+      editorRef.current?.destroy();
     };
   }, []);
 

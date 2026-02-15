@@ -7,6 +7,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../../types/grapesjs';
+import { GJS_EVENTS } from '../../contracts';
 import { activeTimeouts, createTrackedTimeout } from './tracking';
 
 const debug = createDebugLogger('Canvas');
@@ -93,14 +94,14 @@ export function setupCanvasEventHandlers(
   registerListener: (event: string, handler: (...args: unknown[]) => void) => void
 ): void {
   // Force canvas refresh after component removal
-  registerListener('component:remove', (component: any) => {
+  registerListener(GJS_EVENTS.COMPONENT_REMOVE, (component: any) => {
     const tagName = component?.get?.('tagName') || component?.get?.('type');
     debug('Component removed:', tagName);
     scheduleCanvasUpdate(editor);
   });
 
   // Force canvas refresh after component move/reorder
-  registerListener('component:drag:end', () => {
+  registerListener(GJS_EVENTS.COMPONENT_DRAG_END, () => {
     debug('Component drag ended');
     scheduleCanvasUpdate(editor);
   });
@@ -111,7 +112,7 @@ export function setupCanvasEventHandlers(
   });
 
   // Listen for any component update that might affect ordering
-  registerListener('component:update', () => {
+  registerListener(GJS_EVENTS.COMPONENT_UPDATE, () => {
     debug('Component updated');
     scheduleCanvasUpdate(editor);
   });

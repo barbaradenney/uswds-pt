@@ -9,6 +9,7 @@ import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-u
 import {
   coerceBoolean,
   hasAttributeTrue,
+  traitStr,
 } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
@@ -51,7 +52,7 @@ function createAccordionSectionTrait(
 
   // Visibility function - only show if sectionNum <= section-count
   const visibleFn = (component: GrapesComponentModel) => {
-    const count = parseInt(component.get('attributes')?.['section-count'] || '3', 10);
+    const count = parseInt((component.getAttributes?.() ?? {})['section-count'] || '3', 10);
     return sectionNum <= count;
   };
 
@@ -97,7 +98,7 @@ function createAccordionSectionTrait(
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('section-count') || '3', 10);
         if (sectionNum <= count) {
           rebuildAccordionItems(element, count);
@@ -140,7 +141,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = parseInt(value || '3', 10);
+          const count = parseInt(traitStr(value, '3'), 10);
           element.setAttribute('section-count', String(count));
           rebuildAccordionItems(element, count);
         },
@@ -149,7 +150,7 @@ registry.register({
         },
         onInit: (element: HTMLElement, value: TraitValue) => {
           setTimeout(() => {
-            const count = parseInt(value || '3', 10);
+            const count = parseInt(traitStr(value, '3'), 10);
             rebuildAccordionItems(element, count);
           }, 100);
         },
@@ -259,7 +260,7 @@ function createStepTrait(
 
   // Visibility function - only show if stepNum <= step-count
   const visibleFn = (component: GrapesComponentModel) => {
-    const count = parseInt(component.get('attributes')?.['step-count'] || '4', 10);
+    const count = parseInt((component.getAttributes?.() ?? {})['step-count'] || '4', 10);
     return stepNum <= count;
   };
 
@@ -280,7 +281,7 @@ function createStepTrait(
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute(attrName, value || 'incomplete');
+          element.setAttribute(attrName, traitStr(value, 'incomplete'));
           const count = parseInt(element.getAttribute('step-count') || '4', 10);
           if (stepNum <= count) {
             rebuildStepIndicatorSteps(element, count);
@@ -304,7 +305,7 @@ function createStepTrait(
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('step-count') || '4', 10);
         if (stepNum <= count) {
           rebuildStepIndicatorSteps(element, count);
@@ -346,7 +347,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = parseInt(value || '4', 10);
+          const count = parseInt(traitStr(value, '4'), 10);
           element.setAttribute('step-count', String(count));
           rebuildStepIndicatorSteps(element, count);
         },
@@ -355,7 +356,7 @@ registry.register({
         },
         onInit: (element: HTMLElement, value: TraitValue) => {
           setTimeout(() => {
-            const count = parseInt(value || '4', 10);
+            const count = parseInt(traitStr(value, '4'), 10);
             rebuildStepIndicatorSteps(element, count);
           }, 100);
         },
@@ -405,8 +406,8 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
           if (value && value !== 'none') {
-            element.setAttribute('counters', value);
-            (element as USWDSElement).counters = value;
+            element.setAttribute('counters', traitStr(value));
+            (element as USWDSElement).counters = traitStr(value);
           } else {
             element.removeAttribute('counters');
             (element as USWDSElement).counters = '';
@@ -523,7 +524,7 @@ function createProcessListItemTrait(
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['item-count'] || '3', 10);
+      const count = parseInt((component.getAttributes?.() ?? {})['item-count'] || '3', 10);
       return itemNum <= count;
     } catch {
       return true;
@@ -540,7 +541,7 @@ function createProcessListItemTrait(
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('item-count') || '3', 10);
         if (itemNum <= count) {
           rebuildProcessListItems(element, count);
@@ -583,7 +584,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = parseInt(value || '3', 10);
+          const count = parseInt(traitStr(value, '3'), 10);
           element.setAttribute('item-count', String(count));
           rebuildProcessListItems(element, count);
         },
@@ -592,7 +593,7 @@ registry.register({
         },
         onInit: (element: HTMLElement, value: TraitValue) => {
           setTimeout(() => {
-            const count = parseInt(value || '3', 10);
+            const count = parseInt(traitStr(value, '3'), 10);
             rebuildProcessListItems(element, count);
           }, 100);
         },
@@ -616,7 +617,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const level = value || 'h4';
+          const level = traitStr(value, 'h4');
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -665,7 +666,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const content = value || '';
+          const content = traitStr(value);
           // For prose, we update the innerHTML/textContent
           element.textContent = content;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -703,7 +704,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const domain = value || 'domain.gov';
+          const domain = traitStr(value, 'domain.gov');
           element.setAttribute('domain', domain);
           (element as USWDSElement).domain = domain;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -728,7 +729,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const agency = value || 'Parent Agency';
+          const agency = traitStr(value, 'Parent Agency');
           element.setAttribute('parent-agency', agency);
           (element as USWDSElement).parentAgency = agency;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -753,7 +754,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const href = value || '#';
+          const href = traitStr(value, '#');
           element.setAttribute('parent-agency-href', href);
           (element as USWDSElement).parentAgencyHref = href;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -778,7 +779,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const alt = value || '';
+          const alt = traitStr(value);
           if (alt) {
             element.setAttribute('masthead-logo-alt', alt);
           } else {

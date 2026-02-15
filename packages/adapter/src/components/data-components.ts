@@ -10,6 +10,7 @@ import {
   coerceBoolean,
   hasAttributeTrue,
   createBooleanTrait,
+  traitStr,
 } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import { escapeHtml, createDebugLogger } from '@uswds-pt/shared';
@@ -47,7 +48,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -70,7 +71,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -101,7 +102,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const level = value || '3';
+          const level = traitStr(value, '3');
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -129,7 +130,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const mediaType = value || 'none';
+          const mediaType = traitStr(value, 'none');
           element.setAttribute('media-type', mediaType);
           (element as USWDSElement).mediaType = mediaType;
 
@@ -172,8 +173,8 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('media-src', value || '');
-          (element as USWDSElement).mediaSrc = value || '';
+          element.setAttribute('media-src', traitStr(value));
+          (element as USWDSElement).mediaSrc = traitStr(value);
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
           }
@@ -195,8 +196,8 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('media-alt', value || '');
-          (element as USWDSElement).mediaAlt = value || '';
+          element.setAttribute('media-alt', traitStr(value));
+          (element as USWDSElement).mediaAlt = traitStr(value);
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
           }
@@ -222,7 +223,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const position = value || 'inset';
+          const position = traitStr(value, 'inset');
           element.setAttribute('media-position', position);
           (element as USWDSElement).mediaPosition = position;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -300,7 +301,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('footer-text', text);
           (element as USWDSElement).footerText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -351,7 +352,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const url = value || '';
+          const url = traitStr(value);
           if (url) {
             element.setAttribute('href', url);
           } else {
@@ -382,7 +383,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const target = value || '_self';
+          const target = traitStr(value, '_self');
           if (target && target !== '_self') {
             element.setAttribute('target', target);
           } else {
@@ -421,7 +422,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Tag';
+          const text = traitStr(value, 'Tag');
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -522,7 +523,7 @@ function createTableHeaderTrait(colIndex: number): UnifiedTrait {
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
+      const count = parseInt((component.getAttributes?.() ?? {})['col-count'] || '3', 10);
       return colIndex <= count;
     } catch (e) {
       debug('Failed to check table header trait visibility:', e);
@@ -540,7 +541,7 @@ function createTableHeaderTrait(colIndex: number): UnifiedTrait {
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         rebuildTable(element);
       },
       getValue: (element: HTMLElement) => {
@@ -558,8 +559,8 @@ function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait 
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const colCount = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
-      const rowCount = parseInt(component.get?.('attributes')?.['row-count'] || '3', 10);
+      const colCount = parseInt((component.getAttributes?.() ?? {})['col-count'] || '3', 10);
+      const rowCount = parseInt((component.getAttributes?.() ?? {})['row-count'] || '3', 10);
       return rowIndex <= rowCount && colIndex <= colCount;
     } catch (e) {
       debug('Failed to check table cell trait visibility:', e);
@@ -577,7 +578,7 @@ function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait 
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         rebuildTable(element);
       },
       getValue: (element: HTMLElement) => {
@@ -602,7 +603,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('caption', value || '');
+          element.setAttribute('caption', traitStr(value));
           rebuildTable(element);
         },
         getValue: (element: HTMLElement) => {
@@ -695,7 +696,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('stacked', value || 'none');
+          element.setAttribute('stacked', traitStr(value, 'none'));
           rebuildTable(element);
         },
         getValue: (element: HTMLElement) => {
@@ -720,7 +721,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('col-count', value || '3');
+          element.setAttribute('col-count', traitStr(value, '3'));
           rebuildTable(element);
         },
         getValue: (element: HTMLElement) => {
@@ -746,7 +747,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('row-count', value || '3');
+          element.setAttribute('row-count', traitStr(value, '3'));
           rebuildTable(element);
         },
         getValue: (element: HTMLElement) => {
@@ -900,7 +901,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const name = value || 'info';
+          const name = traitStr(value, 'info');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -935,11 +936,11 @@ registry.register({
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
           if (value && value !== '') {
-            element.setAttribute('size', value);
+            element.setAttribute('size', traitStr(value));
           } else {
             element.removeAttribute('size');
           }
-          (element as USWDSElement).size = value || '';
+          (element as USWDSElement).size = traitStr(value);
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
           }
@@ -1069,7 +1070,7 @@ function _createListItemTrait(index: number): UnifiedTrait {
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      const count = parseInt((component.getAttributes?.() ?? {})['count'] || '3', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check list item trait visibility:', e);
@@ -1087,7 +1088,7 @@ function _createListItemTrait(index: number): UnifiedTrait {
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildListItems(element, count);
       },
@@ -1117,7 +1118,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('type', value || 'unordered');
+          element.setAttribute('type', traitStr(value, 'unordered'));
           // Trigger re-render to switch list type
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
@@ -1156,12 +1157,12 @@ registry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: TraitValue) => {
-          const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
+          const count = Math.max(1, Math.min(10, parseInt(traitStr(value, '3'), 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildListItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
+          const count = Math.max(1, Math.min(10, parseInt(traitStr(value, '3'), 10) || 3));
           element.setAttribute('count', String(count));
           rebuildListItems(element, count);
         },
@@ -1240,7 +1241,7 @@ function _createCollectionItemTrait(index: number, type: 'title' | 'description'
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
+      const count = parseInt((component.getAttributes?.() ?? {})['count'] || '3', 10);
       return index <= count;
     } catch (e) {
       debug('Failed to check collection item trait visibility:', e);
@@ -1259,7 +1260,7 @@ function _createCollectionItemTrait(index: number, type: 'title' | 'description'
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('count') || '3', 10) || 3;
         rebuildCollectionItems(element, count);
       },
@@ -1291,12 +1292,12 @@ registry.register({
       },
       handler: {
         onInit: (element: HTMLElement, value: TraitValue) => {
-          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(traitStr(value, '3'), 10) || 3));
           element.setAttribute('count', String(count));
           setTimeout(() => rebuildCollectionItems(element, count), 100);
         },
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = Math.max(1, Math.min(6, parseInt(value, 10) || 3));
+          const count = Math.max(1, Math.min(6, parseInt(traitStr(value, '3'), 10) || 3));
           element.setAttribute('count', String(count));
           rebuildCollectionItems(element, count);
         },
@@ -1328,7 +1329,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Key Information';
+          const text = traitStr(value, 'Key Information');
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -1351,7 +1352,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('content', text);
           (element as USWDSElement).content = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -1382,7 +1383,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const level = value || 'h3';
+          const level = traitStr(value, 'h3');
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {

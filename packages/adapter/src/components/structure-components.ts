@@ -10,6 +10,7 @@ import {
   coerceBoolean,
   createAttributeTrait,
   createBooleanTrait,
+  traitStr,
 } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import { createPageLinkTraits } from './page-link-traits.js';
@@ -57,7 +58,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('method', value || 'post');
+          element.setAttribute('method', traitStr(value, 'post'));
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('method') ?? 'post';
@@ -137,11 +138,12 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: string) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const cls = traitStr(value);
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value && value !== 'none') {
-            element.classList.add(value);
+          if (cls && cls !== 'none') {
+            element.classList.add(cls);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -169,11 +171,12 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: string) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const cls = traitStr(value);
           // Remove existing margin classes
           element.classList.remove('margin-bottom-1', 'margin-bottom-2', 'margin-bottom-3', 'margin-bottom-4');
-          if (value && value !== 'none') {
-            element.classList.add(value);
+          if (cls && cls !== 'none') {
+            element.classList.add(cls);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -209,7 +212,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const legendText = value || 'Group Label';
+          const legendText = traitStr(value, 'Group Label');
           // Find or create the legend element
           let legend = element.querySelector('legend');
           if (!legend) {
@@ -329,7 +332,7 @@ registry.register({
           element.setAttribute('count', String(count));
         },
         onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
-          const targetCount = Math.max(1, Math.min(10, parseInt(value, 10) || 3));
+          const targetCount = Math.max(1, Math.min(10, parseInt(traitStr(value, '3'), 10) || 3));
 
           // Find existing checkboxes or radios
           const checkboxes = element.querySelectorAll('usa-checkbox');
@@ -377,7 +380,7 @@ registry.register({
               // Use GrapesJS API to remove components
               const children = component.components();
               const childModels = children.models.filter((m: GrapesComponentModel) => {
-                const tag = m.get('tagName')?.toLowerCase();
+                const tag = (m.get('tagName') as string | undefined)?.toLowerCase();
                 return tag === 'usa-checkbox' || tag === 'usa-radio';
               });
               for (let i = childModels.length - 1; i >= targetCount; i--) {

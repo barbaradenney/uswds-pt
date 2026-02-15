@@ -10,6 +10,7 @@ import {
   coerceBoolean,
   createAttributeTrait,
   createBooleanTrait,
+  traitStr,
 } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
@@ -58,7 +59,8 @@ function createComboBoxOptionTrait(
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return true;
-      const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
+      const attrs = component.getAttributes?.() ?? {};
+      const count = parseInt(attrs['option-count'] || '3', 10);
       return optionNum <= count;
     } catch {
       return true;
@@ -75,7 +77,7 @@ function createComboBoxOptionTrait(
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         const count = parseInt(element.getAttribute('option-count') || '3', 10);
         if (optionNum <= count) {
           rebuildComboBoxOptions(element, count);
@@ -218,11 +220,12 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: string) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const cls = traitStr(value);
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value && value !== 'none') {
-            element.classList.add(value);
+          if (cls && cls !== 'none') {
+            element.classList.add(cls);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -367,11 +370,12 @@ registry.register({
         ],
       },
       handler: {
-        onChange: (element: HTMLElement, value: string) => {
+        onChange: (element: HTMLElement, value: TraitValue) => {
+          const cls = traitStr(value);
           // Remove existing margin classes
           element.classList.remove('margin-top-1', 'margin-top-2', 'margin-top-3', 'margin-top-4');
-          if (value && value !== 'none') {
-            element.classList.add(value);
+          if (cls && cls !== 'none') {
+            element.classList.add(cls);
           }
         },
         getValue: (element: HTMLElement) => {
@@ -448,7 +452,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('options-preset', value || 'manual');
+          element.setAttribute('options-preset', traitStr(value, 'manual'));
           rebuildSelectOptionsFromSource(element);
         },
         getValue: (element: HTMLElement) => {
@@ -479,7 +483,7 @@ registry.register({
         placeholder: 'value|label or just label\nOne option per line',
         visible: (component: GrapesComponentModel) => {
           try {
-            return component?.get?.('attributes')?.['options-preset'] === 'custom';
+            return (component?.getAttributes?.() ?? {})['options-preset'] === 'custom';
           } catch {
             return false;
           }
@@ -487,7 +491,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('custom-options', value || '');
+          element.setAttribute('custom-options', traitStr(value));
           rebuildSelectOptionsFromSource(element);
         },
         getValue: (element: HTMLElement) => {
@@ -517,7 +521,7 @@ registry.register({
         ],
         visible: (component: GrapesComponentModel) => {
           try {
-            const preset = component?.get?.('attributes')?.['options-preset'] || 'manual';
+            const preset = (component?.getAttributes?.() ?? {})['options-preset'] || 'manual';
             return preset === 'manual';
           } catch {
             return true;
@@ -526,7 +530,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('option-count', value || '3');
+          element.setAttribute('option-count', traitStr(value, '3'));
           rebuildSelectOptionsFromSource(element);
         },
         getValue: (element: HTMLElement) => {
@@ -619,7 +623,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const label = value || 'Select an option';
+          const label = traitStr(value, 'Select an option');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -642,7 +646,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const name = value || 'combo-box';
+          const name = traitStr(value, 'combo-box');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -665,7 +669,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const placeholder = value || '';
+          const placeholder = traitStr(value);
           if (placeholder) {
             element.setAttribute('placeholder', placeholder);
           } else {
@@ -693,7 +697,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const hint = value || '';
+          const hint = traitStr(value);
           if (hint) {
             element.setAttribute('hint', hint);
           } else {
@@ -730,7 +734,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const count = parseInt(value || '3', 10);
+          const count = parseInt(traitStr(value, '3'), 10);
           element.setAttribute('option-count', String(count));
           rebuildComboBoxOptions(element, count);
         },
@@ -739,7 +743,7 @@ registry.register({
         },
         onInit: (element: HTMLElement, value: TraitValue) => {
           setTimeout(() => {
-            const count = parseInt(value || '3', 10);
+            const count = parseInt(traitStr(value, '3'), 10);
             rebuildComboBoxOptions(element, count);
           }, 100);
         },

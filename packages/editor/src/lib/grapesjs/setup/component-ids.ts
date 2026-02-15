@@ -7,6 +7,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import { isExtractingPerPageHtml } from '../data-extractor';
+import { GJS_EVENTS } from '../../contracts';
 import type { EditorInstance, RegisterListener } from './types';
 
 const debug = createDebugLogger('GrapesJSSetup');
@@ -295,7 +296,7 @@ export function setupProactiveIdAssignment(
     debug('Processed all components for ID assignment');
   };
 
-  registerListener(editor, 'component:add', (component: any) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_ADD, (component: any) => {
     requestAnimationFrame(() => {
       if (!component?.get) return;
       assignIdIfNeeded(component);
@@ -311,9 +312,9 @@ export function setupProactiveIdAssignment(
     });
   };
 
-  registerListener(editor, 'load', scheduleIdProcessing);
-  registerListener(editor, 'canvas:frame:load', () => {
+  registerListener(editor, GJS_EVENTS.LOAD, scheduleIdProcessing);
+  registerListener(editor, GJS_EVENTS.CANVAS_FRAME_LOAD, () => {
     if (!isExtractingPerPageHtml()) scheduleIdProcessing();
   });
-  registerListener(editor, 'page:select', scheduleIdProcessing);
+  registerListener(editor, GJS_EVENTS.PAGE_SELECT, scheduleIdProcessing);
 }

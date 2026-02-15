@@ -8,6 +8,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../../types/grapesjs';
+import { GJS_EVENTS } from '../../contracts';
 import { addTrackedDocumentListener, isDocumentHandled, markDocumentHandled } from './tracking';
 
 const debug = createDebugLogger('Canvas');
@@ -377,9 +378,9 @@ export function setupConditionalFieldsWatcher(
     }, 150);
   };
 
-  registerListener('component:update:attributes', refresh);
-  registerListener('component:add', refresh);
-  registerListener('component:remove', refresh);
+  registerListener(GJS_EVENTS.COMPONENT_UPDATE_ATTRS, refresh);
+  registerListener(GJS_EVENTS.COMPONENT_ADD, refresh);
+  registerListener(GJS_EVENTS.COMPONENT_REMOVE, refresh);
 }
 
 // ============================================================================
@@ -413,5 +414,5 @@ export function setupAllInteractiveHandlers(
   editor: EditorInstance,
   registerListener: (event: string, handler: (...args: unknown[]) => void) => void
 ): void {
-  registerListener('canvas:frame:load', () => reinitInteractiveHandlers(editor));
+  registerListener(GJS_EVENTS.CANVAS_FRAME_LOAD, () => reinitInteractiveHandlers(editor));
 }

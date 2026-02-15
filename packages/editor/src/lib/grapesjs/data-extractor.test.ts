@@ -286,8 +286,8 @@ describe('extractEditorData - primary path', () => {
 
     expect(result.html).toBe('<div>My Content</div>');
     expect(result.projectData.pages).toHaveLength(1);
-    expect(result.projectData.pages[0].id).toBe('page-1');
-    expect(result.projectData.pages[0].name).toBe('Home');
+    expect(result.projectData.pages![0].id).toBe('page-1');
+    expect(result.projectData.pages![0].name).toBe('Home');
     expect(result.warnings).toHaveLength(0);
     expect(result.success).toBe(true);
   });
@@ -329,7 +329,7 @@ describe('extractEditorData - fallback path', () => {
 
     expect(result.projectData).toBeDefined();
     expect(result.projectData.pages).toBeDefined();
-    expect(result.projectData.pages.length).toBeGreaterThan(0);
+    expect(result.projectData.pages!.length).toBeGreaterThan(0);
     expect(result.warnings.some(w => w.includes('forEach'))).toBe(true);
   });
 
@@ -339,7 +339,7 @@ describe('extractEditorData - fallback path', () => {
     const result = extractEditorData(editor);
 
     expect(result.projectData).toBeDefined();
-    expect(result.projectData.pages.length).toBeGreaterThan(0);
+    expect(result.projectData.pages!.length).toBeGreaterThan(0);
     expect(result.warnings.some(w => w.includes('invalid structure'))).toBe(true);
   });
 
@@ -348,7 +348,7 @@ describe('extractEditorData - fallback path', () => {
 
     const result = extractEditorData(editor);
 
-    expect(result.projectData.pages.length).toBeGreaterThan(0);
+    expect(result.projectData.pages!.length).toBeGreaterThan(0);
   });
 
   it('should reconstruct pages from editor Pages manager in fallback', () => {
@@ -364,11 +364,11 @@ describe('extractEditorData - fallback path', () => {
 
     const result = extractEditorData(editor);
 
-    expect(result.projectData.pages.length).toBe(2);
-    expect(result.projectData.pages[0].id).toBe('p1');
-    expect(result.projectData.pages[0].name).toBe('Page 1');
-    expect(result.projectData.pages[1].id).toBe('p2');
-    expect(result.projectData.pages[1].name).toBe('Page 2');
+    expect(result.projectData.pages!.length).toBe(2);
+    expect(result.projectData.pages![0].id).toBe('p1');
+    expect(result.projectData.pages![0].name).toBe('Page 1');
+    expect(result.projectData.pages![1].id).toBe('p2');
+    expect(result.projectData.pages![1].name).toBe('Page 2');
   });
 
   it('should fall back to DomComponents wrapper when no pages exist', () => {
@@ -387,8 +387,8 @@ describe('extractEditorData - fallback path', () => {
 
     const result = extractEditorData(editor);
 
-    expect(result.projectData.pages.length).toBe(1);
-    expect(result.projectData.pages[0].name).toBe('Page 1');
+    expect(result.projectData.pages!.length).toBe(1);
+    expect(result.projectData.pages![0].name).toBe('Page 1');
   });
 });
 
@@ -623,7 +623,7 @@ describe('extractEditorData - multi-page integration', () => {
 
     // Should still succeed (per-page extraction is best-effort)
     expect(result.html).toBe('<div>Primary HTML</div>');
-    expect(result.projectData.pages.length).toBeGreaterThan(0);
+    expect(result.projectData.pages!.length).toBeGreaterThan(0);
     expect(result.warnings.some(w => w.includes('Per-page HTML extraction failed'))).toBe(true);
   });
 });

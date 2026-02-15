@@ -6,6 +6,7 @@
  */
 
 import type { UnifiedTrait, TraitValue } from './shared-utils.js';
+import { traitStr } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -168,9 +169,10 @@ export function createSelectOptionTrait(
   const visibleFn = (component: GrapesComponentModel) => {
     try {
       if (!component) return false;
-      const preset = component.get?.('attributes')?.['options-preset'] || 'manual';
+      const attrs = component.getAttributes?.() ?? {};
+      const preset = attrs['options-preset'] || 'manual';
       if (preset !== 'manual') return false;
-      const count = parseInt(component.get?.('attributes')?.['option-count'] || '3', 10);
+      const count = parseInt(attrs['option-count'] || '3', 10);
       return optionNum <= count;
     } catch {
       return false;
@@ -187,7 +189,7 @@ export function createSelectOptionTrait(
     },
     handler: {
       onChange: (element: HTMLElement, value: TraitValue) => {
-        element.setAttribute(attrName, value || '');
+        element.setAttribute(attrName, traitStr(value));
         rebuildSelectOptionsFromSource(element);
       },
       getValue: (element: HTMLElement) => {

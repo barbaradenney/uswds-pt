@@ -14,7 +14,12 @@ export interface GrapesComponentModel {
   set(key: string, value: unknown): void;
   getId(): string;
   getEl(): HTMLElement | null;
+  getAttributes(): Record<string, string>;
   addAttributes(attrs: Record<string, unknown>): void;
+  removeAttributes(attrs: string[]): void;
+  /** Returns the GrapesJS Backbone Collection of child components. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  components(): any;
   on(event: string, handler: (...args: unknown[]) => void): void;
   off(event: string, handler: (...args: unknown[]) => void): void;
   previous(key: string): unknown;

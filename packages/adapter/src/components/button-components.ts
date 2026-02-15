@@ -8,6 +8,7 @@ import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   createAttributeTrait,
   createBooleanTrait,
+  traitStr,
 } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import { createPageLinkTraits } from './page-link-traits.js';
@@ -49,7 +50,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue, _oldValue?: TraitValue, component?: GrapesComponentModel) => {
-          const textValue = value || 'Click me';
+          const textValue = traitStr(value, 'Click me');
 
           // Store as attribute for trait panel persistence
           element.setAttribute('text', textValue);
@@ -60,7 +61,7 @@ registry.register({
           // export.ts handles converting the text attribute to slot content.
           if (component) {
             try {
-              const attrs = component.get('attributes') || {};
+              const attrs = component.getAttributes();
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }

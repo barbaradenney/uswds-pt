@@ -20,10 +20,10 @@ import {
   normalizeGrapesData,
   validateGrapesData,
   getTeamMembership,
-  canAccessPrototype,
   canEditPrototype,
   canDeletePrototype,
   isNameTaken,
+  prototypeListColumns,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
 } from './prototype-helpers.js';
@@ -93,26 +93,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
           .from(prototypes)
           .where(whereClause);
 
-        // Get paginated team prototypes (exclude large payload fields for list view)
-        const listColumns = {
-          id: prototypes.id,
-          slug: prototypes.slug,
-          name: prototypes.name,
-          description: prototypes.description,
-          teamId: prototypes.teamId,
-          createdBy: prototypes.createdBy,
-          createdAt: prototypes.createdAt,
-          updatedAt: prototypes.updatedAt,
-          isPublic: prototypes.isPublic,
-          version: prototypes.version,
-          contentChecksum: prototypes.contentChecksum,
-          branchSlug: prototypes.branchSlug,
-          lastGithubPushAt: prototypes.lastGithubPushAt,
-          lastGithubCommitSha: prototypes.lastGithubCommitSha,
-        };
-
         const items = await db
-          .select(listColumns)
+          .select(prototypeListColumns)
           .from(prototypes)
           .where(whereClause)
           .orderBy(desc(prototypes.updatedAt))
@@ -144,26 +126,8 @@ export async function prototypeRoutes(app: FastifyInstance) {
         .from(prototypes)
         .where(whereClause);
 
-      // Get paginated items (exclude large payload fields for list view)
-      const listColumns = {
-        id: prototypes.id,
-        slug: prototypes.slug,
-        name: prototypes.name,
-        description: prototypes.description,
-        teamId: prototypes.teamId,
-        createdBy: prototypes.createdBy,
-        createdAt: prototypes.createdAt,
-        updatedAt: prototypes.updatedAt,
-        isPublic: prototypes.isPublic,
-        version: prototypes.version,
-        contentChecksum: prototypes.contentChecksum,
-        branchSlug: prototypes.branchSlug,
-        lastGithubPushAt: prototypes.lastGithubPushAt,
-        lastGithubCommitSha: prototypes.lastGithubCommitSha,
-      };
-
       const items = await db
-        .select(listColumns)
+        .select(prototypeListColumns)
         .from(prototypes)
         .where(whereClause)
         .orderBy(desc(prototypes.updatedAt))
@@ -504,15 +468,18 @@ export async function prototypeRoutes(app: FastifyInstance) {
           return reply.status(404).send({ message: 'Prototype not found' });
         }
 
-        // Check access (user must be able to view the original)
-        if (!(await canAccessPrototype(userId, original))) {
-          return reply.status(403).send({ message: 'Access denied' });
-        }
-
-        // For team prototypes, check that user can create in that team
-        if (original.teamId) {
+        // Check access and create permission in a single membership query
+        if (!original.teamId) {
+          // Legacy prototypes without team — only creator can access/duplicate
+          if (original.createdBy !== userId) {
+            return reply.status(403).send({ message: 'Access denied' });
+          }
+        } else {
           const membership = await getTeamMembership(userId, original.teamId);
-          if (!membership || !hasPermission(membership.role as Role, ROLES.TEAM_MEMBER)) {
+          if (!membership) {
+            return reply.status(403).send({ message: 'Access denied' });
+          }
+          if (!hasPermission(membership.role as Role, ROLES.TEAM_MEMBER)) {
             return reply.status(403).send({ message: 'Cannot create prototypes in this team' });
           }
         }

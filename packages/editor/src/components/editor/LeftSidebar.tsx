@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { LayersProvider, useEditorMaybe } from '@grapesjs/react';
+import { GJS_EVENTS } from '../../lib/contracts';
 import { SidebarTabs } from './SidebarTabs';
 import { PagesPanel } from './PagesPanel';
 
@@ -69,20 +70,20 @@ function LayersPanel({ root }: { root: any }) {
     const handleDeselect = () => setSelected(null);
     const handleUpdate = () => forceUpdate((n) => n + 1);
 
-    editor.on('component:selected', handleSelect);
-    editor.on('component:deselected', handleDeselect);
-    editor.on('component:add', handleUpdate);
-    editor.on('component:remove', handleUpdate);
+    editor.on(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
+    editor.on(GJS_EVENTS.COMPONENT_DESELECTED, handleDeselect);
+    editor.on(GJS_EVENTS.COMPONENT_ADD, handleUpdate);
+    editor.on(GJS_EVENTS.COMPONENT_REMOVE, handleUpdate);
 
     // Set initial selection
     const current = editor.getSelected();
     if (current) setSelected(current);
 
     return () => {
-      editor.off('component:selected', handleSelect);
-      editor.off('component:deselected', handleDeselect);
-      editor.off('component:add', handleUpdate);
-      editor.off('component:remove', handleUpdate);
+      editor.off(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
+      editor.off(GJS_EVENTS.COMPONENT_DESELECTED, handleDeselect);
+      editor.off(GJS_EVENTS.COMPONENT_ADD, handleUpdate);
+      editor.off(GJS_EVENTS.COMPONENT_REMOVE, handleUpdate);
     };
   }, [editor]);
 

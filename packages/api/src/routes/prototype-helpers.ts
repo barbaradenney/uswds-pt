@@ -14,6 +14,27 @@ export const MAX_GRAPES_DATA_SIZE = 5 * 1024 * 1024;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
+/**
+ * Column selection for prototype list queries. Excludes large payload fields
+ * (htmlContent, grapesData) that aren't needed in list views.
+ */
+export const prototypeListColumns = {
+  id: prototypes.id,
+  slug: prototypes.slug,
+  name: prototypes.name,
+  description: prototypes.description,
+  teamId: prototypes.teamId,
+  createdBy: prototypes.createdBy,
+  createdAt: prototypes.createdAt,
+  updatedAt: prototypes.updatedAt,
+  isPublic: prototypes.isPublic,
+  version: prototypes.version,
+  contentChecksum: prototypes.contentChecksum,
+  branchSlug: prototypes.branchSlug,
+  lastGithubPushAt: prototypes.lastGithubPushAt,
+  lastGithubCommitSha: prototypes.lastGithubCommitSha,
+};
+
 export interface PrototypeParams {
   slug: string;
 }

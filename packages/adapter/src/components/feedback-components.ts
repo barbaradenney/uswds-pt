@@ -8,6 +8,7 @@
 import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
+  traitStr,
 } from './shared-utils.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -47,7 +48,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const variant = value || 'info';
+          const variant = traitStr(value, 'info');
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -70,7 +71,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -93,7 +94,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -182,7 +183,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'An official website of the United States government';
+          const text = traitStr(value, 'An official website of the United States government');
           element.setAttribute('header-text', text);
           (element as USWDSElement).headerText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -205,7 +206,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || "Here's how you know";
+          const text = traitStr(value, "Here's how you know");
           element.setAttribute('action-text', text);
           (element as USWDSElement).actionText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -271,7 +272,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const type = value || 'info';
+          const type = traitStr(value, 'info');
           element.setAttribute('type', type);
           (element as USWDSElement).type = type;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -294,7 +295,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -317,7 +318,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('content', text);
           (element as USWDSElement).content = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -380,7 +381,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const id = value || 'my-modal';
+          const id = traitStr(value, 'my-modal');
           element.id = id;
         },
         getValue: (element: HTMLElement) => {
@@ -399,7 +400,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -422,7 +423,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('description', text);
           (element as USWDSElement).description = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -450,7 +451,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const type = value || 'button';
+          const type = traitStr(value, 'button');
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -473,7 +474,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Open Modal';
+          const text = traitStr(value, 'Open Modal');
           element.setAttribute('trigger-text', text);
           (element as USWDSElement).triggerText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -505,7 +506,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const icon = value || 'info';
+          const icon = traitStr(value, 'info');
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -609,7 +610,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Continue';
+          const text = traitStr(value, 'Continue');
           element.setAttribute('primary-button-text', text);
           (element as USWDSElement).primaryButtonText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -632,7 +633,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Cancel';
+          const text = traitStr(value, 'Cancel');
           element.setAttribute('secondary-button-text', text);
           (element as USWDSElement).secondaryButtonText = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -694,7 +695,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -723,7 +724,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const type = value || 'text';
+          const type = traitStr(value, 'text');
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -746,7 +747,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Hover me';
+          const text = traitStr(value, 'Hover me');
           element.setAttribute('label', text);
           (element as USWDSElement).label = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -777,7 +778,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const icon = value || 'info';
+          const icon = traitStr(value, 'info');
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -806,7 +807,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const position = value || 'top';
+          const position = traitStr(value, 'top');
           element.setAttribute('position', position);
           (element as USWDSElement).position = position;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {

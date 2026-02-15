@@ -9,6 +9,7 @@
  */
 
 import type { ComponentRegistration, TraitValue } from './shared-utils.js';
+import { traitStr } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 import { registerHeaderComponents } from './header-components.js';
@@ -49,7 +50,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'On this page';
+          const text = traitStr(value, 'On this page');
           element.setAttribute('nav-title', text);
           (element as USWDSElement).navTitle = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -76,7 +77,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const level = value || 'h2';
+          const level = traitStr(value, 'h2');
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -114,7 +115,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const variant = value || 'default';
+          const variant = traitStr(value, 'default');
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -142,7 +143,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('lang-count', value || '3');
+          element.setAttribute('lang-count', traitStr(value, '3'));
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
           }
@@ -156,42 +157,42 @@ registry.register({
     'lang1-label': {
       definition: { name: 'lang1-label', label: 'Language 1 Label', type: 'text', default: 'English' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang1-label', value || 'English'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang1-label', traitStr(value, 'English')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-label') || 'English',
       },
     },
     'lang1-value': {
       definition: { name: 'lang1-value', label: 'Language 1 Value', type: 'text', default: 'en' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang1-value', value || 'en'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang1-value', traitStr(value, 'en')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang1-value') || 'en',
       },
     },
     'lang2-label': {
       definition: { name: 'lang2-label', label: 'Language 2 Label', type: 'text', default: 'Español' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang2-label', value || 'Español'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang2-label', traitStr(value, 'Español')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-label') || 'Español',
       },
     },
     'lang2-value': {
       definition: { name: 'lang2-value', label: 'Language 2 Value', type: 'text', default: 'es' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang2-value', value || 'es'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang2-value', traitStr(value, 'es')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang2-value') || 'es',
       },
     },
     'lang3-label': {
       definition: { name: 'lang3-label', label: 'Language 3 Label', type: 'text', default: 'Français' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang3-label', value || 'Français'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang3-label', traitStr(value, 'Français')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-label') || 'Français',
       },
     },
     'lang3-value': {
       definition: { name: 'lang3-value', label: 'Language 3 Value', type: 'text', default: 'fr' },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang3-value', value || 'fr'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang3-value', traitStr(value, 'fr')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang3-value') || 'fr',
       },
     },
@@ -200,11 +201,11 @@ registry.register({
       definition: {
         name: 'lang4-label', label: 'Language 4 Label', type: 'text', default: '中文',
         visible: (component: GrapesComponentModel) => {
-          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 4; } catch { return false; }
+          try { return parseInt((component?.getAttributes?.() ?? {})['lang-count'] || '3', 10) >= 4; } catch { return false; }
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang4-label', value || '中文'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang4-label', traitStr(value, '中文')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-label') || '中文',
       },
     },
@@ -212,11 +213,11 @@ registry.register({
       definition: {
         name: 'lang4-value', label: 'Language 4 Value', type: 'text', default: 'zh',
         visible: (component: GrapesComponentModel) => {
-          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 4; } catch { return false; }
+          try { return parseInt((component?.getAttributes?.() ?? {})['lang-count'] || '3', 10) >= 4; } catch { return false; }
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang4-value', value || 'zh'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang4-value', traitStr(value, 'zh')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang4-value') || 'zh',
       },
     },
@@ -224,11 +225,11 @@ registry.register({
       definition: {
         name: 'lang5-label', label: 'Language 5 Label', type: 'text', default: 'العربية',
         visible: (component: GrapesComponentModel) => {
-          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 5; } catch { return false; }
+          try { return parseInt((component?.getAttributes?.() ?? {})['lang-count'] || '3', 10) >= 5; } catch { return false; }
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang5-label', value || 'العربية'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang5-label', traitStr(value, 'العربية')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-label') || 'العربية',
       },
     },
@@ -236,11 +237,11 @@ registry.register({
       definition: {
         name: 'lang5-value', label: 'Language 5 Value', type: 'text', default: 'ar',
         visible: (component: GrapesComponentModel) => {
-          try { return parseInt(component?.get?.('attributes')?.['lang-count'] || '3', 10) >= 5; } catch { return false; }
+          try { return parseInt((component?.getAttributes?.() ?? {})['lang-count'] || '3', 10) >= 5; } catch { return false; }
         },
       },
       handler: {
-        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang5-value', value || 'ar'); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
+        onChange: (element: HTMLElement, value: TraitValue) => { element.setAttribute('lang5-value', traitStr(value, 'ar')); if (typeof (element as USWDSElement).requestUpdate === 'function') { (element as USWDSElement).requestUpdate?.(); } },
         getValue: (element: HTMLElement) => element.getAttribute('lang5-value') || 'ar',
       },
     },
@@ -266,7 +267,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Message';
+          const text = traitStr(value, 'Message');
           element.setAttribute('label', text);
           (element as USWDSElement).label = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -288,7 +289,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const maxlen = parseInt(value, 10) || 200;
+          const maxlen = parseInt(traitStr(value, '200'), 10) || 200;
           element.setAttribute('maxlength', String(maxlen));
           (element as USWDSElement).maxlength = maxlen;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -310,8 +311,8 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('name', value || '');
-          (element as USWDSElement).name = value || '';
+          element.setAttribute('name', traitStr(value));
+          (element as USWDSElement).name = traitStr(value);
         },
         getValue: (element: HTMLElement) => {
           return element.getAttribute('name') || '';
@@ -328,8 +329,8 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          element.setAttribute('hint', value || '');
-          (element as USWDSElement).hint = value || '';
+          element.setAttribute('hint', traitStr(value));
+          (element as USWDSElement).hint = traitStr(value);
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
             (element as USWDSElement).requestUpdate?.();
           }
@@ -361,7 +362,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || 'Date of birth';
+          const text = traitStr(value, 'Date of birth');
           element.setAttribute('legend', text);
           (element as USWDSElement).legend = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {
@@ -383,7 +384,7 @@ registry.register({
       },
       handler: {
         onChange: (element: HTMLElement, value: TraitValue) => {
-          const text = value || '';
+          const text = traitStr(value);
           element.setAttribute('hint', text);
           (element as USWDSElement).hint = text;
           if (typeof (element as USWDSElement).requestUpdate === 'function') {

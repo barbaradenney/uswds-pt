@@ -7,6 +7,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import { collectTargetableComponents } from './component-ids';
+import { GJS_EVENTS } from '../../contracts';
 import type { EditorInstance, RegisterListener } from './types';
 import type {
   GrapesComponent,
@@ -52,7 +53,7 @@ export function setupSpacingTrait(
     if (newClass) component.addClass(newClass);
   };
 
-  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_SELECTED, (...args: unknown[]) => {
     const component = args[0] as GrapesComponent;
     const traits = component.get('traits') as GrapesTraitCollection;
     const hasSpacingTrait = traits.where({ name: 'top-spacing' }).length > 0;
@@ -122,16 +123,16 @@ export function setupConditionalShowHideTrait(
     debug('Updated conditional traits with', targetables.length, 'targetable components');
   };
 
-  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_SELECTED, (...args: unknown[]) => {
     updateConditionalTraits(args[0] as GrapesComponent);
   });
 
-  registerListener(editor, 'component:add', () => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_ADD, () => {
     const selected = editor.getSelected?.();
     if (selected) updateConditionalTraits(selected);
   });
 
-  registerListener(editor, 'component:update', (...args: unknown[]) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_UPDATE, (...args: unknown[]) => {
     const property = args[1] as string | undefined;
     if (property === 'name') {
       const selected = editor.getSelected?.();
@@ -271,7 +272,7 @@ export function setupVisibilityTrait(
     });
   };
 
-  registerListener(editor, 'component:selected', (...args: unknown[]) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_SELECTED, (...args: unknown[]) => {
     addVisibilityTrait(args[0] as GrapesComponent);
   });
 

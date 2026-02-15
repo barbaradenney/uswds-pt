@@ -200,7 +200,7 @@ export async function prototypePushRoutes(app: FastifyInstance) {
       });
 
       if ('error' in result) {
-        return reply.status(result.statusCode).send({ message: result.error });
+        return reply.status(result.statusCode ?? 500).send({ message: result.error });
       }
 
       return result;
@@ -264,7 +264,7 @@ export async function prototypePushRoutes(app: FastifyInstance) {
       });
 
       if ('error' in result) {
-        return reply.status(result.statusCode).send({ message: result.error });
+        return reply.status(result.statusCode ?? 500).send({ message: result.error });
       }
 
       return result;

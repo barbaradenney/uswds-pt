@@ -14,6 +14,7 @@ import {
   reinitInteractiveHandlers,
   syncPageLinkHrefs,
 } from '../canvas-helpers';
+import { GJS_EVENTS } from '../../contracts';
 import type { UseEditorStateMachineReturn } from '../../../hooks/useEditorStateMachine';
 import type { EditorInstance, RegisterListener } from './types';
 
@@ -39,7 +40,7 @@ export function waitForFrameReady(
 
     const cleanup = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      editor.off('canvas:frame:load', onFrameLoad);
+      editor.off(GJS_EVENTS.CANVAS_FRAME_LOAD, onFrameLoad);
     };
 
     const onFrameLoad = () => {
@@ -64,7 +65,7 @@ export function waitForFrameReady(
       cleanup();
     };
 
-    editor.on('canvas:frame:load', onFrameLoad);
+    editor.on(GJS_EVENTS.CANVAS_FRAME_LOAD, onFrameLoad);
 
     timeoutId = setTimeout(() => {
       if (resolved) return;
@@ -142,7 +143,7 @@ export function setupPageEventHandlers(
   let isInitialized = false;
   let pendingPageSwitch: AbortController | null = null;
 
-  registerListener(editor, 'page:select', async (page: any) => {
+  registerListener(editor, GJS_EVENTS.PAGE_SELECT, async (page: any) => {
     if (isExtractingPerPageHtml()) return;
 
     const pageId = page?.getId?.() || page?.id;
@@ -224,7 +225,7 @@ export function setupPageEventHandlers(
     }
   });
 
-  registerListener(editor, 'page:add', (page: any) => {
+  registerListener(editor, GJS_EVENTS.PAGE_ADD, (page: any) => {
     const pageId = page?.getId?.() || page?.id;
     const pageName = page?.get?.('name') || page?.getName?.() || 'New Page';
     debug('Page added:', pageId, '-', pageName);
@@ -236,7 +237,7 @@ export function setupPageEventHandlers(
     }
   });
 
-  registerListener(editor, 'page:remove', (page: any) => {
+  registerListener(editor, GJS_EVENTS.PAGE_REMOVE, (page: any) => {
     const pageId = page?.getId?.() || page?.id;
     debug('Page removed:', pageId);
   });
@@ -287,7 +288,7 @@ export function setupPageLinkTrait(
     }
   };
 
-  registerListener(editor, 'component:selected', (component: any) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_SELECTED, (component: any) => {
     updatePageLinkOptions(component);
   });
 

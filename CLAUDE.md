@@ -13,7 +13,7 @@ This is a pnpm workspace monorepo using Turborepo. Four packages in `packages/`:
 - **@uswds-pt/editor** - React frontend with GrapesJS visual editor (Vite)
 - **@uswds-pt/api** - Fastify REST API with GitHub OAuth + JWT session tokens (tsx for dev)
 - **@uswds-pt/adapter** - Converts Custom Elements Manifest to GrapesJS blocks/components
-- **@uswds-pt/shared** - Shared TypeScript types (CEM, prototypes, editor manifest)
+- **@uswds-pt/shared** - Shared TypeScript types (prototypes, GrapesJS data, API types), utilities (checksum, slug, sanitize, debug)
 
 ## Common Commands
 
@@ -78,6 +78,10 @@ Components use Light DOM (no Shadow DOM), making GrapesJS integration straightfo
 **Trait System**: Properties are edited via GrapesJS traits. `WebComponentTraitManager.ts` handles syncing between DOM attributes and the editor. Some components (usa-header, usa-footer) require JavaScript initialization after render.
 
 **Export**: `packages/editor/src/lib/export/` contains export utilities split across focused files (clean.ts, document.ts, init-script.ts) with a barrel `index.ts`. These clean GrapesJS artifacts (data-gjs-* attributes, generated IDs) and can generate full HTML documents with USWDS CDN imports.
+
+**Implicit Contracts**: `packages/editor/src/lib/contracts.ts` centralizes magic strings shared across multiple files: `GJS_EVENTS` (standard GrapesJS event names), `EDITOR_EVENTS` (custom USWDS-PT events), `EDITOR_PROPS` (editor instance properties), `DATA_ATTRS` (DOM data attributes), and `CSS_CLASSES`. Always import event names from here instead of using string literals.
+
+**Prototype Route Helpers**: `packages/api/src/routes/prototype-helpers.ts` contains shared utilities for prototype routes: `getTeamMembership`, `canAccessPrototype`, `canEditPrototype`, `canDeletePrototype`, `prototypeListColumns`, and validation functions. Prototype routes are split across `prototypes.ts` (CRUD + duplicate), `prototype-versions.ts` (version history), and `prototype-push.ts` (GitHub push/handoff).
 
 **Symbols**: Reusable component groups shared across prototypes within a team. Stored in the `symbols` table as GrapesJS symbol structures. CRUD operations via `packages/api/src/routes/symbols.ts` at `/api/teams/:teamId/symbols`. Any team member can create symbols; only the creator or a team/org admin can edit or delete them.
 

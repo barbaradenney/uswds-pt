@@ -7,6 +7,7 @@
  */
 
 import { componentRegistry, cleanupElementIntervals, cleanupAllIntervals } from './component-registry-v2.js';
+import type { TraitValue } from './components/shared-utils.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('WebComponentTraitManager');
@@ -49,7 +50,7 @@ export interface TraitHandler {
    * @param oldValue - The previous value (optional)
    * @param component - The GrapesJS component (optional, for advanced handlers)
    */
-  onChange: (element: HTMLElement, value: unknown, oldValue?: unknown, component?: GjsComponentModel) => void;
+  onChange: (element: HTMLElement, value: TraitValue, oldValue?: TraitValue, component?: GjsComponentModel) => void;
 
   /**
    * Optional: Read the current value from the web component
@@ -59,7 +60,7 @@ export interface TraitHandler {
   /**
    * Optional: Initialize the trait when component is first created
    */
-  onInit?: (element: HTMLElement, defaultValue: unknown) => void;
+  onInit?: (element: HTMLElement, defaultValue: TraitValue) => void;
 }
 
 export interface ComponentConfig {
@@ -107,7 +108,9 @@ export class WebComponentTraitManager {
     // Try new registry first
     const registryHandlers = componentRegistry.getTraitHandlers(tagName);
     if (registryHandlers && Object.keys(registryHandlers).length > 0) {
-      return registryHandlers;
+      // Safe cast: shared-utils.TraitHandler and WCT.TraitHandler differ only in
+      // the component parameter type; at runtime GrapesJS passes full components.
+      return registryHandlers as unknown as Record<string, TraitHandler>;
     }
 
     // Fall back to old componentConfigs
@@ -274,7 +277,7 @@ export class WebComponentTraitManager {
       // Call onInit if it exists (with value or default)
       if (handler.onInit && value !== undefined) {
         try {
-          handler.onInit(element, value);
+          handler.onInit(element, value as TraitValue);
         } catch (err) {
           debug(`Error in onInit for '${traitName}':`, err);
         }
@@ -284,7 +287,7 @@ export class WebComponentTraitManager {
       // This ensures the DOM is in sync with the attribute value
       if (!handler.onInit && value !== undefined) {
         try {
-          handler.onChange(element, value, undefined, component);
+          handler.onChange(element, value as TraitValue, undefined, component);
         } catch (err) {
           debug(`Error in onChange for '${traitName}':`, err);
         }
@@ -411,7 +414,7 @@ export class WebComponentTraitManager {
       if (!element) return;
 
       // Get the trait's current value directly from the trait object
-      const value = trait.get('value');
+      const value = trait.get('value') as TraitValue;
       debug(`Trait '${traitName}' updated to:`, value);
 
       try {
@@ -459,8 +462,8 @@ export class WebComponentTraitManager {
 
     // Process each trait that has changed
     Object.entries(handlers).forEach(([traitName, handler]) => {
-      const newValue = attributes[traitName];
-      const oldValue = previousAttributes[traitName];
+      const newValue = attributes[traitName] as TraitValue;
+      const oldValue = previousAttributes[traitName] as TraitValue;
 
       debug(`Checking '${traitName}': newValue="${newValue}" (${typeof newValue}), oldValue="${oldValue}" (${typeof oldValue}), changed=${newValue !== oldValue}`);
 

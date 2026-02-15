@@ -6,6 +6,7 @@
  */
 
 import { createDebugLogger } from '@uswds-pt/shared';
+import { GJS_EVENTS } from '../../contracts';
 import type { EditorInstance, RegisterListener } from './types';
 
 const debug = createDebugLogger('GrapesJSSetup');
@@ -50,7 +51,7 @@ export function setupSymbolCreationHandler(
     },
   });
 
-  registerListener(editor, 'component:selected', (component: any) => {
+  registerListener(editor, GJS_EVENTS.COMPONENT_SELECTED, (component: any) => {
     if (!component) return;
 
     const toolbar = component.get('toolbar') || [];

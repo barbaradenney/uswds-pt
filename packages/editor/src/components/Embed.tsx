@@ -88,10 +88,13 @@ export function Embed() {
     // Set body styles for embed
     document.body.style.margin = '0';
     document.body.style.padding = '0';
-    document.body.style.background = bg === 'transparent' ? 'transparent' : `#${bg.replace('#', '')}`;
-    if (bg === 'white') {
-      document.body.style.background = 'white';
-    }
+    // Validate bg: allow 'transparent', 'white', or hex color (3/6 digits)
+    const safeBg = bg === 'transparent' || bg === 'white'
+      ? bg
+      : /^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(bg)
+        ? `#${bg.replace('#', '')}`
+        : 'white';
+    document.body.style.background = safeBg;
 
     return () => {
       const links = head.querySelectorAll('[data-uswds-embed]');

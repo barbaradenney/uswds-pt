@@ -18,6 +18,7 @@
 
 import { useState, useEffect, useMemo, useRef, memo, lazy, Suspense } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
+import { GJS_EVENTS } from '../../lib/contracts';
 import DOMPurify from 'dompurify';
 import { SidebarTabs } from './SidebarTabs';
 import { AI_ENABLED } from '../../lib/ai/ai-config';
@@ -65,9 +66,9 @@ export const RightSidebar = memo(function RightSidebar() {
     const handleSelect = () => {
       setActiveTab((current) => current === 'ai' ? 'ai' : 'properties');
     };
-    editor.on('component:selected', handleSelect);
+    editor.on(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
     return () => {
-      editor.off('component:selected', handleSelect);
+      editor.off(GJS_EVENTS.COMPONENT_SELECTED, handleSelect);
     };
   }, [editor]);
 

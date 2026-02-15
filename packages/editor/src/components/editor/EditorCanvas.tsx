@@ -25,6 +25,7 @@ import '../../styles/grapesjs-overrides.css';
 import '../../styles/editor-layout.css';
 
 import type { EditorInstance } from '../../types/grapesjs';
+import type { GrapesProjectData } from '@uswds-pt/shared';
 
 export interface EditorCanvasProps {
   /** Unique key to force remount */
@@ -32,7 +33,7 @@ export interface EditorCanvasProps {
   /** Initial HTML content for the canvas */
   initialContent: string;
   /** Pre-loaded project data (grapesData) */
-  projectData?: Record<string, any> | null;
+  projectData?: GrapesProjectData | null;
   /** Block definitions for the editor */
   blocks: Array<{
     id: string;

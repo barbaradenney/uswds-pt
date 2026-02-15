@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useRef, useEffect } from 'react';
-import type { Prototype, GrapesJSSymbol } from '@uswds-pt/shared';
+import type { Prototype, GrapesJSSymbol, GrapesProjectData } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { mergeGlobalSymbols } from './useGlobalSymbols';
 import { loadUSWDSResources, addCardContainerCSS, addFieldsetSpacingCSS, addButtonGroupCSS, addTypographyCSS, addBannerCollapseCSS, addWrapperOverrideCSS, addStateDimmingCSS, clearGrapesJSStorage } from '../lib/grapesjs/resource-loader';
@@ -40,7 +40,7 @@ import {
 } from '../lib/grapesjs/setup';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import type { EditorInstance } from '../types/grapesjs';
-import { EDITOR_EVENTS, DATA_ATTRS } from '../lib/contracts';
+import { GJS_EVENTS, EDITOR_EVENTS, DATA_ATTRS } from '../lib/contracts';
 
 const debug = createDebugLogger('GrapesJSSetup');
 
@@ -73,7 +73,7 @@ export interface UseGrapesJSSetupOptions {
     category: string;
   }>;
   /** Pre-loaded project data for safety-net loading in onReady */
-  projectData?: Record<string, any> | null;
+  projectData?: GrapesProjectData | null;
   /** Global symbols to merge into project data */
   globalSymbols?: GrapesJSSymbol[];
   /** Callback when a symbol is being created (to show scope dialog) */
@@ -112,7 +112,7 @@ export function useGrapesJSSetup({
 
   // Ref for project data — used in onReady as a safety-net fallback.
   // Stored as ref (not in onReady deps) to avoid recreating onReady on save.
-  const projectDataRef = useRef<Record<string, any> | null>(projectData ?? null);
+  const projectDataRef = useRef<GrapesProjectData | null>(projectData ?? null);
   projectDataRef.current = projectData ?? null;
 
   // Refs for org-level state/user definitions — read by onReady to seed instance properties
@@ -186,7 +186,7 @@ export function useGrapesJSSetup({
     try {
       const currentData = editor.getProjectData();
       const existingSymbolIds = new Set(
-        (currentData.symbols || []).map((s: any) => s.id)
+        (currentData.symbols || []).map((s: unknown) => (s as { id?: string }).id)
       );
       debug('Existing symbol IDs:', [...existingSymbolIds]);
 
@@ -248,9 +248,9 @@ export function useGrapesJSSetup({
         onContentChangeRef.current();
       };
 
-      registerListener(editor, 'component:add', changeHandler);
-      registerListener(editor, 'component:remove', changeHandler);
-      registerListener(editor, 'component:update', changeHandler);
+      registerListener(editor, GJS_EVENTS.COMPONENT_ADD, changeHandler);
+      registerListener(editor, GJS_EVENTS.COMPONENT_REMOVE, changeHandler);
+      registerListener(editor, GJS_EVENTS.COMPONENT_UPDATE, changeHandler);
       registerListener(editor, 'style:change', changeHandler);
 
       // Seed org-level state/user definitions into editor instance properties.
@@ -287,7 +287,7 @@ export function useGrapesJSSetup({
         traitLabel: 'Visible In States',
         dataAttribute: DATA_ATTRS.STATES,
         selectEvent: EDITOR_EVENTS.STATE_SELECT,
-        updateEvent: 'states:update',
+        updateEvent: EDITOR_EVENTS.STATES_UPDATE,
       });
 
       setupVisibilityTrait(editor, registerListener, {
@@ -296,7 +296,7 @@ export function useGrapesJSSetup({
         traitLabel: 'Visible For Users',
         dataAttribute: DATA_ATTRS.USERS,
         selectEvent: EDITOR_EVENTS.USER_SELECT,
-        updateEvent: 'users:update',
+        updateEvent: EDITOR_EVENTS.USERS_UPDATE,
       });
 
       setupStateVisibilityWatcher(editor, (event, handler) => registerListener(editor, event, handler));
@@ -304,10 +304,10 @@ export function useGrapesJSSetup({
       cleanupTriggerComponentIds(editor);
 
       // Load USWDS resources into canvas iframe
-      registerListener(editor, 'canvas:frame:load', () => {
+      registerListener(editor, GJS_EVENTS.CANVAS_FRAME_LOAD, () => {
         if (!isExtractingPerPageHtml()) loadUSWDSResources(editor);
       });
-      registerListener(editor, 'canvas:frame:load', () => {
+      registerListener(editor, GJS_EVENTS.CANVAS_FRAME_LOAD, () => {
         if (!isExtractingPerPageHtml()) syncPageLinkHrefs(editor);
       });
 

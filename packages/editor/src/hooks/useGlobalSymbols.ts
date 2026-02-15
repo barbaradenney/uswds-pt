@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { GlobalSymbol, GrapesJSSymbol } from '@uswds-pt/shared';
+import type { GlobalSymbol, GrapesJSSymbol, GrapesProjectData } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import {
   fetchGlobalSymbols,
@@ -283,16 +283,16 @@ export function useGlobalSymbols({
  * Call this before loading project data into the editor
  */
 export function mergeGlobalSymbols(
-  projectData: any,
+  projectData: GrapesProjectData,
   globalSymbols: GrapesJSSymbol[]
-): any {
+): GrapesProjectData {
   if (!projectData || !globalSymbols.length) {
     return projectData;
   }
 
   // Get existing symbols from project data
   const existingSymbols = projectData.symbols || [];
-  const existingIds = new Set(existingSymbols.map((s: any) => s.id));
+  const existingIds = new Set(existingSymbols.map((s: unknown) => (s as { id?: string }).id));
 
   // Add global symbols that aren't already in the project
   const newSymbols = globalSymbols.filter((s) => !existingIds.has(s.id));
@@ -309,13 +309,13 @@ export function mergeGlobalSymbols(
  * Extract local symbols from GrapesJS project data
  * This filters out global symbols so only local ones are saved with the prototype
  */
-export function extractLocalSymbols(projectData: any): any {
+export function extractLocalSymbols(projectData: GrapesProjectData): GrapesProjectData {
   if (!projectData?.symbols) {
     return projectData;
   }
 
   const localSymbols = projectData.symbols.filter(
-    (s: any) => !s.id?.startsWith(GLOBAL_SYMBOL_PREFIX)
+    (s: unknown) => !(s as { id?: string }).id?.startsWith(GLOBAL_SYMBOL_PREFIX)
   );
 
   debug('Extracted', localSymbols.length, 'local symbols from', projectData.symbols.length, 'total');

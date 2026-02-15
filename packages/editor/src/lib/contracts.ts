@@ -6,7 +6,40 @@
  */
 
 // ============================================================================
-// Custom GrapesJS Events (non-standard, fired by our code)
+// Standard GrapesJS Events (commonly used across multiple files)
+// ============================================================================
+
+export const GJS_EVENTS = {
+  // Component lifecycle
+  COMPONENT_SELECTED: 'component:selected',
+  COMPONENT_DESELECTED: 'component:deselected',
+  COMPONENT_ADD: 'component:add',
+  COMPONENT_REMOVE: 'component:remove',
+  COMPONENT_UPDATE: 'component:update',
+  COMPONENT_UPDATE_ATTRS: 'component:update:attributes',
+  COMPONENT_MOUNT: 'component:mount',
+  COMPONENT_DRAG_END: 'component:drag:end',
+
+  // Canvas
+  CANVAS_FRAME_LOAD: 'canvas:frame:load',
+
+  // Pages
+  PAGE_SELECT: 'page:select',
+  PAGE_ADD: 'page:add',
+  PAGE_REMOVE: 'page:remove',
+
+  // Editor
+  CHANGES_COUNT: 'change:changesCount',
+  LOAD: 'load',
+  DESTROY: 'destroy',
+
+  // Commands
+  RUN: 'run',
+  STOP: 'stop',
+} as const;
+
+// ============================================================================
+// Custom USWDS-PT Events (non-standard, fired by our code)
 // ============================================================================
 
 export const EDITOR_EVENTS = {
@@ -14,6 +47,10 @@ export const EDITOR_EVENTS = {
   STATE_SELECT: 'state:select',
   /** Active user persona changed — fired from CanvasToolbar, listened in state-visibility */
   USER_SELECT: 'user:select',
+  /** Org state definitions changed — synced from Editor.tsx to canvas helpers */
+  STATES_UPDATE: 'states:update',
+  /** Org user definitions changed — synced from Editor.tsx to canvas helpers */
+  USERS_UPDATE: 'users:update',
 } as const;
 
 // ============================================================================

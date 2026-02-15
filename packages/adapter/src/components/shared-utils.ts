@@ -72,6 +72,16 @@ import type { USWDSElement } from '@uswds-pt/shared';
  */
 export type TraitValue = string | boolean | undefined;
 
+/**
+ * Coerce a {@link TraitValue} to a string for use with `setAttribute` and
+ * other DOM string APIs.
+ *
+ * Returns the value when it is a non-empty string; otherwise returns `fallback`.
+ */
+export function traitStr(value: TraitValue, fallback = ''): string {
+  return typeof value === 'string' && value ? value : fallback;
+}
+
 const debug = createDebugLogger('ComponentRegistry');
 
 // ============================================================================
