@@ -58,7 +58,8 @@ export function Editor() {
   const slug = routeSlug || savedSlug;
 
   // Organization context
-  const { organization, currentTeam, isLoading: isLoadingTeam } = useOrganizationContext();
+  const { organization, currentTeam, teams, isLoading: isLoadingTeam } = useOrganizationContext();
+  const hasOrgAdmin = teams.some((t) => t.role === 'org_admin');
 
   // Editor state machine
   const stateMachine = useEditorStateMachine();
@@ -67,6 +68,7 @@ export function Editor() {
   const globalSymbols = useGlobalSymbols({
     teamId: currentTeam?.id || null,
     enabled: !isDemoMode,
+    prototypeId: stateMachine.state.prototype?.id || null,
   });
 
   // State for symbol scope dialog
@@ -271,7 +273,7 @@ export function Editor() {
 
     // Merge global symbols if we have project data
     if (grapesData) {
-      const symbols = globalSymbols.getGrapesJSSymbols();
+      const symbols = globalSymbols.getGrapesJSSymbols;
       if (symbols.length > 0) {
         grapesData = mergeGlobalSymbols(grapesData, symbols);
       }
@@ -334,7 +336,7 @@ export function Editor() {
     projectData: projectDataCacheRef.current.data,
     onContentChange: combinedOnContentChange,
     blocks,
-    globalSymbols: globalSymbols.getGrapesJSSymbols(),
+    globalSymbols: globalSymbols.getGrapesJSSymbols,
     onSymbolCreate: handleSymbolCreate,
     orgStates,
     orgUsers,
@@ -408,38 +410,22 @@ export function Editor() {
   const stableOnGoHome = useCallback(() => stableOnGoHomeRef.current(), []);
 
   /**
-   * Completes symbol creation after the user selects a scope (local or global)
-   * in the SymbolScopeDialog. For global scope, persists the symbol via the
-   * useGlobalSymbols API hook. Local symbols are not supported in GrapesJS core
-   * and are silently skipped. Resets pending symbol state on completion.
+   * Completes symbol creation after the user selects a scope
+   * in the SymbolScopeDialog. Creates the symbol via the API
+   * with the selected scope. Resets pending symbol state on completion.
    */
   const handleSymbolScopeConfirm = useCallback(
     async (scope: SymbolScope, name: string) => {
       if (!pendingSymbolData) return;
 
-      const selectedComponent = pendingSymbolComponentRef.current;
-      // Guard: only local symbols need the live component reference
-      const getEl = selectedComponent?.getEl as (() => HTMLElement | null) | undefined;
-      if (scope === 'local' && !getEl?.()) {
-        debug('Selected component no longer exists, aborting local symbol creation');
-        setPendingSymbolData(null);
-        pendingSymbolComponentRef.current = null;
-        return;
-      }
-
-      if (scope === 'local') {
-        // Local symbols are not supported in GrapesJS core
-        debug('Local symbols not supported, skipping:', name);
-      } else {
-        // Create as global symbol via API
-        debug('Creating global symbol:', name);
-        const created = await globalSymbols.create(name, {
-          ...pendingSymbolData,
-          label: name,
-        });
-        if (created) {
-          debug('Global symbol created:', created.id);
-        }
+      debug('Creating symbol:', name, 'scope:', scope);
+      const created = await globalSymbols.create(
+        name,
+        { ...pendingSymbolData, label: name },
+        scope,
+      );
+      if (created) {
+        debug('Symbol created:', created.id, 'scope:', scope);
       }
 
       // Reset pending state
@@ -731,6 +717,13 @@ export function Editor() {
     (editor as any).__projectUsers = orgUsers;
     editor.trigger?.(EDITOR_EVENTS.USERS_UPDATE);
   }, [orgUsers]);
+
+  // Sync available symbols to editor instance for AI copilot access
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    (editor as any).__availableSymbols = globalSymbols.symbols;
+  }, [globalSymbols.symbols]);
 
   /**
    * Registers global keyboard shortcuts: Cmd+S / Ctrl+S triggers manual save,
@@ -1038,6 +1031,8 @@ export function Editor() {
         pendingSymbol={pendingSymbolData}
         isDemoMode={isDemoMode}
         hasTeam={!!currentTeam}
+        hasOrganization={!!organization}
+        hasOrgAdmin={hasOrgAdmin}
       />
 
       {/* Keyboard Shortcuts Dialog */}

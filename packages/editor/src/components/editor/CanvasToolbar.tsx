@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
 import { useOrganizationContext } from '../../contexts/OrganizationContext';
-import { EDITOR_EVENTS, EDITOR_PROPS } from '../../lib/contracts';
+import { GJS_EVENTS, EDITOR_EVENTS, EDITOR_PROPS } from '../../lib/contracts';
 
 type DeviceId = 'Desktop' | 'Tablet' | 'Mobile portrait';
 
@@ -109,7 +109,7 @@ export function CanvasToolbar() {
       setActiveCommands(initialActive);
     }
 
-    editor.on('device:select', onDeviceSelect);
+    editor.on(GJS_EVENTS.DEVICE_SELECT, onDeviceSelect);
 
     const onRun = (id: string) => {
       if (TOGGLE_COMMANDS.some((c) => c.id === id)) {
@@ -126,13 +126,13 @@ export function CanvasToolbar() {
       }
     };
 
-    editor.on('run', onRun);
-    editor.on('stop', onStop);
+    editor.on(GJS_EVENTS.RUN, onRun);
+    editor.on(GJS_EVENTS.STOP, onStop);
 
     return () => {
-      editor.off('device:select', onDeviceSelect);
-      editor.off('run', onRun);
-      editor.off('stop', onStop);
+      editor.off(GJS_EVENTS.DEVICE_SELECT, onDeviceSelect);
+      editor.off(GJS_EVENTS.RUN, onRun);
+      editor.off(GJS_EVENTS.STOP, onStop);
     };
   }, [editor]);
 

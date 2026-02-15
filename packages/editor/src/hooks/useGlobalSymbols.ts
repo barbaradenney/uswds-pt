@@ -1,24 +1,30 @@
 /**
  * Global Symbols Hook
  *
- * Manages global symbols that can be shared across prototypes within a team.
- * Provides CRUD operations and integration with GrapesJS editor.
+ * Manages symbols across three scopes: prototype, team, and organization.
+ * Provides CRUD operations, promotion, and integration with GrapesJS editor.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { GlobalSymbol, GrapesJSSymbol, GrapesProjectData } from '@uswds-pt/shared';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { GlobalSymbol, GrapesJSSymbol, GrapesProjectData, SymbolScope } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import {
   fetchGlobalSymbols,
   createGlobalSymbol,
   updateGlobalSymbol,
   deleteGlobalSymbol,
+  promoteSymbol as promoteSymbolApi,
 } from '../lib/api';
 
 const debug = createDebugLogger('GlobalSymbols');
 
-// Prefix for global symbol IDs to distinguish from local symbols
-export const GLOBAL_SYMBOL_PREFIX = 'global-';
+// Scope-based prefixes for GrapesJS symbol IDs
+export const PROTOTYPE_SYMBOL_PREFIX = 'proto-';
+export const TEAM_SYMBOL_PREFIX = 'team-';
+export const ORG_SYMBOL_PREFIX = 'org-';
+
+/** All managed symbol prefixes (including legacy 'global-') */
+const MANAGED_PREFIXES = [PROTOTYPE_SYMBOL_PREFIX, TEAM_SYMBOL_PREFIX, ORG_SYMBOL_PREFIX, 'global-'];
 
 interface GlobalSymbolsState {
   symbols: GlobalSymbol[];
@@ -31,28 +37,43 @@ export interface UseGlobalSymbolsOptions {
   teamId: string | null;
   /** Whether the hook is enabled (e.g., not in demo mode) */
   enabled?: boolean;
+  /** Prototype ID (for prototype-scoped creation) */
+  prototypeId?: string | null;
 }
 
 export interface UseGlobalSymbolsReturn extends GlobalSymbolsState {
   /** Refresh symbols from the server */
   refresh: () => Promise<void>;
-  /** Create a new global symbol */
-  create: (name: string, symbolData: GrapesJSSymbol) => Promise<GlobalSymbol | null>;
-  /** Update an existing global symbol */
+  /** Create a new symbol with scope */
+  create: (name: string, symbolData: GrapesJSSymbol, scope?: SymbolScope) => Promise<GlobalSymbol | null>;
+  /** Update an existing symbol */
   update: (symbolId: string, updates: { name?: string; symbolData?: GrapesJSSymbol }) => Promise<GlobalSymbol | null>;
-  /** Delete a global symbol */
+  /** Delete a symbol */
   remove: (symbolId: string) => Promise<boolean>;
-  /** Get symbols formatted for GrapesJS */
-  getGrapesJSSymbols: () => GrapesJSSymbol[];
-  /** Check if a symbol ID is a global symbol */
-  isGlobalSymbol: (symbolId: string) => boolean;
-  /** Get global symbol by its GrapesJS ID */
+  /** Promote a symbol to a higher scope */
+  promote: (symbolId: string, targetScope: 'team' | 'organization') => Promise<GlobalSymbol | null>;
+  /** Symbols formatted for GrapesJS (stable reference via useMemo) */
+  getGrapesJSSymbols: GrapesJSSymbol[];
+  /** Check if a symbol ID is a managed (non-local) symbol */
+  isManagedSymbol: (symbolId: string) => boolean;
+  /** Get symbol by its GrapesJS ID */
   getByGrapesId: (grapesId: string) => GlobalSymbol | null;
+}
+
+/** Get the prefix for a given scope */
+function prefixForScope(scope: string): string {
+  switch (scope) {
+    case 'prototype': return PROTOTYPE_SYMBOL_PREFIX;
+    case 'organization': return ORG_SYMBOL_PREFIX;
+    case 'team':
+    default: return TEAM_SYMBOL_PREFIX;
+  }
 }
 
 export function useGlobalSymbols({
   teamId,
   enabled = true,
+  prototypeId,
 }: UseGlobalSymbolsOptions): UseGlobalSymbolsReturn {
   const [state, setState] = useState<GlobalSymbolsState>({
     symbols: [],
@@ -71,7 +92,8 @@ export function useGlobalSymbols({
   }, []);
 
   /**
-   * Refresh symbols from the server
+   * Refresh symbols from the server.
+   * Single fetch from GET /api/teams/:teamId/symbols returns all 3 scopes.
    */
   const refresh = useCallback(async () => {
     if (!enabled || !teamId) {
@@ -80,21 +102,21 @@ export function useGlobalSymbols({
     }
 
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    debug('Loading global symbols for team:', teamId);
+    debug('Loading symbols for team:', teamId);
 
     const result = await fetchGlobalSymbols(teamId);
 
     if (!mountedRef.current) return;
 
     if (result.success && result.data) {
-      debug('Loaded', result.data.symbols.length, 'global symbols');
+      debug('Loaded', result.data.symbols.length, 'symbols (all scopes)');
       setState({
         symbols: result.data.symbols,
         isLoading: false,
         error: null,
       });
     } else {
-      debug('Failed to load global symbols:', result.error);
+      debug('Failed to load symbols:', result.error);
       setState({
         symbols: [],
         isLoading: false,
@@ -113,30 +135,36 @@ export function useGlobalSymbols({
   }, [enabled, teamId, refresh]);
 
   /**
-   * Create a new global symbol
+   * Create a new symbol with scope
    */
   const create = useCallback(
-    async (name: string, symbolData: GrapesJSSymbol): Promise<GlobalSymbol | null> => {
+    async (name: string, symbolData: GrapesJSSymbol, scope: SymbolScope = 'team'): Promise<GlobalSymbol | null> => {
       if (!teamId) {
         debug('Create failed: No team selected');
         setState((prev) => ({ ...prev, error: 'No team selected' }));
         return null;
       }
 
-      debug('Creating global symbol:', name);
+      debug('Creating symbol:', name, 'scope:', scope);
 
-      // Ensure the symbol has a unique global ID
+      const prefix = prefixForScope(scope);
       const globalSymbolData: GrapesJSSymbol = {
         ...symbolData,
-        id: `${GLOBAL_SYMBOL_PREFIX}${symbolData.id || Date.now()}`,
+        id: `${prefix}${symbolData.id || Date.now()}`,
       };
 
-      const result = await createGlobalSymbol(teamId, name, globalSymbolData);
+      const result = await createGlobalSymbol(
+        teamId,
+        name,
+        globalSymbolData,
+        scope,
+        scope === 'prototype' ? prototypeId || undefined : undefined,
+      );
 
       if (!mountedRef.current) return null;
 
       if (result.success && result.data) {
-        debug('Created global symbol:', result.data.id);
+        debug('Created symbol:', result.data.id, 'scope:', scope);
         setState((prev) => ({
           ...prev,
           symbols: [...prev.symbols, result.data!],
@@ -149,11 +177,11 @@ export function useGlobalSymbols({
       setState((prev) => ({ ...prev, error: result.error || 'Failed to create symbol' }));
       return null;
     },
-    [teamId]
+    [teamId, prototypeId]
   );
 
   /**
-   * Update an existing global symbol
+   * Update an existing symbol
    */
   const update = useCallback(
     async (
@@ -165,14 +193,14 @@ export function useGlobalSymbols({
         return null;
       }
 
-      debug('Updating global symbol:', symbolId);
+      debug('Updating symbol:', symbolId);
 
       const result = await updateGlobalSymbol(teamId, symbolId, updates);
 
       if (!mountedRef.current) return null;
 
       if (result.success && result.data) {
-        debug('Updated global symbol:', symbolId);
+        debug('Updated symbol:', symbolId);
         setState((prev) => ({
           ...prev,
           symbols: prev.symbols.map((s) =>
@@ -190,7 +218,7 @@ export function useGlobalSymbols({
   );
 
   /**
-   * Delete a global symbol
+   * Delete a symbol
    */
   const remove = useCallback(
     async (symbolId: string): Promise<boolean> => {
@@ -199,14 +227,14 @@ export function useGlobalSymbols({
         return false;
       }
 
-      debug('Deleting global symbol:', symbolId);
+      debug('Deleting symbol:', symbolId);
 
       const result = await deleteGlobalSymbol(teamId, symbolId);
 
       if (!mountedRef.current) return false;
 
       if (result.success) {
-        debug('Deleted global symbol:', symbolId);
+        debug('Deleted symbol:', symbolId);
         setState((prev) => ({
           ...prev,
           symbols: prev.symbols.filter((s) => s.id !== symbolId),
@@ -222,44 +250,82 @@ export function useGlobalSymbols({
   );
 
   /**
-   * Get symbols formatted for GrapesJS
-   * Global symbols are marked with a prefix so they can be identified later
+   * Promote a symbol to a higher scope (creates a copy)
    */
-  const getGrapesJSSymbols = useCallback((): GrapesJSSymbol[] => {
-    return state.symbols.map((symbol) => ({
-      ...symbol.symbolData,
-      // Ensure the ID has the global prefix
-      id: symbol.symbolData.id.startsWith(GLOBAL_SYMBOL_PREFIX)
-        ? symbol.symbolData.id
-        : `${GLOBAL_SYMBOL_PREFIX}${symbol.symbolData.id}`,
-      // Store the database ID for later reference
-      _globalSymbolId: symbol.id,
-    }));
+  const promote = useCallback(
+    async (symbolId: string, targetScope: 'team' | 'organization'): Promise<GlobalSymbol | null> => {
+      if (!teamId) {
+        setState((prev) => ({ ...prev, error: 'No team selected' }));
+        return null;
+      }
+
+      debug('Promoting symbol:', symbolId, 'to:', targetScope);
+
+      const result = await promoteSymbolApi(teamId, symbolId, targetScope);
+
+      if (!mountedRef.current) return null;
+
+      if (result.success && result.data) {
+        debug('Promoted symbol, new ID:', result.data.id);
+        setState((prev) => ({
+          ...prev,
+          symbols: [...prev.symbols, result.data!],
+          error: null,
+        }));
+        return result.data;
+      }
+
+      setState((prev) => ({ ...prev, error: result.error || 'Failed to promote symbol' }));
+      return null;
+    },
+    [teamId]
+  );
+
+  /**
+   * Symbols formatted for GrapesJS.
+   * Applies scope-based prefixes so they can be identified later.
+   * Stable array reference — only recalculated when symbols change.
+   */
+  const getGrapesJSSymbols = useMemo((): GrapesJSSymbol[] => {
+    return state.symbols.map((symbol) => {
+      const prefix = prefixForScope(symbol.scope || 'team');
+      return {
+        ...symbol.symbolData,
+        id: symbol.symbolData.id.startsWith(prefix)
+          ? symbol.symbolData.id
+          : `${prefix}${symbol.symbolData.id}`,
+        _globalSymbolId: symbol.id,
+      };
+    });
   }, [state.symbols]);
 
   /**
-   * Check if a symbol ID is a global symbol
+   * Check if a symbol ID is a managed (non-local) symbol
    */
-  const isGlobalSymbol = useCallback((symbolId: string): boolean => {
-    return symbolId.startsWith(GLOBAL_SYMBOL_PREFIX);
+  const isManagedSymbol = useCallback((symbolId: string): boolean => {
+    return MANAGED_PREFIXES.some((p) => symbolId.startsWith(p));
   }, []);
 
   /**
-   * Get global symbol by its GrapesJS ID
+   * Get symbol by its GrapesJS ID
    */
   const getByGrapesId = useCallback(
     (grapesId: string): GlobalSymbol | null => {
-      // Remove the prefix if present
-      const cleanId = grapesId.startsWith(GLOBAL_SYMBOL_PREFIX)
-        ? grapesId.slice(GLOBAL_SYMBOL_PREFIX.length)
-        : grapesId;
+      // Strip any known prefix
+      let cleanId = grapesId;
+      for (const prefix of MANAGED_PREFIXES) {
+        if (grapesId.startsWith(prefix)) {
+          cleanId = grapesId.slice(prefix.length);
+          break;
+        }
+      }
 
       return (
         state.symbols.find(
           (s) =>
             s.symbolData.id === grapesId ||
             s.symbolData.id === cleanId ||
-            s.symbolData.id === `${GLOBAL_SYMBOL_PREFIX}${cleanId}`
+            MANAGED_PREFIXES.some((p) => s.symbolData.id === `${p}${cleanId}`)
         ) || null
       );
     },
@@ -272,8 +338,9 @@ export function useGlobalSymbols({
     create,
     update,
     remove,
+    promote,
     getGrapesJSSymbols,
-    isGlobalSymbol,
+    isManagedSymbol,
     getByGrapesId,
   };
 }
@@ -290,14 +357,12 @@ export function mergeGlobalSymbols(
     return projectData;
   }
 
-  // Get existing symbols from project data
   const existingSymbols = projectData.symbols || [];
   const existingIds = new Set(existingSymbols.map((s: unknown) => (s as { id?: string }).id));
 
-  // Add global symbols that aren't already in the project
   const newSymbols = globalSymbols.filter((s) => !existingIds.has(s.id));
 
-  debug('Merging', newSymbols.length, 'global symbols into project data');
+  debug('Merging', newSymbols.length, 'symbols into project data');
 
   return {
     ...projectData,
@@ -306,16 +371,20 @@ export function mergeGlobalSymbols(
 }
 
 /**
- * Extract local symbols from GrapesJS project data
- * This filters out global symbols so only local ones are saved with the prototype
+ * Extract managed symbols from GrapesJS project data.
+ * Filters out all scope-prefixed symbols so only truly local ones are saved with the prototype.
  */
-export function extractLocalSymbols(projectData: GrapesProjectData): GrapesProjectData {
+export function extractManagedSymbols(projectData: GrapesProjectData): GrapesProjectData {
   if (!projectData?.symbols) {
     return projectData;
   }
 
   const localSymbols = projectData.symbols.filter(
-    (s: unknown) => !(s as { id?: string }).id?.startsWith(GLOBAL_SYMBOL_PREFIX)
+    (s: unknown) => {
+      const id = (s as { id?: string }).id;
+      if (!id) return true;
+      return !MANAGED_PREFIXES.some((p) => id.startsWith(p));
+    }
   );
 
   debug('Extracted', localSymbols.length, 'local symbols from', projectData.symbols.length, 'total');
@@ -325,3 +394,4 @@ export function extractLocalSymbols(projectData: GrapesProjectData): GrapesProje
     symbols: localSymbols,
   };
 }
+

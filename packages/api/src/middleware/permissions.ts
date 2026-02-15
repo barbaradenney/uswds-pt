@@ -200,3 +200,28 @@ export async function isUserInOrganization(
 
   return user?.organizationId === organizationId;
 }
+
+/**
+ * Check if user has org_admin role in the specified organization.
+ * Pure boolean helper (no reply side-effects) for use in route handlers
+ * that need creator-or-admin authorization logic.
+ */
+export async function isOrgAdmin(
+  userId: string,
+  organizationId: string
+): Promise<boolean> {
+  const [adminMembership] = await db
+    .select({ id: teamMemberships.id })
+    .from(teamMemberships)
+    .innerJoin(teams, eq(teamMemberships.teamId, teams.id))
+    .where(
+      and(
+        eq(teamMemberships.userId, userId),
+        eq(teamMemberships.role, ROLES.ORG_ADMIN),
+        eq(teams.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+
+  return !!adminMembership;
+}

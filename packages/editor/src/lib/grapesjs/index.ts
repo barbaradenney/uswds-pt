@@ -8,6 +8,12 @@ export { uswdsComponentsPlugin } from './plugins';
 export {
   loadUSWDSResources,
   addCardContainerCSS,
+  addFieldsetSpacingCSS,
+  addButtonGroupCSS,
+  addTypographyCSS,
+  addBannerCollapseCSS,
+  addWrapperOverrideCSS,
+  addStateDimmingCSS,
   clearGrapesJSStorage,
 } from './resource-loader';
 export {

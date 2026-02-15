@@ -7,6 +7,7 @@
  * AI SDK calls happen server-side — this module only does HTTP + parsing.
  */
 
+import type { GrapesJSSymbol, GrapesComponentData, GlobalSymbol } from '@uswds-pt/shared';
 import { authFetch } from '../../hooks/useAuth';
 import { parseJsonSafely, API_ENDPOINTS } from '../api';
 
@@ -251,4 +252,79 @@ export async function sendAIMessage(
 
   const data = await response.json();
   return parseAIResponse(data.text);
+}
+
+/* ─── Symbol helpers ─── */
+
+const SUMMARY_MAX_LENGTH = 100;
+
+/**
+ * Summarize a symbol's component tree as a human-readable tag list.
+ * Example: "usa-header with usa-button, usa-text-input, usa-link"
+ */
+export function summarizeSymbolHtml(symbolData: GrapesJSSymbol): string {
+  const tags = new Set<string>();
+
+  function walk(comp: GrapesComponentData) {
+    if (comp.tagName) tags.add(comp.tagName);
+    if (Array.isArray(comp.components)) {
+      for (const child of comp.components) {
+        if (typeof child !== 'string') walk(child);
+      }
+    }
+  }
+
+  if (symbolData.components) {
+    for (const comp of symbolData.components) {
+      walk(comp);
+    }
+  }
+
+  const tagList = [...tags];
+  if (tagList.length === 0) return 'empty';
+
+  const root = tagList[0];
+  const rest = tagList.slice(1);
+  let summary = rest.length > 0 ? `${root} with ${rest.join(', ')}` : root;
+
+  if (summary.length > SUMMARY_MAX_LENGTH) {
+    summary = summary.slice(0, SUMMARY_MAX_LENGTH - 1) + '\u2026';
+  }
+
+  return summary;
+}
+
+/* ─── Symbol reference resolution ─── */
+
+export interface SymbolResolution {
+  html: string;
+  referencedSymbols: GlobalSymbol[];
+  unresolvedSymbols: string[];
+}
+
+/**
+ * Resolve `<symbol-ref name="...">` placeholders in AI-generated HTML.
+ *
+ * - Matched names: replaced with `<div data-symbol-ref="symbolId" data-symbol-name="name"></div>`
+ * - Unmatched names: replaced with a visible warning alert
+ */
+export function resolveSymbolRefs(
+  html: string,
+  availableSymbols: GlobalSymbol[],
+): SymbolResolution {
+  const refRegex = /<symbol-ref\s+name="([^"]+)"[^>]*><\/symbol-ref>/g;
+  const referencedSymbols: GlobalSymbol[] = [];
+  const unresolvedSymbols: string[] = [];
+
+  const resolved = html.replace(refRegex, (_match, name: string) => {
+    const symbol = availableSymbols.find((s) => s.name === name);
+    if (symbol) {
+      referencedSymbols.push(symbol);
+      return `<div data-symbol-ref="${symbol.id}" data-symbol-name="${name}"></div>`;
+    }
+    unresolvedSymbols.push(name);
+    return `<usa-alert variant="warning" heading="Symbol not found" text="The symbol &quot;${name}&quot; could not be resolved. It may have been renamed or deleted." slim></usa-alert>`;
+  });
+
+  return { html: resolved, referencedSymbols, unresolvedSymbols };
 }

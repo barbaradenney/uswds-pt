@@ -301,17 +301,19 @@ export const prototypeVersionsRelations = relations(prototypeVersions, ({ one })
 
 /**
  * Global symbols table
- * Stores reusable symbol components that can be shared across prototypes within a team
+ * Stores reusable symbol components scoped to prototype, team, or organization
  */
 export const symbols = pgTable(
   'symbols',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    teamId: uuid('team_id')
-      .references(() => teams.id, { onDelete: 'cascade' })
-      .notNull(),
+    teamId: uuid('team_id').references(() => teams.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
     symbolData: jsonb('symbol_data').notNull(), // GrapesJS symbol structure
+    scope: varchar('scope', { length: 20 }).notNull().default('team'),
+    organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+    prototypeId: uuid('prototype_id').references(() => prototypes.id, { onDelete: 'cascade' }),
+    promotedFrom: uuid('promoted_from'),
     createdBy: uuid('created_by').references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -319,6 +321,9 @@ export const symbols = pgTable(
   (table) => ({
     teamIdx: index('symbols_team_idx').on(table.teamId),
     createdByIdx: index('symbols_created_by_idx').on(table.createdBy),
+    orgIdx: index('symbols_organization_idx').on(table.organizationId),
+    prototypeIdx: index('symbols_prototype_idx').on(table.prototypeId),
+    scopeIdx: index('symbols_scope_idx').on(table.scope),
   })
 );
 
@@ -326,6 +331,14 @@ export const symbolsRelations = relations(symbols, ({ one }) => ({
   team: one(teams, {
     fields: [symbols.teamId],
     references: [teams.id],
+  }),
+  organization: one(organizations, {
+    fields: [symbols.organizationId],
+    references: [organizations.id],
+  }),
+  prototype: one(prototypes, {
+    fields: [symbols.prototypeId],
+    references: [prototypes.id],
   }),
   creator: one(users, {
     fields: [symbols.createdBy],

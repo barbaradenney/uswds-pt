@@ -251,22 +251,42 @@ export interface GrapesJSSymbol {
 }
 
 /**
- * Global symbol - shared across prototypes within a team
+ * Global symbol - shared across prototypes within a team, organization, or prototype
  */
 export interface GlobalSymbol {
   id: string;
-  teamId: string;
+  teamId: string | null;
   name: string;
   symbolData: GrapesJSSymbol;
+  scope: SymbolScope;
+  organizationId?: string | null;
+  prototypeId?: string | null;
+  promotedFrom?: string | null;
   createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 /**
- * Symbol scope for distinguishing local vs global
+ * Symbol scope for distinguishing prototype, team, and organization levels
  */
-export type SymbolScope = 'local' | 'global';
+export type SymbolScope = 'prototype' | 'team' | 'organization';
+
+/**
+ * Request body for promoting a symbol to a higher scope
+ */
+export interface PromoteSymbolRequest {
+  targetScope: 'team' | 'organization';
+}
+
+/**
+ * Lightweight symbol entry for AI prompt catalog
+ */
+export interface SymbolCatalogEntry {
+  name: string;
+  scope: SymbolScope;
+  summary: string;
+}
 
 /**
  * API Request/Response Types for Symbols
@@ -275,6 +295,8 @@ export type SymbolScope = 'local' | 'global';
 export interface CreateGlobalSymbolRequest {
   name: string;
   symbolData: GrapesJSSymbol;
+  scope?: SymbolScope;
+  prototypeId?: string;
 }
 
 export interface UpdateGlobalSymbolRequest {

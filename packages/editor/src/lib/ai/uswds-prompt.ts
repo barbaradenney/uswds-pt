@@ -298,11 +298,16 @@ Every form page content (inside \`<main>\`) follows this structure:
 - Show status tags on each card
 `;
 
+import type { SymbolCatalogEntry } from '@uswds-pt/shared';
+
 /**
  * Generate the system prompt for the AI copilot.
  * Instructs the AI to return explanation text + optional HTML in a fenced code block.
+ * When a symbol catalog is provided, the AI can reference reusable symbols via <symbol-ref>.
  */
-export function generateUSWDSPrompt(): string {
+export function generateUSWDSPrompt(catalog?: SymbolCatalogEntry[]): string {
+  const symbolSection = buildSymbolCatalogSection(catalog);
+
   return `You are a USWDS (U.S. Web Design System) prototyping assistant integrated into a visual page builder.
 
 Your job is to help users build government website prototypes using USWDS web components. You communicate in plain English and provide USWDS HTML when the user asks you to create or modify components.
@@ -329,6 +334,7 @@ Your job is to help users build government website prototypes using USWDS web co
 7. **Keep explanations concise** — 1-3 sentences is ideal.
 8. **Only return one code block per response.** If you need to show multiple options, describe them in text and provide the recommended one in the code block.
 9. **When the user attaches a PDF or image of a form**, you MUST use multi-page format with \`<!-- PAGE: Name -->\` delimiters inside a single \`\`\`html code block. Break the form into 3-5 logical step pages. This is required — never put an entire form on one page.
+10. **When reusable symbols are available**, use \`<symbol-ref name="Exact Name"></symbol-ref>\` to insert a linked symbol instance instead of rebuilding the same components from scratch. The name must match exactly (case-sensitive).
 
 ## Page Templates
 
@@ -469,6 +475,34 @@ When the user attaches a PDF or image of a form:
 4. Wire Back/Continue buttons with \`page-link\` between pages.
 5. Use pattern components (usa-name-pattern, usa-address-pattern, etc.) where they match.
 6. Include a Review page at the end summarizing all sections.
+${symbolSection}`;
+}
+
+const MAX_CATALOG_SYMBOLS = 100;
+
+/**
+ * Build the Available Symbols section for the AI prompt.
+ * Returns empty string when no symbols exist (keeps prompt lean).
+ */
+function buildSymbolCatalogSection(catalog?: SymbolCatalogEntry[]): string {
+  if (!catalog || catalog.length === 0) return '';
+
+  const displayed = catalog.slice(0, MAX_CATALOG_SYMBOLS);
+  const lines = displayed.map(
+    (s) => `- **${s.name}** (${s.scope}) — ${s.summary}`
+  );
+
+  if (catalog.length > MAX_CATALOG_SYMBOLS) {
+    lines.push(`(...and ${catalog.length - MAX_CATALOG_SYMBOLS} more)`);
+  }
+
+  return `
+## Available Symbols
+
+Use \`<symbol-ref name="Exact Name"></symbol-ref>\` to insert a linked symbol instance.
+Rules: name must match exactly (case-sensitive), works in single/multi-page responses.
+
+${lines.join('\n')}
 `;
 }
 

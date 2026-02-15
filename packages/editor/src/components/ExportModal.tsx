@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
+import { COPY_FEEDBACK_MS, COPY_ERROR_FEEDBACK_MS } from '../lib/constants';
 
 interface ExportModalProps {
   /** HTML content for single-page export */
@@ -80,7 +81,7 @@ export function ExportModal({ htmlContent, pages, prototypeId, onClose }: Export
     try {
       await navigator.clipboard.writeText(displayHtml);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
     } catch {
       // Fallback for older browsers
       try {
@@ -94,14 +95,14 @@ export function ExportModal({ htmlContent, pages, prototypeId, onClose }: Export
         document.body.removeChild(textarea);
         if (success) {
           setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
+          setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
         } else {
           setCopyError(true);
-          setTimeout(() => setCopyError(false), 3000);
+          setTimeout(() => setCopyError(false), COPY_ERROR_FEEDBACK_MS);
         }
       } catch {
         setCopyError(true);
-        setTimeout(() => setCopyError(false), 3000);
+        setTimeout(() => setCopyError(false), COPY_ERROR_FEEDBACK_MS);
       }
     }
   }
@@ -125,7 +126,7 @@ export function ExportModal({ htmlContent, pages, prototypeId, onClose }: Export
     try {
       await navigator.clipboard.writeText(text);
       setEmbedCopied(type);
-      setTimeout(() => setEmbedCopied(null), 2000);
+      setTimeout(() => setEmbedCopied(null), COPY_FEEDBACK_MS);
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = text;
@@ -134,7 +135,7 @@ export function ExportModal({ htmlContent, pages, prototypeId, onClose }: Export
       document.execCommand('copy');
       document.body.removeChild(textarea);
       setEmbedCopied(type);
-      setTimeout(() => setEmbedCopied(null), 2000);
+      setTimeout(() => setEmbedCopied(null), COPY_FEEDBACK_MS);
     }
   }
 

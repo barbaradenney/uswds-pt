@@ -1,11 +1,11 @@
 /**
  * Symbol Scope Dialog
  *
- * Modal for choosing whether a new symbol should be local (prototype-specific)
- * or global (shared across all prototypes in the team).
+ * Modal for choosing whether a new symbol should be scoped to the
+ * prototype, team, or organization.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 
 interface SymbolScopeDialogProps {
@@ -17,10 +17,14 @@ interface SymbolScopeDialogProps {
   onConfirm: (scope: SymbolScope, name: string) => void;
   /** The symbol being created (for preview info) */
   pendingSymbol?: GrapesJSSymbol | null;
-  /** Whether in demo mode (global symbols not available) */
+  /** Whether in demo mode (team/org symbols not available) */
   isDemoMode?: boolean;
-  /** Whether a team is available for global symbols */
+  /** Whether a team is available */
   hasTeam?: boolean;
+  /** Whether the user belongs to an organization */
+  hasOrganization?: boolean;
+  /** Whether the user has org_admin role */
+  hasOrgAdmin?: boolean;
 }
 
 export function SymbolScopeDialog({
@@ -30,23 +34,72 @@ export function SymbolScopeDialog({
   pendingSymbol,
   isDemoMode = false,
   hasTeam = true,
+  hasOrganization = false,
+  hasOrgAdmin = false,
 }: SymbolScopeDialogProps) {
-  const [scope, setScope] = useState<SymbolScope>('local');
+  const [scope, setScope] = useState<SymbolScope>('prototype');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Reset state when dialog opens with new symbol
   useEffect(() => {
     if (isOpen && pendingSymbol) {
       setName(pendingSymbol.label || 'New Symbol');
-      setScope('local');
+      setScope('prototype');
       setError(null);
     }
   }, [isOpen, pendingSymbol]);
 
+  const handleClose = useCallback(() => {
+    setName('');
+    setScope('prototype');
+    setError(null);
+    onClose();
+  }, [onClose]);
+
+  // Focus trap + Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+        return;
+      }
+
+      // Focus trap: Tab / Shift+Tab
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleClose]);
+
   if (!isOpen) return null;
 
-  const canUseGlobal = !isDemoMode && hasTeam;
+  const canUseTeam = !isDemoMode && hasTeam;
+  const canUseOrg = !isDemoMode && hasOrganization && hasOrgAdmin;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,21 +120,18 @@ export function SymbolScopeDialog({
     onClose();
   }
 
-  function handleClose() {
-    setName('');
-    setScope('local');
-    setError(null);
-    onClose();
-  }
-
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div
+        ref={dialogRef}
         className="modal-content symbol-scope-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="symbol-scope-dialog-title"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h2>Create Symbol</h2>
+          <h2 id="symbol-scope-dialog-title">Create Symbol</h2>
           <button
             className="modal-close"
             onClick={handleClose}
@@ -93,7 +143,7 @@ export function SymbolScopeDialog({
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="error-message" role="alert">{error}</div>}
 
             <div className="form-group">
               <label htmlFor="symbol-name">Symbol Name *</label>
@@ -113,18 +163,18 @@ export function SymbolScopeDialog({
 
             <div className="form-group">
               <label>Symbol Scope</label>
-              <div className="scope-options">
+              <div className="scope-options" role="radiogroup" aria-label="Symbol scope">
                 <label className="scope-option">
                   <input
                     type="radio"
                     name="scope"
-                    value="local"
-                    checked={scope === 'local'}
-                    onChange={() => setScope('local')}
+                    value="prototype"
+                    checked={scope === 'prototype'}
+                    onChange={() => setScope('prototype')}
                   />
                   <div className="scope-option-content">
                     <span className="scope-option-title">
-                      Local
+                      Prototype
                       <span className="scope-badge scope-badge-local">This prototype only</span>
                     </span>
                     <span className="scope-option-description">
@@ -133,36 +183,67 @@ export function SymbolScopeDialog({
                   </div>
                 </label>
 
-                <label className={`scope-option ${!canUseGlobal ? 'disabled' : ''}`}>
+                <label className={`scope-option ${!canUseTeam ? 'disabled' : ''}`}>
                   <input
                     type="radio"
                     name="scope"
-                    value="global"
-                    checked={scope === 'global'}
-                    onChange={() => setScope('global')}
-                    disabled={!canUseGlobal}
+                    value="team"
+                    checked={scope === 'team'}
+                    onChange={() => setScope('team')}
+                    disabled={!canUseTeam}
                   />
                   <div className="scope-option-content">
                     <span className="scope-option-title">
-                      Global
+                      Team
                       <span className="scope-badge scope-badge-global">Team-wide</span>
                     </span>
                     <span className="scope-option-description">
-                      {canUseGlobal
+                      {canUseTeam
                         ? 'Shared across all prototypes in your team. Updates apply everywhere.'
                         : isDemoMode
-                        ? 'Global symbols require signing in.'
-                        : 'Global symbols require being part of a team.'}
+                        ? 'Team symbols require signing in.'
+                        : 'Team symbols require being part of a team.'}
+                    </span>
+                  </div>
+                </label>
+
+                <label className={`scope-option ${!canUseOrg ? 'disabled' : ''}`}>
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="organization"
+                    checked={scope === 'organization'}
+                    onChange={() => setScope('organization')}
+                    disabled={!canUseOrg}
+                  />
+                  <div className="scope-option-content">
+                    <span className="scope-option-title">
+                      Organization
+                      <span className="scope-badge scope-badge-org">Org-wide</span>
+                    </span>
+                    <span className="scope-option-description">
+                      {canUseOrg
+                        ? 'Shared across all teams in your organization. Updates apply everywhere.'
+                        : !hasOrganization
+                        ? 'Organization symbols require belonging to an organization.'
+                        : 'Organization symbols require org admin permissions.'}
                     </span>
                   </div>
                 </label>
               </div>
             </div>
 
-            {scope === 'global' && canUseGlobal && (
+            {scope === 'team' && canUseTeam && (
               <div className="info-message">
-                <strong>Tip:</strong> Global symbols are great for headers, footers, and
+                <strong>Tip:</strong> Team symbols are great for headers, footers, and
                 other components you want to reuse across multiple prototypes.
+              </div>
+            )}
+
+            {scope === 'organization' && canUseOrg && (
+              <div className="info-message">
+                <strong>Tip:</strong> Organization symbols are shared across all teams and are
+                ideal for brand elements and standard components.
               </div>
             )}
           </div>
@@ -217,6 +298,7 @@ export function SymbolScopeDialog({
         .scope-option.disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          pointer-events: none;
         }
 
         .scope-option input[type="radio"] {
@@ -256,6 +338,11 @@ export function SymbolScopeDialog({
         .scope-badge-global {
           background-color: var(--global-badge-bg, #e8f8e8);
           color: var(--global-badge-color, #1a7f37);
+        }
+
+        .scope-badge-org {
+          background-color: var(--org-badge-bg, #f0e8fd);
+          color: var(--org-badge-color, #6f42c1);
         }
 
         .info-message {

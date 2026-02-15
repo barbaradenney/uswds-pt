@@ -19,6 +19,7 @@ import { organizationRoutes } from './routes/organizations.js';
 import { teamRoutes } from './routes/teams.js';
 import { invitationRoutes } from './routes/invitations.js';
 import { symbolRoutes } from './routes/symbols.js';
+import { orgSymbolRoutes } from './routes/org-symbols.js';
 import { githubAuthRoutes } from './routes/github-auth.js';
 import { githubRoutes, githubTeamRoutes } from './routes/github.js';
 import { aiRoutes } from './routes/ai.js';
@@ -159,6 +160,7 @@ async function main() {
   await app.register(organizationRoutes, { prefix: '/api/organizations' });
   await app.register(teamRoutes, { prefix: '/api/teams' });
   await app.register(symbolRoutes, { prefix: '/api/teams' });
+  await app.register(orgSymbolRoutes, { prefix: '/api/organizations' });
   await app.register(invitationRoutes, { prefix: '/api/invitations' });
   await app.register(githubAuthRoutes, { prefix: '/api/auth' });
   await app.register(githubRoutes, { prefix: '/api/github' });

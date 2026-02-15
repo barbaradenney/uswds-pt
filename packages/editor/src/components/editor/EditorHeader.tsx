@@ -14,6 +14,7 @@ import { memo, useState, useEffect, useRef } from 'react';
 import type { UseEditorAutosaveReturn } from '../../hooks/useEditorAutosave';
 import { useConnectionStatus } from '../../hooks/useConnectionStatus';
 import { mod } from '../../lib/platform';
+import { DRAFT_BADGE_DISPLAY_MS, DRAFT_BADGE_MIN_GAP_MS } from '../../lib/constants';
 
 export interface EditorHeaderProps {
   /** Prototype name (read-only) */
@@ -143,10 +144,10 @@ export const EditorHeader = memo(function EditorHeader({
   useEffect(() => {
     if (!lastSnapshotAt) return;
     const now = Date.now();
-    if (now - lastBadgeTimeRef.current < 30_000) return;
+    if (now - lastBadgeTimeRef.current < DRAFT_BADGE_MIN_GAP_MS) return;
     lastBadgeTimeRef.current = now;
     setShowDraftBadge(true);
-    const timeout = setTimeout(() => setShowDraftBadge(false), 2000);
+    const timeout = setTimeout(() => setShowDraftBadge(false), DRAFT_BADGE_DISPLAY_MS);
     return () => clearTimeout(timeout);
   }, [lastSnapshotAt]);
 
@@ -154,7 +155,7 @@ export const EditorHeader = memo(function EditorHeader({
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!lastSavedAt) return;
-    const interval = setInterval(() => setTick(t => t + 1), 30000);
+    const interval = setInterval(() => setTick(t => t + 1), DRAFT_BADGE_MIN_GAP_MS);
     return () => clearInterval(interval);
   }, [lastSavedAt]);
 

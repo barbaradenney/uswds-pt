@@ -10,7 +10,9 @@ import type {
   GlobalSymbolListResponse,
   CreateGlobalSymbolRequest,
   UpdateGlobalSymbolRequest,
+  PromoteSymbolRequest,
   GrapesJSSymbol,
+  SymbolScope,
 } from '@uswds-pt/shared';
 
 /**
@@ -72,6 +74,11 @@ export const API_ENDPOINTS = {
   // Global Symbols
   TEAM_SYMBOLS: (teamId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols`,
   TEAM_SYMBOL: (teamId: string, symbolId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols/${encodeURIComponent(symbolId)}`,
+  TEAM_SYMBOL_PROMOTE: (teamId: string, symbolId: string) => `/api/teams/${encodeURIComponent(teamId)}/symbols/${encodeURIComponent(symbolId)}/promote`,
+
+  // Organization Symbols
+  ORG_SYMBOLS: (orgId: string) => `/api/organizations/${encodeURIComponent(orgId)}/symbols`,
+  ORG_SYMBOL: (orgId: string, symbolId: string) => `/api/organizations/${encodeURIComponent(orgId)}/symbols/${encodeURIComponent(symbolId)}`,
 
   // GitHub Integration (team-level)
   GITHUB_REPOS: '/api/github/repos',
@@ -244,16 +251,18 @@ export function fetchGlobalSymbols(teamId: string): Promise<ApiResult<GlobalSymb
 }
 
 /**
- * Create a new global symbol
+ * Create a new global symbol with optional scope
  */
 export function createGlobalSymbol(
   teamId: string,
   name: string,
-  symbolData: GrapesJSSymbol
+  symbolData: GrapesJSSymbol,
+  scope?: SymbolScope,
+  prototypeId?: string,
 ): Promise<ApiResult<GlobalSymbol>> {
   return apiPost<GlobalSymbol>(
     API_ENDPOINTS.TEAM_SYMBOLS(teamId),
-    { name, symbolData } as CreateGlobalSymbolRequest,
+    { name, symbolData, scope, prototypeId } as CreateGlobalSymbolRequest,
     'Failed to create global symbol'
   );
 }
@@ -283,5 +292,81 @@ export function deleteGlobalSymbol(
   return apiDelete<{ message: string }>(
     API_ENDPOINTS.TEAM_SYMBOL(teamId, symbolId),
     'Failed to delete global symbol'
+  );
+}
+
+// ============================================================================
+// Organization Symbols API Functions
+// ============================================================================
+
+/**
+ * Fetch all organization-scoped symbols
+ */
+export function fetchOrgSymbols(orgId: string): Promise<ApiResult<GlobalSymbolListResponse>> {
+  return apiGet<GlobalSymbolListResponse>(
+    API_ENDPOINTS.ORG_SYMBOLS(orgId),
+    'Failed to fetch organization symbols'
+  );
+}
+
+/**
+ * Create a new organization-scoped symbol
+ */
+export function createOrgSymbol(
+  orgId: string,
+  name: string,
+  symbolData: GrapesJSSymbol
+): Promise<ApiResult<GlobalSymbol>> {
+  return apiPost<GlobalSymbol>(
+    API_ENDPOINTS.ORG_SYMBOLS(orgId),
+    { name, symbolData },
+    'Failed to create organization symbol'
+  );
+}
+
+/**
+ * Update an organization-scoped symbol
+ */
+export function updateOrgSymbol(
+  orgId: string,
+  symbolId: string,
+  updates: UpdateGlobalSymbolRequest
+): Promise<ApiResult<GlobalSymbol>> {
+  return apiPut<GlobalSymbol>(
+    API_ENDPOINTS.ORG_SYMBOL(orgId, symbolId),
+    updates,
+    'Failed to update organization symbol'
+  );
+}
+
+/**
+ * Delete an organization-scoped symbol
+ */
+export function deleteOrgSymbol(
+  orgId: string,
+  symbolId: string
+): Promise<ApiResult<{ message: string }>> {
+  return apiDelete<{ message: string }>(
+    API_ENDPOINTS.ORG_SYMBOL(orgId, symbolId),
+    'Failed to delete organization symbol'
+  );
+}
+
+// ============================================================================
+// Symbol Promotion
+// ============================================================================
+
+/**
+ * Promote a symbol to a higher scope (creates a copy)
+ */
+export function promoteSymbol(
+  teamId: string,
+  symbolId: string,
+  targetScope: 'team' | 'organization'
+): Promise<ApiResult<GlobalSymbol>> {
+  return apiPost<GlobalSymbol>(
+    API_ENDPOINTS.TEAM_SYMBOL_PROMOTE(teamId, symbolId),
+    { targetScope } as PromoteSymbolRequest,
+    'Failed to promote symbol'
   );
 }

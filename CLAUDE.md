@@ -83,7 +83,9 @@ Components use Light DOM (no Shadow DOM), making GrapesJS integration straightfo
 
 **Prototype Route Helpers**: `packages/api/src/routes/prototype-helpers.ts` contains shared utilities for prototype routes: `getTeamMembership`, `canAccessPrototype`, `canEditPrototype`, `canDeletePrototype`, `prototypeListColumns`, and validation functions. Prototype routes are split across `prototypes.ts` (CRUD + duplicate), `prototype-versions.ts` (version history), and `prototype-push.ts` (GitHub push/handoff).
 
-**Symbols**: Reusable component groups shared across prototypes within a team. Stored in the `symbols` table as GrapesJS symbol structures. CRUD operations via `packages/api/src/routes/symbols.ts` at `/api/teams/:teamId/symbols`. Any team member can create symbols; only the creator or a team/org admin can edit or delete them.
+**Symbols**: Reusable component groups with multi-scope support (`prototype`, `team`, `organization`). Stored in the `symbols` table as GrapesJS symbol structures with `scope`, `organizationId`, `prototypeId`, and `promotedFrom` columns. Team-level CRUD via `packages/api/src/routes/symbols.ts` at `/api/teams/:teamId/symbols`. Organization-level CRUD via `packages/api/src/routes/org-symbols.ts` at `/api/organizations/:orgId/symbols`. Symbols can be promoted from lower to higher scope. Any team member can create symbols; only the creator or a team/org admin can edit or delete them.
+
+**Preview**: `packages/api/src/routes/preview.ts` provides `GET /api/preview/:slug` for rendering prototypes. Public prototypes are accessible without auth; others require authentication.
 
 ### Database Schema (Drizzle ORM)
 
@@ -95,10 +97,9 @@ Tables in `packages/api/src/db/schema.ts`:
 - `users` - User accounts; includes GitHub OAuth fields (`githubId`, `githubUsername`, `githubAccessToken` encrypted)
 - `prototypes` - Stores `htmlContent`, `grapesData` (JSONB), `branchSlug`, GitHub push tracking (`lastGithubPushAt`, `lastGithubCommitSha`)
 - `prototype_versions` - Version history snapshots with `contentChecksum`
-- `symbols` - Team-scoped reusable symbol components (`symbolData` JSONB)
+- `symbols` - Multi-scope reusable symbol components (`symbolData` JSONB); `scope` column (`prototype`, `team`, `organization`), with `organizationId`, `prototypeId`, and `promotedFrom` columns
 - `github_team_connections` - Links a team to a GitHub repo for push-on-save (one connection per team)
 - `github_handoff_connections` - Links a team to a separate GitHub repo for clean HTML developer handoff
-- `audit_logs` - Audit trail (for future use)
 
 ### Authentication
 

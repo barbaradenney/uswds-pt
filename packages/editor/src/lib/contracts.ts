@@ -36,6 +36,9 @@ export const GJS_EVENTS = {
   // Commands
   RUN: 'run',
   STOP: 'stop',
+
+  // Devices
+  DEVICE_SELECT: 'device:select',
 } as const;
 
 // ============================================================================

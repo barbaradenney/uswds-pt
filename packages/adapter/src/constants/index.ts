@@ -7,7 +7,6 @@ export { COMPONENT_ICONS } from './icons.js';
 export { DEFAULT_CONTENT, STARTER_TEMPLATES } from './templates.js';
 export type { StarterTemplate } from './templates.js';
 export {
-  PATH_TO_CATEGORY,
   USWDS_WC_VERSIONS,
   LIT_VERSION,
   USWDS_VERSION,

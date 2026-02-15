@@ -8,9 +8,10 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useEditorMaybe } from '@grapesjs/react';
-import { sendAIMessage, autoSplitFormHtml } from '../lib/ai/ai-client';
+import { sendAIMessage, autoSplitFormHtml, parseMultiPageHtml, resolveSymbolRefs, summarizeSymbolHtml } from '../lib/ai/ai-client';
 import type { AIMessage, Attachment, PageDefinition } from '../lib/ai/ai-client';
 import { generateUSWDSPrompt, buildUserMessageWithContext } from '../lib/ai/uswds-prompt';
+import type { GlobalSymbol, SymbolCatalogEntry } from '@uswds-pt/shared';
 import { syncPageLinkHrefs } from '../lib/grapesjs/canvas-helpers';
 
 export interface ChatMessage {
@@ -103,17 +104,40 @@ export function useAICopilot(): UseAICopilotReturn {
 
     try {
       abortRef.current = new AbortController();
+
+      // Build symbol catalog for AI prompt
+      const availableSymbols: GlobalSymbol[] = (editor as any)?.__availableSymbols || [];
+      let catalog: SymbolCatalogEntry[] | undefined;
+      if (availableSymbols.length > 0) {
+        catalog = availableSymbols.map((s) => ({
+          name: s.name,
+          scope: s.scope,
+          summary: summarizeSymbolHtml(s.symbolData),
+        }));
+      }
+
       const response = await sendAIMessage(
-        generateUSWDSPrompt(),
+        generateUSWDSPrompt(catalog),
         apiMessages,
         abortRef.current.signal,
       );
 
+      // Resolve <symbol-ref> placeholders in the response HTML
+      let resolvedHtml = response.html;
+      let explanation = response.explanation;
+      if (resolvedHtml && availableSymbols.length > 0) {
+        const resolution = resolveSymbolRefs(resolvedHtml, availableSymbols);
+        resolvedHtml = resolution.html;
+        if (resolution.unresolvedSymbols.length > 0) {
+          explanation += `\n\nNote: Could not resolve symbol(s): ${resolution.unresolvedSymbols.join(', ')}. They may have been renamed or deleted.`;
+        }
+      }
+
       // Fallback: if AI didn't use PAGE delimiters but attachments were present,
       // try client-side auto-splitting on headings / fieldsets.
-      let pages = response.pages;
-      if (!pages && attachments?.length && response.html) {
-        pages = autoSplitFormHtml(response.html);
+      let pages = resolvedHtml ? parseMultiPageHtml(resolvedHtml) : response.pages;
+      if (!pages && attachments?.length && resolvedHtml) {
+        pages = autoSplitFormHtml(resolvedHtml);
       }
 
       setMessages((prev) =>
@@ -121,8 +145,8 @@ export function useAICopilot(): UseAICopilotReturn {
           m.id === loadingId
             ? {
                 ...m,
-                content: response.explanation,
-                html: response.html || undefined,
+                content: explanation,
+                html: resolvedHtml || undefined,
                 pages: pages || undefined,
                 isLoading: false,
               }
@@ -148,6 +172,44 @@ export function useAICopilot(): UseAICopilotReturn {
       abortRef.current = null;
     }
   }, [messages, isLoading, editor]);
+
+  /**
+   * Resolve data-symbol-ref markers in the GrapesJS component tree.
+   * Replaces marker divs with the actual symbol component data.
+   */
+  const resolveSymbolMarkers = useCallback((wrapper: any) => {
+    if (!wrapper) return;
+    const availableSymbols: GlobalSymbol[] = (editor as any)?.__availableSymbols || [];
+    if (availableSymbols.length === 0) return;
+
+    const markers = wrapper.find?.('[data-symbol-ref]') || [];
+    for (const marker of markers) {
+      const symbolId = marker.getAttributes?.()?.['data-symbol-ref'];
+      if (!symbolId) continue;
+
+      const symbol = availableSymbols.find((s) => s.id === symbolId);
+      if (!symbol?.symbolData?.components) continue;
+
+      const parent = marker.parent?.();
+      if (!parent) continue;
+
+      const children = parent.components();
+      const models = children.models || [];
+      let markerIndex = 0;
+      for (let i = 0; i < models.length; i++) {
+        if (models[i] === marker) {
+          markerIndex = i;
+          break;
+        }
+      }
+
+      marker.remove();
+      // Insert the symbol's components at the marker position
+      for (let j = symbol.symbolData.components.length - 1; j >= 0; j--) {
+        children.add(symbol.symbolData.components[j], { at: markerIndex });
+      }
+    }
+  }, [editor]);
 
   const applyHtml = useCallback((messageId: string, mode: 'replace' | 'add') => {
     if (!editor) return;
@@ -198,10 +260,14 @@ export function useAICopilot(): UseAICopilotReturn {
           wrapper?.append?.(msg.html);
         }
       }
+
+      // Resolve symbol-ref markers after inserting HTML
+      const wrapper = editor.DomComponents?.getWrapper();
+      resolveSymbolMarkers(wrapper);
     } finally {
       um?.stop?.();
     }
-  }, [editor, messages]);
+  }, [editor, messages, resolveSymbolMarkers]);
 
   const applyMultiPage = useCallback((messageId: string) => {
     if (!editor) return;
@@ -310,7 +376,16 @@ export function useAICopilot(): UseAICopilotReturn {
         }
       }
 
-      // Step 4: Post-processing — sync page link hrefs
+      // Step 4: Resolve symbol-ref markers in all pages
+      for (const { page } of resolvedPages) {
+        const mainComp = page.getMainComponent?.();
+        const comp = mainComp || page.getMainFrame?.()?.getComponent?.();
+        if (comp) {
+          resolveSymbolMarkers(comp);
+        }
+      }
+
+      // Step 5: Post-processing — sync page link hrefs
       try {
         syncPageLinkHrefs(editor);
       } catch {
@@ -319,7 +394,7 @@ export function useAICopilot(): UseAICopilotReturn {
     } finally {
       um?.stop?.();
     }
-  }, [editor, messages]);
+  }, [editor, messages, resolveSymbolMarkers]);
 
   const clearHistory = useCallback(() => {
     if (abortRef.current) {

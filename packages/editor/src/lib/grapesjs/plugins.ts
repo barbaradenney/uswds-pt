@@ -8,7 +8,6 @@
  * - grid-components.ts: Grid layout (grid-container, grid-row, grid-col)
  * - card-components.ts: Card layouts (card-container, card-inner-container, card-body)
  * - text-components.ts: Text content (text-block, heading-block)
- * - table-plugin.ts: USWDS table styling
  */
 
 import {

@@ -1,19 +1,4 @@
 /**
- * Category inference from module path
- */
-export const PATH_TO_CATEGORY: Record<string, string> = {
-  'uswds-wc-actions': 'actions',
-  'uswds-wc-forms': 'forms',
-  'uswds-wc-navigation': 'navigation',
-  'uswds-wc-data-display': 'data-display',
-  'uswds-wc-feedback': 'feedback',
-  'uswds-wc-layout': 'layout',
-  'uswds-wc-structure': 'structure',
-  'uswds-wc-patterns': 'patterns',
-  'uswds-wc-templates': 'templates',
-};
-
-/**
  * CDN configuration for USWDS-WC components
  * Uses esm.sh with shared Lit dependencies to avoid duplicate custom element registration
  */
