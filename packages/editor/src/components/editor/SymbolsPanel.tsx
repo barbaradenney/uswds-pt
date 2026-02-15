@@ -91,6 +91,27 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
   const role = currentTeam?.role as Role | undefined;
   const hasOrg = !!organization;
 
+  const handleDragStart = useCallback((symbol: GlobalSymbol, e: React.MouseEvent) => {
+    if (!editor || e.button !== 0) return;
+
+    const components = symbol.symbolData?.components;
+    if (!components || components.length === 0) return;
+
+    const tempId = `__symbol-drag-${symbol.id}`;
+    editor.Blocks.add(tempId, {
+      label: symbol.name,
+      content: components,
+      category: '__symbol-drag__',
+    });
+    const block = editor.Blocks.get(tempId);
+    if (!block) return;
+
+    editor.Blocks.startDrag(block, e.nativeEvent);
+    editor.once('block:drag:stop', () => {
+      editor.Blocks.remove(tempId);
+    });
+  }, [editor]);
+
   const handleInsert = useCallback((symbol: GlobalSymbol) => {
     if (!editor) return;
 
@@ -242,6 +263,7 @@ export const SymbolsPanel = memo(function SymbolsPanel() {
               remove={remove}
               promote={promote}
               onInsert={handleInsert}
+              onDragStart={handleDragStart}
               editor={editor}
             />
           );
@@ -265,6 +287,7 @@ interface SymbolScopeGroupProps {
   remove: UseGlobalSymbolsReturn['remove'];
   promote: UseGlobalSymbolsReturn['promote'];
   onInsert: (symbol: GlobalSymbol) => void;
+  onDragStart: (symbol: GlobalSymbol, e: React.MouseEvent) => void;
   editor: any;
 }
 
@@ -278,6 +301,7 @@ function SymbolScopeGroup({
   remove,
   promote,
   onInsert,
+  onDragStart,
   editor,
 }: SymbolScopeGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -310,6 +334,7 @@ function SymbolScopeGroup({
               remove={remove}
               promote={promote}
               onInsert={onInsert}
+              onDragStart={onDragStart}
               editor={editor}
             />
           ))}
@@ -340,10 +365,11 @@ interface SymbolListItemProps {
   remove: UseGlobalSymbolsReturn['remove'];
   promote: UseGlobalSymbolsReturn['promote'];
   onInsert: (symbol: GlobalSymbol) => void;
+  onDragStart: (symbol: GlobalSymbol, e: React.MouseEvent) => void;
   editor: any;
 }
 
-function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote, onInsert, editor }: SymbolListItemProps) {
+function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote, onInsert, onDragStart, editor }: SymbolListItemProps) {
   const [action, setAction] = useState<ItemAction>('none');
   const [renameName, setRenameName] = useState(symbol.name);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -467,7 +493,7 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
 
   return (
     <>
-      <div className="symbols-item">
+      <div className="symbols-item" onMouseDown={(e) => onDragStart(symbol, e)}>
         {/* Scope badge */}
         <span
           className={`symbols-scope-badge symbols-scope-badge--${symbol.scope}`}
@@ -491,6 +517,7 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
         <button
           className="symbols-item-insert-btn"
           onClick={() => onInsert(symbol)}
+          onMouseDown={(e) => e.stopPropagation()}
           aria-label={`Insert ${symbol.name}`}
           title="Insert onto canvas"
         >
@@ -505,6 +532,7 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
               onClick={() =>
                 setAction((prev) => (prev === 'menu' ? 'none' : 'menu'))
               }
+              onMouseDown={(e) => e.stopPropagation()}
               aria-label={`Actions for ${symbol.name}`}
               aria-expanded={isExpanded}
               aria-haspopup="true"

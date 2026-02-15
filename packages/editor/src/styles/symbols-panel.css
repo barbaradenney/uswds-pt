@@ -119,6 +119,11 @@
   gap: 8px;
   padding: 6px 10px;
   transition: background 0.1s;
+  cursor: grab;
+}
+
+.symbols-item:active {
+  cursor: grabbing;
 }
 
 .symbols-item:hover {
