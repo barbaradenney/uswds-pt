@@ -17,7 +17,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate-users": "tsx src/db/migrations/migrate-existing-users.ts"
+    "db:migrate-users": "tsx src/db/migrations/migrate-existing-users.ts",
+    "db:migrate-symbols": "tsx src/db/migrations/add-multi-scope-symbols.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.58.0",
