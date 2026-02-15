@@ -82,7 +82,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem(USER_KEY);
       }
     }
-    setState((prev) => ({ ...prev, isLoading: false }));
+    setState((prev) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: prev.error,
+    }));
     return false;
   }, []);
 

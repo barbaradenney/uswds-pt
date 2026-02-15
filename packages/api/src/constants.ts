@@ -9,11 +9,6 @@
 export const JWT_EXPIRY = '7d';
 
 /**
- * Password hashing configuration
- */
-export const BCRYPT_SALT_ROUNDS = 12;
-
-/**
  * Fallback JWT secret for local development only.
  * In production, JWT_SECRET env var is required (enforced in index.ts).
  */

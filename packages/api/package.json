@@ -27,7 +27,6 @@
     "@fastify/jwt": "^9.0.0",
     "@fastify/rate-limit": "^10.0.0",
     "@uswds-pt/shared": "workspace:*",
-    "bcrypt": "^5.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.33.0",
     "fastify": "^5.0.0",
@@ -37,7 +36,6 @@
     "postgres": "^3.4.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.0",
     "@eslint/js": "^9.39.2",
     "@types/node": "^20.19.25",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
