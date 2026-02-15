@@ -318,8 +318,7 @@ export function extractPerPageHtml(editor: EditorInstance, projectData: Normaliz
   const restoredId = restoredPage?.getId?.() || restoredPage?.id;
   const expectedId = currentPage?.getId?.() || currentPage?.id;
   if (expectedId && restoredId !== expectedId) {
-    // eslint-disable-next-line no-console
-    console.warn('[DataExtractor] Page restore failed, forcing re-select');
+    debug('Page restore failed, forcing re-select');
     editor.Pages?.select?.(currentPage);
   }
 }

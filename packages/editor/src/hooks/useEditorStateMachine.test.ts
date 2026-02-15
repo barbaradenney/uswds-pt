@@ -245,17 +245,12 @@ describe('useEditorStateMachine', () => {
       const { result } = renderHook(() => useEditorStateMachine());
 
       // Try to save from uninitialized state
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       act(() => {
         result.current.saveStart('manual');
       });
 
-      // Should remain in uninitialized state
+      // Should remain in uninitialized state (invalid transition is a no-op)
       expect(result.current.state.status).toBe('uninitialized');
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -317,17 +312,12 @@ describe('useEditorStateMachine', () => {
       });
 
       // Try to save during page switch
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       act(() => {
         result.current.saveStart('autosave');
       });
 
-      // Should remain in page_switching state
+      // Should remain in page_switching state (invalid transition is a no-op)
       expect(result.current.state.status).toBe('page_switching');
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -780,16 +770,10 @@ describe('useEditorStateMachine', () => {
 
   describe('reducer', () => {
     it('should handle invalid transitions gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Try invalid transition
+      // Try invalid transition — should return unchanged state (no-op)
       const result = editorReducer(initialState, { type: 'SAVE_START', saveType: 'manual' });
 
-      // Should return unchanged state
       expect(result).toEqual(initialState);
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
 
     it('should preserve prototype data across states', () => {

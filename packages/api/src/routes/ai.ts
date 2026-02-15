@@ -6,6 +6,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
+import { DEFAULT_AI_MODEL_CLAUDE, DEFAULT_AI_MODEL_OPENAI } from '../constants.js';
 
 /* ─── Types ─── */
 
@@ -26,6 +27,12 @@ interface ChatRequestBody {
   messages: AIMessage[];
 }
 
+/*
+ * Content part types are defined by the Anthropic and OpenAI SDKs.
+ * Since the SDKs are dynamically imported, we cast at call boundaries
+ * rather than duplicating their complex type hierarchies here.
+ */
+
 /* ─── Config ─── */
 
 function getAIConfig() {
@@ -33,35 +40,28 @@ function getAIConfig() {
   const provider = (process.env.AI_PROVIDER || 'claude') as 'claude' | 'openai';
   const model =
     process.env.AI_MODEL ||
-    (provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o');
+    (provider === 'claude' ? DEFAULT_AI_MODEL_CLAUDE : DEFAULT_AI_MODEL_OPENAI);
   return { apiKey, provider, model };
 }
 
 /* ─── Content Builders ─── */
 
-function buildClaudeContent(m: AIMessage): string | any[] {
+function buildClaudeContent(m: AIMessage): string | unknown[] {
   if (!m.attachments?.length) return m.content;
-  const parts: any[] = [];
+  const parts: unknown[] = [];
   for (const att of m.attachments) {
-    if (att.mediaType === 'application/pdf') {
-      parts.push({
-        type: 'document',
-        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
-      });
-    } else {
-      parts.push({
-        type: 'image',
-        source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
-      });
-    }
+    parts.push({
+      type: att.mediaType === 'application/pdf' ? 'document' : 'image',
+      source: { type: 'base64', media_type: att.mediaType, data: att.base64Data },
+    });
   }
   parts.push({ type: 'text', text: m.content });
   return parts;
 }
 
-function buildOpenAIContent(m: AIMessage): string | any[] {
+function buildOpenAIContent(m: AIMessage): string | unknown[] {
   if (!m.attachments?.length) return m.content;
-  const parts: any[] = [];
+  const parts: unknown[] = [];
   let textSuffix = '';
   for (const att of m.attachments) {
     if (att.mediaType === 'application/pdf') {
@@ -92,14 +92,16 @@ async function callClaude(
     model,
     max_tokens: 8192,
     system,
+    // Content builders return SDK-compatible structures; cast required because
+    // the SDK types are only available after dynamic import.
     messages: messages.map((m) => ({
       role: m.role,
-      content: buildClaudeContent(m),
+      content: buildClaudeContent(m) as string,
     })),
   });
 
-  const textBlock = response.content.find((b: any) => b.type === 'text');
-  return textBlock ? (textBlock as any).text : '';
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return textBlock && 'text' in textBlock ? textBlock.text : '';
 }
 
 async function callOpenAI(
@@ -114,11 +116,13 @@ async function callOpenAI(
   const response = await client.chat.completions.create({
     model,
     max_tokens: 8192,
+    // Content builders return SDK-compatible structures; cast required because
+    // the SDK types are only available after dynamic import.
     messages: [
-      { role: 'system', content: system },
+      { role: 'system' as const, content: system },
       ...messages.map((m) => ({
         role: m.role as 'user' | 'assistant',
-        content: buildOpenAIContent(m),
+        content: buildOpenAIContent(m) as string,
       })),
     ],
   });
@@ -195,13 +199,16 @@ export async function aiRoutes(app: FastifyInstance) {
             : await callOpenAI(apiKey, model, system, messages);
 
         return { text };
-      } catch (err: any) {
+      } catch (err: unknown) {
         request.log.error(err, 'AI proxy error');
 
-        if (err?.status === 429 || err?.statusCode === 429) {
+        const status =
+          (err as Record<string, unknown>)?.status ??
+          (err as Record<string, unknown>)?.statusCode;
+        if (status === 429) {
           return reply.status(429).send({ message: 'AI provider rate limit exceeded' });
         }
-        if (err?.status === 401 || err?.statusCode === 401) {
+        if (status === 401) {
           return reply.status(503).send({ message: 'AI service configuration error' });
         }
 

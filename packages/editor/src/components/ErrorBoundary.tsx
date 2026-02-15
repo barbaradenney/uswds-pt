@@ -1,4 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('ErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -48,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    debug('Caught an error:', error, errorInfo);
   }
 
   handleRetry = (): void => {

@@ -6,6 +6,9 @@
  */
 
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('EditorErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -41,8 +44,8 @@ export class EditorErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('[EditorErrorBoundary] Editor crashed:', error);
-    console.error('[EditorErrorBoundary] Component stack:', errorInfo.componentStack);
+    debug('Editor crashed:', error);
+    debug('Component stack:', errorInfo.componentStack);
 
     // Increment error count
     this.setState(prev => ({ errorCount: prev.errorCount + 1 }));

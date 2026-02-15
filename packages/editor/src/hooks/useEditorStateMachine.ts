@@ -168,8 +168,8 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
   // Check if transition is valid
   const allowedActions = validTransitions[state.status];
   if (!allowedActions.includes(action.type)) {
-    console.warn(
-      `[EditorStateMachine] Invalid transition: ${action.type} from ${state.status}. ` +
+    debug(
+      `Invalid transition: ${action.type} from ${state.status}. ` +
       `Allowed actions: ${allowedActions.join(', ')}`
     );
     // Don't throw - just log warning and return current state
