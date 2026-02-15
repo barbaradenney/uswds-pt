@@ -118,11 +118,19 @@ export interface ApiResult<T> {
 }
 
 /**
- * Options for API requests
+ * Options for API requests.
+ *
+ * For most callers, the convenience helpers (apiGet, apiPost, …) are sufficient.
+ * Use `headers` / `signal` only when the standard helpers don't cover your
+ * use case (e.g., optimistic concurrency via If-Match, or cancellation).
  */
 interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: unknown;
+  /** Extra headers merged with the default Content-Type header. */
+  headers?: Record<string, string>;
+  /** AbortSignal for request cancellation. */
+  signal?: AbortSignal;
   defaultError?: string;
 }
 
@@ -136,16 +144,21 @@ export async function apiRequest<T>(
   endpoint: string,
   options: ApiRequestOptions = {}
 ): Promise<ApiResult<T>> {
-  const { method = 'GET', body, defaultError = 'Request failed' } = options;
+  const { method = 'GET', body, headers: extraHeaders, signal, defaultError = 'Request failed' } = options;
 
   try {
     const init: RequestInit = {
       method,
+      signal,
     };
 
+    const mergedHeaders: Record<string, string> = { ...extraHeaders };
     if (body !== undefined) {
-      init.headers = { 'Content-Type': 'application/json' };
+      mergedHeaders['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
+    }
+    if (Object.keys(mergedHeaders).length > 0) {
+      init.headers = mergedHeaders;
     }
 
     const response = await authFetch(endpoint, init);

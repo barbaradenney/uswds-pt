@@ -6,7 +6,10 @@
  */
 
 import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
+import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('FooterComponents');
 
 /**
  * Registry interface to avoid circular imports.
@@ -90,7 +93,8 @@ function createFooterSectionTitleTrait(sectionNum: number): UnifiedTrait {
       if (variant !== 'big') return false;
       const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
       return sectionNum <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check footer section title trait visibility:', e);
       return false;
     }
   };
@@ -136,7 +140,8 @@ function createFooterSectionLinkTrait(
       if (variant !== 'big') return false;
       const count = parseInt(component.get?.('attributes')?.['section-count'] || '3', 10);
       return sectionNum <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check footer section link trait visibility:', e);
       return false;
     }
   };
@@ -382,7 +387,8 @@ registry.register({
             if (!component) return false;
             const variant = component.get?.('attributes')?.['variant'] || 'medium';
             return variant === 'big';
-          } catch {
+          } catch (e) {
+            debug('Failed to check footer section-count visibility:', e);
             return false;
           }
         },

@@ -9,7 +9,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Prototype, SymbolScope, GrapesJSSymbol } from '@uswds-pt/shared';
 import { createDebugLogger, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
-import { authFetch } from '../hooks/useAuth';
 import { useOrganization } from '../hooks/useOrganization';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useEditorStateMachine } from '../hooks/useEditorStateMachine';
@@ -28,7 +27,7 @@ import { SymbolScopeDialog } from './SymbolScopeDialog';
 import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
-import { isDemoMode, API_ENDPOINTS } from '../lib/api';
+import { isDemoMode, API_ENDPOINTS, apiGet } from '../lib/api';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
@@ -639,12 +638,15 @@ export function Editor() {
         }
 
         // 3. Fetch the restored prototype directly (NOT persistence.load)
-        const response = await authFetch(API_ENDPOINTS.PROTOTYPE(slug));
-        if (!response.ok) {
-          stateMachine.restoreVersionFailed('Failed to load restored prototype');
+        const result = await apiGet<Prototype>(
+          API_ENDPOINTS.PROTOTYPE(slug),
+          'Failed to load restored prototype'
+        );
+        if (!result.success || !result.data) {
+          stateMachine.restoreVersionFailed(result.error || 'Failed to load restored prototype');
           return false;
         }
-        const proto: Prototype = await response.json();
+        const proto: Prototype = result.data;
 
         // 4. In-place reload into editor
         const editor = editorRef.current;

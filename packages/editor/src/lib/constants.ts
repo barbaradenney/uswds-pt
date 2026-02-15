@@ -125,3 +125,32 @@ export const AI_PANEL_CHECK_TIMEOUT_MS = 10000;
 
 /** Minimum gap between consecutive "Draft backed up" badge displays (ms) */
 export const DRAFT_BADGE_MIN_GAP_MS = 30000;
+
+// ============================================================================
+// localStorage Keys
+// ============================================================================
+
+/**
+ * Centralized localStorage key names used by the editor package.
+ *
+ * The debug key (`uswds_pt_debug`) lives in `@uswds-pt/shared` as
+ * `DEBUG_STORAGE_KEY` because it is consumed by multiple packages.
+ */
+export const STORAGE_KEYS = {
+  /** JWT auth token */
+  TOKEN: 'uswds_pt_token',
+  /** Cached user profile JSON */
+  USER: 'uswds_pt_user',
+  /** Demo-mode prototype list */
+  PROTOTYPES: 'uswds_pt_prototypes',
+  /** Currently selected team ID */
+  CURRENT_TEAM: 'uswds_pt_current_team',
+} as const;
+
+/**
+ * Centralized sessionStorage key names used by the editor package.
+ */
+export const SESSION_KEYS = {
+  /** Whether AI copilot was activated via URL secret (survives page reloads) */
+  AI_ENABLED: 'uswds_pt_ai_enabled',
+} as const;

@@ -12,7 +12,10 @@ import {
   createAttributeTrait,
   createBooleanTrait,
 } from './shared-utils.js';
+import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('UIComponents');
 
 /**
  * Registry interface to avoid circular imports.
@@ -201,7 +204,8 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check button group link base visibility:', e);
       return true;
     }
   };
@@ -212,7 +216,8 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
     try {
       const attrs = component.get?.('attributes') || {};
       return attrs[`btn${index}-link-type`] === 'page';
-    } catch {
+    } catch (e) {
+      debug('Failed to check button group page-link visibility:', e);
       return false;
     }
   };
@@ -223,7 +228,8 @@ function createButtonGroupLinkTrait(index: number, type: 'link-type' | 'page-lin
     try {
       const attrs = component.get?.('attributes') || {};
       return attrs[`btn${index}-link-type`] === 'external';
-    } catch {
+    } catch (e) {
+      debug('Failed to check button group href visibility:', e);
       return false;
     }
   };
@@ -350,7 +356,8 @@ function createButtonGroupItemTrait(index: number, type: 'text' | 'variant'): Un
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['btn-count'] || '2', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check button group item trait visibility:', e);
       return true;
     }
   };
@@ -632,7 +639,8 @@ function createBreadcrumbItemTrait(index: number, type: 'label' | 'href'): Unifi
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check breadcrumb item trait visibility:', e);
       return true;
     }
   };
@@ -834,7 +842,8 @@ function createSideNavItemTrait(index: number, type: 'label' | 'href' | 'current
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '4', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check side nav item trait visibility:', e);
       return true;
     }
   };

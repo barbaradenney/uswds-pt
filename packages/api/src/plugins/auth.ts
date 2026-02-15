@@ -10,6 +10,21 @@ import { db, users, type User } from '../db/index.js';
 import { DEFAULT_JWT_SECRET_DEV } from '../constants.js';
 import { normalizeEmail } from '../lib/email.js';
 
+/** Shared select/returning fields for user queries (excludes sensitive fields) */
+const USER_PUBLIC_FIELDS = {
+  id: users.id,
+  email: users.email,
+  name: users.name,
+  organizationId: users.organizationId,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+  isActive: users.isActive,
+  githubId: users.githubId,
+  githubUsername: users.githubUsername,
+  githubTokenExpiresAt: users.githubTokenExpiresAt,
+  avatarUrl: users.avatarUrl,
+} as const;
+
 
 async function authPluginImpl(app: FastifyInstance) {
   // Register JWT plugin
@@ -41,18 +56,8 @@ export const authPlugin = fastifyPlugin(authPluginImpl);
 export async function findUserByEmail(email: string): Promise<Omit<User, 'githubAccessToken'> | null> {
   const [user] = await db
     .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
+      ...USER_PUBLIC_FIELDS,
       passwordHash: users.passwordHash,
-      organizationId: users.organizationId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      isActive: users.isActive,
-      githubId: users.githubId,
-      githubUsername: users.githubUsername,
-      githubTokenExpiresAt: users.githubTokenExpiresAt,
-      avatarUrl: users.avatarUrl,
     })
     .from(users)
     .where(eq(users.email, normalizeEmail(email)))
@@ -68,19 +73,7 @@ export async function findUserById(
   id: string
 ): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
   const [user] = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      organizationId: users.organizationId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      isActive: users.isActive,
-      githubId: users.githubId,
-      githubUsername: users.githubUsername,
-      githubTokenExpiresAt: users.githubTokenExpiresAt,
-      avatarUrl: users.avatarUrl,
-    })
+    .select(USER_PUBLIC_FIELDS)
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
@@ -93,19 +86,7 @@ export async function findUserById(
  */
 export async function findUserByGithubId(githubId: number): Promise<Omit<User, 'passwordHash' | 'githubAccessToken'> | null> {
   const [user] = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      organizationId: users.organizationId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      isActive: users.isActive,
-      githubId: users.githubId,
-      githubUsername: users.githubUsername,
-      githubTokenExpiresAt: users.githubTokenExpiresAt,
-      avatarUrl: users.avatarUrl,
-    })
+    .select(USER_PUBLIC_FIELDS)
     .from(users)
     .where(eq(users.githubId, githubId))
     .limit(1);
@@ -134,19 +115,7 @@ export async function createOAuthUser(
       githubAccessToken,
       avatarUrl,
     })
-    .returning({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      organizationId: users.organizationId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      isActive: users.isActive,
-      githubId: users.githubId,
-      githubUsername: users.githubUsername,
-      githubTokenExpiresAt: users.githubTokenExpiresAt,
-      avatarUrl: users.avatarUrl,
-    });
+    .returning(USER_PUBLIC_FIELDS);
 
   return user;
 }

@@ -11,8 +11,10 @@ import {
   hasAttributeTrue,
   createBooleanTrait,
 } from './shared-utils.js';
-import { escapeHtml } from '@uswds-pt/shared';
+import { escapeHtml, createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('DataComponents');
 
 /**
  * Registry interface to avoid circular imports.
@@ -521,7 +523,8 @@ function createTableHeaderTrait(colIndex: number): UnifiedTrait {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
       return colIndex <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check table header trait visibility:', e);
       return true;
     }
   };
@@ -557,7 +560,8 @@ function createTableCellTrait(rowIndex: number, colIndex: number): UnifiedTrait 
       const colCount = parseInt(component.get?.('attributes')?.['col-count'] || '3', 10);
       const rowCount = parseInt(component.get?.('attributes')?.['row-count'] || '3', 10);
       return rowIndex <= rowCount && colIndex <= colCount;
-    } catch {
+    } catch (e) {
+      debug('Failed to check table cell trait visibility:', e);
       return true;
     }
   };
@@ -1066,7 +1070,8 @@ function _createListItemTrait(index: number): UnifiedTrait {
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check list item trait visibility:', e);
       return true;
     }
   };
@@ -1236,7 +1241,8 @@ function _createCollectionItemTrait(index: number, type: 'title' | 'description'
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['count'] || '3', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check collection item trait visibility:', e);
       return true;
     }
   };

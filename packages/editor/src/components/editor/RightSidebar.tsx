@@ -180,6 +180,12 @@ function BlockCategory({
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
+  // Memoize sanitized block media HTML — icons are static and don't change
+  const sanitizedMedia = useMemo(
+    () => new Map(blocks.map((b) => [b.getId(), DOMPurify.sanitize(b.getMedia())])),
+    [blocks],
+  );
+
   return (
     <div className="block-category">
       <button
@@ -205,7 +211,7 @@ function BlockCategory({
             >
               <div
                 className="custom-block-media"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.getMedia()) }}
+                dangerouslySetInnerHTML={{ __html: sanitizedMedia.get(block.getId()) ?? '' }}
               />
               <div className="custom-block-label">{block.getLabel()}</div>
             </div>

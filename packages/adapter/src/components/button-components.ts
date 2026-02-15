@@ -10,6 +10,9 @@ import {
   createBooleanTrait,
 } from './shared-utils.js';
 import { createPageLinkTraits } from './page-link-traits.js';
+import { createDebugLogger } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('ButtonComponents');
 
 /**
  * Registry interface to avoid circular imports.
@@ -60,8 +63,8 @@ registry.register({
               if (attrs.text !== textValue) {
                 component.set('attributes', { ...attrs, text: textValue });
               }
-            } catch (_e) {
-              // Ignore errors during attribute sync
+            } catch (e) {
+              debug('Error syncing button attributes:', e);
             }
           }
 

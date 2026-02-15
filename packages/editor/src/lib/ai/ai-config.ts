@@ -9,6 +9,7 @@
  */
 
 import { createDebugLogger } from '@uswds-pt/shared';
+import { SESSION_KEYS } from '../constants';
 
 const debug = createDebugLogger('AI Copilot');
 
@@ -35,7 +36,7 @@ export function checkAiEnabled(): boolean {
 
   if (aiParam === 'off' || aiParam === 'disable') {
     debug('Disabled: Explicit ?ai=off parameter');
-    sessionStorage.removeItem('uswds_pt_ai_enabled');
+    sessionStorage.removeItem(SESSION_KEYS.AI_ENABLED);
     return false;
   }
 
@@ -51,11 +52,11 @@ export function checkAiEnabled(): boolean {
 
   if (aiParam === AI_SECRET) {
     debug('Enabled: Secret matched, saving to session');
-    sessionStorage.setItem('uswds_pt_ai_enabled', 'true');
+    sessionStorage.setItem(SESSION_KEYS.AI_ENABLED, 'true');
     return true;
   }
 
-  const fromSession = sessionStorage.getItem('uswds_pt_ai_enabled') === 'true';
+  const fromSession = sessionStorage.getItem(SESSION_KEYS.AI_ENABLED) === 'true';
   debug('From session:', fromSession);
   return fromSession;
 }

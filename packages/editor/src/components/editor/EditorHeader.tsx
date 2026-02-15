@@ -116,7 +116,7 @@ export const EditorHeader = memo(function EditorHeader({
   lastPushResult = null,
   onDismissPushResult,
 }: EditorHeaderProps) {
-  const connectionStatus = useConnectionStatus();
+  const connectionStatus = useConnectionStatus(showConnectionStatus);
 
   // Push dropdown state
   const [showPushMenu, setShowPushMenu] = useState(false);

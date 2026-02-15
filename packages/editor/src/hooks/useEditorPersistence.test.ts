@@ -663,9 +663,12 @@ describe('useEditorPersistence', () => {
       const stateMachine = createMockStateMachine();
       const editorRef = { current: null };
 
+      // apiPost → apiRequest → authFetch; apiRequest reads response.text()
+      const body = JSON.stringify(newProto);
       mockAuthFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(newProto),
+        text: () => Promise.resolve(body),
       });
 
       const { result } = renderHook(() =>
@@ -689,7 +692,11 @@ describe('useEditorPersistence', () => {
 
       expect(slug!).toBe(newProto.slug);
       expect(stateMachine.createPrototype).toHaveBeenCalled();
-      expect(stateMachine.prototypeCreated).toHaveBeenCalledWith(newProto);
+      // apiRequest round-trips through JSON.parse(response.text()) so Date
+      // objects become ISO strings — match on key fields instead of deep equality
+      expect(stateMachine.prototypeCreated).toHaveBeenCalledWith(
+        expect.objectContaining({ id: newProto.id, slug: newProto.slug }),
+      );
       expect(mockNavigate).toHaveBeenCalledWith(`/edit/${newProto.slug}`, { replace: true });
     });
 

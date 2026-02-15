@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Role, InvitationWithTeam } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
-import { authFetch } from './useAuth';
-import { API_ENDPOINTS } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
 
 const debug = createDebugLogger('Invitations');
 
@@ -32,29 +31,23 @@ export function useInvitations(): UseInvitationsReturn {
 
   // Load user's pending invitations
   const refreshInvitations = useCallback(async () => {
-    try {
-      setState((prev) => ({ ...prev, isLoading: true }));
-      const response = await authFetch(API_ENDPOINTS.INVITATIONS);
-      if (response.ok) {
-        const data = await response.json();
-        setState({
-          invitations: data.invitations || [],
-          isLoading: false,
-          error: null,
-        });
-      } else {
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: 'Failed to load invitations',
-        }));
-      }
-    } catch (err) {
-      debug('Failed to fetch invitations:', err);
+    setState((prev) => ({ ...prev, isLoading: true }));
+    const result = await apiGet<{ invitations: InvitationWithTeam[] }>(
+      API_ENDPOINTS.INVITATIONS,
+      'Failed to load invitations'
+    );
+    if (result.success) {
+      setState({
+        invitations: result.data?.invitations || [],
+        isLoading: false,
+        error: null,
+      });
+    } else {
+      debug('Failed to fetch invitations:', result.error);
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to load invitations',
+        error: result.error || 'Failed to load invitations',
       }));
     }
   }, []);
@@ -66,68 +59,52 @@ export function useInvitations(): UseInvitationsReturn {
 
   // Accept an invitation
   const acceptInvitation = useCallback(async (token: string): Promise<boolean> => {
-    try {
-      const response = await authFetch(API_ENDPOINTS.INVITATION_ACCEPT(token), {
-        method: 'POST',
-      });
+    const result = await apiPost(
+      API_ENDPOINTS.INVITATION_ACCEPT(token),
+      undefined,
+      'Failed to accept invitation'
+    );
 
-      if (!response.ok) {
-        try {
-          const error = await response.json();
-          setState((prev) => ({
-            ...prev,
-            error: error.message || 'Failed to accept invitation',
-          }));
-        } catch {
-          setState((prev) => ({ ...prev, error: 'Failed to accept invitation' }));
-        }
-        return false;
-      }
-
-      // Remove accepted invitation from list
+    if (!result.success) {
       setState((prev) => ({
         ...prev,
-        invitations: prev.invitations.filter((inv) => inv.token !== token),
+        error: result.error || 'Failed to accept invitation',
       }));
-
-      return true;
-    } catch (err) {
-      setState((prev) => ({ ...prev, error: 'Failed to accept invitation' }));
       return false;
     }
+
+    // Remove accepted invitation from list
+    setState((prev) => ({
+      ...prev,
+      invitations: prev.invitations.filter((inv) => inv.token !== token),
+    }));
+
+    return true;
   }, []);
 
   // Decline an invitation
   const declineInvitation = useCallback(async (token: string): Promise<boolean> => {
-    try {
-      const response = await authFetch(API_ENDPOINTS.INVITATION_DECLINE(token), {
-        method: 'POST',
-      });
+    const result = await apiPost(
+      API_ENDPOINTS.INVITATION_DECLINE(token),
+      undefined,
+      'Failed to decline invitation'
+    );
 
-      if (!response.ok) {
-        try {
-          const error = await response.json();
-          setState((prev) => ({
-            ...prev,
-            error: error.message || 'Failed to decline invitation',
-          }));
-        } catch {
-          setState((prev) => ({ ...prev, error: 'Failed to decline invitation' }));
-        }
-        return false;
-      }
-
-      // Remove declined invitation from list
+    if (!result.success) {
       setState((prev) => ({
         ...prev,
-        invitations: prev.invitations.filter((inv) => inv.token !== token),
+        error: result.error || 'Failed to decline invitation',
       }));
-
-      return true;
-    } catch (err) {
-      setState((prev) => ({ ...prev, error: 'Failed to decline invitation' }));
       return false;
     }
+
+    // Remove declined invitation from list
+    setState((prev) => ({
+      ...prev,
+      invitations: prev.invitations.filter((inv) => inv.token !== token),
+    }));
+
+    return true;
   }, []);
 
   // Clear error
@@ -154,36 +131,22 @@ export async function acceptInvitationByToken(token: string): Promise<{
   teamId?: string;
   role?: Role;
 }> {
-  try {
-    const response = await authFetch(API_ENDPOINTS.INVITATION_ACCEPT(token), {
-      method: 'POST',
-    });
+  const result = await apiPost<{ membership?: { teamId?: string; role?: Role } }>(
+    API_ENDPOINTS.INVITATION_ACCEPT(token),
+    undefined,
+    'Failed to accept invitation'
+  );
 
-    if (!response.ok) {
-      try {
-        const error = await response.json();
-        return {
-          success: false,
-          error: error.message || 'Failed to accept invitation',
-        };
-      } catch {
-        return {
-          success: false,
-          error: 'Failed to accept invitation',
-        };
-      }
-    }
-
-    const data = await response.json();
-    return {
-      success: true,
-      teamId: data.membership?.teamId,
-      role: data.membership?.role,
-    };
-  } catch (err) {
+  if (!result.success) {
     return {
       success: false,
-      error: 'Failed to accept invitation',
+      error: result.error || 'Failed to accept invitation',
     };
   }
+
+  return {
+    success: true,
+    teamId: result.data?.membership?.teamId,
+    role: result.data?.membership?.role,
+  };
 }

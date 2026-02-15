@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
-import { authFetch, useAuth } from '../hooks/useAuth';
-import { API_ENDPOINTS } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
+import { API_ENDPOINTS, apiGet, apiDelete, apiPost } from '../lib/api';
 import { formatDate } from '../lib/date';
-import { inferTemplateLabel } from '../lib/template-utils';
 import { useOrganization } from '../hooks/useOrganization';
 import { useInvitations } from '../hooks/useInvitations';
 import { TeamSwitcher } from './TeamSwitcher';
@@ -43,18 +42,10 @@ const PrototypeCard = React.memo(function PrototypeCard({
   onCancelDelete,
   onDuplicate,
 }: PrototypeCardProps) {
-  const templateLabel = inferTemplateLabel(prototype.htmlContent);
   const isConfirmingDelete = confirmDeleteSlug === prototype.slug;
 
   return (
     <div className="prototype-card">
-      {templateLabel && (
-        <div className="prototype-card-template-row">
-          <span className="prototype-card-template">
-            {templateLabel}
-          </span>
-        </div>
-      )}
       <div
         style={{
           display: 'flex',
@@ -182,24 +173,24 @@ export function PrototypeList() {
   const isOrgAdmin = teams.length === 0 || teams.some((t) => t.role === 'org_admin');
   const hasNoTeams = teams.length === 0;
   const loadPrototypes = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const url = currentTeam
-        ? `${API_ENDPOINTS.PROTOTYPES}?teamId=${currentTeam.id}`
-        : API_ENDPOINTS.PROTOTYPES;
-      const response = await authFetch(url);
+    setIsLoading(true);
+    const url = currentTeam
+      ? `${API_ENDPOINTS.PROTOTYPES}?teamId=${currentTeam.id}`
+      : API_ENDPOINTS.PROTOTYPES;
+    const result = await apiGet<{ prototypes?: Prototype[] } | Prototype[]>(
+      url,
+      'Failed to load prototypes'
+    );
 
-      if (!response.ok) {
-        throw new Error('Failed to load prototypes');
-      }
-
-      const data = await response.json();
-      setPrototypes(data.prototypes || data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load prototypes');
-    } finally {
-      setIsLoading(false);
+    if (result.success && result.data) {
+      const data = result.data;
+      setPrototypes(
+        Array.isArray(data) ? data : (data as { prototypes?: Prototype[] }).prototypes || []
+      );
+    } else {
+      setError(result.error || 'Failed to load prototypes');
     }
+    setIsLoading(false);
   }, [currentTeam]);
 
   useEffect(() => {
@@ -212,19 +203,19 @@ export function PrototypeList() {
       setGitHubConnection(null);
       return;
     }
-    authFetch(API_ENDPOINTS.GITHUB_TEAM_CONNECTION(currentTeam.id))
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.repoOwner && data?.repoName) {
-          setGitHubConnection({ repoOwner: data.repoOwner, repoName: data.repoName });
-        } else {
-          setGitHubConnection(null);
+    apiGet<{ repoOwner?: string; repoName?: string }>(
+      API_ENDPOINTS.GITHUB_TEAM_CONNECTION(currentTeam.id),
+      'Failed to check GitHub connection'
+    ).then((result) => {
+      if (result.success && result.data?.repoOwner && result.data?.repoName) {
+        setGitHubConnection({ repoOwner: result.data.repoOwner, repoName: result.data.repoName });
+      } else {
+        if (!result.success) {
+          debug('Failed to check GitHub connection:', result.error);
         }
-      })
-      .catch((err) => {
-        debug('Failed to check GitHub connection:', err);
         setGitHubConnection(null);
-      });
+      }
+    });
   }, [currentTeam]);
 
   const handleDelete = useCallback((slug: string, e: React.MouseEvent) => {
@@ -233,21 +224,17 @@ export function PrototypeList() {
   }, []);
 
   const confirmDeleteHandler = useCallback(async (slug: string) => {
-    try {
-      const response = await authFetch(API_ENDPOINTS.PROTOTYPE(slug), {
-        method: 'DELETE',
-      });
+    const result = await apiDelete(
+      API_ENDPOINTS.PROTOTYPE(slug),
+      'Failed to delete prototype'
+    );
 
-      if (!response.ok) {
-        throw new Error('Failed to delete prototype');
-      }
-
+    if (result.success) {
       setPrototypes((prev) => prev.filter((p) => p.slug !== slug));
-      setConfirmDeleteSlug(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete');
-      setConfirmDeleteSlug(null);
+    } else {
+      setError(result.error || 'Failed to delete');
     }
+    setConfirmDeleteSlug(null);
   }, []);
 
   const cancelDelete = useCallback(() => {
@@ -257,20 +244,17 @@ export function PrototypeList() {
   const handleDuplicate = useCallback(async (slug: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    try {
-      const response = await authFetch(API_ENDPOINTS.PROTOTYPE_DUPLICATE(slug), {
-        method: 'POST',
-      });
+    const result = await apiPost<Prototype>(
+      API_ENDPOINTS.PROTOTYPE_DUPLICATE(slug),
+      undefined,
+      'Failed to duplicate prototype'
+    );
 
-      if (!response.ok) {
-        throw new Error('Failed to duplicate prototype');
-      }
-
-      const duplicate = await response.json();
+    if (result.success && result.data) {
       // Add the duplicate to the list
-      setPrototypes((prev) => [duplicate, ...prev]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to duplicate');
+      setPrototypes((prev) => [result.data!, ...prev]);
+    } else {
+      setError(result.error || 'Failed to duplicate');
     }
   }, []);
 

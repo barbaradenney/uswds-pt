@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { UserWithOrgAndTeams } from '@uswds-pt/shared';
+import { STORAGE_KEYS } from '../lib/constants';
 
 // ============================================================================
 // Types
@@ -31,8 +32,8 @@ interface AuthContextValue extends AuthState {
 // Constants
 // ============================================================================
 
-const TOKEN_KEY = 'uswds_pt_token';
-const USER_KEY = 'uswds_pt_user';
+const TOKEN_KEY = STORAGE_KEYS.TOKEN;
+const USER_KEY = STORAGE_KEYS.USER;
 // AuthContext defines its own API_URL to avoid circular imports (api.ts imports authFetch from here).
 // The canonical API_URL and API_ENDPOINTS live in lib/api.ts — all other files should use those.
 const API_URL = import.meta.env.VITE_API_URL || '';

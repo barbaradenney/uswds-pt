@@ -70,31 +70,3 @@ export function createDebugLogger(namespace: string): (...args: unknown[]) => vo
  */
 export const debug = createDebugLogger('USWDS-PT');
 
-/**
- * Programmatically enable debug mode
- * Useful for enabling debug in tests or programmatically
- */
-export function enableDebug(): void {
-  debugEnabled = true;
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(DEBUG_STORAGE_KEY, 'true');
-  }
-}
-
-/**
- * Programmatically disable debug mode
- */
-export function disableDebug(): void {
-  debugEnabled = false;
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(DEBUG_STORAGE_KEY);
-  }
-}
-
-/**
- * Reset debug state (force re-check on next call)
- * Useful for tests
- */
-export function resetDebugState(): void {
-  debugEnabled = null;
-}

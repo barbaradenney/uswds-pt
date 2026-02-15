@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Organization, Team, Role } from '@uswds-pt/shared';
 import { createDebugLogger } from '@uswds-pt/shared';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
+import { STORAGE_KEYS } from '../lib/constants';
 
 const debug = createDebugLogger('Organization');
 
@@ -24,7 +25,7 @@ interface UseOrganizationReturn extends OrganizationState {
   deleteTeam: (teamId: string) => Promise<boolean>;
 }
 
-const CURRENT_TEAM_KEY = 'uswds_pt_current_team';
+const CURRENT_TEAM_KEY = STORAGE_KEYS.CURRENT_TEAM;
 
 export function useOrganization(): UseOrganizationReturn {
   const [state, setState] = useState<OrganizationState>({

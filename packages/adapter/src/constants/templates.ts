@@ -1,5 +1,13 @@
 /**
- * Default content templates for drag-and-drop
+ * Default content templates for drag-and-drop.
+ *
+ * Values prefixed with `__FULL_HTML__` represent complete HTML fragments that
+ * should be rendered directly into the canvas rather than treated as the
+ * inner content of a wrapping custom element.  The prefix is stripped at
+ * render time; its sole purpose is to act as a signal checked by the
+ * component registry, block registration, and canvas rendering logic
+ * (8+ files across the adapter and editor packages) so they can distinguish
+ * full-document/fragment content from simple component slot content.
  */
 export const DEFAULT_CONTENT: Record<string, string> = {
   // Basic Elements (wrapped in usa-prose so USWDS typography applies)

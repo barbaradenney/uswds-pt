@@ -13,8 +13,3 @@ export const JWT_EXPIRY = '7d';
  * In production, JWT_SECRET env var is required (enforced in index.ts).
  */
 export const DEFAULT_JWT_SECRET_DEV = 'dev-only-jwt-secret-do-not-use-in-prod';
-
-/**
- * API version (for future use)
- */
-export const API_VERSION = '1.0.0';

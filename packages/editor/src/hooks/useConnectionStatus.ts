@@ -19,9 +19,10 @@ export interface ConnectionStatus {
 /**
  * Hook to track connection status
  *
+ * @param enabled - When false, skips subscribing to online/offline events (default: true)
  * @returns Connection status object
  */
-export function useConnectionStatus(): ConnectionStatus {
+export function useConnectionStatus(enabled = true): ConnectionStatus {
   const [status, setStatus] = useState<ConnectionStatus>(() => ({
     isOnline: isOnline(),
     justReconnected: false,
@@ -29,6 +30,7 @@ export function useConnectionStatus(): ConnectionStatus {
   }));
 
   useEffect(() => {
+    if (!enabled) return;
     const unsubscribe = subscribeToOnlineStatus((onlineStatus) => {
       setStatus((prev) => {
         const wasOffline = !prev.isOnline;
@@ -44,10 +46,11 @@ export function useConnectionStatus(): ConnectionStatus {
     });
 
     return unsubscribe;
-  }, []);
+  }, [enabled]);
 
   // Clear "just reconnected" after 3 seconds
   useEffect(() => {
+    if (!enabled) return;
     if (status.justReconnected) {
       const timeout = setTimeout(() => {
         setStatus((prev) => ({ ...prev, justReconnected: false }));

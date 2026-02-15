@@ -12,7 +12,7 @@ import type { Prototype } from '@uswds-pt/shared';
 import { createDebugLogger, computeContentChecksum } from '@uswds-pt/shared';
 import { authFetch } from './useAuth';
 import { useOrganization } from './useOrganization';
-import { API_ENDPOINTS } from '../lib/api';
+import { API_ENDPOINTS, apiPost } from '../lib/api';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import {
   getPrototype,
@@ -570,10 +570,9 @@ export function useEditorPersistence({
     try {
       const blankTemplate = DEFAULT_CONTENT['blank-template']?.replace('__FULL_HTML__', '') || '';
 
-      const response = await authFetch(API_ENDPOINTS.PROTOTYPES, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const result = await apiPost<Prototype>(
+        API_ENDPOINTS.PROTOTYPES,
+        {
           name: 'Untitled Prototype',
           htmlContent: blankTemplate,
           grapesData: {
@@ -588,14 +587,15 @@ export function useEditorPersistence({
             assets: [],
           },
           teamId: currentTeam.id,
-        }),
-      });
+        },
+        'Failed to create prototype'
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to create prototype');
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to create prototype');
       }
 
-      const data: Prototype = await response.json();
+      const data = result.data;
       debug('Create successful, slug:', data.slug);
 
       prototypeCreated(data);

@@ -9,7 +9,10 @@ import type { ComponentRegistration, UnifiedTrait } from './shared-utils.js';
 import {
   coerceBoolean,
 } from './shared-utils.js';
+import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
+
+const debug = createDebugLogger('HeaderComponents');
 
 /**
  * Registry interface to avoid circular imports.
@@ -180,7 +183,8 @@ function createHeaderNavItemTrait(
       if (!component) return true;
       const count = parseInt(component.get?.('attributes')?.['nav-count'] || '4', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check header nav item trait visibility:', e);
       return true;
     }
   };
@@ -310,7 +314,8 @@ function createHeaderSecondaryLinkTrait(
       if (!component) return false;
       const count = parseInt(component.get?.('attributes')?.['sec-count'] || '0', 10);
       return index <= count;
-    } catch {
+    } catch (e) {
+      debug('Failed to check header secondary link trait visibility:', e);
       return false;
     }
   };
@@ -391,7 +396,8 @@ registry.register({
             if (!component) return false;
             const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
             return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
-          } catch {
+          } catch (e) {
+            debug('Failed to check skip-link-text visibility:', e);
             return true;
           }
         },
@@ -421,7 +427,8 @@ registry.register({
             if (!component) return false;
             const showSkipLink = component.get?.('attributes')?.['show-skip-link'];
             return showSkipLink === true || showSkipLink === 'true' || showSkipLink === undefined;
-          } catch {
+          } catch (e) {
+            debug('Failed to check skip-link-href visibility:', e);
             return true;
           }
         },

@@ -210,8 +210,8 @@ export class WebComponentTraitManager {
       if (typeof cleanup === 'function') {
         try {
           cleanup();
-        } catch (_e) {
-          // Ignore errors during cleanup
+        } catch (e) {
+          debug(`Error cleaning up listener '${key}':`, e);
         }
       }
       this.activeListeners.delete(key);
@@ -556,12 +556,12 @@ export class WebComponentTraitManager {
     debug('Destroying WebComponentTraitManager');
 
     // Clean up all active listeners (observers, etc.)
-    this.activeListeners.forEach((cleanup, _key) => {
+    this.activeListeners.forEach((cleanup, key) => {
       if (typeof cleanup === 'function') {
         try {
           cleanup();
-        } catch (_e) {
-          // Ignore errors during cleanup
+        } catch (e) {
+          debug(`Error cleaning up listener '${key}' during destroy:`, e);
         }
       }
     });

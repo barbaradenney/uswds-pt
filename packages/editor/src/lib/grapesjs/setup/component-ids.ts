@@ -12,6 +12,33 @@ import type { EditorInstance, RegisterListener } from './types';
 const debug = createDebugLogger('GrapesJSSetup');
 
 /**
+ * Component tag names eligible for show/hide targeting in the conditional
+ * visibility UI.  Includes USWDS form/data components plus common HTML
+ * structural elements so users can reveal or hide whole sections.
+ */
+const TARGETABLE_TYPES_FULL = [
+  'usa-text-input', 'usa-textarea', 'usa-select',
+  'usa-date-picker', 'usa-time-picker', 'usa-file-input',
+  'usa-combo-box', 'usa-range-slider',
+  'usa-card', 'usa-alert', 'usa-accordion',
+  'fieldset', 'form', 'div', 'section', 'article', 'aside',
+  'main', 'nav', 'p', 'span',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+] as const;
+
+/**
+ * Subset of targetable types used for proactive ID assignment.
+ * Only USWDS interactive components and fieldsets get auto-IDs on drop;
+ * generic HTML elements are excluded to avoid unnecessary ID clutter.
+ */
+const TARGETABLE_TYPES_PROACTIVE = [
+  'usa-text-input', 'usa-textarea', 'usa-select',
+  'usa-date-picker', 'usa-time-picker', 'usa-file-input',
+  'usa-combo-box', 'usa-range-slider',
+  'usa-card', 'usa-alert', 'usa-accordion', 'fieldset',
+] as const;
+
+/**
  * Get a friendly label for a component
  * Priority: Layer name > label attribute > name attribute > content > heading
  */
@@ -147,15 +174,7 @@ export function collectTargetableComponents(editor: EditorInstance): Array<{ id:
   const result: Array<{ id: string; label: string; component: any }> = [];
   const allIds = new Set<string>();
 
-  const targetableTypes = [
-    'usa-text-input', 'usa-textarea', 'usa-select',
-    'usa-date-picker', 'usa-time-picker', 'usa-file-input',
-    'usa-combo-box', 'usa-range-slider',
-    'usa-card', 'usa-alert', 'usa-accordion',
-    'fieldset', 'form', 'div', 'section', 'article', 'aside',
-    'main', 'nav', 'p', 'span',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  ];
+  const targetableTypes: readonly string[] = TARGETABLE_TYPES_FULL;
 
   const hasCustomLayerName = (comp: any): boolean => {
     const layerName = comp.getName?.() || comp.get?.('name');
@@ -237,12 +256,7 @@ export function setupProactiveIdAssignment(
   editor: EditorInstance,
   registerListener: RegisterListener
 ): void {
-  const targetableTypes = [
-    'usa-text-input', 'usa-textarea', 'usa-select',
-    'usa-date-picker', 'usa-time-picker', 'usa-file-input',
-    'usa-combo-box', 'usa-range-slider',
-    'usa-card', 'usa-alert', 'usa-accordion', 'fieldset',
-  ];
+  const targetableTypes: readonly string[] = TARGETABLE_TYPES_PROACTIVE;
 
   const getAllExistingIds = (): Set<string> => {
     const ids = new Set<string>();
