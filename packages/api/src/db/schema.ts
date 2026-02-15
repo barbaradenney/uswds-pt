@@ -248,6 +248,7 @@ export const prototypes = pgTable(
     createdByIdx: index('prototypes_created_by_idx').on(table.createdBy),
     teamIdx: index('prototypes_team_idx').on(table.teamId),
     updatedAtIdx: index('prototypes_updated_at_idx').on(table.updatedAt),
+    isPublicIdx: index('prototypes_is_public_idx').on(table.isPublic),
     teamBranchSlugUnique: unique('prototypes_team_branch_slug_unique').on(table.teamId, table.branchSlug),
   })
 );
@@ -324,6 +325,7 @@ export const symbols = pgTable(
     orgIdx: index('symbols_organization_idx').on(table.organizationId),
     prototypeIdx: index('symbols_prototype_idx').on(table.prototypeId),
     scopeIdx: index('symbols_scope_idx').on(table.scope),
+    scopeOrgIdx: index('symbols_scope_organization_idx').on(table.scope, table.organizationId),
   })
 );
 

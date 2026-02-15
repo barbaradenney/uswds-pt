@@ -19,7 +19,7 @@
 import { useState, useEffect, useMemo, useRef, memo, lazy, Suspense } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
 import { GJS_EVENTS } from '../../lib/contracts';
-import DOMPurify from 'dompurify';
+import { DOMPurify } from '../../lib/sanitize';
 import { SidebarTabs } from './SidebarTabs';
 import { isDemoMode } from '../../lib/api';
 

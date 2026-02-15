@@ -197,7 +197,7 @@ VITE_AI_ENABLED=true
 
 - The editor sends conversation context to `POST /api/ai/chat` (authenticated, rate-limited: 10 req/min)
 - The API server calls the AI provider SDK (Anthropic or OpenAI) with the server-side API key
-- The AI is trained on all USWDS web components through a custom prompt (`src/lib/ai/uswds-prompt.ts`)
+- The AI is trained on all USWDS web components through a custom prompt (`packages/editor/src/lib/ai/uswds-prompt.ts`)
 - Supports image and PDF attachments (Claude only for PDFs)
 - Users can request things like "add a contact form" or "make this card have a warning style"
 - The AI knows about usa-button, usa-header, usa-card, usa-alert, and all other USWDS components

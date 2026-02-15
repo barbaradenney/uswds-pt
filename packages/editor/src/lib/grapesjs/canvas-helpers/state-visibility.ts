@@ -94,7 +94,7 @@ export function setupStateVisibilityWatcher(
   // Re-apply on structural changes (debounced)
   registerListener(GJS_EVENTS.COMPONENT_ADD, refresh);
   registerListener(GJS_EVENTS.COMPONENT_REMOVE, refresh);
-  registerListener('page:select', refresh);
+  registerListener(GJS_EVENTS.PAGE_SELECT, refresh);
 
   // Re-apply when component attributes change (covers checkbox trait
   // toggling data-states / data-users). Uses the narrower

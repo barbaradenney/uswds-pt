@@ -7,6 +7,7 @@
 import { CDN_URLS } from '@uswds-pt/adapter';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { EditorInstance } from '../../types/grapesjs';
+import { CSS_CLASSES } from '../contracts';
 
 const debug = createDebugLogger('ResourceLoader');
 
@@ -358,7 +359,7 @@ export function addStateDimmingCSS(editor: EditorInstance): void {
     const style = canvasFrame.contentDocument.createElement('style');
     style.textContent = `
       /* Dim components that are hidden in the active state */
-      .gjs-state-dimmed {
+      .${CSS_CLASSES.STATE_DIMMED} {
         opacity: 0.25 !important;
         outline: 1px dashed rgba(150, 150, 150, 0.5) !important;
       }

@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-grapesjs': ['grapesjs', '@grapesjs/react'],
           'vendor-adapter': ['@uswds-pt/adapter'],
+          'vendor-utils': ['dompurify', 'diff'],
         },
       },
     },

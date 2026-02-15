@@ -19,10 +19,6 @@ export { forceCanvasUpdate, setupCanvasEventHandlers, registerClearCommand } fro
 
 // Interactive component handlers
 export {
-  setupPageLinkHandler,
-  setupBannerClickHandler,
-  setupAccordionClickHandler,
-  setupModalClickHandler,
   setupConditionalFieldsHandler,
   setupConditionalFieldsWatcher,
   reinitInteractiveHandlers,

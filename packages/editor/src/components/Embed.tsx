@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import DOMPurify from 'dompurify';
+import { DOMPurify } from '../lib/sanitize';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
 import { isDemoMode, API_URL, API_ENDPOINTS } from '../lib/api';

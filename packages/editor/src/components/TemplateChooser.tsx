@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { STARTER_TEMPLATES } from '@uswds-pt/adapter';
-import DOMPurify from 'dompurify';
+import { DOMPurify } from '../lib/sanitize';
 import { toBranchSlug } from '@uswds-pt/shared';
 
 interface TemplateChooserProps {

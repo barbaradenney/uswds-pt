@@ -156,8 +156,8 @@ export function ensureComponentId(component: any, allIds: Set<string>, editor?: 
     if (idTrait) idTrait.set('value', finalId);
 
     if (editor) {
-      editor.trigger?.('component:update', component);
-      editor.trigger?.('component:update:attributes', component);
+      editor.trigger?.(GJS_EVENTS.COMPONENT_UPDATE, component);
+      editor.trigger?.(GJS_EVENTS.COMPONENT_UPDATE_ATTRS, component);
     }
 
     debug('Generated and set ID for component:', finalId, '- tagName:', tagName);

@@ -86,7 +86,16 @@ async function main() {
   // Register CORS - allow frontend URLs
   // CORS_ORIGINS can be a comma-separated list of allowed origins
   const additionalOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    ? process.env.CORS_ORIGINS.split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => {
+          try {
+            const parsed = new URL(origin);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        })
     : [];
 
   // CORS uses origin (protocol + host + port) — strip any path from FRONTEND_URL
