@@ -34,9 +34,9 @@ import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
   DEFAULT_CONTENT,
-  COMPONENT_ICONS,
   STARTER_TEMPLATES,
 } from '@uswds-pt/adapter';
+import { generateBlocks } from '../lib/blocks';
 import type { EditorInstance } from '../types/grapesjs';
 
 const debug = createDebugLogger('Editor');
@@ -188,41 +188,8 @@ export function Editor() {
     });
   };
 
-  // Generate blocks
-  const blocks = useMemo(() => {
-    const uswdsBlocks = Object.entries(DEFAULT_CONTENT).map(([tagName, content]) => {
-      const isFullHtml = content.startsWith('__FULL_HTML__');
-      const blockContent = isFullHtml
-        ? content.replace('__FULL_HTML__', '')
-        : `<${tagName}>${content}</${tagName}>`;
-
-      const labelMap: Record<string, string> = {
-        'heading': 'Heading',
-        'text': 'Text',
-        'form-container': 'Form',
-        'section-container': 'Section',
-        'grid-2-col': '2 Columns',
-        'grid-3-col': '3 Columns',
-        'grid-4-col': '4 Columns',
-        'grid-sidebar-left': 'Sidebar Left',
-        'grid-sidebar-right': 'Sidebar Right',
-        'grid-container': 'Container',
-        'grid-row': 'Row',
-      };
-
-      const label = labelMap[tagName] || tagName.replace('usa-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-      return {
-        id: tagName,
-        label,
-        content: blockContent,
-        media: COMPONENT_ICONS[tagName] || COMPONENT_ICONS['default'],
-        category: getCategoryForComponent(tagName),
-      };
-    });
-
-    return uswdsBlocks;
-  }, []);
+  // Generate blocks from shared utility
+  const blocks = useMemo(() => generateBlocks(), []);
 
   // Stable initialContent: only recompute when editorKey changes (editor will remount).
   // Between key changes, return the same string to prevent memo() from detecting changes.
@@ -426,9 +393,14 @@ export function Editor() {
 
       // For native symbols, pendingSymbolData is the serialized main (from main.toJSON()).
       // Wrap it with id/label for the API, preserving native GrapesJS linking data.
+      // GrapesJS omits tagName for plain divs — normalize so isNativeSymbolData() always detects it.
       const mainId = pendingMainSymbolRef.current?.getId?.() || `symbol-${Date.now()}`;
+      const normalized = { ...(pendingSymbolData as any) };
+      if (!normalized.tagName && !normalized.type) {
+        normalized.tagName = 'div';
+      }
       const symbolDataForApi: GrapesJSSymbol = {
-        ...(pendingSymbolData as any),
+        ...normalized,
         id: mainId,
         label: name,
       };
@@ -1071,35 +1043,3 @@ export function Editor() {
   );
 }
 
-/**
- * Static mapping from block-panel category name to the component tag names
- * it contains. Hoisted to module scope so it is allocated once (not on every
- * call to getCategoryForComponent).
- */
-const CATEGORY_MAP: Record<string, string[]> = {
-  'Basics': ['heading', 'text'],
-  'Containers': ['form-container', 'section-container', 'fieldset'],
-  'Actions': ['usa-button', 'usa-button-group', 'usa-link', 'usa-search'],
-  'Form Controls': ['usa-text-input', 'usa-textarea', 'usa-select', 'usa-checkbox', 'checkbox-group', 'usa-radio', 'radio-group', 'usa-date-picker', 'usa-time-picker', 'usa-file-input', 'usa-combo-box', 'usa-range-slider', 'usa-character-count', 'usa-memorable-date'],
-  'Navigation': ['usa-breadcrumb', 'usa-pagination', 'usa-side-navigation', 'usa-header', 'usa-footer', 'usa-skip-link', 'usa-in-page-navigation', 'usa-language-selector'],
-  'Data Display': ['usa-card', 'usa-table', 'usa-tag', 'usa-list', 'usa-icon', 'usa-collection', 'usa-summary-box'],
-  'Feedback': ['usa-alert', 'usa-banner', 'usa-site-alert', 'usa-modal', 'usa-tooltip'],
-  'Page Layouts': ['grid-2-col', 'grid-3-col', 'grid-4-col', 'grid-sidebar-left', 'grid-sidebar-right'],
-  'Layout': ['usa-accordion', 'usa-step-indicator', 'usa-process-list', 'usa-identifier', 'usa-prose'],
-  'Patterns': ['usa-name-pattern', 'usa-address-pattern', 'usa-phone-number-pattern', 'usa-email-address-pattern', 'usa-date-of-birth-pattern', 'usa-ssn-pattern'],
-  'Templates': ['blank-template', 'landing-template', 'form-template', 'sign-in-template', 'error-template'],
-};
-
-/**
- * Maps a component tag name (e.g., "usa-button") to its block-panel category
- * (e.g., "Actions"). Falls back to "Components" for any unrecognized tag.
- * Used by the blocks useMemo to organize the drag-and-drop panel.
- */
-function getCategoryForComponent(tagName: string): string {
-  for (const [category, components] of Object.entries(CATEGORY_MAP)) {
-    if (components.includes(tagName)) {
-      return category;
-    }
-  }
-  return 'Components';
-}

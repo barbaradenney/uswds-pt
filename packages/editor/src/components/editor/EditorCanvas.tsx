@@ -48,6 +48,8 @@ export interface EditorCanvasProps {
   onRetry: () => void;
   /** Callback to go home after error */
   onGoHome: () => void;
+  /** Editor mode — controls which sidebar tabs are shown */
+  mode?: 'prototype' | 'symbol';
 }
 
 export const EditorCanvas = memo(function EditorCanvas({
@@ -58,6 +60,7 @@ export const EditorCanvas = memo(function EditorCanvas({
   onReady,
   onRetry,
   onGoHome,
+  mode = 'prototype',
 }: EditorCanvasProps) {
   return (
     <EditorErrorBoundary onRetry={onRetry} onGoHome={onGoHome}>
@@ -85,12 +88,12 @@ export const EditorCanvas = memo(function EditorCanvas({
         }}
       >
         <div className="editor-workspace">
-          <LeftSidebar />
+          <LeftSidebar mode={mode} />
           <div className="editor-canvas-column">
             <CanvasToolbar />
             <Canvas className="editor-canvas" />
           </div>
-          <RightSidebar />
+          <RightSidebar mode={mode} />
         </div>
       </GjsEditor>
     </EditorErrorBoundary>

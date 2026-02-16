@@ -45,9 +45,9 @@ describe('isNativeSymbolData', () => {
     expect(isNativeSymbolData({})).toBe(false);
   });
 
-  it('returns false for object with components array but no id/label', () => {
-    // Not legacy (missing id/label), not native (no tagName/type)
-    expect(isNativeSymbolData({ components: [{ tagName: 'div' }] })).toBe(false);
+  it('returns true for object with components array but no id/label (plain div with children)', () => {
+    // GrapesJS omits tagName for plain <div>; this IS a native component
+    expect(isNativeSymbolData({ components: [{ tagName: 'div' }] })).toBe(true);
   });
 
   it('returns true for native data that also has components (child components)', () => {
@@ -57,6 +57,43 @@ describe('isNativeSymbolData', () => {
         tagName: 'usa-button',
         type: 'default',
         components: [{ tagName: 'span', content: 'Click' }],
+      })
+    ).toBe(true);
+  });
+
+  it('returns true for data with __symbol marker (native GrapesJS symbol)', () => {
+    expect(isNativeSymbolData({ __symbol: true })).toBe(true);
+  });
+
+  it('returns true for data with __symbolId marker', () => {
+    expect(isNativeSymbolData({ __symbolId: 'abc-123' })).toBe(true);
+  });
+
+  it('returns true for data with attributes but no tagName (plain div)', () => {
+    // GrapesJS serializes plain divs without tagName but with attributes
+    expect(isNativeSymbolData({ attributes: { class: 'my-class' } })).toBe(true);
+  });
+
+  it('returns true for data with classes but no tagName (plain div)', () => {
+    expect(isNativeSymbolData({ classes: ['container'] })).toBe(true);
+  });
+
+  it('returns true for plain div with components and attributes but no tagName', () => {
+    // Common case: user selects a div container with children
+    expect(
+      isNativeSymbolData({
+        attributes: { id: 'wrapper' },
+        components: [{ tagName: 'usa-button' }, { tagName: 'usa-alert' }],
+      })
+    ).toBe(true);
+  });
+
+  it('returns true for object with id and components but no label (not legacy envelope)', () => {
+    // Has id + components but missing label → NOT legacy wrapper format → native
+    expect(
+      isNativeSymbolData({
+        id: 'some-component-id',
+        components: [{ tagName: 'div' }],
       })
     ).toBe(true);
   });

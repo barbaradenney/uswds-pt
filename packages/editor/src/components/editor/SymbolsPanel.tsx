@@ -20,6 +20,7 @@ import {
   useMemo,
   memo,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { GlobalSymbol, SymbolScope, Role } from '@uswds-pt/shared';
 import type { UseGlobalSymbolsReturn } from '../../hooks/useGlobalSymbols';
 import { useEditorMaybe } from '@grapesjs/react';
@@ -428,6 +429,7 @@ interface SymbolListItemProps {
 }
 
 function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote, onInsert, onDragStart, editor }: SymbolListItemProps) {
+  const navigate = useNavigate();
   const [action, setAction] = useState<ItemAction>('none');
   const [renameName, setRenameName] = useState(symbol.name);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -612,6 +614,13 @@ function SymbolListItem({ symbol, userId, role, hasOrg, update, remove, promote,
       {/* Inline action rows */}
       {action === 'menu' && (
         <div className="symbols-item-action-row" role="group" aria-label="Symbol actions">
+          <button
+            className="symbols-item-action-btn"
+            onClick={() => navigate(`/symbols/${symbol.id}/edit`)}
+            aria-label={`Edit ${symbol.name}`}
+          >
+            Edit
+          </button>
           <button
             className="symbols-item-action-btn"
             onClick={() => {

@@ -241,6 +241,16 @@ export function apiDelete<T>(endpoint: string, defaultError?: string): Promise<A
 // ============================================================================
 
 /**
+ * Fetch a single global symbol by ID
+ */
+export function fetchGlobalSymbol(teamId: string, symbolId: string): Promise<ApiResult<GlobalSymbol>> {
+  return apiGet<GlobalSymbol>(
+    API_ENDPOINTS.TEAM_SYMBOL(teamId, symbolId),
+    'Failed to fetch symbol'
+  );
+}
+
+/**
  * Fetch all global symbols for a team
  */
 export function fetchGlobalSymbols(teamId: string): Promise<ApiResult<GlobalSymbolListResponse>> {

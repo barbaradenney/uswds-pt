@@ -15,6 +15,7 @@ import {
   deleteGlobalSymbol,
   promoteSymbol as promoteSymbolApi,
 } from '../lib/api';
+import { isNativeSymbolData } from '../lib/grapesjs/symbol-utils';
 
 const debug = createDebugLogger('GlobalSymbols');
 
@@ -420,8 +421,7 @@ export function extractManagedSymbols(projectData: GrapesProjectData): GrapesPro
 
       // Managed symbol: keep if native format (needed for instance linking),
       // strip if legacy wrapper format
-      const isNative = !!(data.tagName || data.type);
-      return isNative;
+      return isNativeSymbolData(data);
     }
   );
 

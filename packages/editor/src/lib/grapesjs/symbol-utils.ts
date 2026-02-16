@@ -15,6 +15,11 @@ const debug = createDebugLogger('SymbolUtils');
  * Native symbol data has component-level props like `tagName` or `type` at the
  * top level (from component.toJSON()). Legacy format has a `components[]`
  * wrapper array and an `id`/`label` envelope.
+ *
+ * GrapesJS omits `tagName` for plain `<div>` (the default) and `type` for
+ * `'default'`, so we also check for GrapesJS symbol markers and other
+ * component-level properties (`attributes`, `classes`, `components` without
+ * the legacy `id+label` envelope).
  */
 export function isNativeSymbolData(symbolData: unknown): boolean {
   if (!symbolData || typeof symbolData !== 'object') return false;
@@ -23,8 +28,15 @@ export function isNativeSymbolData(symbolData: unknown): boolean {
   // Native: has component-level properties at top level
   if (data.tagName || data.type) return true;
 
-  // Legacy: has `components` array wrapper with `id` and `label`
-  if (Array.isArray(data.components) && data.id && data.label) return false;
+  // Native: has GrapesJS symbol marker
+  if ('__symbol' in data || '__symbolId' in data) return true;
+
+  // Legacy wrapper: has id + label + components array (the old envelope format)
+  if (data.id && data.label && Array.isArray(data.components)) return false;
+
+  // Has component-level props but NOT the legacy id+label envelope →
+  // native component with default tag (plain div)
+  if (Array.isArray(data.components) || 'attributes' in data || 'classes' in data) return true;
 
   return false;
 }

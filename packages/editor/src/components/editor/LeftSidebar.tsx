@@ -32,12 +32,15 @@ const TABS = AI_ENABLED
   ? [...BASE_TABS, { id: 'ai', label: 'AI' }]
   : BASE_TABS;
 
-export const LeftSidebar = memo(function LeftSidebar() {
-  const [activeTab, setActiveTab] = useState('pages');
+const SYMBOL_TABS = [{ id: 'layers', label: 'Layers' }];
+
+export const LeftSidebar = memo(function LeftSidebar({ mode = 'prototype' }: { mode?: 'prototype' | 'symbol' }) {
+  const tabs = mode === 'symbol' ? SYMBOL_TABS : TABS;
+  const [activeTab, setActiveTab] = useState(mode === 'symbol' ? 'layers' : 'pages');
 
   return (
     <div className="editor-sidebar editor-sidebar--left">
-      <SidebarTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <SidebarTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="sidebar-panel-content">
         {activeTab === 'pages' && (
           <div

@@ -14,6 +14,7 @@ const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home
 const TeamSettingsPage = lazy(() => import('./components/TeamSettingsPage').then(m => ({ default: m.TeamSettingsPage })));
 const OrgSettingsPage = lazy(() => import('./components/OrgSettingsPage').then(m => ({ default: m.OrgSettingsPage })));
 const AuthCallback = lazy(() => import('./components/AuthCallback').then(m => ({ default: m.AuthCallback })));
+const SymbolEditor = lazy(() => import('./components/SymbolEditor').then(m => ({ default: m.SymbolEditor })));
 
 // Loading fallback component
 function LoadingFallback() {
@@ -92,6 +93,12 @@ function App() {
             path="/org/settings"
             element={
               isAuthenticated ? <OrgSettingsPage /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/symbols/:symbolId/edit"
+            element={
+              isAuthenticated ? <SymbolEditor /> : <Navigate to="/login" replace />
             }
           />
         </Routes>

@@ -59,7 +59,8 @@ function buildTabs() {
 
 const TABS = buildTabs();
 
-export const RightSidebar = memo(function RightSidebar() {
+export const RightSidebar = memo(function RightSidebar({ mode = 'prototype' }: { mode?: 'prototype' | 'symbol' }) {
+  const tabs = mode === 'symbol' ? BASE_TABS : TABS;
   const [activeTab, setActiveTab] = useState('components');
   const editor = useEditorMaybe();
 
@@ -80,7 +81,7 @@ export const RightSidebar = memo(function RightSidebar() {
 
   return (
     <div className="editor-sidebar editor-sidebar--right">
-      <SidebarTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <SidebarTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="sidebar-panel-content">
         {activeTab === 'components' && (
           <div
