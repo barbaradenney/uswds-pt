@@ -6,18 +6,13 @@
  */
 
 import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
+import { triggerUpdate } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('FooterComponents');
-
-/**
- * Registry interface to avoid circular imports.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerFooterComponents(registry: RegistryLike): void {
 
@@ -47,9 +42,7 @@ function rebuildFooterSections(element: HTMLElement, count: number): void {
   // Set the sections property on the Lit component
   (element as USWDSElement).sections = sections;
 
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -201,9 +194,7 @@ registry.register({
           const variant = String(value || 'medium');
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).variant || element.getAttribute('variant') || 'medium';
@@ -224,9 +215,7 @@ registry.register({
           const name = String(value || 'Agency Name');
           element.setAttribute('agency-name', name);
           (element as USWDSElement).agencyName = name;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).agencyName || element.getAttribute('agency-name') || 'Agency Name';
@@ -248,9 +237,7 @@ registry.register({
           const url = String(value || '#');
           element.setAttribute('agency-url', url);
           (element as USWDSElement).agencyUrl = url;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).agencyUrl || element.getAttribute('agency-url') || '#';
@@ -276,9 +263,7 @@ registry.register({
             element.removeAttribute('logo-src');
             (element as USWDSElement).logoSrc = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoSrc || element.getAttribute('logo-src') || '';
@@ -304,9 +289,7 @@ registry.register({
             element.removeAttribute('logo-alt');
             (element as USWDSElement).logoAlt = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoAlt || element.getAttribute('logo-alt') || '';
@@ -332,9 +315,7 @@ registry.register({
             element.removeAttribute('contact-phone');
             (element as USWDSElement).contactPhone = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).contactPhone || element.getAttribute('contact-phone') || '';
@@ -360,9 +341,7 @@ registry.register({
             element.removeAttribute('contact-email');
             (element as USWDSElement).contactEmail = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).contactEmail || element.getAttribute('contact-email') || '';

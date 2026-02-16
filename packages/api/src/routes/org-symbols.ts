@@ -13,6 +13,7 @@ import {
   isUserInOrganization,
   isOrgAdmin,
 } from '../middleware/permissions.js';
+import { validateSymbolData } from './prototype-helpers.js';
 
 interface CreateOrgSymbolBody {
   name: string;
@@ -91,6 +92,11 @@ export async function orgSymbolRoutes(app: FastifyInstance) {
       const { orgId } = request.params;
       const { name, symbolData } = request.body;
 
+      const symbolDataError = validateSymbolData(symbolData as Record<string, unknown>);
+      if (symbolDataError) {
+        return reply.status(400).send({ message: symbolDataError });
+      }
+
       const [newSymbol] = await db
         .insert(symbols)
         .values({
@@ -155,6 +161,14 @@ export async function orgSymbolRoutes(app: FastifyInstance) {
       }
 
       const { name, symbolData } = request.body;
+
+      if (symbolData) {
+        const symbolDataError = validateSymbolData(symbolData as Record<string, unknown>);
+        if (symbolDataError) {
+          return reply.status(400).send({ message: symbolDataError });
+        }
+      }
+
       const updateData: Partial<typeof symbols.$inferInsert> = {
         updatedAt: new Date(),
       };

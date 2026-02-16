@@ -6,6 +6,7 @@
  */
 
 import type { UnifiedTrait, TraitValue } from './shared-utils.js';
+import { triggerUpdate } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -175,9 +176,7 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
             }
 
             // Trigger web component update
-            if (typeof (element as USWDSElement).requestUpdate === 'function') {
-              (element as USWDSElement).requestUpdate?.();
-            }
+            triggerUpdate(element);
           } else {
             element.removeAttribute('href');
             (element as USWDSElement).href = undefined;
@@ -239,9 +238,7 @@ export function createPageLinkTraits(): Record<string, UnifiedTrait> {
             }
 
             // Trigger web component update
-            if (typeof (element as USWDSElement).requestUpdate === 'function') {
-              (element as USWDSElement).requestUpdate?.();
-            }
+            triggerUpdate(element);
           } else {
             element.removeAttribute('href');
             (element as USWDSElement).href = undefined;

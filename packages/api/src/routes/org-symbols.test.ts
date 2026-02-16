@@ -69,6 +69,27 @@ vi.mock('../db/schema.js', () => ({
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
   },
+  prototypes: {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    description: 'description',
+    teamId: 'teamId',
+    createdBy: 'createdBy',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    isPublic: 'isPublic',
+    version: 'version',
+    contentChecksum: 'contentChecksum',
+    branchSlug: 'branchSlug',
+    lastGithubPushAt: 'lastGithubPushAt',
+    lastGithubCommitSha: 'lastGithubCommitSha',
+  },
+  teamMemberships: {
+    userId: 'userId',
+    teamId: 'teamId',
+    role: 'role',
+  },
 }));
 
 // Mock permissions — mockPerms values are read at call time

@@ -66,11 +66,12 @@ pnpm --filter @uswds-pt/api db:studio  # Open Drizzle Studio
 **Component Registration**: The adapter's `component-registry-v2.ts` contains the `ComponentRegistry` class and wiring. Individual component registrations are split across focused files in `packages/adapter/src/components/`:
 - `button-components.ts`, `form-components.ts`, `form-input-components.ts`, `text-input-components.ts`
 - `selection-components.ts`, `date-time-components.ts`, `file-range-components.ts`
-- `data-components.ts`, `feedback-components.ts`, `ui-components.ts`
+- `card-components.ts`, `table-components.ts`, `list-components.ts`, `tag-icon-components.ts` (split from former `data-components.ts` barrel)
+- `feedback-components.ts`, `ui-components.ts`
 - `layout-components.ts`, `structure-components.ts`
 - `header-components.ts`, `footer-components.ts`, `navigation-components.ts`
 - `pattern-components.ts` (multi-field USWDS patterns: name, address, phone, email, DOB, SSN)
-- Helper modules: `shared-utils.ts`, `select-helpers.ts`, `page-link-traits.ts`, `form-trait-factories.ts`
+- Helper modules: `shared-utils.ts` (includes `RegistryLike` interface and `triggerUpdate` utility), `select-helpers.ts`, `page-link-traits.ts`, `form-trait-factories.ts`
 - Barrel: `index.ts`
 
 Components use Light DOM (no Shadow DOM), making GrapesJS integration straightforward.
@@ -135,7 +136,7 @@ Push implementation is in `packages/api/src/lib/github-push.ts` (multi-file atom
 
 - **@fastify/helmet** -- CSP, X-Frame-Options (DENY), HSTS (2-year, preload in production), Referrer-Policy
 - **@fastify/rate-limit** -- 100/min global, 5/min login (410), 3/min register (410), 10/min GitHub callback, 10/min AI chat
-- **Input validation** -- `htmlContent` max 2MB, `grapesData` max 5MB, body limit 8MB, `additionalProperties: false`
+- **Input validation** -- `htmlContent` max 2MB, `grapesData` max 5MB, `symbolData` max 2MB, body limit 8MB, `additionalProperties: false`
 - **Optimistic concurrency** -- `version` column + `If-Match` header + atomic transactions
 - **Preview sandbox** -- `<iframe sandbox="allow-scripts" srcdoc={...}>` prevents stored XSS
 - **OAuth state** -- SHA-256 hashed before `timingSafeEqual` to prevent timing side-channel

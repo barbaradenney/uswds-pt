@@ -153,7 +153,7 @@ function isDescendantOf(source: any, target: any): boolean {
   return false;
 }
 
-function LayerItem({
+const LayerItem = memo(function LayerItem({
   component,
   level,
   selected,
@@ -182,75 +182,108 @@ function LayerItem({
   const isInstance = !!symbolInfo?.isInstance;
   const isMain = !!symbolInfo?.isMain;
 
-  const handleDragStart = (e: React.DragEvent) => {
-    e.stopPropagation();
-    dragRef.current = component;
-    setIsDragging(true);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', component.getId());
-  };
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      e.stopPropagation();
+      dragRef.current = component;
+      setIsDragging(true);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', component.getId());
+    },
+    [component, dragRef]
+  );
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     dragRef.current = null;
     setIsDragging(false);
     setDropPosition(null);
-  };
+  }, [dragRef]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const dragged = dragRef.current;
-    if (!dragged || dragged === component || isDescendantOf(dragged, component)) {
-      return;
-    }
+      const dragged = dragRef.current;
+      if (!dragged || dragged === component || isDescendantOf(dragged, component)) {
+        return;
+      }
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientY - rect.top) / rect.height;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = (e.clientY - rect.top) / rect.height;
 
-    if (ratio < 0.25) {
-      setDropPosition('before');
-    } else if (ratio > 0.75) {
-      setDropPosition('after');
-    } else {
-      setDropPosition('inside');
-    }
+      if (ratio < 0.25) {
+        setDropPosition('before');
+      } else if (ratio > 0.75) {
+        setDropPosition('after');
+      } else {
+        setDropPosition('inside');
+      }
 
-    e.dataTransfer.dropEffect = 'move';
-  };
+      e.dataTransfer.dropEffect = 'move';
+    },
+    [component, dragRef]
+  );
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     const related = e.relatedTarget as Node | null;
     if (related && e.currentTarget.contains(related)) return;
     setDropPosition(null);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const dragged = dragRef.current;
-    if (!dragged || dragged === component || isDescendantOf(dragged, component)) {
-      setDropPosition(null);
-      return;
-    }
-
-    if (dropPosition === 'inside') {
-      dragged.move(component, { at: component.components().length });
-      setExpanded(true);
-    } else {
-      const parent = component.parent?.();
-      if (!parent) {
+      const dragged = dragRef.current;
+      if (!dragged || dragged === component || isDescendantOf(dragged, component)) {
         setDropPosition(null);
         return;
       }
-      const index = parent.components().indexOf(component);
-      dragged.move(parent, { at: dropPosition === 'before' ? index : index + 1 });
-    }
 
-    setDropPosition(null);
-    dragRef.current = null;
-  };
+      const currentDropPosition = (() => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const ratio = (e.clientY - rect.top) / rect.height;
+        if (ratio < 0.25) return 'before';
+        if (ratio > 0.75) return 'after';
+        return 'inside';
+      })();
+
+      if (currentDropPosition === 'inside') {
+        dragged.move(component, { at: component.components().length });
+        setExpanded(true);
+      } else {
+        const parent = component.parent?.();
+        if (!parent) {
+          setDropPosition(null);
+          return;
+        }
+        const index = parent.components().indexOf(component);
+        dragged.move(parent, { at: currentDropPosition === 'before' ? index : index + 1 });
+      }
+
+      setDropPosition(null);
+      dragRef.current = null;
+    },
+    [component, dragRef]
+  );
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onSelect(component);
+    },
+    [component, onSelect]
+  );
+
+  const handleToggleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setExpanded((prev) => !prev);
+    },
+    []
+  );
 
   const nodeClass = `layer-node${dropPosition ? ` layer-node--drop-${dropPosition}` : ''}`;
   const symbolClass = isInstance ? ' layer-item--symbol-instance' : isMain ? ' layer-item--symbol-main' : '';
@@ -267,18 +300,12 @@ function LayerItem({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(component);
-        }}
+        onClick={handleClick}
       >
         {hasChildren ? (
           <button
             className="layer-toggle"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(!expanded);
-            }}
+            onClick={handleToggleClick}
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
             {expanded ? '\u25BE' : '\u25B8'}
@@ -312,4 +339,4 @@ function LayerItem({
       )}
     </div>
   );
-}
+});

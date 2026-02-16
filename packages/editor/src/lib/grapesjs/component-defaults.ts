@@ -53,36 +53,3 @@ export const structuralDefaults = {
   selectable: true,
   hoverable: true,
 } as const;
-
-/**
- * Create component defaults with a specific tag name and name
- */
-export function createContainerDefaults(tagName: string, name: string) {
-  return {
-    tagName,
-    name,
-    ...containerDefaults,
-  };
-}
-
-/**
- * Create leaf component defaults
- */
-export function createLeafDefaults(tagName: string, name: string) {
-  return {
-    tagName,
-    name,
-    ...leafDefaults,
-  };
-}
-
-/**
- * Create text component defaults
- */
-export function createTextDefaults(tagName: string, name: string) {
-  return {
-    tagName,
-    name,
-    ...textDefaults,
-  };
-}

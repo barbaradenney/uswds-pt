@@ -10,17 +10,11 @@ import {
   coerceBoolean,
   createBooleanTrait,
   createAttributeTrait,
+  triggerUpdate,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 import { createErrorMessageTrait } from './form-trait-factories.js';
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerDateTimeComponents(registry: RegistryLike): void {
 
@@ -47,9 +41,7 @@ registry.register({
           const label = String(value || 'Date');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).label ?? element.getAttribute('label') ?? 'Date';
@@ -70,9 +62,7 @@ registry.register({
           const name = String(value || 'date-picker');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).name ?? element.getAttribute('name') ?? 'date-picker';
@@ -98,9 +88,7 @@ registry.register({
             element.removeAttribute('hint');
           }
           (element as USWDSElement).hint = hint;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).hint ?? element.getAttribute('hint') ?? '';
@@ -126,9 +114,7 @@ registry.register({
             element.removeAttribute('min-date');
           }
           (element as USWDSElement).minDate = minDate;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).minDate ?? element.getAttribute('min-date') ?? '';
@@ -154,9 +140,7 @@ registry.register({
             element.removeAttribute('max-date');
           }
           (element as USWDSElement).maxDate = maxDate;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).maxDate ?? element.getAttribute('max-date') ?? '';
@@ -181,9 +165,7 @@ registry.register({
             element.removeAttribute('required');
           }
           (element as USWDSElement).required = isRequired;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).required ?? element.hasAttribute('required');
@@ -217,9 +199,7 @@ registry.register({
             element.removeAttribute('disabled');
           }
           (element as USWDSElement).disabled = isDisabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).disabled ?? element.hasAttribute('disabled');
@@ -260,9 +240,7 @@ registry.register({
           const label = String(value || 'Time');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).label ?? element.getAttribute('label') ?? 'Time';
@@ -283,9 +261,7 @@ registry.register({
           const name = String(value || 'time-picker');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).name ?? element.getAttribute('name') ?? 'time-picker';
@@ -311,9 +287,7 @@ registry.register({
             element.removeAttribute('hint');
           }
           (element as USWDSElement).hint = hint;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).hint ?? element.getAttribute('hint') ?? '';
@@ -339,9 +313,7 @@ registry.register({
             element.removeAttribute('min-time');
           }
           (element as USWDSElement).minTime = minTime;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).minTime ?? element.getAttribute('min-time') ?? '';
@@ -367,9 +339,7 @@ registry.register({
             element.removeAttribute('max-time');
           }
           (element as USWDSElement).maxTime = maxTime;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).maxTime ?? element.getAttribute('max-time') ?? '';
@@ -395,9 +365,7 @@ registry.register({
           const step = String(value || '30');
           element.setAttribute('step', step);
           (element as USWDSElement).step = step;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).step ?? element.getAttribute('step') ?? '30';
@@ -422,9 +390,7 @@ registry.register({
             element.removeAttribute('required');
           }
           (element as USWDSElement).required = isRequired;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).required ?? element.hasAttribute('required');
@@ -458,9 +424,7 @@ registry.register({
             element.removeAttribute('disabled');
           }
           (element as USWDSElement).disabled = isDisabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).disabled ?? element.hasAttribute('disabled');

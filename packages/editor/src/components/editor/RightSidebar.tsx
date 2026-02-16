@@ -18,7 +18,7 @@
 
 import { useState, useEffect, useMemo, useRef, memo, lazy, Suspense } from 'react';
 import { BlocksProvider, TraitsProvider, useEditorMaybe } from '@grapesjs/react';
-import { GJS_EVENTS } from '../../lib/contracts';
+import { GJS_EVENTS, DATA_ATTRS } from '../../lib/contracts';
 import { DOMPurify } from '../../lib/sanitize';
 import { SidebarTabs } from './SidebarTabs';
 import { isDemoMode } from '../../lib/api';
@@ -273,7 +273,7 @@ function CheckboxGroupField({ trait }: { trait: any }) {
   const options: Array<{ id: string; label: string }> = trait.get?.('options') || [];
   const label = trait.getLabel() || trait.getName();
   const component = trait.target;
-  const dataAttr = trait.get?.('dataAttribute') || 'data-states';
+  const dataAttr = trait.get?.('dataAttribute') || DATA_ATTRS.STATES;
 
   // Use a tick counter to force re-render after attribute changes.
   // No separate checkedIds state — always derive from the component attribute

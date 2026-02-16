@@ -13,6 +13,7 @@ import {
   requireTeamMember,
   requireTeamRole,
 } from '../middleware/permissions.js';
+import { validateSymbolData } from './prototype-helpers.js';
 
 interface CreateSymbolBody {
   name: string;
@@ -132,6 +133,11 @@ export async function symbolRoutes(app: FastifyInstance) {
       const { teamId } = request.params;
       const { name, symbolData, scope = 'team', prototypeId } = request.body;
 
+      const symbolDataError = validateSymbolData(symbolData as Record<string, unknown>);
+      if (symbolDataError) {
+        return reply.status(400).send({ message: symbolDataError });
+      }
+
       const insertValues: typeof symbols.$inferInsert = {
         name,
         symbolData,
@@ -229,6 +235,13 @@ export async function symbolRoutes(app: FastifyInstance) {
       const authUser = getAuthUser(request);
       const { teamId, symbolId } = request.params;
       const { name, symbolData } = request.body;
+
+      if (symbolData) {
+        const symbolDataError = validateSymbolData(symbolData as Record<string, unknown>);
+        if (symbolDataError) {
+          return reply.status(400).send({ message: symbolDataError });
+        }
+      }
 
       const { conditions } = await buildAccessConditions(teamId, authUser.id);
 

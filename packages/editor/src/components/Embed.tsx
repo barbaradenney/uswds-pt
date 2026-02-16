@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { CDN_URLS } from '@uswds-pt/adapter';
 import { DOMPurify } from '../lib/sanitize';
 import { cleanExport } from '../lib/export';
 import { getPrototype, createPrototype } from '../lib/localStorage';
 import { isDemoMode, API_URL, API_ENDPOINTS } from '../lib/api';
-
-// CDN URLs for USWDS resources
-const USWDS_VERSION = '3.8.1';
-const USWDS_WC_BUNDLE_VERSION = '2.5.12';
-
-const EMBED_CDN_URLS = {
-  uswdsCss: `https://cdn.jsdelivr.net/npm/@uswds/uswds@${USWDS_VERSION}/dist/css/uswds.min.css`,
-  uswdsWcJs: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.js`,
-  uswdsWcCss: `https://cdn.jsdelivr.net/npm/@uswds-wc/bundle@${USWDS_WC_BUNDLE_VERSION}/uswds-wc.css`,
-};
 
 interface EmbedData {
   name: string;
@@ -60,21 +51,21 @@ export function Embed() {
       // Add USWDS CSS
       const uswdsCssLink = document.createElement('link');
       uswdsCssLink.rel = 'stylesheet';
-      uswdsCssLink.href = EMBED_CDN_URLS.uswdsCss;
+      uswdsCssLink.href = CDN_URLS.uswdsCss;
       uswdsCssLink.setAttribute('data-uswds-embed', 'true');
       head.appendChild(uswdsCssLink);
 
       // Add USWDS Web Components CSS
       const wcCssLink = document.createElement('link');
       wcCssLink.rel = 'stylesheet';
-      wcCssLink.href = EMBED_CDN_URLS.uswdsWcCss;
+      wcCssLink.href = CDN_URLS.uswdsWcCss;
       wcCssLink.setAttribute('data-uswds-embed', 'true');
       head.appendChild(wcCssLink);
 
       // Add USWDS Web Components JS
       const wcScript = document.createElement('script');
       wcScript.type = 'module';
-      wcScript.src = EMBED_CDN_URLS.uswdsWcJs;
+      wcScript.src = CDN_URLS.uswdsWcJs;
       wcScript.setAttribute('data-uswds-embed', 'true');
       head.appendChild(wcScript);
 

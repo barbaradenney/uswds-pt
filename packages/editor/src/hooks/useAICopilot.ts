@@ -13,6 +13,7 @@ import type { AIMessage, Attachment, PageDefinition } from '../lib/ai/ai-client'
 import { generateUSWDSPrompt, buildUserMessageWithContext } from '../lib/ai/uswds-prompt';
 import type { GlobalSymbol, SymbolCatalogEntry } from '@uswds-pt/shared';
 import { syncPageLinkHrefs } from '../lib/grapesjs/canvas-helpers';
+import { EDITOR_PROPS } from '../lib/contracts';
 
 export interface ChatMessage {
   id: string;
@@ -106,7 +107,7 @@ export function useAICopilot(): UseAICopilotReturn {
       abortRef.current = new AbortController();
 
       // Build symbol catalog for AI prompt
-      const availableSymbols: GlobalSymbol[] = (editor as any)?.__availableSymbols || [];
+      const availableSymbols: GlobalSymbol[] = (editor as any)?.[EDITOR_PROPS.AVAILABLE_SYMBOLS] || [];
       let catalog: SymbolCatalogEntry[] | undefined;
       if (availableSymbols.length > 0) {
         catalog = availableSymbols.map((s) => ({
@@ -179,7 +180,7 @@ export function useAICopilot(): UseAICopilotReturn {
    */
   const resolveSymbolMarkers = useCallback((wrapper: any) => {
     if (!wrapper) return;
-    const availableSymbols: GlobalSymbol[] = (editor as any)?.__availableSymbols || [];
+    const availableSymbols: GlobalSymbol[] = (editor as any)?.[EDITOR_PROPS.AVAILABLE_SYMBOLS] || [];
     if (availableSymbols.length === 0) return;
 
     const markers = wrapper.find?.('[data-symbol-ref]') || [];

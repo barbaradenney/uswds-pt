@@ -29,7 +29,7 @@ import { TemplateChooser } from './TemplateChooser';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { openPreviewInNewTab, openMultiPagePreviewInNewTab, cleanExport, generateFullDocument, generateMultiPageDocument, type PageData } from '../lib/export';
 import { isDemoMode, API_ENDPOINTS, apiGet } from '../lib/api';
-import { GJS_EVENTS, EDITOR_EVENTS } from '../lib/contracts';
+import { GJS_EVENTS, EDITOR_EVENTS, EDITOR_PROPS } from '../lib/contracts';
 import { type LocalPrototype } from '../lib/localStorage';
 import { clearGrapesJSStorage, loadUSWDSResources } from '../lib/grapesjs/resource-loader';
 import {
@@ -473,7 +473,7 @@ export function Editor() {
       const html = editor.getHtml();
       debug('Export: HTML length =', html?.length);
 
-      if (DEBUG) {
+      if (import.meta.env.DEV && DEBUG) {
         (window as any).__lastExportHtml = html;
       }
 
@@ -550,7 +550,7 @@ export function Editor() {
       debug('Preview: HTML length =', html?.length);
 
       // Store for debugging (accessible via window.__lastPreviewHtml)
-      if (DEBUG) {
+      if (import.meta.env.DEV && DEBUG) {
         (window as any).__lastPreviewHtml = html;
       }
 
@@ -721,14 +721,14 @@ export function Editor() {
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    (editor as any).__projectStates = orgStates;
+    (editor as any)[EDITOR_PROPS.PROJECT_STATES] = orgStates;
     editor.trigger?.(EDITOR_EVENTS.STATES_UPDATE);
   }, [orgStates]);
 
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    (editor as any).__projectUsers = orgUsers;
+    (editor as any)[EDITOR_PROPS.PROJECT_USERS] = orgUsers;
     editor.trigger?.(EDITOR_EVENTS.USERS_UPDATE);
   }, [orgUsers]);
 
@@ -736,7 +736,7 @@ export function Editor() {
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    (editor as any).__availableSymbols = globalSymbols.symbols;
+    (editor as any)[EDITOR_PROPS.AVAILABLE_SYMBOLS] = globalSymbols.symbols;
   }, [globalSymbols.symbols]);
 
   /**

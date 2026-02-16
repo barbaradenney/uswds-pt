@@ -9,17 +9,12 @@ import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-u
 import {
   coerceBoolean,
   hasAttributeTrue,
+  triggerUpdate,
   traitStr,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
-
-/**
- * Registry interface to avoid circular imports.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerLayoutComponents(registry: RegistryLike): void {
 
@@ -35,9 +30,7 @@ function rebuildAccordionItems(element: HTMLElement, count: number): void {
     items.push({ title, content, expanded });
   }
   (element as USWDSElement).items = items;
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -174,9 +167,7 @@ registry.register({
             element.removeAttribute('multiselectable');
           }
           (element as USWDSElement).multiselectable = isMulti;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).multiselectable || element.hasAttribute('multiselectable');
@@ -201,9 +192,7 @@ registry.register({
             element.removeAttribute('bordered');
           }
           (element as USWDSElement).bordered = isBordered;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).bordered || element.hasAttribute('bordered');
@@ -244,9 +233,7 @@ function rebuildStepIndicatorSteps(element: HTMLElement, count: number): void {
     steps.push({ label, status });
   }
   (element as USWDSElement).steps = steps;
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -380,9 +367,7 @@ registry.register({
             element.removeAttribute('show-labels');
           }
           (element as USWDSElement).showLabels = showLabels;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showLabels || element.hasAttribute('show-labels');
@@ -412,9 +397,7 @@ registry.register({
             element.removeAttribute('counters');
             (element as USWDSElement).counters = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           const val = (element as USWDSElement).counters || element.getAttribute('counters') || '';
@@ -440,9 +423,7 @@ registry.register({
             element.removeAttribute('centered');
           }
           (element as USWDSElement).centered = isCentered;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).centered || element.hasAttribute('centered');
@@ -467,9 +448,7 @@ registry.register({
             element.removeAttribute('small');
           }
           (element as USWDSElement).small = isSmall;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).small || element.hasAttribute('small');
@@ -504,9 +483,7 @@ function rebuildProcessListItems(element: HTMLElement, count: number): void {
     items.push({ heading, content });
   }
   (element as USWDSElement).items = items;
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -620,9 +597,7 @@ registry.register({
           const level = traitStr(value, 'h4');
           element.setAttribute('heading-level', level);
           (element as USWDSElement).headingLevel = level;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).headingLevel || element.getAttribute('heading-level') || 'h4';
@@ -669,9 +644,7 @@ registry.register({
           const content = traitStr(value);
           // For prose, we update the innerHTML/textContent
           element.textContent = content;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return element.textContent || '';
@@ -707,9 +680,7 @@ registry.register({
           const domain = traitStr(value, 'domain.gov');
           element.setAttribute('domain', domain);
           (element as USWDSElement).domain = domain;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).domain || element.getAttribute('domain') || 'domain.gov';
@@ -732,9 +703,7 @@ registry.register({
           const agency = traitStr(value, 'Parent Agency');
           element.setAttribute('parent-agency', agency);
           (element as USWDSElement).parentAgency = agency;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).parentAgency || element.getAttribute('parent-agency') || 'Parent Agency';
@@ -757,9 +726,7 @@ registry.register({
           const href = traitStr(value, '#');
           element.setAttribute('parent-agency-href', href);
           (element as USWDSElement).parentAgencyHref = href;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).parentAgencyHref || element.getAttribute('parent-agency-href') || '#';
@@ -786,9 +753,7 @@ registry.register({
             element.removeAttribute('masthead-logo-alt');
           }
           (element as USWDSElement).mastheadLogoAlt = alt;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).mastheadLogoAlt || element.getAttribute('masthead-logo-alt') || '';
@@ -814,9 +779,7 @@ registry.register({
             element.removeAttribute('show-required-links');
           }
           (element as USWDSElement).showRequiredLinks = show;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showRequiredLinks !== false;
@@ -842,9 +805,7 @@ registry.register({
             element.removeAttribute('show-logos');
           }
           (element as USWDSElement).showLogos = show;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showLogos !== false;

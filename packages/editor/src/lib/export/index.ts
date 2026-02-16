@@ -12,9 +12,6 @@ export {
   removeEmptyAttrs,
   cleanGrapesClasses,
   formatHtml,
-  isSelfClosingTag,
-  GRAPES_ATTR_PATTERNS,
-  GRAPES_CLASSES,
 } from './clean';
 export type { CleanOptions } from './clean';
 
@@ -27,6 +24,5 @@ export {
   generateMultiPageDocument,
   openPreviewInNewTab,
   openMultiPagePreviewInNewTab,
-  indentContent,
 } from './document';
 export type { PageData } from './document';

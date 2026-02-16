@@ -12,16 +12,9 @@ import {
   createBooleanTrait,
   traitStr,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import { createPageLinkTraits } from './page-link-traits.js';
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerStructureComponents(registry: RegistryLike): void {
 

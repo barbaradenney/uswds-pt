@@ -199,19 +199,21 @@ export function createPrototype(
 
   prototypes.unshift(newPrototype); // Add to beginning
 
-  const result = safeSetItem(STORAGE_KEY, JSON.stringify(prototypes));
+  let result = safeSetItem(STORAGE_KEY, JSON.stringify(prototypes));
 
   if (!result.success) {
-    // Log error but still return the prototype (caller can check storage)
     debug('Error: Failed to save prototype:', result.error?.message);
-    // Try to clean up old prototypes and retry
+    // Try to clean up old prototypes and retry on quota exceeded
     if (result.error?.type === 'quota_exceeded' && prototypes.length > 5) {
       debug('Attempting to clean up old prototypes...');
       const trimmed = prototypes.slice(0, 5); // Keep only 5 most recent
-      const retryResult = safeSetItem(STORAGE_KEY, JSON.stringify(trimmed));
-      if (retryResult.success) {
+      result = safeSetItem(STORAGE_KEY, JSON.stringify(trimmed));
+      if (result.success) {
         debug('Cleanup successful, saved with trimmed list');
       }
+    }
+    if (!result.success) {
+      throw new Error(result.error?.message || 'Failed to save prototype to local storage');
     }
   }
 

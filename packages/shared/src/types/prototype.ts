@@ -47,18 +47,6 @@ export interface Team {
 }
 
 /**
- * Team membership - connects users to teams with roles
- */
-export interface TeamMembership {
-  id: string;
-  teamId: string;
-  userId: string;
-  role: Role;
-  joinedAt: Date;
-  invitedBy?: string;
-}
-
-/**
  * Team membership with team details (used in user responses)
  */
 export interface TeamMembershipWithTeam {
@@ -224,15 +212,6 @@ export interface GrapesComponentData {
   classes?: string[];
   components?: GrapesComponentData[] | string;
   content?: string;
-}
-
-/**
- * API Request/Response Types
- */
-
-export interface AuthResponse {
-  token: string;
-  user: UserWithOrgAndTeams | null;
 }
 
 // ============================================================================

@@ -12,19 +12,13 @@ import {
   hasAttributeTrue,
   createAttributeTrait,
   createBooleanTrait,
+  triggerUpdate,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('UIComponents');
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerUIComponents(registry: RegistryLike): void {
 
@@ -49,9 +43,7 @@ function rebuildButtonGroupButtons(element: HTMLElement, count: number): void {
   // If no ul exists yet, the component may need to render first
   if (!ul) {
     // Try to trigger initial render and retry
-    if (typeof (element as USWDSElement).requestUpdate === 'function') {
-      (element as USWDSElement).requestUpdate?.();
-    }
+    triggerUpdate(element);
     // Retry after a delay to wait for web component to render
     setTimeout(() => rebuildButtonGroupButtons(element, count), 100);
     return;
@@ -543,9 +535,7 @@ registry.register({
           if (input) {
             input.placeholder = text;
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).placeholder || 'Search';
@@ -580,9 +570,7 @@ registry.register({
             buttonSpan.textContent = text;
           }
           // Trigger re-render
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).buttonText || 'Search';
@@ -625,9 +613,7 @@ function rebuildBreadcrumbItems(element: HTMLElement, count: number): void {
   (element as USWDSElement).items = items;
 
   // Trigger Lit component re-render
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 // Helper to create a breadcrumb item trait
@@ -828,9 +814,7 @@ function rebuildSideNavItems(element: HTMLElement, count: number): void {
   (element as USWDSElement).items = items;
 
   // Trigger Lit component re-render
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 // Helper to create a side nav item trait

@@ -6,7 +6,7 @@
  */
 
 import type { UnifiedTrait, TraitValue } from './shared-utils.js';
-import { traitStr } from './shared-utils.js';
+import { traitStr, triggerUpdate } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 
@@ -122,9 +122,7 @@ export function renderSelectOptions(element: HTMLElement, options: Array<{ value
   } else {
     // Fallback: set the options property
     (element as USWDSElement).options = options;
-    if (typeof (element as USWDSElement).requestUpdate === 'function') {
-      (element as USWDSElement).requestUpdate?.();
-    }
+    triggerUpdate(element);
   }
 }
 

@@ -11,14 +11,8 @@
 
 import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-utils.js';
 import { createAttributeTrait, createBooleanTrait } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import { escapeHtml } from '@uswds-pt/shared';
-
-/**
- * Registry interface to avoid circular imports.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 // ============================================================================
 // Rebuild Functions

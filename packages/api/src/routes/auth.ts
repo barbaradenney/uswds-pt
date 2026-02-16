@@ -4,7 +4,6 @@
 
 import { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
-import type { LoginBody, RegisterBody } from '@uswds-pt/shared';
 import { db } from '../db/index.js';
 import {
   users,
@@ -152,7 +151,7 @@ export async function authRoutes(app: FastifyInstance) {
    * POST /api/auth/login
    * Authenticate a user and return a JWT token
    */
-  app.post<{ Body: LoginBody }>(
+  app.post<{ Body: { email: string; password: string } }>(
     '/login',
     {
       config: {
@@ -184,7 +183,7 @@ export async function authRoutes(app: FastifyInstance) {
    * POST /api/auth/register
    * Create a new user account
    */
-  app.post<{ Body: RegisterBody }>(
+  app.post<{ Body: { email: string; password: string; name?: string } }>(
     '/register',
     {
       config: {

@@ -9,17 +9,11 @@ import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   createAttributeTrait,
   createBooleanTrait,
+  triggerUpdate,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 import { createFormHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerFileRangeComponents(registry: RegistryLike): void {
 
@@ -160,9 +154,7 @@ registry.register({
           }
 
           // Force Lit to re-render
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           // Read from Lit property first
@@ -212,9 +204,7 @@ registry.register({
           }
 
           // Force Lit to re-render
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           // Read from Lit property first

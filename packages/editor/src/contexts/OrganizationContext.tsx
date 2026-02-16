@@ -20,15 +20,12 @@ const debug = createDebugLogger('OrganizationContext');
 // Types
 // ============================================================================
 
-interface OrganizationState {
+export interface OrganizationContextValue {
   organization: Organization | null;
   teams: Array<Team & { role: Role; joinedAt: Date }>;
   currentTeam: (Team & { role: Role; joinedAt: Date }) | null;
   isLoading: boolean;
   error: string | null;
-}
-
-export interface OrganizationContextValue extends OrganizationState {
   setCurrentTeam: (teamId: string | null) => void;
   refreshOrganization: () => Promise<void>;
   refreshTeams: () => Promise<void>;
@@ -60,13 +57,20 @@ interface OrganizationProviderProps {
 }
 
 export function OrganizationProvider({ children }: OrganizationProviderProps) {
-  const [state, setState] = useState<OrganizationState>({
+  // Split state into stable data vs frequently-changing team selection
+  // to minimize re-renders when only currentTeam changes
+  const [orgData, setOrgData] = useState<{
+    organization: Organization | null;
+    teams: Array<Team & { role: Role; joinedAt: Date }>;
+    isLoading: boolean;
+    error: string | null;
+  }>({
     organization: null,
     teams: [],
-    currentTeam: null,
     isLoading: true,
     error: null,
   });
+  const [currentTeam, setCurrentTeamState] = useState<(Team & { role: Role; joinedAt: Date }) | null>(null);
 
   // Guard against concurrent initial fetches (React Strict Mode double-mount)
   const initialFetchStartedRef = useRef(false);
@@ -75,8 +79,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const refreshOrganization = useCallback(async () => {
     const result = await apiGet<Organization>(API_ENDPOINTS.ORGANIZATIONS);
     if (result.success && result.data) {
-      const organization = result.data;
-      setState((prev) => ({ ...prev, organization }));
+      setOrgData((prev) => ({ ...prev, organization: result.data! }));
     }
   }, []);
 
@@ -92,22 +95,18 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 
       // Restore current team from localStorage, or auto-select first team if none saved
       const savedTeamId = localStorage.getItem(CURRENT_TEAM_KEY);
-      let currentTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
+      let restoredTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
 
       // If no team is selected but user has teams, auto-select the first one
-      if (!currentTeam && teams.length > 0) {
-        currentTeam = teams[0];
-        localStorage.setItem(CURRENT_TEAM_KEY, currentTeam.id);
+      if (!restoredTeam && teams.length > 0) {
+        restoredTeam = teams[0];
+        localStorage.setItem(CURRENT_TEAM_KEY, restoredTeam.id);
       }
 
-      setState((prev) => ({
-        ...prev,
-        teams,
-        currentTeam,
-        isLoading: false,
-      }));
+      setOrgData((prev) => ({ ...prev, teams, isLoading: false }));
+      setCurrentTeamState(restoredTeam);
     } else {
-      setState((prev) => ({
+      setOrgData((prev) => ({
         ...prev,
         isLoading: false,
         error: result.error || null,
@@ -127,7 +126,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     let cancelled = false;
 
     const loadData = async () => {
-      setState((prev) => ({ ...prev, isLoading: true }));
+      setOrgData((prev) => ({ ...prev, isLoading: true }));
       await Promise.all([refreshOrganization(), refreshTeams()]);
       // If effect was cleaned up while fetching, don't update state
       if (cancelled) {
@@ -143,43 +142,41 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 
   // Set current team (pass null to show all prototypes)
   const setCurrentTeam = useCallback((teamId: string | null) => {
-    setState((prev) => {
-      if (teamId === null) {
-        localStorage.removeItem(CURRENT_TEAM_KEY);
-        return { ...prev, currentTeam: null };
-      }
-      const team = prev.teams.find((t) => t.id === teamId);
-      if (team) {
-        localStorage.setItem(CURRENT_TEAM_KEY, teamId);
-        return { ...prev, currentTeam: team };
-      }
-      return prev;
-    });
-  }, []);
+    if (teamId === null) {
+      localStorage.removeItem(CURRENT_TEAM_KEY);
+      setCurrentTeamState(null);
+      return;
+    }
+    const team = orgData.teams.find((t) => t.id === teamId);
+    if (team) {
+      localStorage.setItem(CURRENT_TEAM_KEY, teamId);
+      setCurrentTeamState(team);
+    }
+  }, [orgData.teams]);
 
   // Update organization
   const updateOrganization = useCallback(async (
     updates: { name?: string; description?: string; stateDefinitions?: Array<{ id: string; name: string }>; userDefinitions?: Array<{ id: string; name: string }> }
   ): Promise<Organization | null> => {
-    if (!state.organization) {
-      setState((prev) => ({ ...prev, error: 'No organization found' }));
+    if (!orgData.organization) {
+      setOrgData((prev) => ({ ...prev, error: 'No organization found' }));
       return null;
     }
 
     const result = await apiPut<Organization>(
-      API_ENDPOINTS.ORGANIZATION(state.organization.id),
+      API_ENDPOINTS.ORGANIZATION(orgData.organization.id),
       updates,
       'Failed to update organization'
     );
 
     if (result.success && result.data) {
-      setState((prev) => ({ ...prev, organization: result.data! }));
+      setOrgData((prev) => ({ ...prev, organization: result.data! }));
       return result.data;
     }
 
-    setState((prev) => ({ ...prev, error: result.error || null }));
+    setOrgData((prev) => ({ ...prev, error: result.error || null }));
     return null;
-  }, [state.organization]);
+  }, [orgData.organization]);
 
   // Create a new team
   const createTeam = useCallback(async (name: string, description?: string): Promise<Team | null> => {
@@ -194,7 +191,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       return result.data;
     }
 
-    setState((prev) => ({ ...prev, error: result.error || null }));
+    setOrgData((prev) => ({ ...prev, error: result.error || null }));
     return null;
   }, [refreshTeams]);
 
@@ -214,7 +211,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       return result.data;
     }
 
-    setState((prev) => ({ ...prev, error: result.error || null }));
+    setOrgData((prev) => ({ ...prev, error: result.error || null }));
     return null;
   }, [refreshTeams]);
 
@@ -230,7 +227,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       return true;
     }
 
-    setState((prev) => ({ ...prev, error: result.error || null }));
+    setOrgData((prev) => ({ ...prev, error: result.error || null }));
     return false;
   }, [refreshTeams]);
 
@@ -259,12 +256,13 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     }
 
     debug('setupOrganization: Error:', result.error);
-    setState((prev) => ({ ...prev, error: result.error || null }));
+    setOrgData((prev) => ({ ...prev, error: result.error || null }));
     return false;
   }, [refreshOrganization, refreshTeams]);
 
   const value: OrganizationContextValue = useMemo(() => ({
-    ...state,
+    ...orgData,
+    currentTeam,
     setCurrentTeam,
     refreshOrganization,
     refreshTeams,
@@ -273,7 +271,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     createTeam,
     updateTeam,
     deleteTeam,
-  }), [state, setCurrentTeam, refreshOrganization, refreshTeams, setupOrganization, updateOrganization, createTeam, updateTeam, deleteTeam]);
+  }), [orgData, currentTeam, setCurrentTeam, refreshOrganization, refreshTeams, setupOrganization, updateOrganization, createTeam, updateTeam, deleteTeam]);
 
   return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 }

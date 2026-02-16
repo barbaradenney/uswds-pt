@@ -60,6 +60,29 @@ import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 /**
+ * Registry interface to avoid circular imports.
+ * Component files receive this instead of the concrete ComponentRegistry class.
+ */
+export interface RegistryLike {
+  register(registration: ComponentRegistration): void;
+}
+
+/**
+ * Triggers a Lit re-render on a USWDS web component element, if the element
+ * exposes a `requestUpdate()` method.
+ *
+ * Use this after setting properties/attributes on a web component to ensure
+ * the Light DOM content updates to reflect the new values.
+ *
+ * @param element - The DOM element (typed as `unknown` so callers don't need to cast)
+ */
+export function triggerUpdate(element: unknown): void {
+  if (typeof (element as USWDSElement).requestUpdate === 'function') {
+    (element as USWDSElement).requestUpdate?.();
+  }
+}
+
+/**
  * The value type that GrapesJS trait handlers receive.
  *
  * Trait values from GrapesJS can be:

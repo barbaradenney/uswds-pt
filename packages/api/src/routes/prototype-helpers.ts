@@ -109,6 +109,20 @@ export function validateGrapesData(data: Record<string, unknown> | undefined): s
   return null;
 }
 
+const MAX_SYMBOL_DATA_SIZE = 2 * 1024 * 1024; // 2MB
+
+/**
+ * Validate symbolData size.
+ */
+export function validateSymbolData(data: Record<string, unknown> | undefined): string | null {
+  if (!data) return null;
+  const byteSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+  if (byteSize > MAX_SYMBOL_DATA_SIZE) {
+    return `symbolData exceeds maximum size of ${MAX_SYMBOL_DATA_SIZE / (1024 * 1024)}MB`;
+  }
+  return null;
+}
+
 /**
  * Check if user is a member of the specified team and get their role
  */

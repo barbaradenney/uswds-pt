@@ -7,7 +7,7 @@
 
 import { createDebugLogger } from '@uswds-pt/shared';
 import { collectTargetableComponents } from './component-ids';
-import { GJS_EVENTS } from '../../contracts';
+import { GJS_EVENTS, EDITOR_PROPS, DATA_ATTRS } from '../../contracts';
 import type { EditorInstance, RegisterListener } from './types';
 import type {
   GrapesComponent,
@@ -196,7 +196,7 @@ export function setupVisibilityTrait(
       },
 
       onEvent({ elInput, component, trait }: { elInput: HTMLElement; component: GrapesComponent; trait: GrapesTrait }) {
-        const dataAttr = (trait.get?.('dataAttribute') as string) || 'data-states';
+        const dataAttr = (trait.get?.('dataAttribute') as string) || DATA_ATTRS.STATES;
         const checkboxes = elInput.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
         const checkedIds: string[] = [];
         checkboxes.forEach((cb) => {
@@ -211,7 +211,7 @@ export function setupVisibilityTrait(
       },
 
       onUpdate({ elInput, component, trait }: { elInput: HTMLElement; component: GrapesComponent; trait: GrapesTrait }) {
-        const dataAttr = (trait.get?.('dataAttribute') as string) || 'data-states';
+        const dataAttr = (trait.get?.('dataAttribute') as string) || DATA_ATTRS.STATES;
         const attrs = component.getAttributes() as Record<string, string>;
         const dataValue = attrs[dataAttr] || '';
         const activeIds = dataValue ? dataValue.split(',').map((s: string) => s.trim()) : [];
@@ -228,7 +228,7 @@ export function setupVisibilityTrait(
 
     const items: Array<{ id: string; name: string }> = (() => {
       try {
-        const instanceKey = config.dataKey === 'states' ? '__projectStates' : '__projectUsers';
+        const instanceKey = config.dataKey === 'states' ? EDITOR_PROPS.PROJECT_STATES : EDITOR_PROPS.PROJECT_USERS;
         // The editor stores custom project arrays as dynamic properties.
         // Since EditorInstance is typed as `any` for SDK compatibility,
         // this access is intentionally unchecked.

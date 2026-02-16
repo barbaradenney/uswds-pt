@@ -40,7 +40,7 @@ import {
 } from '../lib/grapesjs/setup';
 import type { UseEditorStateMachineReturn } from './useEditorStateMachine';
 import type { EditorInstance } from '../types/grapesjs';
-import { GJS_EVENTS, EDITOR_EVENTS, DATA_ATTRS } from '../lib/contracts';
+import { GJS_EVENTS, EDITOR_EVENTS, EDITOR_PROPS, DATA_ATTRS } from '../lib/contracts';
 
 const debug = createDebugLogger('GrapesJSSetup');
 
@@ -264,8 +264,8 @@ export function useGrapesJSSetup({
       registerListener(editor, 'style:change', changeHandler);
 
       // Seed org-level state/user definitions into editor instance properties.
-      (editor as any).__projectStates = orgStatesRef.current;
-      (editor as any).__projectUsers = orgUsersRef.current;
+      (editor as any)[EDITOR_PROPS.PROJECT_STATES] = orgStatesRef.current;
+      (editor as any)[EDITOR_PROPS.PROJECT_USERS] = orgUsersRef.current;
 
       // Safety-net: redundant when projectData option loads correctly,
       // but critical fallback when it doesn't (e.g., silent init failure).

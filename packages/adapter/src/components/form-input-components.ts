@@ -12,19 +12,12 @@
  */
 
 import type { ComponentRegistration } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import { registerButtonComponents } from './button-components.js';
 import { registerTextInputComponents } from './text-input-components.js';
 import { registerSelectionComponents } from './selection-components.js';
 import { registerDateTimeComponents } from './date-time-components.js';
 import { registerFileRangeComponents } from './file-range-components.js';
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerFormInputComponents(registry: RegistryLike): void {
   registerButtonComponents(registry);

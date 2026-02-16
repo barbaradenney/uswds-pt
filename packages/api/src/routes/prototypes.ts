@@ -8,7 +8,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { eq, desc, and, or, count, ilike } from 'drizzle-orm';
+import { eq, desc, and, or, lte, count, ilike } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { CreatePrototypeBody, UpdatePrototypeBody } from '@uswds-pt/shared';
 import { computeContentChecksum, toBranchSlug } from '@uswds-pt/shared';
@@ -391,6 +391,29 @@ export async function prototypeRoutes(app: FastifyInstance) {
 
           if (!result) {
             throw new Error('CONCURRENT_MODIFICATION');
+          }
+
+          // Prune old versions — keep at most 50 per prototype
+          const MAX_VERSIONS = 50;
+          if (newVersionNumber > MAX_VERSIONS) {
+            const [cutoff] = await tx
+              .select({ versionNumber: prototypeVersions.versionNumber })
+              .from(prototypeVersions)
+              .where(eq(prototypeVersions.prototypeId, fresh.id))
+              .orderBy(desc(prototypeVersions.versionNumber))
+              .offset(MAX_VERSIONS)
+              .limit(1);
+
+            if (cutoff) {
+              await tx
+                .delete(prototypeVersions)
+                .where(
+                  and(
+                    eq(prototypeVersions.prototypeId, fresh.id),
+                    lte(prototypeVersions.versionNumber, cutoff.versionNumber)
+                  )
+                );
+            }
           }
 
           return result;

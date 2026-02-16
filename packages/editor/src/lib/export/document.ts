@@ -6,6 +6,8 @@
 import { createDebugLogger, escapeHtml, DEBUG_STORAGE_KEY } from '@uswds-pt/shared';
 import { CDN_URLS, CONDITIONAL_FIELDS_SCRIPT, STATE_VISIBILITY_SCRIPT } from '@uswds-pt/adapter';
 import { BLOB_URL_REVOKE_DELAY_MS } from '../constants';
+import { DATA_ATTRS } from '../contracts';
+import { sanitizeHtml } from '../sanitize';
 
 import { cleanExport } from './clean';
 import { generateInitScript, hasConditionalFields } from './init-script';
@@ -70,14 +72,14 @@ export interface PageData {
  * Check if content uses data-states attributes for state visibility
  */
 function hasStateVisibility(content: string): boolean {
-  return content.includes('data-states=');
+  return content.includes(`${DATA_ATTRS.STATES}=`);
 }
 
 /**
  * Check if content uses data-users attributes for user visibility
  */
 function hasUserVisibility(content: string): boolean {
-  return content.includes('data-users=');
+  return content.includes(`${DATA_ATTRS.USERS}=`);
 }
 
 /**
@@ -143,12 +145,12 @@ ${content ? indentContent(content, 2) : '  <!-- Add your content here -->'}
 export function openPreviewInNewTab(html: string, title: string = 'Prototype Preview'): void {
   debug('Preview: input length =', html?.length);
 
-  // Clean the HTML first
-  const cleanedHtml = cleanExport(html);
+  // Clean the HTML first, then sanitize to prevent XSS in same-origin blob URL
+  const cleanedHtml = sanitizeHtml(cleanExport(html));
   debug('Preview: cleaned length =', cleanedHtml?.length);
 
   // Store for debugging (accessible via window.__lastCleanedPreviewHtml)
-  if (DEBUG) {
+  if (import.meta.env.DEV && DEBUG) {
     (window as any).__lastCleanedPreviewHtml = cleanedHtml;
   }
 
@@ -251,8 +253,9 @@ export function generateMultiPageDocument(
   } = options;
 
   // Wrap each page in a container with data-page-id attribute
+  // Sanitize to prevent XSS when opened as same-origin blob URL
   const pagesHtml = pages.map(page => {
-    const cleanedHtml = cleanExport(page.html);
+    const cleanedHtml = sanitizeHtml(cleanExport(page.html));
     return `  <!-- Page: ${escapeHtml(page.name)} -->
   <div data-page-id="${escapeHtml(page.id)}" data-page-name="${escapeHtml(page.name)}">
 ${indentContent(cleanedHtml, 4)}

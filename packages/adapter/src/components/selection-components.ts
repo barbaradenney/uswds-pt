@@ -10,8 +10,10 @@ import {
   coerceBoolean,
   createAttributeTrait,
   createBooleanTrait,
+  triggerUpdate,
   traitStr,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { GrapesComponentModel } from '../types.js';
 import type { USWDSElement } from '@uswds-pt/shared';
 import { createFormHintTrait, createRadioHintTrait, createErrorMessageTrait } from './form-trait-factories.js';
@@ -19,14 +21,6 @@ import {
   rebuildSelectOptionsFromSource,
   createSelectOptionTrait,
 } from './select-helpers.js';
-
-/**
- * Registry interface to avoid circular imports.
- * Component files receive this instead of the concrete ComponentRegistry class.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 /**
  * Helper to rebuild combo box options from individual traits
@@ -39,9 +33,7 @@ function rebuildComboBoxOptions(element: HTMLElement, count: number): void {
     options.push({ value, label });
   }
   (element as USWDSElement).options = options;
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -626,9 +618,7 @@ registry.register({
           const label = traitStr(value, 'Select an option');
           element.setAttribute('label', label);
           (element as USWDSElement).label = label;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).label || element.getAttribute('label') || 'Select an option';
@@ -649,9 +639,7 @@ registry.register({
           const name = traitStr(value, 'combo-box');
           element.setAttribute('name', name);
           (element as USWDSElement).name = name;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).name || element.getAttribute('name') || 'combo-box';
@@ -676,9 +664,7 @@ registry.register({
             element.removeAttribute('placeholder');
           }
           (element as USWDSElement).placeholder = placeholder;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).placeholder || element.getAttribute('placeholder') || '';
@@ -704,9 +690,7 @@ registry.register({
             element.removeAttribute('hint');
           }
           (element as USWDSElement).hint = hint;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).hint || element.getAttribute('hint') || '';
@@ -799,9 +783,7 @@ registry.register({
             element.removeAttribute('disable-filtering');
           }
           (element as USWDSElement).disableFiltering = isDisabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).disableFiltering || element.hasAttribute('disable-filtering');
@@ -826,9 +808,7 @@ registry.register({
             element.removeAttribute('required');
           }
           (element as USWDSElement).required = isRequired;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).required || element.hasAttribute('required');
@@ -862,9 +842,7 @@ registry.register({
             element.removeAttribute('disabled');
           }
           (element as USWDSElement).disabled = isDisabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).disabled || element.hasAttribute('disabled');

@@ -9,18 +9,13 @@ import type { ComponentRegistration, UnifiedTrait, TraitValue } from './shared-u
 import type { GrapesComponentModel } from '../types.js';
 import {
   coerceBoolean,
+  triggerUpdate,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import { createDebugLogger } from '@uswds-pt/shared';
 import type { USWDSElement } from '@uswds-pt/shared';
 
 const debug = createDebugLogger('HeaderComponents');
-
-/**
- * Registry interface to avoid circular imports.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerHeaderComponents(registry: RegistryLike): void {
 
@@ -46,19 +41,15 @@ function updateWithFallback(
   callback: () => void
 ): void {
   // First, try to update via Lit
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 
   // Then, perform direct DOM manipulation as a fallback
   // This ensures the visual state is correct even if Lit's update is blocked
   callback();
 
-  // Schedule another requestUpdate in case the component becomes responsive
+  // Schedule another triggerUpdate in case the component becomes responsive
   setTimeout(() => {
-    if (typeof (element as USWDSElement).requestUpdate === 'function') {
-      (element as USWDSElement).requestUpdate?.();
-    }
+    triggerUpdate(element);
   }, 50);
 }
 
@@ -117,9 +108,7 @@ function rebuildHeaderNavItems(element: HTMLElement, count: number): void {
   // Set the navItems property on the Lit component
   (element as USWDSElement).navItems = navItems;
 
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -143,9 +132,7 @@ function initHeaderNavItems(element: HTMLElement): void {
     (element as USWDSElement).navItems = navItems;
 
     // Also try to trigger update if available
-    if (typeof (element as USWDSElement).requestUpdate === 'function') {
-      (element as USWDSElement).requestUpdate?.();
-    }
+    triggerUpdate(element);
 
     // If component isn't ready yet, retry
     const currentNavItems = (element as USWDSElement).navItems;
@@ -162,9 +149,7 @@ function initHeaderNavItems(element: HTMLElement): void {
     const lateNavItems = (element as USWDSElement).navItems;
     if (!(Array.isArray(lateNavItems) && lateNavItems.length)) {
       (element as USWDSElement).navItems = navItems;
-      if (typeof (element as USWDSElement).requestUpdate === 'function') {
-        (element as USWDSElement).requestUpdate?.();
-      }
+      triggerUpdate(element);
     }
   }, 500);
 }
@@ -256,9 +241,7 @@ function rebuildHeaderSecondaryLinks(element: HTMLElement, count: number): void 
 
   (element as USWDSElement).secondaryLinks = links;
 
-  if (typeof (element as USWDSElement).requestUpdate === 'function') {
-    (element as USWDSElement).requestUpdate?.();
-  }
+  triggerUpdate(element);
 }
 
 /**
@@ -278,9 +261,7 @@ function initHeaderSecondaryLinks(element: HTMLElement): void {
   const trySetLinks = (attempt: number = 0): void => {
     (element as USWDSElement).secondaryLinks = links;
 
-    if (typeof (element as USWDSElement).requestUpdate === 'function') {
-      (element as USWDSElement).requestUpdate?.();
-    }
+    triggerUpdate(element);
 
     const currentLinks = (element as USWDSElement).secondaryLinks;
     if (!(Array.isArray(currentLinks) && currentLinks.length) && attempt < 30) {
@@ -294,9 +275,7 @@ function initHeaderSecondaryLinks(element: HTMLElement): void {
     const lateLinks = (element as USWDSElement).secondaryLinks;
     if (!(Array.isArray(lateLinks) && lateLinks.length)) {
       (element as USWDSElement).secondaryLinks = links;
-      if (typeof (element as USWDSElement).requestUpdate === 'function') {
-        (element as USWDSElement).requestUpdate?.();
-      }
+      triggerUpdate(element);
     }
   }, 500);
 }
@@ -460,9 +439,7 @@ registry.register({
           const text = String(value || 'Site Name');
           element.setAttribute('logo-text', text);
           (element as USWDSElement).logoText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoText || element.getAttribute('logo-text') || 'Site Name';
@@ -492,9 +469,7 @@ registry.register({
           const href = String(value || '/');
           element.setAttribute('logo-href', href);
           (element as USWDSElement).logoHref = href;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoHref || element.getAttribute('logo-href') || '/';
@@ -520,9 +495,7 @@ registry.register({
             element.removeAttribute('logo-image-src');
             (element as USWDSElement).logoImageSrc = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoImageSrc || element.getAttribute('logo-image-src') || '';
@@ -548,9 +521,7 @@ registry.register({
             element.removeAttribute('logo-image-alt');
             (element as USWDSElement).logoImageAlt = '';
           }
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).logoImageAlt || element.getAttribute('logo-image-alt') || '';
@@ -611,9 +582,7 @@ registry.register({
           // Set the Lit property directly to trigger re-render
           (element as USWDSElement).showSearch = showSearch;
           // Request an update from the Lit component
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showSearch || element.hasAttribute('show-search');
@@ -621,9 +590,7 @@ registry.register({
         onInit: (element: HTMLElement, value: TraitValue) => {
           const showSearch = coerceBoolean(value);
           (element as USWDSElement).showSearch = showSearch;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
       },
     },
@@ -642,9 +609,7 @@ registry.register({
           const placeholder = String(value || 'Search');
           element.setAttribute('search-placeholder', placeholder);
           (element as USWDSElement).searchPlaceholder = placeholder;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).searchPlaceholder || element.getAttribute('search-placeholder') || 'Search';

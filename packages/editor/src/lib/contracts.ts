@@ -71,6 +71,12 @@ export const EDITOR_EVENTS = {
 export const EDITOR_PROPS = {
   ACTIVE_STATE_ID: '__activeStateId',
   ACTIVE_USER_ID: '__activeUserId',
+  /** Organization-level state definitions, synced from Editor.tsx */
+  PROJECT_STATES: '__projectStates',
+  /** Organization-level user persona definitions, synced from Editor.tsx */
+  PROJECT_USERS: '__projectUsers',
+  /** Available symbols for AI copilot access */
+  AVAILABLE_SYMBOLS: '__availableSymbols',
 } as const;
 
 // ============================================================================

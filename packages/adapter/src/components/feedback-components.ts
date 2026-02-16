@@ -8,16 +8,11 @@
 import type { ComponentRegistration, TraitValue } from './shared-utils.js';
 import {
   coerceBoolean,
+  triggerUpdate,
   traitStr,
 } from './shared-utils.js';
+import type { RegistryLike } from './shared-utils.js';
 import type { USWDSElement } from '@uswds-pt/shared';
-
-/**
- * Registry interface to avoid circular imports.
- */
-interface RegistryLike {
-  register(registration: ComponentRegistration): void;
-}
 
 export function registerFeedbackComponents(registry: RegistryLike): void {
 
@@ -51,9 +46,7 @@ registry.register({
           const variant = traitStr(value, 'info');
           element.setAttribute('variant', variant);
           (element as USWDSElement).variant = variant;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).variant || element.getAttribute('variant') || 'info';
@@ -74,9 +67,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).heading || element.getAttribute('heading') || '';
@@ -97,9 +88,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).text || element.getAttribute('text') || '';
@@ -124,9 +113,7 @@ registry.register({
             element.removeAttribute('slim');
           }
           (element as USWDSElement).slim = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).slim || element.hasAttribute('slim');
@@ -151,9 +138,7 @@ registry.register({
             element.removeAttribute('no-icon');
           }
           (element as USWDSElement).noIcon = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).noIcon || element.hasAttribute('no-icon');
@@ -186,9 +171,7 @@ registry.register({
           const text = traitStr(value, 'An official website of the United States government');
           element.setAttribute('header-text', text);
           (element as USWDSElement).headerText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).headerText || element.getAttribute('header-text') || 'An official website of the United States government';
@@ -209,9 +192,7 @@ registry.register({
           const text = traitStr(value, "Here's how you know");
           element.setAttribute('action-text', text);
           (element as USWDSElement).actionText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).actionText || element.getAttribute('action-text') || "Here's how you know";
@@ -236,9 +217,7 @@ registry.register({
             element.removeAttribute('expanded');
           }
           (element as USWDSElement).expanded = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).expanded || element.hasAttribute('expanded');
@@ -275,9 +254,7 @@ registry.register({
           const type = traitStr(value, 'info');
           element.setAttribute('type', type);
           (element as USWDSElement).type = type;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).type || element.getAttribute('type') || 'info';
@@ -298,9 +275,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).heading || element.getAttribute('heading') || '';
@@ -321,9 +296,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('content', text);
           (element as USWDSElement).content = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).content || element.getAttribute('content') || '';
@@ -348,9 +321,7 @@ registry.register({
             element.removeAttribute('slim');
           }
           (element as USWDSElement).slim = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).slim || element.hasAttribute('slim');
@@ -403,9 +374,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('heading', text);
           (element as USWDSElement).heading = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).heading || element.getAttribute('heading') || '';
@@ -426,9 +395,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('description', text);
           (element as USWDSElement).description = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).description || element.getAttribute('description') || '';
@@ -454,9 +421,7 @@ registry.register({
           const type = traitStr(value, 'button');
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).triggerType || element.getAttribute('trigger-type') || 'button';
@@ -477,9 +442,7 @@ registry.register({
           const text = traitStr(value, 'Open Modal');
           element.setAttribute('trigger-text', text);
           (element as USWDSElement).triggerText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).triggerText || element.getAttribute('trigger-text') || 'Open Modal';
@@ -509,9 +472,7 @@ registry.register({
           const icon = traitStr(value, 'info');
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).triggerIcon || element.getAttribute('trigger-icon') || 'info';
@@ -536,9 +497,7 @@ registry.register({
             element.removeAttribute('show-trigger');
           }
           (element as USWDSElement).showTrigger = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showTrigger !== false;
@@ -563,9 +522,7 @@ registry.register({
             element.removeAttribute('large');
           }
           (element as USWDSElement).large = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).large || element.hasAttribute('large');
@@ -590,9 +547,7 @@ registry.register({
             element.removeAttribute('force-action');
           }
           (element as USWDSElement).forceAction = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).forceAction || element.hasAttribute('force-action');
@@ -613,9 +568,7 @@ registry.register({
           const text = traitStr(value, 'Continue');
           element.setAttribute('primary-button-text', text);
           (element as USWDSElement).primaryButtonText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).primaryButtonText || 'Continue';
@@ -636,9 +589,7 @@ registry.register({
           const text = traitStr(value, 'Cancel');
           element.setAttribute('secondary-button-text', text);
           (element as USWDSElement).secondaryButtonText = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).secondaryButtonText || 'Cancel';
@@ -663,9 +614,7 @@ registry.register({
             element.removeAttribute('show-secondary-button');
           }
           (element as USWDSElement).showSecondaryButton = isEnabled;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).showSecondaryButton !== false;
@@ -698,9 +647,7 @@ registry.register({
           const text = traitStr(value);
           element.setAttribute('text', text);
           (element as USWDSElement).text = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).text || element.getAttribute('text') || '';
@@ -727,9 +674,7 @@ registry.register({
           const type = traitStr(value, 'text');
           element.setAttribute('trigger-type', type);
           (element as USWDSElement).triggerType = type;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).triggerType || element.getAttribute('trigger-type') || 'text';
@@ -750,9 +695,7 @@ registry.register({
           const text = traitStr(value, 'Hover me');
           element.setAttribute('label', text);
           (element as USWDSElement).label = text;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).label || element.getAttribute('label') || 'Hover me';
@@ -781,9 +724,7 @@ registry.register({
           const icon = traitStr(value, 'info');
           element.setAttribute('trigger-icon', icon);
           (element as USWDSElement).triggerIcon = icon;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).triggerIcon || element.getAttribute('trigger-icon') || 'info';
@@ -810,9 +751,7 @@ registry.register({
           const position = traitStr(value, 'top');
           element.setAttribute('position', position);
           (element as USWDSElement).position = position;
-          if (typeof (element as USWDSElement).requestUpdate === 'function') {
-            (element as USWDSElement).requestUpdate?.();
-          }
+          triggerUpdate(element);
         },
         getValue: (element: HTMLElement) => {
           return (element as USWDSElement).position || element.getAttribute('position') || 'top';
